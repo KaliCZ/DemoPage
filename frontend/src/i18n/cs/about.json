@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "title": "O mně | Pavel Kalandra — kalandra.tech",
+    "description": "O Pavlu Kalandrovi — kariérní cesta od C# vývojáře po CTO."
+  },
+  "hero": {
+    "name": "Pavel Kalandra",
+    "location": "Praha, Česká republika",
+    "subtitle": "Softwarový inženýr a technický lídr zaměřený na budování odolných systémů a silných týmů.",
+    "githubLabel": "GitHub",
+    "githubAriaLabel": "GitHub profil",
+    "linkedinLabel": "LinkedIn",
+    "linkedinAriaLabel": "LinkedIn profil"
+  },
+  "manifesto": {
+    "title": "Můj manifest",
+    "subtitle": "Navrhuji systémy, které nejen fungují dnes, ale elegantně se vyvíjejí v čase.",
+    "pillars": [
+      {
+        "icon": "architecture",
+        "color": "primary",
+        "title": "Odolná architektura",
+        "description": "Systémy, které se elegantně přizpůsobují měnícím se potřebám byznysu."
+      },
+      {
+        "icon": "groups",
+        "color": "tertiary",
+        "title": "Autonomní týmy",
+        "description": "Kultura, kde každý inženýr cítí zodpovědnost za svou práci a má prostor růst."
+      }
+    ],
+    "accordions": [
+      {
+        "color": "primary",
+        "title": "Umožněte si škálovat",
+        "content": "Software by neměl být složitý. Každý kus softwaru vyžaduje údržbu a učení. Pokud vám neusnadňuje život, postavte ho jinak. Nebo ho nestavte vůbec. Nezasekněte se v režimu opravování. Využijte čas na tvorbu hodnoty."
+      },
+      {
+        "color": "tertiary",
+        "title": "Buďte šťastní ze své práce",
+        "content": "Většina inženýrů dělá tuto práci, protože milují tvorbu. Dejte jim trochu volnosti a sledujte, jak váš software roste. Motivovat inženýry by nemělo být těžké."
+      },
+      {
+        "color": "secondary",
+        "title": "Zaměřte se na DX",
+        "content": "Spojením těch dvou bodů dostanete jednoduchý závěr. Opravte to, co inženýry trápí, a oni vám na oplátku vylepší produkt. Všichni vyhrávají. Všichni jsou spokojení."
+      }
+    ]
+  },
+  "career": {
+    "label": "Cesta",
+    "title": "Kariérní cesta",
+    "entries": [
+      {
+        "side": "right",
+        "date": "Čer 2025 — Současnost",
+        "role": "CTO",
+        "company": "tickadoo",
+        "description": "Zodpovědný za celkovou architekturu systému, návrh featur a způsoby práce."
+      },
+      {
+        "side": "left",
+        "date": "Úno 2025 — Srp 2025",
+        "role": "Staff Software Engineer",
+        "company": "Outreach",
+        "description": "Moc jsem se neohřál, odešel jsem za skvělou příležitostí jako CTO v tickadoo."
+      },
+      {
+        "side": "right",
+        "date": "Dub 2024 — Led 2025",
+        "role": "Tribe Lead",
+        "company": "Rossum",
+        "description": "Vedl jsem třetinu engineeringu, restrukturalizoval týmy na produktově zaměřené a koučoval nové lídry."
+      },
+      {
+        "side": "left",
+        "date": "Bře 2018 — Bře 2024",
+        "role": "Mews",
+        "company": "",
+        "yearsLabel": "6 let ve 3 rolích",
+        "subEntries": [
+          {
+            "date": "Dub 2023 — Bře 2024",
+            "role": "Staff Engineer",
+            "description": "Samostatně vedl DX iniciativu, která zkrátila lokální start o 61 %, ušetřila 137 GB databázového bloatu a přepracovala knihovnu FuncSharp — vylepšení výkonu v hot-path a přidání lepšího type-safety pro prevenci celých kategorií bugů už při kompilaci. Prosazoval kulturní změny v backend engineeringu."
+          },
+          {
+            "date": "Led 2019 — Dub 2023",
+            "role": "Engineering Manager, Finance",
+            "description": "Vedl cross-funkční tým zodpovědný za billing, reporting a fiskální compliance. Přechod na multi-tax systémy pro globální expanzi."
+          },
+          {
+            "date": "Bře 2018 — Pro 2018",
+            "role": "Back End Developer",
+            "description": ""
+          }
+        ]
+      },
+      {
+        "side": "right",
+        "date": "Dub 2016 — Úno 2018",
+        "role": "Software Developer",
+        "company": "ZENTITY a.s.",
+        "description": "Správa ASP.NET webové aplikace; později migrace z SQL reportingu na vlastní d3.js/Vue.js reporting."
+      },
+      {
+        "side": "left",
+        "date": "2014 — 2017",
+        "role": "Začátek kariéry",
+        "company": "CN Group CZ · Lynax",
+        "description": "Začínal jako C# stážista během studia, postupoval přes WPF vývoj a CodedUI testování. Stavěl desktopové aplikace a tabletová rozhraní."
+      }
+    ]
+  }
+}

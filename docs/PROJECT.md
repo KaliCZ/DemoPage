@@ -21,47 +21,25 @@
 
 ## Versions & Roadmap
 
-### Version 1 — Static Page
-**Status:** Not started
+### Version 1 — Simple Site
+**Status:** Done
 
-A minimal static site to verify hosting, deployment pipeline, and domain setup.
-
-**Pages:**
-- **About Me** — basic personal info, links to GitHub and LinkedIn
-- **Project** — architecture design, product requirements, versions, and time tracking (rendered from this document)
-
-**Acceptance criteria:**
-- [ ] Static site is deployed and accessible at kalandra.tech
-- [ ] CI/CD pipeline deploys on every push to main
-- [ ] About page with personal info and links
-- [ ] Project page rendering content from this document
-
----
-
-### Version 2 — Dynamic Content (Light/Dark Mode)
-**Status:** Not started
-
-Add JavaScript to enable dynamic UI behavior.
+Simple site with domain, hosting and deployment pipeline.
 
 **Features:**
-- [ ] Light/dark mode toggle
-- [ ] User preference persisted in localStorage
+- [x] Static site deployed and accessible at kalandra.tech
+- [x] CI/CD pipeline deploys on every push to main
+- [x] About page with personal info, manifesto, and career timeline
+- [x] Project page with roadmap, tech stack, and quick stats
+- [x] Light/dark mode toggle with system preference detection
+- [x] User preference persisted in localStorage
+- [x] Language picker in the UI (Czech / English)
+- [x] All page content available in both languages
+- [x] Astro i18n routing (`/` for English, `/cs/` for Czech)
 
 ---
 
-### Version 3 — Language Picker
-**Status:** Not started
-
-Internationalization with Czech and English. No translation API — both languages are maintained manually.
-
-**Features:**
-- [ ] Language picker in the UI (Czech / English)
-- [ ] All page content available in both languages
-- [ ] Language preference persisted
-
----
-
-### Version 4 — Login (Supabase Auth)
+### Version 2 — Login (Supabase Auth)
 **Status:** Not started
 
 Integrate Supabase authentication. No new features gated behind login yet.
@@ -74,7 +52,7 @@ Integrate Supabase authentication. No new features gated behind login yet.
 
 ---
 
-### Version 5 — Backend & Contact Form
+### Version 3 — Backend & Contact Form
 **Status:** Not started
 
 Deploy the ASP.NET Core backend connected to Supabase PostgreSQL. First real backend feature: a contact form.
@@ -88,7 +66,7 @@ Deploy the ASP.NET Core backend connected to Supabase PostgreSQL. First real bac
 
 ---
 
-### Version 6 — Job Offer Form
+### Version 4 — Job Offer Form
 **Status:** Not started
 
 Upgrade the contact form into a structured job offer submission.
@@ -109,27 +87,20 @@ Upgrade the contact form into a structured job offer submission.
 
 ---
 
-### Version 7 — Emails & Slack
+### Version 5 — Emails, Slack & Observability
 **Status:** Not started
 
 **Features:**
 - [ ] Email confirmation on job offer submission (to user)
 - [ ] Email notification to site owner on new submission
 - [ ] Slack notification to owner on new submission
-
----
-
-### Version 8 — Observability
-**Status:** Not started
-
-**Integrations:**
 - [ ] **Sentry** — error tracking, tracing, logging
 - [ ] **PostHog** — product analytics
 - [ ] **BetterStack** — logging, tracing, uptime monitoring
 
 ---
 
-### Version 9 — Background Tasks
+### Version 6 — Background Tasks
 **Status:** Not started
 
 Move async work (emails, notifications) out of the request pipeline into durable background processing.
@@ -142,7 +113,7 @@ Move async work (emails, notifications) out of the request pipeline into durable
 
 ---
 
-### Version 10 — Pay to Win (Stripe)
+### Version 7 — Pay to Win (Stripe)
 **Status:** Not started
 
 Monetize job offer submissions via Stripe.

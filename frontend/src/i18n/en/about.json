@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "title": "About Me | Pavel Kalandra — kalandra.tech",
+    "description": "About Pavel Kalandra — career journey from C# developer to CTO."
+  },
+  "hero": {
+    "name": "Pavel Kalandra",
+    "location": "Prague, Czech Republic",
+    "subtitle": "Software engineer and engineering leader dedicated to building resilient systems and high-performing teams.",
+    "githubLabel": "GitHub",
+    "githubAriaLabel": "GitHub profile",
+    "linkedinLabel": "LinkedIn",
+    "linkedinAriaLabel": "LinkedIn profile"
+  },
+  "manifesto": {
+    "title": "My Manifesto",
+    "subtitle": "Designing systems that don't just work today, but evolve gracefully over time.",
+    "pillars": [
+      {
+        "icon": "architecture",
+        "color": "primary",
+        "title": "Resilient Architecture",
+        "description": "Systems that evolve gracefully as business needs shift."
+      },
+      {
+        "icon": "groups",
+        "color": "tertiary",
+        "title": "Empowered Teams",
+        "description": "Autonomous cultures where every engineer has ownership and a path to mastery."
+      }
+    ],
+    "accordions": [
+      {
+        "color": "primary",
+        "title": "Allow yourself to scale",
+        "content": "Software shouldn't be hard. Every piece of software requires maintenance and learning. If it doesn't make your life easier, build it different. Or don't build it at all. Don't get stuck in maintenance mode. Use your time for building value."
+      },
+      {
+        "color": "tertiary",
+        "title": "Be happy about your work",
+        "content": "Most engineers do this job because they love building. Give them some free time and just watch how they make your software grow. Motivating engineers shouldn't be difficult."
+      },
+      {
+        "color": "secondary",
+        "title": "Focus on DX",
+        "content": "By applying the two points above, you get a simple implication. Fix what's bothering the engineers and they will make your product better in return. Everybody wins. Everybody's happy."
+      }
+    ]
+  },
+  "career": {
+    "label": "The Path",
+    "title": "Career Journey",
+    "entries": [
+      {
+        "side": "right",
+        "date": "Jun 2025 — Present",
+        "role": "CTO",
+        "company": "tickadoo",
+        "description": "Responsible for overall system architecture, feature design and ways of working."
+      },
+      {
+        "side": "left",
+        "date": "Feb 2025 — Aug 2025",
+        "role": "Staff Software Engineer",
+        "company": "Outreach",
+        "description": "Didn't stay long, left for a great opportunity as CTO at tickadoo."
+      },
+      {
+        "side": "right",
+        "date": "Apr 2024 — Jan 2025",
+        "role": "Tribe Lead",
+        "company": "Rossum",
+        "description": "Led one-third of engineering, restructuring into product-focused teams and coaching new leaders."
+      },
+      {
+        "side": "left",
+        "date": "Mar 2018 — Mar 2024",
+        "role": "Mews",
+        "company": "",
+        "yearsLabel": "6 years across 3 roles",
+        "subEntries": [
+          {
+            "date": "Apr 2023 — Mar 2024",
+            "role": "Staff Engineer",
+            "description": "Single-handedly drove a DX initiative that cut local startup time by 61%, saved 137 GB of database bloat, and overhauled the FuncSharp library — improving hot-path performance and adding stronger type-safety to prevent entire categories of bugs at compile time. Championed culture changes across backend engineering."
+          },
+          {
+            "date": "Jan 2019 — Apr 2023",
+            "role": "Engineering Manager, Finance",
+            "description": "Led cross-functional team overseeing billing, reporting, and fiscal compliance. Transitioned to multi-tax systems for global expansion."
+          },
+          {
+            "date": "Mar 2018 — Dec 2018",
+            "role": "Back End Developer",
+            "description": ""
+          }
+        ]
+      },
+      {
+        "side": "right",
+        "date": "Apr 2016 — Feb 2018",
+        "role": "Software Developer",
+        "company": "ZENTITY a.s.",
+        "description": "Managed ASP.NET web application; later migrated from SQL reporting to custom d3.js/Vue.js reporting."
+      },
+      {
+        "side": "left",
+        "date": "2014 — 2017",
+        "role": "Early Career",
+        "company": "CN Group CZ · Lynax",
+        "description": "Started as a C# intern during university, progressing through WPF development and CodedUI testing. Built desktop applications and tablet interfaces."
+      }
+    ]
+  }
+}

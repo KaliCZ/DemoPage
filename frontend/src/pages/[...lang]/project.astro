@@ -1,0 +1,179 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { locales, defaultLocale, type Locale } from '../../i18n/utils';
+import enStrings from '../../i18n/en/project.json';
+import csStrings from '../../i18n/cs/project.json';
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map(lang => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+
+const techIcons = ['public', 'rocket_launch', 'data_object', 'deployed_code'];
+const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="project" lang={lang}>
+
+  <!-- Hero / Intro Section -->
+  <section class="max-w-7xl mx-auto px-8 mb-24">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+      <div class="md:col-span-8">
+        <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
+          {t.hero.titlePrefix}<span class="text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-container">{t.hero.titleHighlight}</span>{t.hero.titleSuffix}
+        </h1>
+        <p class="font-body text-xl text-on-surface-variant max-w-2xl leading-relaxed">
+          {t.hero.description}
+        </p>
+      </div>
+      <div class="md:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
+        <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
+          <span class="material-symbols-outlined text-tertiary" aria-hidden="true">bolt</span>
+          {t.quickStats.title}
+        </h3>
+        <div class="space-y-6">
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.statusLabel}</div>
+            <div class="font-body font-semibold text-primary">{t.quickStats.statusValue}</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.versionLabel}</div>
+            <div class="font-body font-semibold text-on-surface">{t.quickStats.versionValue}</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.timeLabel}</div>
+            <div class="font-body font-semibold text-on-surface">{t.quickStats.timeValue}</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.sourceLabel}</div>
+            <a href="https://github.com/kalicz/DemoPage" target="_blank" rel="noopener noreferrer" class="font-body font-semibold text-tertiary hover:underline">{t.quickStats.sourceValue}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack -->
+  <section class="max-w-7xl mx-auto px-8 mb-32">
+    <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.techStack.title}</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {t.techStack.items.map((item, i) => (
+        <div class="bg-surface-container-high p-6 flex flex-col items-center justify-center gap-4 hover:bg-surface-container-highest transition-all duration-300 group rounded-xl border border-outline-variant/20">
+          <span class:list={["material-symbols-outlined text-3xl group-hover:scale-110 transition-transform", `text-${techColors[i]}`]} aria-hidden="true">{techIcons[i]}</span>
+          <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant">{item}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Roadmap Section -->
+  <section class="max-w-7xl mx-auto px-8">
+    <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-4">
+      <div>
+        <span class="font-label text-tertiary uppercase tracking-widest text-sm mb-4 block">{t.roadmap.timelineLabel}</span>
+        <h2 class="font-headline text-4xl font-extrabold tracking-tight text-on-surface">{t.roadmap.title}</h2>
+      </div>
+      <p class="font-body text-on-surface-variant max-w-sm text-right">
+        {t.roadmap.subtitle}
+      </p>
+    </div>
+
+    <div class="relative">
+      <!-- Vertical Line -->
+      <div class="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-outline-variant/30 -translate-x-1/2 hidden md:block"></div>
+
+      <div class="space-y-24">
+        {t.roadmap.versions.map((version) => {
+          const isLeft = version.side === 'left';
+          const isFaded = 'faded' in version && version.faded;
+          const hasPricing = 'pricingTable' in version && version.pricingTable;
+
+          return (
+            <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center", isFaded && "opacity-60"]}>
+              {isLeft ? (
+                <>
+                  <div class="md:text-right md:pr-16">
+                    <div class:list={["font-label text-primary mb-2 text-sm uppercase", version.done && "flex items-center gap-1.5 md:justify-end"]}>
+                      {`Version ${version.number}`}
+                      {version.done && (
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check_circle</span>
+                      )}
+                    </div>
+                    <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>{version.title}</h3>
+                    {'time' in version && version.time && <p class="font-label text-xs text-on-surface-variant mb-4">{version.time}</p>}
+                    <p class:list={["font-body text-on-surface-variant leading-relaxed", hasPricing && "mb-4"]}>{version.description}</p>
+                    {hasPricing && (
+                      <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-sm">
+                        <table class="w-full font-body text-on-surface-variant">
+                          <thead>
+                            <tr class="text-left font-label text-xs uppercase tracking-wider">
+                              {version.pricingTable!.headers.map((h) => <th scope="col" class="pb-2">{h}</th>)}
+                            </tr>
+                          </thead>
+                          <tbody class="text-sm">
+                            {version.pricingTable!.rows.map((row) => (
+                              <tr>
+                                {row.map((cell) => <td class="py-1">{cell}</td>)}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                  {version.done ? (
+                    <div class="absolute left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
+                      <span class="material-symbols-outlined text-white text-[14px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
+                    </div>
+                  ) : (
+                    <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+                  )}
+                  <div></div>
+                </>
+              ) : (
+                <>
+                  <div></div>
+                  <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+                  <div class="md:pl-16">
+                    <div class="font-label text-primary mb-2 text-sm uppercase">{`Version ${version.number}`}</div>
+                    <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">{version.title}</h3>
+                    <p class="font-body text-on-surface-variant leading-relaxed">{version.description}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="max-w-7xl mx-auto px-8 mt-32">
+    <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
+      <div class="relative z-10 flex flex-col items-center text-center">
+        <h2 class="font-headline text-3xl md:text-5xl font-extrabold mb-6 tracking-tight text-on-surface">{t.cta.title}</h2>
+        <p class="font-body text-on-surface-variant max-w-xl mb-10 text-lg">
+          {t.cta.description}
+        </p>
+        <a
+          href="https://github.com/kalicz/DemoPage"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="bg-primary text-on-primary px-8 py-4 font-headline font-bold rounded-lg shadow-md hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95"
+        >
+          {t.cta.button}
+        </a>
+      </div>
+      <!-- Abstract visual element -->
+      <div class="absolute -right-24 -bottom-24 w-96 h-96 bg-tertiary/10 blur-[100px] rounded-full"></div>
+    </div>
+  </section>
+
+</Layout>

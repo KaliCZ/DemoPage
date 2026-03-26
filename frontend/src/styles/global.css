@@ -76,6 +76,14 @@ body {
   color: var(--color-on-primary-container);
 }
 
+/* Suppress transitions during theme toggle to prevent flash */
+.no-transitions,
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition: none !important;
+}
+
 /* ============================================
    Dark Mode Overrides
    Applied when <html class="dark">

@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About Me",
+    "project": "Project"
+  },
+  "theme": {
+    "switchToDark": "Switch to dark mode",
+    "switchToLight": "Switch to light mode"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content",
+    "mainNavigation": "Main navigation",
+    "toggleDarkMode": "Toggle dark mode",
+    "changeLanguage": "Change language"
+  },
+  "footer": {
+    "linkedinTitle": "LinkedIn — Pavel Kalandra",
+    "linkedinAriaLabel": "LinkedIn profile",
+    "githubTitle": "GitHub — KaliCZ",
+    "githubAriaLabel": "GitHub profile"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "kalandra.tech — Pavel Kalandra",
+    "description": "Osobní ukázka Pavla Kalandry — CTO a technický lídr z Prahy. Stavěno veřejně se zdokumentovanými architektonickými rozhodnutími."
+  },
+  "hero": {
+    "label": "Vítejte",
+    "titlePrefix": "Ahoj, jsem ",
+    "titleName": "Pavel Kalandra.",
+    "subtitle": "Softwarový inženýr a technický lídr z Prahy."
+  },
+  "cards": {
+    "about": {
+      "title": "O mně",
+      "description": "Co mě jako inženýra pohání.",
+      "cta": "Číst dále"
+    },
+    "project": {
+      "title": "Projekt",
+      "description": "Od jednoduché stránky až po pokročilé funkce. Sledujte plán do budoucna.",
+      "cta": "Zobrazit plán"
+    }
+  },
+  "whatsHere": {
+    "title": "Co je tato stránka?",
+    "siteName": "kalandra.tech",
+    "paragraph1": " je moje osobní webová stránka, a zároveň i experiment. Stavím ji transparentě — každá verze, každé architektonické rozhodnutí, každý deployment je veřejný.",
+    "paragraph2prefix": "Další projekty přibudou časem. Zatím je tu jediný projekt — ",
+    "paragraph2link": "meta-projekt stavby tohoto webu",
+    "paragraph2suffix": ". Sledujte novinky."
+  }
+}

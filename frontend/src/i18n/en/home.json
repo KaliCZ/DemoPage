@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "kalandra.tech — Pavel Kalandra",
+    "description": "Personal showcase of Pavel Kalandra — CTO and software engineering leader based in Prague. Built in public with documented architecture decisions."
+  },
+  "hero": {
+    "label": "Welcome",
+    "titlePrefix": "Hi, I'm ",
+    "titleName": "Pavel Kalandra.",
+    "subtitle": "Software engineer and engineering leader based in Prague."
+  },
+  "cards": {
+    "about": {
+      "title": "About Me",
+      "description": "What drives me as an engineer.",
+      "cta": "Read more"
+    },
+    "project": {
+      "title": "Project",
+      "description": "From a simple page to advanced features. Follow the roadmap.",
+      "cta": "View roadmap"
+    }
+  },
+  "whatsHere": {
+    "title": "What is this page?",
+    "siteName": "kalandra.tech",
+    "paragraph1": " is my personal website, but it's also an experiment. I'm building it transparently — every version, every architectural decision, every deployment is public.",
+    "paragraph2prefix": "More projects are coming in the future. For now, the only project here is ",
+    "paragraph2link": "the meta-project of building this very site",
+    "paragraph2suffix": ". Stay tuned."
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "title": "Projekt | kalandra.tech — Živě budovaná ukázka",
+    "description": "Živě budovaná ukázka dokumentující architekturu, plán vývoje a technická rozhodnutí za kalandra.tech — od statického webu po full-stack SaaS."
+  },
+  "hero": {
+    "titlePrefix": "",
+    "titleHighlight": "Živě budovaná",
+    "titleSuffix": " ukázka.",
+    "description": "Tahle stránka je experiment, který se pořád vyvíjí. Slouží jako ukázka mých dovedností — každá iterace je zdokumentovaná, od prvních wireframů po pokročilé featury."
+  },
+  "quickStats": {
+    "title": "Rychlý přehled",
+    "statusLabel": "Stav",
+    "statusValue": "MVP",
+    "versionLabel": "Aktuální verze",
+    "versionValue": "v1.0",
+    "timeLabel": "Čas strávený",
+    "timeValue": "5 hodin",
+    "sourceLabel": "Zdrojový kód",
+    "sourceValue": "GitHub"
+  },
+  "techStack": {
+    "title": "Postaveno na",
+    "items": ["Cloudflare Pages", "Astro", "Tailwind CSS", "GitHub Actions"]
+  },
+  "roadmap": {
+    "timelineLabel": "Časová osa",
+    "title": "Plán vývoje",
+    "subtitle": "7 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
+    "versions": [
+      {
+        "number": 1,
+        "title": "Jednoduchý web",
+        "done": true,
+        "time": "~5 hodin",
+        "description": "Jednoduchý web s doménou, hostingem a deployment pipeline.",
+        "side": "left"
+      },
+      {
+        "number": 2,
+        "title": "Přihlášení (Supabase Auth)",
+        "done": false,
+        "description": "Autentizace uživatelů pomocí Supabase. Registrace, přihlášení, Google OAuth.",
+        "side": "right"
+      },
+      {
+        "number": 3,
+        "title": "Formulář pracovních nabídek",
+        "done": false,
+        "description": "Stránka s formulářem pro podání pracovní nabídky s nahráváním souborů (do 30 MB). Stránka je viditelná pro všechny, ale formulář vyžaduje přihlášení. Pouze frontend — zatím bez backendu, po odeslání formuláře se nic nestane.",
+        "description": "Structured job offer submission page with file uploads (up to 30 MB). The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.",
+        "side": "left"
+      },
+      {
+        "number": 4,
+        "title": "Backend a zpracování formuláře",
+        "done": false,
+        "description": "ASP.NET Core backend na Oracle cloud. Zpracování formuláře pracovních nabídek s Marten event sourcingem. Nabídky procházejí stavy: Podáno, V přezkoumání, Odmítnuto, Přijato. Uživatelé mohou sledovat svá podání, SuperAdmin vidí všechna. ",
+        "side": "right"
+      },
+      {
+        "number": 5,
+        "title": "Emaily, Slack a observabilita",
+        "done": false,
+        "faded": true,
+        "description": "Emailová potvrzení a Slack notifikace při podání pracovních nabídek a změnách stavu. Kompletní observability stack: Sentry pro error tracking, PostHog pro produktovou analytiku, BetterStack pro logování a uptime.",
+        "side": "left"
+      },
+      {
+        "number": 6,
+        "title": "Úlohy na pozadí",
+        "done": false,
+        "faded": true,
+        "description": "Přesun emailů a notifikací do zpracování na pozadí. Self-hosted Temporal na backend VPS s retry sémantikou. Záloha: Azure Queue Storage.",
+        "side": "right"
+      },
+      {
+        "number": 7,
+        "title": "Pay to Win (Stripe)",
+        "done": false,
+        "faded": true,
+        "description": "Monetizace podání pracovních nabídek přes Stripe s odstupňovanými cenami.",
+        "side": "left",
+        "pricingTable": {
+          "headers": ["Úroveň", "Cena", "Garance"],
+          "rows": [
+            ["Zdarma", "$0", "Odpověď do 7 dnů"],
+            ["Premium", "$5", "Odpověď do 24 hodin"],
+            ["Pohovor (30 min)", "$25", "Hovor do 7 dnů"],
+            ["Pohovor (1 hodina)", "$50", "Hovor do 7 dnů"]
+          ]
+        }
+      }
+    ]
+  },
+  "cta": {
+    "title": "Sledujte, jak to roste.",
+    "description": "Toto je veřejný technický deník. Sledujte repozitář a podívejte se na commity, ze kterých vznikla tato stránka.",
+    "button": "Zobrazit zdrojový kód"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "home": "Domů",
+    "about": "O mně",
+    "project": "Projekt"
+  },
+  "theme": {
+    "switchToDark": "Přepnout na tmavý režim",
+    "switchToLight": "Přepnout na světlý režim"
+  },
+  "a11y": {
+    "skipToContent": "Přeskočit na obsah",
+    "mainNavigation": "Hlavní navigace",
+    "toggleDarkMode": "Přepnout tmavý režim",
+    "changeLanguage": "Změnit jazyk"
+  },
+  "footer": {
+    "linkedinTitle": "LinkedIn — Pavel Kalandra",
+    "linkedinAriaLabel": "LinkedIn profil",
+    "githubTitle": "GitHub — KaliCZ",
+    "githubAriaLabel": "GitHub profil"
+  }
+}

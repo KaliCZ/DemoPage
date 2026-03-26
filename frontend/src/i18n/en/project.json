@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "title": "Project | kalandra.tech — Live-Built Showcase",
+    "description": "Live-built showcase documenting the architecture, roadmap, and technical decisions behind kalandra.tech — from static site to full-stack SaaS."
+  },
+  "hero": {
+    "titlePrefix": "The ",
+    "titleHighlight": "Live-Built",
+    "titleSuffix": " Showcase.",
+    "description": "This page is an evolving experiment in digital architecture. It serves as a live-built showcase of my skills where every iteration is documented, from initial wireframes to advanced features."
+  },
+  "quickStats": {
+    "title": "Quick Stats",
+    "statusLabel": "Status",
+    "statusValue": "MVP",
+    "versionLabel": "Current Version",
+    "versionValue": "v1.0",
+    "timeLabel": "Time Spent So Far",
+    "timeValue": "5 hours",
+    "sourceLabel": "Source",
+    "sourceValue": "GitHub"
+  },
+  "techStack": {
+    "title": "Engineered With",
+    "items": ["Cloudflare Pages", "Astro", "Tailwind CSS", "GitHub Actions"]
+  },
+  "roadmap": {
+    "timelineLabel": "Timeline",
+    "title": "Development Roadmap",
+    "subtitle": "7 versions from static site to advanced backend features. Each version adds a layer of complexity.",
+    "versions": [
+      {
+        "number": 1,
+        "title": "Simple Site",
+        "done": true,
+        "time": "~5 hours",
+        "description": "Simple site with domain, hosting and deployment pipeline.",
+        "side": "left"
+      },
+      {
+        "number": 2,
+        "title": "Login (Supabase Auth)",
+        "done": false,
+        "description": "User authentication with Supabase. Sign up, log in, Google OAuth.",
+        "side": "right"
+      },
+      {
+        "number": 3,
+        "title": "Job Offer Form",
+        "done": false,
+        "description": "Structured job offer submission page with file uploads (up to 30 MB). The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.",
+        "side": "left"
+      },
+      {
+        "number": 4,
+        "title": "Backend & Form Handling",
+        "done": false,
+        "description": "ASP.NET Core backend on Oracle cloud. Handles job offer form submissions with Marten event sourcing. Offers go through states: Submitted, In Review, Declined, Accepted. Users can track their submissions, SuperAdmin sees all submissions.",
+        "side": "right"
+      },
+      {
+        "number": 5,
+        "title": "Emails, Slack & Observability",
+        "done": false,
+        "faded": true,
+        "description": "Email confirmations and Slack notifications on job offer submissions and status changes. Full observability stack: Sentry for error tracking, PostHog for product analytics, BetterStack for logging and uptime.",
+        "side": "left"
+      },
+      {
+        "number": 6,
+        "title": "Background Tasks",
+        "done": false,
+        "faded": true,
+        "description": "Move emails and notifications into background processing. Self-hosted Temporal on the backend VPS with retry semantics. Fallback: Azure Queue Storage.",
+        "side": "right"
+      },
+      {
+        "number": 7,
+        "title": "Pay to Win (Stripe)",
+        "done": false,
+        "faded": true,
+        "description": "Monetize job offer submissions via Stripe with tiered pricing.",
+        "side": "left",
+        "pricingTable": {
+          "headers": ["Tier", "Price", "Guarantee"],
+          "rows": [
+            ["Free", "$0", "Response within 7 days"],
+            ["Premium", "$5", "Response within 24 hours"],
+            ["Interview (30 min)", "$25", "Call within 7 days"],
+            ["Interview (1 hour)", "$50", "Call within 7 days"]
+          ]
+        }
+      }
+    ]
+  },
+  "cta": {
+    "title": "Witness the progress.",
+    "description": "This is a public engineering journal. Follow the repository to see the commits that built this exact page.",
+    "button": "View Source Code"
+  }
+}
