@@ -1,0 +1,256 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Project | kalandra.tech — Live-Built Showcase" activePage="project">
+
+  <!-- Hero / Intro Section -->
+  <section class="max-w-7xl mx-auto px-8 mb-24">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+      <div class="md:col-span-8">
+        <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
+          The <span class="text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-container">Live-Built</span> Showcase.
+        </h1>
+        <p class="font-body text-xl text-on-surface-variant max-w-2xl leading-relaxed">
+          This page is an evolving experiment in digital architecture. It serves as a live-built showcase of my skills where every iteration is documented, from initial wireframes to advanced backend integrations.
+        </p>
+      </div>
+      <div class="md:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
+        <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
+          <span class="material-symbols-outlined text-tertiary">bolt</span>
+          Quick Stats
+        </h3>
+        <div class="space-y-6">
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">Status</div>
+            <div class="font-body font-semibold text-primary">MVP</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">Current Version</div>
+            <div class="font-body font-semibold text-on-surface">v1.0 (Static)</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">Time Spent So Far</div>
+            <div class="font-body font-semibold text-on-surface">3 hours</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">Source</div>
+            <a href="https://github.com/kalicz/DemoPage" target="_blank" rel="noopener" class="font-body font-semibold text-tertiary hover:underline">GitHub</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack -->
+  <section class="max-w-7xl mx-auto px-8 mb-32">
+    <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">Engineered With</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-surface-container-high p-6 flex flex-col items-center justify-center gap-4 hover:bg-surface-container-highest transition-all duration-300 group rounded-xl border border-outline-variant/20">
+        <span class="material-symbols-outlined text-3xl text-primary group-hover:scale-110 transition-transform">public</span>
+        <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant">Cloudflare Pages</span>
+      </div>
+      <div class="bg-surface-container-high p-6 flex flex-col items-center justify-center gap-4 hover:bg-surface-container-highest transition-all duration-300 group rounded-xl border border-outline-variant/20">
+        <span class="material-symbols-outlined text-3xl text-tertiary group-hover:scale-110 transition-transform">rocket_launch</span>
+        <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant">Astro</span>
+      </div>
+      <div class="bg-surface-container-high p-6 flex flex-col items-center justify-center gap-4 hover:bg-surface-container-highest transition-all duration-300 group rounded-xl border border-outline-variant/20">
+        <span class="material-symbols-outlined text-3xl text-primary group-hover:scale-110 transition-transform">data_object</span>
+        <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant">Tailwind CSS</span>
+      </div>
+      <div class="bg-surface-container-high p-6 flex flex-col items-center justify-center gap-4 hover:bg-surface-container-highest transition-all duration-300 group rounded-xl border border-outline-variant/20">
+        <span class="material-symbols-outlined text-3xl text-tertiary group-hover:scale-110 transition-transform">deployed_code</span>
+        <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant">GitHub Actions</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap Section -->
+  <section class="max-w-7xl mx-auto px-8">
+    <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-4">
+      <div>
+        <span class="font-label text-tertiary uppercase tracking-widest text-sm mb-4 block">Timeline</span>
+        <h2 class="font-headline text-4xl font-extrabold tracking-tight text-on-surface">Development Roadmap</h2>
+      </div>
+      <p class="font-body text-on-surface-variant max-w-sm text-right">
+        10 versions from static site to advanced backend features. Each version adds a layer of complexity.
+      </p>
+    </div>
+
+    <div class="relative">
+      <!-- Vertical Line -->
+      <div class="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-outline-variant/30 -translate-x-1/2 hidden md:block"></div>
+
+      <div class="space-y-24">
+
+        <!-- v1: Foundation (Done) -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div class="md:text-right md:pr-16">
+            <div class="inline-block px-3 py-1 bg-primary/10 text-primary text-[10px] font-label uppercase tracking-widest rounded-full mb-2">Done</div>
+            <h3 class="font-headline text-2xl font-bold mb-2 text-on-surface">Static Page (v1)</h3>
+            <p class="font-label text-xs text-on-surface-variant mb-4">~3 hours</p>
+            <p class="font-body text-on-surface-variant leading-relaxed mb-6">Minimal static site — hosting, deployment pipeline, domain setup. About Me page and Project page.</p>
+            <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
+              <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
+                <span class="material-symbols-outlined text-[16px] text-primary transition-transform group-open:rotate-180">expand_more</span>
+                What was done
+              </summary>
+              <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
+                <li class="flex items-center gap-2">
+                  <img src="/images/claude-icon.svg" alt="Claude" class="w-4 h-4 rounded-full" />
+                  <span>Designed pages in Google Stitch, built with Astro + Tailwind</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <img src="/images/pavel-portrait.jpg" alt="Kalan" class="w-4 h-4 rounded-full object-cover" />
+                  <span>Set up domain, DNS and Cloudflare Pages hosting</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <img src="/images/claude-icon.svg" alt="Claude" class="w-4 h-4 rounded-full" />
+                  <span>GitHub Actions deploy pipeline</span>
+                </li>
+              </ul>
+            </details>
+          </div>
+          <div class="absolute left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
+            <span class="material-symbols-outlined text-white text-[14px]" style="font-variation-settings: 'FILL' 1;">check</span>
+          </div>
+          <div></div>
+        </div>
+
+        <!-- v2: Dark/Light Mode -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div></div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div class="md:pl-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 2</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Light/Dark Mode</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">Toggle between light and dark themes. User preference persisted in localStorage.</p>
+          </div>
+        </div>
+
+        <!-- v3: Language Picker -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div class="md:text-right md:pr-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 3</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Language Picker</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">Internationalization with Czech and English. Manually maintained translations.</p>
+          </div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div></div>
+        </div>
+
+        <!-- v4: Login -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div></div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div class="md:pl-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 4</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Login (Supabase Auth)</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">User authentication with Supabase. Sign up, log in, Google OAuth.</p>
+          </div>
+        </div>
+
+        <!-- v5: Backend & Contact Form -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div class="md:text-right md:pr-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 5</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Backend & Contact Form</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">ASP.NET Core backend on Hetzner VPS. Contact form with Marten event sourcing.</p>
+          </div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div></div>
+        </div>
+
+        <!-- v6: Job Offer Form -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center opacity-60">
+          <div></div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div class="md:pl-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 6</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Job Offer Form</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">Structured job offer submission with file uploads (up to 30 MB). Offers go through states: Submitted, In Review, Declined, Accepted. Users can track their submissions, SuperAdmin sees all.</p>
+          </div>
+        </div>
+
+        <!-- v7: Emails & Slack -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center opacity-60">
+          <div class="md:text-right md:pr-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 7</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Emails & Slack</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">Email confirmations on submission, email and Slack notifications to the site owner on new offers and status changes.</p>
+          </div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div></div>
+        </div>
+
+        <!-- v8: Observability -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center opacity-60">
+          <div></div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div class="md:pl-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 8</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Observability</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">Full observability stack: Sentry for error tracking and tracing, PostHog for product analytics and feature flags, BetterStack for logging and uptime monitoring.</p>
+          </div>
+        </div>
+
+        <!-- v9: Background Tasks -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center opacity-60">
+          <div class="md:text-right md:pr-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 9</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Background Tasks</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed">Move emails and notifications into durable background processing. Self-hosted Temporal on the backend VPS with retry semantics. Fallback: Azure Queue Storage.</p>
+          </div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div></div>
+        </div>
+
+        <!-- v10: Stripe Payments -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center opacity-60">
+          <div></div>
+          <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+          <div class="md:pl-16">
+            <div class="font-label text-primary mb-2 text-sm uppercase">Version 10</div>
+            <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Pay to Win (Stripe)</h3>
+            <p class="font-body text-on-surface-variant leading-relaxed mb-4">Monetize job offer submissions via Stripe with tiered pricing.</p>
+            <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-sm">
+              <table class="w-full font-body text-on-surface-variant">
+                <thead><tr class="text-left font-label text-xs uppercase tracking-wider"><th class="pb-2">Tier</th><th class="pb-2">Price</th><th class="pb-2">Guarantee</th></tr></thead>
+                <tbody class="text-sm">
+                  <tr><td class="py-1">Free</td><td>$0</td><td>Response within 7 days</td></tr>
+                  <tr><td class="py-1">Premium</td><td>$5</td><td>Response within 24 hours</td></tr>
+                  <tr><td class="py-1">Interview (30 min)</td><td>$25</td><td>Call within 7 days</td></tr>
+                  <tr><td class="py-1">Interview (1 hour)</td><td>$50</td><td>Call within 7 days</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="max-w-7xl mx-auto px-8 mt-32">
+    <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
+      <div class="relative z-10 flex flex-col items-center text-center">
+        <h2 class="font-headline text-3xl md:text-5xl font-extrabold mb-6 tracking-tight text-on-surface">Witness the progress.</h2>
+        <p class="font-body text-on-surface-variant max-w-xl mb-10 text-lg">
+          This is a public engineering journal. Follow the repository to see the commits that built this exact page.
+        </p>
+        <a
+          href="https://github.com/kalicz/DemoPage"
+          target="_blank"
+          rel="noopener"
+          class="bg-primary text-on-primary px-8 py-4 font-headline font-bold rounded-lg shadow-md hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95"
+        >
+          View Source Code
+        </a>
+      </div>
+      <!-- Abstract visual element -->
+      <div class="absolute -right-24 -bottom-24 w-96 h-96 bg-tertiary/10 blur-[100px] rounded-full"></div>
+    </div>
+  </section>
+
+</Layout>
