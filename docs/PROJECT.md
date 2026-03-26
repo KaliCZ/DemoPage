@@ -15,7 +15,7 @@
 |---|---|
 | **Automation** | Minimal manual overhead. Infrastructure as code or GitHub Actions for everything. No manual setup steps. |
 | **Reliability** | The site must be up reliably. |
-| **Cost** | As cheap as possible — preferably free. Backend hosting is the exception (Hetzner VPS ~4 EUR/month). |
+| **Cost** | As cheap as possible — preferably free. Backend hosting: Oracle Cloud Always Free (fallback: Hetzner VPS ~€4/month). |
 
 ---
 
@@ -137,7 +137,7 @@ Move async work (emails, notifications) out of the request pipeline into durable
 **Features:**
 - [ ] Background task processing (emails sent outside the HTTP request)
 - [ ] Durable execution with retry semantics
-- [ ] Preferred: self-hosted Temporal on Hetzner VPS
+- [ ] Preferred: self-hosted Temporal on backend VPS
 - [ ] Fallback: Azure Queue Storage
 
 ---
@@ -168,22 +168,22 @@ Monetize job offer submissions via Stripe.
 ### Overview
 
 ```
-┌─────────────┐     ┌──────────────────┐     ┌─────────────────────────┐
-│  Cloudflare  │     │   Hetzner VPS    │     │       Supabase          │
-│              │     │                  │     │                         │
-│  Static site │────▶│  ASP.NET Core    │────▶│  PostgreSQL (DB)        │
-│  (CDN)       │     │  Backend API     │     │  Auth (JWT)             │
-│              │     │                  │     │                         │
-│  Domain DNS  │     │  Temporal        │     └─────────────────────────┘
-│              │     │  (self-hosted)   │
-└─────────────┘     └──────────────────┘
-                            │
-                    ┌───────┴────────┐
-                    │                │
-              ┌─────▼─────┐   ┌─────▼─────┐
-              │   Slack    │   │   Email    │
-              │   Webhook  │   │   (SMTP)   │
-              └───────────┘   └───────────┘
+┌─────────────┐     ┌──────────────────────────┐     ┌─────────────────────────┐
+│  Cloudflare  │     │  Oracle Cloud Free Tier  │     │       Supabase          │
+│              │     │  (fallback: Hetzner VPS) │     │                         │
+│  Static site │────▶│                          │────▶│  PostgreSQL (DB)        │
+│  (CDN)       │     │  ASP.NET Core            │     │  Auth (JWT)             │
+│              │     │  Backend API              │     │                         │
+│  Domain DNS  │     │                          │     └─────────────────────────┘
+│              │     │  Temporal (self-hosted)  │
+└─────────────┘     └──────────────────────────┘
+                              │
+                      ┌───────┴────────┐
+                      │                │
+                ┌─────▼─────┐   ┌─────▼─────┐
+                │   Slack    │   │   Email    │
+                │   Webhook  │   │   (SMTP)   │
+                └───────────┘   └───────────┘
 ```
 
 ### Frontend
@@ -200,7 +200,7 @@ Monetize job offer submissions via Stripe.
 | Decision | Choice | Rationale |
 |---|---|---|
 | **Runtime** | ASP.NET Core | Strong typing, familiar, good performance |
-| **Hosting** | Hetzner VPS (~4 EUR/month) | Cheapest option that supports long-running processes |
+| **Hosting** | Oracle Cloud Always Free (ARM A1: 4 OCPUs, 24 GB RAM, 200 GB storage). Fallback: Hetzner VPS (~€4/month). | Free, generous specs, supports long-running processes. See [ADR](#backend-hosting--oracle-cloud-always-free-fallback-hetzner-vps) for risks and fallback plan. |
 | **Database** | Supabase PostgreSQL | Free tier, managed, includes auth |
 | **Event sourcing** | Marten | .NET library, uses PostgreSQL directly |
 | **Auth** | Supabase Auth (JWT validation in backend) | Free, includes social logins |
@@ -209,7 +209,7 @@ Monetize job offer submissions via Stripe.
 
 | Decision     | Choice | Rationale |
 |--------------|---|---|
-| **Ideally**  | Temporal (self-hosted on Hetzner) | Durable workflows, free when self-hosted |
+| **Ideally**  | Temporal (self-hosted on the backend VPS) | Durable workflows, free when self-hosted |
 | **Fallback** | Azure Queue Storage | If Temporal + Supabase DB causes quota issues |
 
 ### CI/CD
@@ -217,7 +217,7 @@ Monetize job offer submissions via Stripe.
 | Component | Deployment method |
 |---|---|
 | **Frontend** | GitHub Actions → Cloudflare Pages (wrangler CLI) |
-| **Backend** | GitHub Actions → Hetzner VPS (SSH deploy or Docker) |
+| **Backend** | GitHub Actions → Oracle Cloud / Hetzner VPS (SSH deploy or Docker) |
 | **Infrastructure** | GitHub Actions with respective CLIs per service |
 
 ### Observability (Version 8+)
@@ -233,6 +233,41 @@ Monetize job offer submissions via Stripe.
 | Tool | Purpose |
 |---|---|
 | **Stripe** | Payment processing for premium tiers |
+
+---
+
+## Architecture Decision Log
+
+### Decided
+
+#### Backend Hosting → Oracle Cloud Always Free (fallback: Hetzner VPS)
+
+**Context:** Need a host that supports long-running processes (ASP.NET Core + Temporal background workers). Most free tiers are serverless/scale-to-zero and shut down the process when idle.
+
+**Decision:** Start with Oracle Cloud Always Free ARM A1 instance (4 OCPUs, 24 GB RAM, 200 GB storage). If Oracle proves unreliable, fall back to Hetzner VPS (~€4/month).
+
+**Oracle Cloud — known risks:**
+| Risk | Details | Mitigation |
+|---|---|---|
+| **Signup rejection** | Oracle rejects many free tier signups based on region demand and payment method | Use real credit card, match billing address, pick less popular region |
+| **ARM capacity** | Popular regions often have no A1 capacity available | Choose EU or less popular region at signup |
+| **Idle reclamation** | Instances with <20% CPU at P95 over 7 days are stopped (not deleted) after 1 week notice | Real workloads (Docker, ASP.NET, Temporal) should stay above threshold. Upgrading to PAYG (still free) disables this entirely. |
+| **Account suspension** | Rare reports of accounts suspended without clear reason | Keep PAYG enabled; maintain real usage |
+
+**Setup notes:**
+- Use **Ubuntu** (not Oracle Linux) for straightforward Docker support
+- Set a large **boot volume** (~150 GB) at creation to avoid iSCSI block volume complexity
+- Open ports in **both** OCI security list AND OS firewall
+
+**Alternatives considered:**
+| Option | Why not primary |
+|---|---|
+| **Hetzner VPS (~€4/month)** | Reliable fallback. Full control, predictable, straightforward deploy. Will switch here if Oracle causes trouble. |
+| **Azure App Service Free (F1)** | 60 min CPU/day, no always-on — app sleeps after inactivity. |
+| **AWS Lambda / Google Cloud Run** | Serverless — no persistent background process for Temporal workers. |
+| **Render free tier** | Spins down after 15 min inactivity. Background workers are paid only. |
+| **Fly.io** | Free tier has gotten stingier; likely ends up costing a few dollars anyway with less control than a VPS. |
+| **Azure Container Apps** | Free tier is generous, but self-hosting Temporal would be awkward. |
 
 ---
 
@@ -260,15 +295,6 @@ Monetize job offer submissions via Stripe.
 3. Fall back to Azure Queue Storage if Temporal overhead is too high
 
 **Recommendation:** TBD — to be discussed.
-
-### Hetzner VPS Automated Deploy
-
-**Feasibility:** Yes, fully possible. Options include:
-- **Docker-based:** Build Docker image in GitHub Actions, push to container registry, SSH into VPS to pull and restart
-- **Direct deploy:** Build in CI, SCP artifacts to VPS, restart service via SSH
-- **Self-hosted runner:** Run a GitHub Actions runner on the VPS (more complex, less recommended)
-
-**Recommendation:** Docker-based deploy is the most robust and reproducible approach.
 
 ---
 
