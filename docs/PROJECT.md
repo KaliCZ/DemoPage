@@ -193,7 +193,8 @@ Monetize job offer submissions via Stripe.
 | **Hosting** | Cloudflare Pages | Free tier, global CDN, automatic HTTPS |
 | **Domain/DNS** | Cloudflare | Already using Cloudflare for hosting |
 | **CSS** | Tailwind CSS | Utility-first, tree-shakeable |
-| **Framework** | TBD — see [open question](#frontend-framework) | Need to decide between no-build ES6 modules vs. a framework |
+| **Framework** | Astro (SSG mode) with Vue islands for interactivity | Zero JS by default, built-in i18n, Cloudflare owns Astro. Vue components only where needed. See [ADR](#frontend-framework--astro-ssg-with-vue-islands). |
+| **Rendering** | Static Site Generation (SSG) | Build-time only. Cloudflare Pages serves plain HTML/CSS/JS from CDN. No server-side rendering, no Workers. Cache purged automatically on each deploy. |
 
 ### Backend
 
@@ -269,21 +270,38 @@ Monetize job offer submissions via Stripe.
 | **Fly.io** | Free tier has gotten stingier; likely ends up costing a few dollars anyway with less control than a VPS. |
 | **Azure Container Apps** | Free tier is generous, but self-hosting Temporal would be awkward. |
 
+#### Frontend Framework → Astro (SSG) with Vue Islands
+
+**Context:** Need a frontend framework for a mostly-static site hosted on Cloudflare Pages. Requirements: Tailwind CSS, i18n (Czech/English), progressive interactivity (dark mode → login → forms), minimal JS shipped to users.
+
+**Decision:** Start with Astro in static site generation (SSG) mode. Interactive components built as Vue islands, hydrated only where needed. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN. Cache is purged automatically on every deploy.
+
+**Expected evolution:** As more dynamic, authenticated pages are added (v5+: submission detail, user dashboard, admin views), the balance shifts from static content toward SPA-like behavior. Dynamic pages use an SPA fallback pattern — Astro serves a static shell, a Vue island reads the URL, calls the ASP.NET API, and renders content. If this pattern dominates and Astro becomes more hindrance than help, a migration to **Vue/Nuxt** is expected. The Vue components built as islands will transfer directly.
+
+**Why Astro:**
+- Ships **zero JS by default** — only interactive islands include client-side code
+- **Built-in i18n** routing and locale detection (since v4.3)
+- **Cloudflare acquired Astro** (Jan 2026) — best-in-class Pages integration
+- SSG output is just HTML/CSS/JS files — the frontend stays a pure static client, all API calls go to the ASP.NET Core backend
+- `.astro` template syntax feels similar to HTML/Vue — low learning curve
+
+**Why Vue for islands (not React):**
+- HTML-first template authoring (write HTML, enhance with directives) vs React's JS-first approach (write functions that return JSX)
+- Both support component composition equally — Vue uses slots, React uses children
+- Vue skills transfer directly to a future Vue/Nuxt project if heavier UI logic is needed
+
+**Alternatives considered:**
+| Option | Why not chosen |
+|---|---|
+| **Vanilla ES6 modules** | Still needs a Tailwind build step. Would have to manually build routing, i18n, and component system. No real benefit. |
+| **Vue/Nuxt (full app)** | Ships ~50-80 KB Vue runtime to every page even when content is static. Overkill for a mostly-static site. |
+| **React/Next.js (full app)** | Ships ~80-120 KB React runtime. JS-first authoring style is less preferred. Next.js is Vercel-aligned, not Cloudflare-aligned. |
+| **SvelteKit** | Good framework, but i18n is still not built-in. More geared toward interactive apps than content-driven sites. |
+| **Vercel (Next.js/Nuxt/etc.)** | Popular hosting platform, but its SSR model runs server-side functions — effectively a second backend. The goal is a thin static client deployed to a CDN with a single ASP.NET Core backend handling all server logic. Vercel blurs that boundary. |
+
 ---
 
 ## Open Questions
-
-### Frontend Framework
-
-**Context:** Writing vanilla ES6 modules with no build step is appealing for simplicity, but creates friction with Tailwind CSS (which needs a build step to tree-shake unused utilities) and internationalization.
-
-**Options:**
-1. **No framework, ES6 modules** — simplest runtime, but need a Tailwind build step anyway. i18n and routing become manual.
-2. **SvelteKit** — lightweight, compiles away, good DX, built-in routing and SSR/SSG. Works well with Cloudflare Pages.
-3. **Vue.js (Nuxt)** — mature ecosystem, good docs, SSG support.
-4. **Astro** — content-focused, supports markdown natively (good for rendering this doc), partial hydration, works with Cloudflare.
-
-**Recommendation:** TBD — to be discussed.
 
 ### Temporal + Supabase DB
 
