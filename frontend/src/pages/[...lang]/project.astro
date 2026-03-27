@@ -26,7 +26,7 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
     <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
       <div class="md:col-span-8">
         <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
-          {t.hero.titlePrefix}<span class="text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-container">{t.hero.titleHighlight}</span>{t.hero.titleSuffix}
+          {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-primary-container">{t.hero.titleHighlight}</span>{t.hero.titleSuffix}
         </h1>
         <p class="font-body text-xl text-on-surface-variant max-w-2xl leading-relaxed">
           {t.hero.description}
@@ -51,8 +51,19 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
             <div class="font-body font-semibold text-on-surface">{t.quickStats.timeValue}</div>
           </div>
           <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.costOneTimeLabel}</div>
+            <div class="font-body font-semibold text-on-surface">{t.quickStats.costOneTimeValue}</div>
+          </div>
+          <div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.costRecurringLabel}</div>
+            <div class="font-body font-semibold text-on-surface">{t.quickStats.costRecurringValue}</div>
+          </div>
+          <div>
             <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.sourceLabel}</div>
-            <a href="https://github.com/kalicz/DemoPage" target="_blank" rel="noopener noreferrer" class="font-body font-semibold text-tertiary hover:underline">{t.quickStats.sourceValue}</a>
+            <a href="https://github.com/kalicz/DemoPage" target="_blank" rel="noopener noreferrer" class="font-body font-semibold text-tertiary hover:underline flex items-center gap-1.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              {t.quickStats.sourceValue}
+            </a>
           </div>
         </div>
       </div>
@@ -93,9 +104,10 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
           const isLeft = version.side === 'left';
           const isFaded = 'faded' in version && version.faded;
           const hasPricing = 'pricingTable' in version && version.pricingTable;
+          const hasDetails = 'details' in version && version.details;
 
           return (
-            <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center", isFaded && "opacity-60"]}>
+            <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-start", isFaded && "opacity-60"]}>
               {isLeft ? (
                 <>
                   <div class="md:text-right md:pr-16">
@@ -107,7 +119,27 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
                     </div>
                     <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>{version.title}</h3>
                     {'time' in version && version.time && <p class="font-label text-xs text-on-surface-variant mb-4">{version.time}</p>}
-                    <p class:list={["font-body text-on-surface-variant leading-relaxed", hasPricing && "mb-4"]}>{version.description}</p>
+                    <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>{version.description}</p>
+                    {hasDetails && (
+                      <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
+                        <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
+                          <span class="material-symbols-outlined text-[16px] text-primary transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+                          {version.detailsLabel}
+                        </summary>
+                        <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
+                          {version.details!.map((item) => (
+                            <li class="flex items-center gap-2">
+                              {item.author === 'claude' ? (
+                                <img src="/images/claude-icon.svg" alt="Claude" class="w-4 h-4 rounded-full" />
+                              ) : (
+                                <img src="/images/pavel-portrait.jpg" alt="Pavel" class="w-4 h-4 rounded-full object-cover" />
+                              )}
+                              <span>{item.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                     {hasPricing && (
                       <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-sm">
                         <table class="w-full font-body text-on-surface-variant">
@@ -128,18 +160,18 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
                     )}
                   </div>
                   {version.done ? (
-                    <div class="absolute left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
+                    <div class="absolute top-5 left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
                       <span class="material-symbols-outlined text-white text-[14px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
                     </div>
                   ) : (
-                    <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+                    <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
                   )}
                   <div></div>
                 </>
               ) : (
                 <>
                   <div></div>
-                  <div class="absolute left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+                  <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
                   <div class="md:pl-16">
                     <div class="font-label text-primary mb-2 text-sm uppercase">{`Version ${version.number}`}</div>
                     <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">{version.title}</h3>

@@ -76,6 +76,15 @@ body {
   color: var(--color-on-primary-container);
 }
 
+/* Gradient text with accessible fallback.
+   Uses a visible color as fallback so text remains readable
+   when browser extensions (e.g. Dark Reader) strip the gradient. */
+.gradient-text {
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
 /* Suppress transitions during theme toggle to prevent flash */
 .no-transitions,
 .no-transitions *,

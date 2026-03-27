@@ -16,9 +16,13 @@
     "versionLabel": "Aktuální verze",
     "versionValue": "v1.0",
     "timeLabel": "Čas strávený",
-    "timeValue": "5 hodin",
+    "timeValue": "7 hodin",
     "sourceLabel": "Zdrojový kód",
-    "sourceValue": "GitHub"
+    "sourceValue": "GitHub",
+    "costOneTimeLabel": "Jednorázové náklady",
+    "costOneTimeValue": "3 €",
+    "costRecurringLabel": "Průběžné náklady",
+    "costRecurringValue": "0 €/měsíc"
   },
   "techStack": {
     "title": "Postaveno na",
@@ -33,9 +37,19 @@
         "number": 1,
         "title": "Jednoduchý web",
         "done": true,
-        "time": "~5 hodin",
+        "time": "~7 hodin",
         "description": "Jednoduchý web s doménou, hostingem a deployment pipeline.",
-        "side": "left"
+        "side": "left",
+        "detailsLabel": "Co se udělalo",
+        "details": [
+          { "author": "claude", "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind" },
+          { "author": "pavel", "text": "Nastavení domény, DNS a hostingu na Cloudflare Pages" },
+          { "author": "claude", "text": "Deploy pipeline přes GitHub Actions" },
+          { "author": "claude", "text": "Světlý a tmavý režim s detekcí systémových preferencí" },
+          { "author": "claude", "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady" },
+          { "author": "claude", "text": "Responzivní layout, SEO markup, Open Graph a hreflang tagy" },
+          { "author": "claude", "text": "Přístupná navigace se skip-to-content a ARIA atributy" }
+        ]
       },
       {
         "number": 2,
