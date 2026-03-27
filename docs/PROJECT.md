@@ -5,7 +5,7 @@
 
 ## Project Goals
 
-1. **Personal showcase website** — present myself to potential employers/recruiters at [kalandra.tech](https://www.kalandra.tech)
+1. **Personal showcase website** — present myself to potential employers/recruiters at [www.kalandra.tech](https://www.kalandra.tech)
 2. **Skills demonstration** — document the building of this project as part of the showcase, including architecture diagrams, decisions, and progress
 3. **Technology playground** — experiment with new technologies in a real, deployed project
 
@@ -22,12 +22,12 @@
 ## Versions & Roadmap
 
 ### Version 1 — Simple Site
-**Status:** Done
+**Status:** Done (~7 hours)
 
 Simple site with domain, hosting and deployment pipeline.
 
 **Features:**
-- [x] Static site deployed and accessible at kalandra.tech
+- [x] Static site deployed and accessible at [www.kalandra.tech](https://www.kalandra.tech)
 - [x] CI/CD pipeline deploys on every push to main
 - [x] About page with personal info, manifesto, and career timeline
 - [x] Project page with roadmap, tech stack, and quick stats
@@ -36,6 +36,9 @@ Simple site with domain, hosting and deployment pipeline.
 - [x] Language picker in the UI (Czech / English)
 - [x] All page content available in both languages
 - [x] Astro i18n routing (`/` for English, `/cs/` for Czech)
+- [x] Responsive layout for mobile and desktop
+- [x] SEO-friendly markup with Open Graph and hreflang tags
+- [x] Accessible navigation with skip-to-content and ARIA attributes
 
 ---
 
@@ -52,26 +55,22 @@ Integrate Supabase authentication. No new features gated behind login yet.
 
 ---
 
-### Version 3 — Backend & Contact Form
+### Version 3 — Job Offer Form
 **Status:** Not started
 
-Deploy the ASP.NET Core backend connected to Supabase PostgreSQL. First real backend feature: a contact form.
+Structured job offer submission page. The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.
 
 **Features:**
-- [ ] ASP.NET Core backend deployed with automated CI/CD
-- [ ] Backend validates Supabase JWT tokens
-- [ ] Contact form: name, surname, email, message (max 3000 chars)
-- [ ] Form submissions stored in PostgreSQL via Marten (event sourcing)
-- [ ] Simple form UI on the frontend
+- [ ] Job offer submission form with file uploads (up to 30 MB)
+- [ ] Form gated behind authentication (page visible to all)
+- [ ] Frontend-only — no backend processing yet
 
 ---
 
-### Version 4 — Job Offer Form
+### Version 4 — Backend & Form Handling
 **Status:** Not started
 
-Upgrade the contact form into a structured job offer submission.
-
-**Fields:** URL, contact info, message, file attachments (up to 30 MB total)
+ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions. No frontend changes.
 
 **Job offer states:**
 - **Submitted** — initial state after user submits
@@ -80,9 +79,10 @@ Upgrade the contact form into a structured job offer submission.
 - **Accepted** — offer was accepted
 
 **Features:**
-- [ ] Job offer submission form with file uploads
+- [ ] ASP.NET Core backend deployed with automated CI/CD
+- [ ] Backend validates Supabase JWT tokens
+- [ ] Form submissions stored in PostgreSQL via Marten (event sourcing)
 - [ ] User can view their submitted offers and current status
-- [ ] Status change notifications (Declined / Accepted)
 - [ ] SuperAdmin view: all job offers from all users
 
 ---
@@ -192,7 +192,7 @@ Monetize job offer submissions via Stripe.
 | **Backend** | GitHub Actions → Oracle Cloud / Hetzner VPS (SSH deploy or Docker) |
 | **Infrastructure** | GitHub Actions with respective CLIs per service |
 
-### Observability (Version 8+)
+### Observability (Version 5+)
 
 | Tool | Purpose |
 |---|---|
@@ -200,7 +200,7 @@ Monetize job offer submissions via Stripe.
 | **PostHog** | Product analytics and feature flags |
 | **BetterStack** | Logging, tracing, uptime monitoring |
 
-### Payments (Version 10+)
+### Payments (Version 7+)
 
 | Tool | Purpose |
 |---|---|
@@ -247,7 +247,7 @@ Monetize job offer submissions via Stripe.
 
 **Decision:** Start with Astro in static site generation (SSG) mode. Interactive components built as Vue islands, hydrated only where needed. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN. Cache is purged automatically on every deploy.
 
-**Expected evolution:** As more dynamic, authenticated pages are added (v5+: submission detail, user dashboard, admin views), the balance shifts from static content toward SPA-like behavior. Dynamic pages use an SPA fallback pattern — Astro serves a static shell, a Vue island reads the URL, calls the ASP.NET API, and renders content. If this pattern dominates and Astro becomes more hindrance than help, a migration to **Vue/Nuxt** is expected. The Vue components built as islands will transfer directly.
+**Expected evolution:** As more dynamic, authenticated pages are added (v4+: submission detail, user dashboard, admin views), the balance shifts from static content toward SPA-like behavior. Dynamic pages use an SPA fallback pattern — Astro serves a static shell, a Vue island reads the URL, calls the ASP.NET API, and renders content. If this pattern dominates and Astro becomes more hindrance than help, a migration to **Vue/Nuxt** is expected. The Vue components built as islands will transfer directly.
 
 **Why Astro:**
 - Ships **zero JS by default** — only interactive islands include client-side code
@@ -292,5 +292,6 @@ Monetize job offer submissions via Stripe.
 | Date | Version | Duration | Description |
 |---|---|---|---|
 | 2026-03-26 | Setup | — | Initial project setup, documentation |
+| 2026-03-27 | v1 | ~7 hours | Static site, i18n, dark mode, language picker, SEO, accessibility |
 
 <!-- Add rows as work progresses. This table will be rendered on the project page. -->

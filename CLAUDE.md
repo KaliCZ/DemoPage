@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Personal showcase website at [kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages.
+Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages.
 
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
 

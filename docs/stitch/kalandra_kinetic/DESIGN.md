@@ -1,5 +1,5 @@
 ```markdown
-# Design System Strategy: kalandra.tech
+# Design System Strategy: www.kalandra.tech
 
 ## 1. Overview & Creative North Star: "The Digital Architect"
 This design system is built to reflect the intersection of high-level engineering leadership and refined personal curation. The **Creative North Star** is "The Digital Architect"—a philosophy that values structural integrity, expansive breathing room, and intentional depth. 
