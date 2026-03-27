@@ -4,7 +4,6 @@
     "description": "Osobní ukázka Pavla Kalandry — CTO a technický lídr z Prahy. Stavěno veřejně se zdokumentovanými architektonickými rozhodnutími."
   },
   "hero": {
-    "label": "Vítejte",
     "titlePrefix": "Ahoj, jsem ",
     "titleName": "Pavel Kalandra.",
     "subtitle": "Softwarový inženýr a technický lídr z Prahy."

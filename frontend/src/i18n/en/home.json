@@ -4,7 +4,6 @@
     "description": "Personal showcase of Pavel Kalandra — CTO and software engineering leader based in Prague. Built in public with documented architecture decisions."
   },
   "hero": {
-    "label": "Welcome",
     "titlePrefix": "Hi, I'm ",
     "titleName": "Pavel Kalandra.",
     "subtitle": "Software engineer and engineering leader based in Prague."
