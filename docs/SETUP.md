@@ -57,7 +57,7 @@ WHERE email = 'your@email.com';
 
 ### 2.1 Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL)
 - [Node.js 22+](https://nodejs.org/)
 

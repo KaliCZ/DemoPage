@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core backend with Marten (event sourcing) + PostgreSQL, deployed to Oracle Cloud.
+Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core (.NET 10) backend with Marten (event sourcing) + PostgreSQL, deployed to Oracle Cloud.
 
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
@@ -93,6 +93,7 @@ docs/
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
 - **Admin role**: Configured via `Auth.AdminUserIds` in appsettings (list of Supabase user UUIDs).
+- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
 - **Dev workflow**: `make dev` starts PostgreSQL + backend (dotnet watch) + frontend (astro dev).
 
 ## Build & Deploy

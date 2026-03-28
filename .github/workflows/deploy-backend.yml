@@ -1,4 +1,4 @@
-name: Backend CI/CD
+name: Backend Deploy
 
 on:
   push:
@@ -6,10 +6,6 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'backend/**'
 
 permissions:
   contents: read
@@ -28,7 +24,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -39,14 +35,12 @@ jobs:
         working-directory: backend
 
       - name: Test
-        run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test --no-build -c Release
         working-directory: backend
 
   build-and-push:
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -77,25 +71,44 @@ jobs:
 
   deploy:
     needs: build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
-
     steps:
-      - name: Deploy to Oracle Cloud
+      - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            docker stop kalandra-api || true
-            docker rm kalandra-api || true
+            IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            MAX_ATTEMPTS=20
+
+            # Pull the new image
+            docker pull $IMAGE
+
+            # Determine which slot is active (blue=8080, green=8081)
+            if docker ps --format '{{.Names}}' | grep -q kalandra-api-blue; then
+              OLD_NAME="kalandra-api-blue"
+              NEW_NAME="kalandra-api-green"
+              NEW_PORT=8081
+            else
+              OLD_NAME="kalandra-api-green"
+              NEW_NAME="kalandra-api-blue"
+              NEW_PORT=8080
+            fi
+            echo "Active: $OLD_NAME → Deploying: $NEW_NAME on port $NEW_PORT"
+
+            # Clean up any leftover container with the new name
+            docker stop $NEW_NAME 2>/dev/null || true
+            docker rm $NEW_NAME 2>/dev/null || true
+
+            # Start new container on its slot port
             docker run -d \
-              --name kalandra-api \
+              --name $NEW_NAME \
               --restart unless-stopped \
               --network host \
+              -e ASPNETCORE_URLS=http://+:$NEW_PORT \
               -e ASPNETCORE_ENVIRONMENT=Production \
               -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
               -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
@@ -103,6 +116,56 @@ jobs:
               -e "Auth__AdminUserIds__0=${{ secrets.ADMIN_USER_ID }}" \
               -e "Cors__AllowedOrigins__0=https://www.kalandra.tech" \
               -e "Cors__AllowedOrigins__1=https://kalandra.tech" \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              $IMAGE
+
+            # Wait for the new container to become healthy
+            echo "Waiting for new container on port $NEW_PORT..."
+            ATTEMPTS=0
+            until curl -sf http://localhost:$NEW_PORT/api/health > /dev/null 2>&1; do
+              ATTEMPTS=$((ATTEMPTS + 1))
+              if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+                echo "New container failed to start. Rolling back..."
+                docker stop $NEW_NAME || true
+                docker rm $NEW_NAME || true
+                exit 1
+              fi
+              echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
+              sleep 3
+            done
+            echo "New container is healthy on port $NEW_PORT."
+
+            # Switch Caddy upstream to the new port (zero-downtime swap)
+            cat > ~/Caddyfile << EOF
+            api.kalandra.tech {
+                reverse_proxy localhost:$NEW_PORT
+            }
+            EOF
+            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+            # Stop the old container
+            docker stop $OLD_NAME 2>/dev/null || true
+            docker rm $OLD_NAME 2>/dev/null || true
+
+            echo "Deployment complete — $NEW_NAME serving on port $NEW_PORT."
+
+      # TODO: Once you publish the verify-deployment action to its own repo,
+      # replace this step with:
+      # - uses: kalandra/verify-deployment@v1
+      #   with:
+      #     health-url: https://api.kalandra.tech/api/health
+      #     max-attempts: 20
+      #     retry-interval: 5
+      - name: Verify public endpoint
+        run: |
+          ATTEMPTS=0
+          MAX_ATTEMPTS=20
+          until curl -sf https://api.kalandra.tech/api/health > /dev/null 2>&1; do
+            ATTEMPTS=$((ATTEMPTS + 1))
+            if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+              echo "Public health check failed after $MAX_ATTEMPTS attempts!"
+              exit 1
+            fi
+            echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 5s..."
             sleep 5
-            curl -f http://localhost:8080/api/health || exit 1
+          done
+          echo "Public endpoint verified."

@@ -14,27 +14,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureServices(services =>
-        {
-            // Override Marten to use the test database
-            services.Configure<StoreOptions>(options =>
-            {
-                options.Connection(_postgres.GetConnectionString());
-            });
-        });
-
-        builder.UseSetting("ConnectionStrings:DefaultConnection", "will-be-overridden");
+        builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Auth:SupabaseJwtSecret", JwtTestHelper.TestSecret);
         builder.UseSetting("Auth:AdminUserIds:0", "admin-user-id");
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
     }
 
-    public new async Task DisposeAsync()
+    public new async ValueTask DisposeAsync()
     {
         await _postgres.DisposeAsync();
         await base.DisposeAsync();

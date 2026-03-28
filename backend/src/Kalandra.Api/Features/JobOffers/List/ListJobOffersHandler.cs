@@ -1,5 +1,6 @@
 using Kalandra.Api.Features.JobOffers.Entities;
 using Marten;
+using Marten.Linq;
 
 namespace Kalandra.Api.Features.JobOffers.List;
 

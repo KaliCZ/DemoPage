@@ -12,4 +12,4 @@ public record JobOfferSummary(
     string? Location,
     DateTimeOffset CreatedAt);
 
-public record ListJobOffersResponse(List<JobOfferSummary> Items, int TotalCount);
+public record ListJobOffersResponse(IReadOnlyList<JobOfferSummary> Items, int TotalCount);
