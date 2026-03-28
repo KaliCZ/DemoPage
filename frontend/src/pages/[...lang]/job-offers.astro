@@ -1,0 +1,276 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
+import enStrings from '../../i18n/en/job-offers.json';
+import csStrings from '../../i18n/cs/job-offers.json';
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map(lang => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="job-offers" lang={lang}>
+
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-8 mb-16">
+    <h1 id="page-title" class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+    </h1>
+    <p id="page-subtitle" class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+  </section>
+
+  <!-- Login prompt -->
+  <section id="login-prompt" class="max-w-5xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
+      <button
+        id="offers-sign-in"
+        type="button"
+        class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
+        {t.loginPrompt.signInButton}
+      </button>
+    </div>
+  </section>
+
+  <!-- Offers list -->
+  <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
+    <!-- Loading -->
+    <div id="offers-loading" class="text-center py-12">
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
+    </div>
+
+    <!-- Empty state -->
+    <div id="offers-empty" class="hidden bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-4 block" aria-hidden="true">inbox</span>
+      <h2 class="font-headline text-xl font-bold text-on-surface mb-3">{t.empty.title}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.empty.description}</p>
+      <a
+        href={localePath(lang, 'hire-me')}
+        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors"
+      >
+        {t.empty.cta}
+      </a>
+    </div>
+
+    <!-- Offers grid -->
+    <div id="offers-grid" class="hidden grid gap-4"></div>
+  </section>
+
+  <!-- Detail view (shown when clicking an offer) -->
+  <section id="offer-detail-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
+    <button id="back-to-list" type="button" class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8 cursor-pointer">
+      <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
+      {t.list.back}
+    </button>
+    <div id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"></div>
+
+    <!-- Admin status update -->
+    <div id="admin-controls" class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">{t.list.updateStatus}</h3>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <select id="status-select" class="px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+          <option value="Submitted">{t.list.submitted}</option>
+          <option value="InReview">{t.list.inReview}</option>
+          <option value="Accepted">{t.list.accepted}</option>
+          <option value="Declined">{t.list.declined}</option>
+        </select>
+        <textarea id="admin-notes-input" rows="2" placeholder={t.list.adminNotes}
+          class="flex-1 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"></textarea>
+        <button id="save-status" type="button"
+          class="px-6 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer self-start">
+          {t.list.save}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script define:vars={{
+    apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000',
+    hireMeUrl: localePath(lang, 'hire-me'),
+    statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, Accepted: t.list.accepted, Declined: t.list.declined },
+    remoteLabel: t.list.remote,
+    viewDetailLabel: t.list.viewDetail,
+    submittedByLabel: t.list.submittedBy,
+    adminNotesLabel: t.list.adminNotes,
+    heroTitleAdmin: t.hero.titleAdmin,
+    heroSubtitleAdmin: t.hero.subtitleAdmin,
+    statusLabel: t.list.status
+  }}>
+    var isAdmin = false;
+    var currentOfferId = null;
+
+    var statusColors = {
+      Submitted: 'bg-secondary-container text-on-surface',
+      InReview: 'bg-primary-container text-on-primary-container',
+      Accepted: 'bg-tertiary-container text-on-surface',
+      Declined: 'bg-error-container text-on-surface'
+    };
+
+    window.addEventListener('auth-change', async function(e) {
+      var user = e.detail?.user;
+      if (user) {
+        document.getElementById('login-prompt')?.classList.add('hidden');
+        document.getElementById('offers-list-section')?.classList.remove('hidden');
+        await loadOffers();
+      } else {
+        document.getElementById('login-prompt')?.classList.remove('hidden');
+        document.getElementById('offers-list-section')?.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('offers-sign-in')?.addEventListener('click', function() {
+      document.getElementById('auth-sign-in-desktop')?.click();
+    });
+
+    async function loadOffers() {
+      var token = await window.__getAccessToken?.();
+      if (!token) return;
+
+      // Try admin endpoint first
+      var response = await fetch(apiUrl + '/api/job-offers', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      if (response.status === 403) {
+        // Not admin, use own endpoint
+        isAdmin = false;
+        response = await fetch(apiUrl + '/api/job-offers/mine', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+      } else {
+        isAdmin = true;
+        // Update hero text for admin
+        var titleEl = document.getElementById('page-title');
+        var subtitleEl = document.getElementById('page-subtitle');
+        if (titleEl) titleEl.innerHTML = '<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">' + heroTitleAdmin + '</span>';
+        if (subtitleEl) subtitleEl.textContent = heroSubtitleAdmin;
+      }
+
+      document.getElementById('offers-loading')?.classList.add('hidden');
+
+      if (!response.ok) return;
+
+      var data = await response.json();
+
+      if (data.items.length === 0) {
+        document.getElementById('offers-empty')?.classList.remove('hidden');
+        return;
+      }
+
+      var grid = document.getElementById('offers-grid');
+      if (!grid) return;
+      grid.classList.remove('hidden');
+      grid.innerHTML = '';
+
+      data.items.forEach(function(offer) {
+        var card = document.createElement('div');
+        card.className = 'bg-surface-container-low rounded-2xl border border-outline-variant/10 p-6 hover:border-primary/20 transition-colors cursor-pointer';
+        card.innerHTML = '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
+          '<div class="flex-1 min-w-0">' +
+            '<h3 class="font-headline text-lg font-bold text-on-surface truncate">' + escapeHtml(offer.jobTitle) + '</h3>' +
+            '<p class="text-sm text-on-surface-variant font-body">' + escapeHtml(offer.companyName) + '</p>' +
+          '</div>' +
+          '<div class="flex items-center gap-3 flex-shrink-0">' +
+            (offer.isRemote ? '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold bg-tertiary-container text-on-surface">' + remoteLabel + '</span>' : '') +
+            '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold ' + (statusColors[offer.status] || '') + '">' + (statusLabels[offer.status] || offer.status) + '</span>' +
+            '<span class="text-xs text-on-surface-variant font-label">' + new Date(offer.createdAt).toLocaleDateString() + '</span>' +
+          '</div>' +
+        '</div>';
+
+        card.addEventListener('click', function() {
+          showDetail(offer.id, token);
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    async function showDetail(id, token) {
+      currentOfferId = id;
+      document.getElementById('offers-list-section')?.classList.add('hidden');
+      document.getElementById('offer-detail-section')?.classList.remove('hidden');
+
+      var response = await fetch(apiUrl + '/api/job-offers/' + id, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!response.ok) return;
+
+      var offer = await response.json();
+      var detail = document.getElementById('offer-detail');
+      if (!detail) return;
+
+      detail.innerHTML =
+        '<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">' +
+          '<div>' +
+            '<h2 class="font-headline text-2xl font-bold text-on-surface mb-1">' + escapeHtml(offer.jobTitle) + '</h2>' +
+            '<p class="text-on-surface-variant font-body">' + escapeHtml(offer.companyName) + '</p>' +
+          '</div>' +
+          '<span class="px-4 py-1.5 rounded-full text-sm font-label font-semibold ' + (statusColors[offer.status] || '') + ' self-start">' + (statusLabels[offer.status] || offer.status) + '</span>' +
+        '</div>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">' +
+          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Contact</p><p class="text-sm font-body text-on-surface">' + escapeHtml(offer.contactName) + '</p><p class="text-sm font-body text-on-surface-variant">' + escapeHtml(offer.contactEmail) + '</p></div>' +
+          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Location</p><p class="text-sm font-body text-on-surface">' + (offer.location ? escapeHtml(offer.location) : '—') + (offer.isRemote ? ' <span class="text-tertiary">(' + remoteLabel + ')</span>' : '') + '</p></div>' +
+          (offer.salaryRange ? '<div><p class="text-xs font-label text-on-surface-variant mb-1">Salary</p><p class="text-sm font-body text-on-surface">' + escapeHtml(offer.salaryRange) + '</p></div>' : '') +
+          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Submitted</p><p class="text-sm font-body text-on-surface">' + new Date(offer.createdAt).toLocaleString() + '</p></div>' +
+        '</div>' +
+        '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Description</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + escapeHtml(offer.description) + '</p></div>' +
+        (offer.additionalNotes ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Additional Notes</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + escapeHtml(offer.additionalNotes) + '</p></div>' : '') +
+        (isAdmin && offer.userEmail ? '<div class="pt-4 border-t border-outline-variant/10"><p class="text-xs font-label text-on-surface-variant">' + submittedByLabel + ': ' + escapeHtml(offer.userEmail) + '</p></div>' : '') +
+        (isAdmin && offer.adminNotes ? '<div class="mt-4"><p class="text-xs font-label text-on-surface-variant mb-1">' + adminNotesLabel + '</p><p class="text-sm font-body text-on-surface-variant italic">' + escapeHtml(offer.adminNotes) + '</p></div>' : '');
+
+      // Show admin controls
+      if (isAdmin) {
+        document.getElementById('admin-controls')?.classList.remove('hidden');
+        var select = document.getElementById('status-select');
+        if (select) select.value = offer.status;
+        var notes = document.getElementById('admin-notes-input');
+        if (notes) notes.value = offer.adminNotes || '';
+      } else {
+        document.getElementById('admin-controls')?.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('back-to-list')?.addEventListener('click', function() {
+      document.getElementById('offer-detail-section')?.classList.add('hidden');
+      document.getElementById('offers-list-section')?.classList.remove('hidden');
+    });
+
+    document.getElementById('save-status')?.addEventListener('click', async function() {
+      if (!currentOfferId) return;
+      var token = await window.__getAccessToken?.();
+      if (!token) return;
+
+      var status = document.getElementById('status-select')?.value;
+      var notes = document.getElementById('admin-notes-input')?.value;
+
+      await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ status: status, adminNotes: notes || null })
+      });
+
+      // Go back to list and reload
+      document.getElementById('offer-detail-section')?.classList.add('hidden');
+      document.getElementById('offers-list-section')?.classList.remove('hidden');
+      await loadOffers();
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+
+</Layout>

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "My Submissions — kalandra.tech",
+    "description": "View your submitted job offers."
+  },
+  "hero": {
+    "title": "My Submissions",
+    "titleAdmin": "All Submissions",
+    "subtitle": "Track the status of your submitted job offers.",
+    "subtitleAdmin": "Review all submitted job offers."
+  },
+  "loginPrompt": {
+    "title": "Authentication Required",
+    "description": "Please sign in to view your submissions.",
+    "signInButton": "Sign In to Continue"
+  },
+  "empty": {
+    "title": "No submissions yet",
+    "description": "You haven't submitted any job offers yet.",
+    "cta": "Submit a Job Offer"
+  },
+  "list": {
+    "status": "Status",
+    "submitted": "Submitted",
+    "inReview": "In Review",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "remote": "Remote",
+    "viewDetail": "View Details",
+    "back": "Back to list",
+    "submittedBy": "Submitted by",
+    "adminNotes": "Admin Notes",
+    "updateStatus": "Update Status",
+    "save": "Save"
+  }
+}

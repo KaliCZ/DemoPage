@@ -8,7 +8,7 @@ import csCommon from '../i18n/cs/common.json';
 interface Props {
   title: string;
   description?: string;
-  activePage: 'home' | 'about' | 'project';
+  activePage: 'home' | 'about' | 'project' | 'hire-me' | 'job-offers';
   lang?: Locale;
 }
 
@@ -106,9 +106,18 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
           ]}
           aria-current={activePage === 'project' ? 'page' : undefined}
         >{t.nav.project}</a>
+        <a
+          href={localePath(lang, 'hire-me')}
+          class:list={[
+            activePage === 'hire-me'
+              ? 'text-primary border-b-2 border-primary pb-1'
+              : 'text-on-surface-variant hover:text-on-surface transition-colors',
+          ]}
+          aria-current={activePage === 'hire-me' ? 'page' : undefined}
+        >{t.nav.hireMe}</a>
       </div>
 
-      <!-- Theme toggle + Language picker (desktop) -->
+      <!-- Theme toggle + Language picker + Auth (desktop) -->
       <div class="hidden md:flex items-center gap-2">
         <!-- Dark mode toggle -->
         <button
@@ -165,6 +174,46 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
             </a>
           </div>
         </div>
+        <!-- Auth (desktop) -->
+        <div id="auth-container-desktop" class="flex items-center">
+          <button
+            id="auth-sign-in-desktop"
+            type="button"
+            class="hidden px-4 py-1.5 rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            {t.auth.signIn}
+          </button>
+          <div id="auth-profile-desktop" class="hidden relative group">
+            <button
+              type="button"
+              class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer"
+              aria-haspopup="true"
+            >
+              <img id="auth-avatar-desktop" class="w-7 h-7 rounded-full" src="" alt="" />
+              <span id="auth-name-desktop" class="text-sm font-label text-on-surface-variant"></span>
+              <span class="material-symbols-outlined text-sm text-on-surface-variant transition-transform group-hover:rotate-180" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50" role="menu">
+              <a
+                href={localePath(lang, 'job-offers')}
+                class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                role="menuitem"
+              >
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">description</span>
+                {t.nav.mySubmissions}
+              </a>
+              <button
+                id="auth-sign-out-desktop"
+                type="button"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors w-full text-left cursor-pointer"
+                role="menuitem"
+              >
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">logout</span>
+                {t.auth.signOut}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -197,7 +246,16 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
         ]}
         aria-current={activePage === 'project' ? 'page' : undefined}
       >{t.nav.project}</a>
-      <!-- Theme toggle + Language picker (mobile) -->
+      <a
+        href={localePath(lang, 'hire-me')}
+        class:list={[
+          activePage === 'hire-me'
+            ? 'text-primary border-b-2 border-primary pb-1'
+            : 'text-on-surface-variant',
+        ]}
+        aria-current={activePage === 'hire-me' ? 'page' : undefined}
+      >{t.nav.hireMe}</a>
+      <!-- Theme toggle + Language picker + Auth (mobile) -->
       <div class="flex items-center gap-2 ml-auto">
         <button
           id="theme-toggle-mobile"
@@ -250,6 +308,17 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
               <span class="font-label text-xs">Čeština</span>
             </a>
           </div>
+        </div>
+        <!-- Auth (mobile) -->
+        <button
+          id="auth-sign-in-mobile"
+          type="button"
+          class="hidden px-3 py-1 rounded-lg text-xs font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+        >
+          {t.auth.signIn}
+        </button>
+        <div id="auth-profile-mobile" class="hidden">
+          <img id="auth-avatar-mobile" class="w-6 h-6 rounded-full" src="" alt="" />
         </div>
       </div>
     </div>
@@ -311,6 +380,93 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
     document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
     updateToggleIcons();
+  </script>
+
+  <script>
+    import { createClient } from '@supabase/supabase-js';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
+
+    const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+      ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    function updateAuthUI(user: any) {
+      const signInDesktop = document.getElementById('auth-sign-in-desktop');
+      const profileDesktop = document.getElementById('auth-profile-desktop');
+      const avatarDesktop = document.getElementById('auth-avatar-desktop') as HTMLImageElement;
+      const nameDesktop = document.getElementById('auth-name-desktop');
+      const signInMobile = document.getElementById('auth-sign-in-mobile');
+      const profileMobile = document.getElementById('auth-profile-mobile');
+      const avatarMobile = document.getElementById('auth-avatar-mobile') as HTMLImageElement;
+
+      if (user) {
+        const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+        const avatar = user.user_metadata?.avatar_url || '';
+
+        if (signInDesktop) signInDesktop.classList.add('hidden');
+        if (profileDesktop) {
+          profileDesktop.classList.remove('hidden');
+          if (avatarDesktop) { avatarDesktop.src = avatar; avatarDesktop.alt = name; }
+          if (nameDesktop) nameDesktop.textContent = name;
+        }
+        if (signInMobile) signInMobile.classList.add('hidden');
+        if (profileMobile) {
+          profileMobile.classList.remove('hidden');
+          if (avatarMobile) { avatarMobile.src = avatar; avatarMobile.alt = name; }
+        }
+
+        // Dispatch event for other scripts
+        window.dispatchEvent(new CustomEvent('auth-change', { detail: { user } }));
+      } else {
+        if (signInDesktop) signInDesktop.classList.remove('hidden');
+        if (profileDesktop) profileDesktop.classList.add('hidden');
+        if (signInMobile) signInMobile.classList.remove('hidden');
+        if (profileMobile) profileMobile.classList.add('hidden');
+
+        window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: null } }));
+      }
+    }
+
+    async function signIn() {
+      if (!supabase) return;
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href }
+      });
+    }
+
+    async function signOut() {
+      if (!supabase) return;
+      await supabase.auth.signOut();
+      updateAuthUI(null);
+    }
+
+    // Initialize
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        updateAuthUI(session?.user ?? null);
+      });
+
+      supabase.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session?.user ?? null);
+      });
+    }
+
+    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', signIn);
+    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', signIn);
+    document.getElementById('auth-sign-out-desktop')?.addEventListener('click', signOut);
+
+    // Expose getAccessToken globally for other pages
+    (window as any).__getAccessToken = async () => {
+      if (!supabase) return null;
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token ?? null;
+    };
+    (window as any).__getUser = async () => {
+      if (!supabase) return null;
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user ?? null;
+    };
   </script>
 
 </body>

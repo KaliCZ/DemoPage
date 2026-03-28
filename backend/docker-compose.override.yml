@@ -1,0 +1,10 @@
+# Override for local development — only runs the database.
+# The API runs natively via `dotnet run` for hot reload.
+#
+# Usage:
+#   docker compose up db        (start only PostgreSQL)
+#   docker compose --profile full up   (start PostgreSQL + API in Docker)
+services:
+  api:
+    profiles:
+      - full

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Mé nabídky — kalandra.tech",
+    "description": "Zobrazení odeslaných pracovních nabídek."
+  },
+  "hero": {
+    "title": "Mé nabídky",
+    "titleAdmin": "Všechny nabídky",
+    "subtitle": "Sledujte stav vašich odeslaných pracovních nabídek.",
+    "subtitleAdmin": "Přehled všech odeslaných pracovních nabídek."
+  },
+  "loginPrompt": {
+    "title": "Vyžadováno přihlášení",
+    "description": "Pro zobrazení vašich nabídek se prosím přihlaste.",
+    "signInButton": "Přihlásit se a pokračovat"
+  },
+  "empty": {
+    "title": "Zatím žádné nabídky",
+    "description": "Ještě jste neodeslali žádnou pracovní nabídku.",
+    "cta": "Odeslat pracovní nabídku"
+  },
+  "list": {
+    "status": "Stav",
+    "submitted": "Odesláno",
+    "inReview": "V hodnocení",
+    "accepted": "Přijato",
+    "declined": "Odmítnuto",
+    "remote": "Vzdáleně",
+    "viewDetail": "Zobrazit detail",
+    "back": "Zpět na seznam",
+    "submittedBy": "Odesláno uživatelem",
+    "adminNotes": "Poznámky správce",
+    "updateStatus": "Aktualizovat stav",
+    "save": "Uložit"
+  }
+}
