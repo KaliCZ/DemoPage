@@ -157,6 +157,65 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CannotView_OtherUsersOffer()
+    {
+        // Create as user1
+        var token1 = JwtTestHelper.GenerateToken("view-owner", "viewowner@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        // Try to view as user2
+        var token2 = JwtTestHelper.GenerateToken("view-other", "viewother@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
+
+        var detailRes = await _client.GetAsync($"/api/job-offers/{created!.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, detailRes.StatusCode);
+
+        var historyRes = await _client.GetAsync($"/api/job-offers/{created.Id}/history");
+        Assert.Equal(HttpStatusCode.NotFound, historyRes.StatusCode);
+
+        var commentsRes = await _client.GetAsync($"/api/job-offers/{created.Id}/comments");
+        Assert.Equal(HttpStatusCode.NotFound, commentsRes.StatusCode);
+    }
+
+    [Fact]
+    public async Task CannotEdit_OtherUsersOffer()
+    {
+        // Create as user1
+        var token1 = JwtTestHelper.GenerateToken("edit-owner", "editowner@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        // Try to edit as user2
+        var token2 = JwtTestHelper.GenerateToken("edit-other", "editother@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
+
+        var editRes = await _client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", CreateValidRequest());
+        Assert.Equal(HttpStatusCode.Forbidden, editRes.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListMine_DoesNotShowOtherUsersOffers()
+    {
+        // Create as user1
+        var token1 = JwtTestHelper.GenerateToken("list-owner", "listowner@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        // List as user2
+        var token2 = JwtTestHelper.GenerateToken("list-other", "listother@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
+
+        var listRes = await _client.GetAsync("/api/job-offers/mine");
+        Assert.Equal(HttpStatusCode.OK, listRes.StatusCode);
+        var list = await listRes.Content.ReadFromJsonAsync<ListJobOffersResponse>();
+        Assert.DoesNotContain(list!.Items, i => i.Id == created!.Id);
+    }
+
+    [Fact]
     public async Task Edit_WhenSubmitted_Succeeds()
     {
         var token = JwtTestHelper.GenerateToken("edit-user", "edit@test.com");
