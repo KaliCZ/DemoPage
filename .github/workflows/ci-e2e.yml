@@ -1,0 +1,86 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kalandra
+          POSTGRES_PASSWORD: kalandra_dev
+          POSTGRES_DB: kalandra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kalandra"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build backend
+        run: dotnet build -c Release
+        working-directory: backend
+
+      - name: Start backend
+        run: |
+          cd backend/src/Kalandra.Api
+          dotnet run -c Release --no-build --urls http://localhost:5000 &
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
+          Auth__SupabaseProjectUrl: "https://test-project.supabase.co"
+          Auth__SupabaseJwtSecret: "super-secret-jwt-token-for-ci-testing-only-min-32-chars"
+          Auth__AdminUserIds__0: "admin-user-id"
+          ASPNETCORE_ENVIRONMENT: Development
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5000/api/health > /dev/null 2>&1; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30 — waiting 2s..."
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Serve frontend
+        run: npx serve dist -l 4321 &
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run E2E tests
+        run: npx playwright test --config playwright.e2e.config.ts
+        working-directory: frontend
