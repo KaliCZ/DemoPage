@@ -402,6 +402,10 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
+
 # Tool configs
 
 .env
