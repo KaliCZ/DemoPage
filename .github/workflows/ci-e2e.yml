@@ -47,8 +47,8 @@ jobs:
           dotnet run -c Release --no-build --urls http://localhost:5000 &
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
-          Auth__SupabaseProjectUrl: "https://test-project.supabase.co"
-          Auth__SupabaseJwtSecret: "super-secret-jwt-token-for-ci-testing-only-min-32-chars"
+          Auth__SupabaseProjectUrl: "https://fake-project-not-real.supabase.co"
+          Auth__SupabaseJwtSecret: "this-is-a-fake-secret-for-ci-only-needs-to-be-32-chars!"
           Auth__AdminUserIds__0: "admin-user-id"
           ASPNETCORE_ENVIRONMENT: Development
 
