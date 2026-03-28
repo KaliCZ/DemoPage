@@ -1,6 +1,8 @@
 using FluentValidation;
 using Kalandra.Api.Features.JobOffers.Cancel;
+using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
+using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.GetDetail;
 using Kalandra.Api.Features.JobOffers.History;
 using Kalandra.Api.Features.JobOffers.List;
@@ -41,6 +43,32 @@ public class JobOffersController : ControllerBase
         var result = await handler.HandleAsync(request, userId, email, ct);
 
         return CreatedAtAction(nameof(GetDetail), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Edit(
+        Guid id,
+        [FromBody] CreateJobOfferRequest request,
+        [FromServices] IValidator<CreateJobOfferRequest> validator,
+        CancellationToken ct)
+    {
+        var validation = await validator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+
+        var userId = User.GetUserId()!;
+        var email = User.GetEmail() ?? "";
+
+        var handler = new EditJobOfferHandler(_session);
+        var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
+
+        if (!success)
+            return error == "Not found" ? NotFound() :
+                   error == "Not authorized" ? Forbid() :
+                   BadRequest(new { error });
+
+        return NoContent();
     }
 
     [HttpGet("mine")]
@@ -127,5 +155,47 @@ public class JobOffersController : ControllerBase
         var success = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
 
         return success ? NoContent() : NotFound();
+    }
+
+    [HttpGet("{id:guid}/comments")]
+    [Authorize]
+    public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        var isAdmin = (await HttpContext.RequestServices
+            .GetRequiredService<IAuthorizationService>()
+            .AuthorizeAsync(User, "Admin")).Succeeded;
+
+        var handler = new CommentsHandler(_session);
+        var result = await handler.ListCommentsAsync(id, userId, isAdmin, ct);
+
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpPost("{id:guid}/comments")]
+    [Authorize]
+    public async Task<IActionResult> AddComment(
+        Guid id,
+        [FromBody] AddCommentRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId()!;
+        var email = User.GetEmail() ?? "";
+        var name = User.FindFirst("user_metadata.full_name")?.Value
+            ?? User.FindFirst("name")?.Value
+            ?? email.Split('@')[0];
+        var isAdmin = (await HttpContext.RequestServices
+            .GetRequiredService<IAuthorizationService>()
+            .AuthorizeAsync(User, "Admin")).Succeeded;
+
+        var handler = new CommentsHandler(_session);
+        var (success, error) = await handler.AddCommentAsync(id, request, userId, email, name, isAdmin, ct);
+
+        if (!success)
+            return error == "Not found" ? NotFound() :
+                   error == "Not authorized" ? Forbid() :
+                   BadRequest(new { error });
+
+        return NoContent();
     }
 }

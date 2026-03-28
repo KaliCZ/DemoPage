@@ -52,9 +52,26 @@ public class JobOffer
         UpdatedAt = e.Timestamp;
     }
 
+    public void Apply(JobOfferEdited e)
+    {
+        CompanyName = e.CompanyName;
+        ContactName = e.ContactName;
+        ContactEmail = e.ContactEmail;
+        JobTitle = e.JobTitle;
+        Description = e.Description;
+        SalaryRange = e.SalaryRange;
+        Location = e.Location;
+        IsRemote = e.IsRemote;
+        AdditionalNotes = e.AdditionalNotes;
+        UpdatedAt = e.Timestamp;
+    }
+
     public void Apply(JobOfferCancelled e)
     {
         Status = JobOfferStatus.Cancelled;
         UpdatedAt = e.Timestamp;
     }
+
+    // Comments don't change aggregate state — they're read from the event stream directly
+    public void Apply(JobOfferCommentAdded _) { }
 }

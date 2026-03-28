@@ -19,7 +19,6 @@ public class JobOfferHistoryHandler
         bool isAdmin,
         CancellationToken ct)
     {
-        // First check ownership
         var offer = await _session.LoadAsync<JobOffer>(id, ct);
         if (offer == null)
             return null;
@@ -33,6 +32,8 @@ public class JobOfferHistoryHandler
         {
             JobOfferSubmitted s => new JobOfferHistoryEntry(
                 "Submitted", "Job offer submitted", s.UserEmail, s.Timestamp),
+            JobOfferEdited ed => new JobOfferHistoryEntry(
+                "Edited", "Job offer edited", ed.EditedByEmail, ed.Timestamp),
             JobOfferStatusChanged sc => new JobOfferHistoryEntry(
                 "StatusChanged",
                 $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
@@ -44,6 +45,11 @@ public class JobOfferHistoryHandler
                 "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
                 c.CancelledByEmail,
                 c.Timestamp),
+            JobOfferCommentAdded cm => new JobOfferHistoryEntry(
+                "Comment",
+                cm.Content,
+                cm.UserEmail,
+                cm.Timestamp),
             _ => new JobOfferHistoryEntry("Unknown", "Unknown event", "", DateTimeOffset.MinValue)
         }).ToList();
 

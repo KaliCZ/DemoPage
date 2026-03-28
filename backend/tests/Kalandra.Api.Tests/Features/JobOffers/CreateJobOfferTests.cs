@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
+using Kalandra.Api.Features.JobOffers.GetDetail;
 using Kalandra.Api.Features.JobOffers.History;
 using Kalandra.Api.Features.JobOffers.List;
 using Kalandra.Api.Tests.Helpers;
@@ -152,6 +154,99 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
         var cancelResponse = await _client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel",
             new { reason = "Trying to cancel someone else's offer" });
         Assert.Equal(HttpStatusCode.Forbidden, cancelResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Edit_WhenSubmitted_Succeeds()
+    {
+        var token = JwtTestHelper.GenerateToken("edit-user", "edit@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Create
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        // Edit
+        var editRequest = new CreateJobOfferRequest(
+            "Updated Corp", "Jane Doe", "jane@updated.com", "CTO",
+            "Updated description.", "$200k", "Remote", true, null);
+        var editRes = await _client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", editRequest);
+        Assert.Equal(HttpStatusCode.NoContent, editRes.StatusCode);
+
+        // Verify detail reflects edit
+        var detail = await _client.GetFromJsonAsync<GetJobOfferDetailResponse>($"/api/job-offers/{created.Id}");
+        Assert.Equal("Updated Corp", detail!.CompanyName);
+        Assert.Equal("CTO", detail.JobTitle);
+
+        // Verify history has Edited event
+        var history = await _client.GetFromJsonAsync<JobOfferHistoryResponse>($"/api/job-offers/{created.Id}/history");
+        Assert.Equal(2, history!.Entries.Count);
+        Assert.Equal("Edited", history.Entries[1].EventType);
+    }
+
+    [Fact]
+    public async Task Edit_WhenNotSubmitted_Fails()
+    {
+        // Create and cancel
+        var token = JwtTestHelper.GenerateToken("edit-fail-user", "editfail@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        await _client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel", new { reason = "" });
+
+        // Try to edit cancelled offer
+        var editRes = await _client.PutAsJsonAsync($"/api/job-offers/{created.Id}", CreateValidRequest());
+        Assert.Equal(HttpStatusCode.BadRequest, editRes.StatusCode);
+    }
+
+    [Fact]
+    public async Task Comments_OwnerCanAddAndList()
+    {
+        var token = JwtTestHelper.GenerateToken("comment-user", "comment@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        // Add comment
+        var commentRes = await _client.PostAsJsonAsync(
+            $"/api/job-offers/{created!.Id}/comments", new { content = "Hello, any update?" });
+        Assert.Equal(HttpStatusCode.NoContent, commentRes.StatusCode);
+
+        // List comments
+        var listRes = await _client.GetAsync($"/api/job-offers/{created.Id}/comments");
+        Assert.Equal(HttpStatusCode.OK, listRes.StatusCode);
+        var comments = await listRes.Content.ReadFromJsonAsync<ListCommentsResponse>();
+        Assert.Single(comments!.Comments);
+        Assert.Equal("Hello, any update?", comments.Comments[0].Content);
+    }
+
+    [Fact]
+    public async Task Comments_AdminCanReply()
+    {
+        // User creates offer
+        var userToken = JwtTestHelper.GenerateToken("comment-owner", "owner@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+
+        var createRes = await _client.PostAsJsonAsync("/api/job-offers", CreateValidRequest());
+        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
+
+        // Admin adds comment
+        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var commentRes = await _client.PostAsJsonAsync(
+            $"/api/job-offers/{created!.Id}/comments", new { content = "Thanks, reviewing now!" });
+        Assert.Equal(HttpStatusCode.NoContent, commentRes.StatusCode);
+
+        // Verify as user
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+        var listRes = await _client.GetFromJsonAsync<ListCommentsResponse>(
+            $"/api/job-offers/{created.Id}/comments");
+        Assert.Single(listRes!.Comments);
+        Assert.Equal("Thanks, reviewing now!", listRes.Comments[0].Content);
     }
 
     [Fact]

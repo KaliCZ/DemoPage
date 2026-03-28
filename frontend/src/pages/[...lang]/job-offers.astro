@@ -3,8 +3,11 @@ import Layout from '../../layouts/Layout.astro';
 import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
 import enStrings from '../../i18n/en/job-offers.json';
 import csStrings from '../../i18n/cs/job-offers.json';
+import enHireMe from '../../i18n/en/hire-me.json';
+import csHireMe from '../../i18n/cs/hire-me.json';
 
 const translations = { en: enStrings, cs: csStrings };
+const formTranslations = { en: enHireMe, cs: csHireMe };
 
 export function getStaticPaths() {
   return locales.map(lang => ({
@@ -14,6 +17,7 @@ export function getStaticPaths() {
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
+const f = formTranslations[lang].form;
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="job-offers" lang={lang}>
@@ -64,7 +68,87 @@ const t = translations[lang];
     </button>
     <div id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"></div>
 
-    <!-- Cancel button (for offer owner, visible when cancellable) -->
+    <!-- Edit form (hidden by default, shown when editing) -->
+    <div id="edit-form-section" class="hidden mt-6">
+      <form id="edit-form" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="edit-companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.companyName}</label>
+            <input type="text" id="edit-companyName" name="companyName" required maxlength="200" placeholder={f.companyNamePlaceholder}
+              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+          </div>
+          <div>
+            <label for="edit-contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.contactName}</label>
+            <input type="text" id="edit-contactName" name="contactName" required maxlength="200" placeholder={f.contactNamePlaceholder}
+              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="edit-contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.contactEmail}</label>
+            <input type="email" id="edit-contactEmail" name="contactEmail" required maxlength="255" placeholder={f.contactEmailPlaceholder}
+              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+          </div>
+          <div>
+            <label for="edit-jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.jobTitle}</label>
+            <input type="text" id="edit-jobTitle" name="jobTitle" required maxlength="200" placeholder={f.jobTitlePlaceholder}
+              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+          </div>
+        </div>
+        <div>
+          <label for="edit-description" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.description}</label>
+          <textarea id="edit-description" name="description" required maxlength="5000" rows="5" placeholder={f.descriptionPlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="edit-salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.salaryRange}</label>
+            <input type="text" id="edit-salaryRange" name="salaryRange" maxlength="100" placeholder={f.salaryRangePlaceholder}
+              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+          </div>
+          <div>
+            <label for="edit-location" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.location}</label>
+            <input type="text" id="edit-location" name="location" maxlength="200" placeholder={f.locationPlaceholder}
+              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="edit-isRemote" name="isRemote"
+            class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary" />
+          <label for="edit-isRemote" class="text-sm font-label font-semibold text-on-surface">{f.isRemote}</label>
+        </div>
+        <div>
+          <label for="edit-additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.additionalNotes}</label>
+          <textarea id="edit-additionalNotes" name="additionalNotes" maxlength="2000" rows="3" placeholder={f.additionalNotesPlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+        </div>
+        <div id="edit-error" class="hidden text-error text-sm font-body"></div>
+        <div class="flex gap-4">
+          <button type="submit" class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+            {t.list.editSave}
+          </button>
+          <button type="button" id="edit-discard" class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer">
+            {t.list.editCancel}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- User actions (edit / cancel) -->
+    <div id="user-actions" class="hidden mt-6 flex gap-4">
+      <button id="edit-btn" type="button"
+        class="hidden flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">edit</span>
+        {t.list.edit}
+      </button>
+      <button id="cancel-btn" type="button"
+        class="hidden flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold font-label bg-error text-on-primary hover:bg-error/90 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">cancel</span>
+        {t.list.cancel}
+      </button>
+    </div>
+
+    <!-- Cancel confirmation -->
     <div id="cancel-controls" class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
       <h3 class="font-headline text-lg font-bold text-on-surface mb-4">{t.list.cancel}</h3>
       <p class="text-sm text-on-surface-variant font-body mb-4">{t.list.cancelConfirm}</p>
@@ -95,6 +179,23 @@ const t = translations[lang];
       </div>
     </div>
 
+    <!-- Comments -->
+    <div id="comments-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
+        <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">chat</span>
+        {t.list.comments}
+      </h3>
+      <div id="comments-list" class="space-y-4 mb-4"></div>
+      <div class="flex gap-3">
+        <textarea id="comment-input" rows="2" placeholder={t.list.commentPlaceholder}
+          class="flex-1 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"></textarea>
+        <button id="send-comment" type="button"
+          class="px-5 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer self-end">
+          {t.list.commentSend}
+        </button>
+      </div>
+    </div>
+
     <!-- Activity log -->
     <div id="history-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
       <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
@@ -114,11 +215,14 @@ const t = translations[lang];
     adminNotesLabel: t.list.adminNotes,
     heroTitleAdmin: t.hero.titleAdmin,
     heroSubtitleAdmin: t.hero.subtitleAdmin,
-    historyEmptyLabel: t.list.historyEmpty
+    historyEmptyLabel: t.list.historyEmpty,
+    commentsEmptyLabel: t.list.commentsEmpty,
+    errorText: 'Something went wrong. Please try again.'
   }}>
     var isAdmin = false;
     var currentOfferId = null;
     var currentOffer = null;
+    var currentToken = null;
 
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
@@ -130,8 +234,10 @@ const t = translations[lang];
 
     var eventIcons = {
       Submitted: 'send',
+      Edited: 'edit',
       StatusChanged: 'swap_horiz',
-      Cancelled: 'cancel'
+      Cancelled: 'cancel',
+      Comment: 'chat_bubble'
     };
 
     window.addEventListener('auth-change', async function(e) {
@@ -151,17 +257,17 @@ const t = translations[lang];
     });
 
     async function loadOffers() {
-      var token = await window.__getAccessToken?.();
-      if (!token) return;
+      currentToken = await window.__getAccessToken?.();
+      if (!currentToken) return;
 
       var response = await fetch(apiUrl + '/api/job-offers', {
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': 'Bearer ' + currentToken }
       });
 
       if (response.status === 403) {
         isAdmin = false;
         response = await fetch(apiUrl + '/api/job-offers/mine', {
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'Authorization': 'Bearer ' + currentToken }
         });
       } else {
         isAdmin = true;
@@ -201,28 +307,38 @@ const t = translations[lang];
             '<span class="text-xs text-on-surface-variant font-label">' + new Date(offer.createdAt).toLocaleDateString() + '</span>' +
           '</div>' +
         '</div>';
-        card.addEventListener('click', function() { showDetail(offer.id, token); });
+        card.addEventListener('click', function() { showDetail(offer.id); });
         grid.appendChild(card);
       });
     }
 
-    async function showDetail(id, token) {
+    async function showDetail(id) {
       currentOfferId = id;
       document.getElementById('offers-list-section')?.classList.add('hidden');
       document.getElementById('offer-detail-section')?.classList.remove('hidden');
+      document.getElementById('edit-form-section')?.classList.add('hidden');
+      document.getElementById('cancel-controls')?.classList.add('hidden');
 
-      var [detailRes, historyRes] = await Promise.all([
-        fetch(apiUrl + '/api/job-offers/' + id, { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch(apiUrl + '/api/job-offers/' + id + '/history', { headers: { 'Authorization': 'Bearer ' + token } })
+      var headers = { 'Authorization': 'Bearer ' + currentToken };
+      var [detailRes, historyRes, commentsRes] = await Promise.all([
+        fetch(apiUrl + '/api/job-offers/' + id, { headers }),
+        fetch(apiUrl + '/api/job-offers/' + id + '/history', { headers }),
+        fetch(apiUrl + '/api/job-offers/' + id + '/comments', { headers })
       ]);
 
       if (!detailRes.ok) return;
       var offer = await detailRes.json();
       currentOffer = offer;
 
+      renderDetail(offer);
+      renderControls(offer);
+      if (historyRes.ok) renderHistory(await historyRes.json());
+      if (commentsRes.ok) renderComments(await commentsRes.json());
+    }
+
+    function renderDetail(offer) {
       var detail = document.getElementById('offer-detail');
       if (!detail) return;
-
       detail.innerHTML =
         '<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">' +
           '<div>' +
@@ -241,11 +357,20 @@ const t = translations[lang];
         (offer.additionalNotes ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Additional Notes</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + esc(offer.additionalNotes) + '</p></div>' : '') +
         (isAdmin && offer.userEmail ? '<div class="pt-4 border-t border-outline-variant/10"><p class="text-xs font-label text-on-surface-variant">' + submittedByLabel + ': ' + esc(offer.userEmail) + '</p></div>' : '') +
         (isAdmin && offer.adminNotes ? '<div class="mt-4"><p class="text-xs font-label text-on-surface-variant mb-1">' + adminNotesLabel + '</p><p class="text-sm font-body text-on-surface-variant italic">' + esc(offer.adminNotes) + '</p></div>' : '');
+    }
 
-      // Cancel controls: show for owner if status is Submitted or InReview
-      var canCancel = !isAdmin && (offer.status === 'Submitted' || offer.status === 'InReview');
-      var cancelEl = document.getElementById('cancel-controls');
-      if (cancelEl) cancelEl.classList.toggle('hidden', !canCancel);
+    function renderControls(offer) {
+      var isOwner = !isAdmin;
+      var canEdit = isOwner && offer.status === 'Submitted';
+      var canCancel = isOwner && (offer.status === 'Submitted' || offer.status === 'InReview');
+
+      // User actions bar
+      var actionsEl = document.getElementById('user-actions');
+      var editBtn = document.getElementById('edit-btn');
+      var cancelBtn = document.getElementById('cancel-btn');
+      if (actionsEl) actionsEl.classList.toggle('hidden', !canEdit && !canCancel);
+      if (editBtn) editBtn.classList.toggle('hidden', !canEdit);
+      if (cancelBtn) cancelBtn.classList.toggle('hidden', !canCancel);
 
       // Admin controls
       if (isAdmin && offer.status !== 'Cancelled') {
@@ -257,48 +382,127 @@ const t = translations[lang];
       } else {
         document.getElementById('admin-controls')?.classList.add('hidden');
       }
-
-      // Render history
-      var historyList = document.getElementById('history-list');
-      if (historyList && historyRes.ok) {
-        var history = await historyRes.json();
-        if (history.entries.length === 0) {
-          historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + '</p>';
-        } else {
-          historyList.innerHTML = '';
-          history.entries.forEach(function(entry) {
-            var icon = eventIcons[entry.eventType] || 'info';
-            var el = document.createElement('div');
-            el.className = 'flex items-start gap-3 text-sm';
-            el.innerHTML =
-              '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>' +
-              '<div class="flex-1 min-w-0">' +
-                '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
-                '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(entry.actorEmail) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
-              '</div>';
-            historyList.appendChild(el);
-          });
-        }
-      }
     }
 
-    document.getElementById('back-to-list')?.addEventListener('click', function() {
-      document.getElementById('offer-detail-section')?.classList.add('hidden');
-      document.getElementById('offers-list-section')?.classList.remove('hidden');
+    function renderHistory(history) {
+      var historyList = document.getElementById('history-list');
+      if (!historyList) return;
+      // Filter out Comment events — those are shown in the comments section
+      var entries = history.entries.filter(function(e) { return e.eventType !== 'Comment'; });
+      if (entries.length === 0) {
+        historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + '</p>';
+        return;
+      }
+      historyList.innerHTML = '';
+      entries.forEach(function(entry) {
+        var icon = eventIcons[entry.eventType] || 'info';
+        var el = document.createElement('div');
+        el.className = 'flex items-start gap-3 text-sm';
+        el.innerHTML =
+          '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>' +
+          '<div class="flex-1 min-w-0">' +
+            '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
+            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(entry.actorEmail) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
+          '</div>';
+        historyList.appendChild(el);
+      });
+    }
+
+    function renderComments(data) {
+      var list = document.getElementById('comments-list');
+      if (!list) return;
+      if (data.comments.length === 0) {
+        list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + '</p>';
+        return;
+      }
+      list.innerHTML = '';
+      data.comments.forEach(function(c) {
+        var el = document.createElement('div');
+        el.className = 'flex gap-3';
+        el.innerHTML =
+          '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
+            '<span class="text-xs font-bold text-on-primary-container">' + esc(c.userName.charAt(0).toUpperCase()) + '</span>' +
+          '</div>' +
+          '<div class="flex-1 min-w-0">' +
+            '<div class="flex items-baseline gap-2">' +
+              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(c.userName) + '</span>' +
+              '<span class="text-xs font-label text-on-surface-variant">' + new Date(c.createdAt).toLocaleString() + '</span>' +
+            '</div>' +
+            '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' + esc(c.content) + '</p>' +
+          '</div>';
+        list.appendChild(el);
+      });
+    }
+
+    // Edit button
+    document.getElementById('edit-btn')?.addEventListener('click', function() {
+      if (!currentOffer) return;
+      var o = currentOffer;
+      document.getElementById('edit-companyName').value = o.companyName;
+      document.getElementById('edit-contactName').value = o.contactName;
+      document.getElementById('edit-contactEmail').value = o.contactEmail;
+      document.getElementById('edit-jobTitle').value = o.jobTitle;
+      document.getElementById('edit-description').value = o.description;
+      document.getElementById('edit-salaryRange').value = o.salaryRange || '';
+      document.getElementById('edit-location').value = o.location || '';
+      document.getElementById('edit-isRemote').checked = o.isRemote;
+      document.getElementById('edit-additionalNotes').value = o.additionalNotes || '';
+
+      document.getElementById('offer-detail')?.classList.add('hidden');
+      document.getElementById('user-actions')?.classList.add('hidden');
+      document.getElementById('edit-form-section')?.classList.remove('hidden');
+    });
+
+    document.getElementById('edit-discard')?.addEventListener('click', function() {
+      document.getElementById('edit-form-section')?.classList.add('hidden');
+      document.getElementById('offer-detail')?.classList.remove('hidden');
+      document.getElementById('user-actions')?.classList.remove('hidden');
+    });
+
+    document.getElementById('edit-form')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var form = e.target;
+      var errEl = document.getElementById('edit-error');
+      if (errEl) errEl.classList.add('hidden');
+
+      var body = {
+        companyName: form.companyName.value,
+        contactName: form.contactName.value,
+        contactEmail: form.contactEmail.value,
+        jobTitle: form.jobTitle.value,
+        description: form.description.value,
+        salaryRange: form.salaryRange.value || null,
+        location: form.location.value || null,
+        isRemote: form.isRemote.checked,
+        additionalNotes: form.additionalNotes.value || null
+      };
+
+      var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        await showDetail(currentOfferId);
+      } else {
+        if (errEl) { errEl.textContent = errorText; errEl.classList.remove('hidden'); }
+      }
+    });
+
+    // Cancel button
+    document.getElementById('cancel-btn')?.addEventListener('click', function() {
+      document.getElementById('cancel-controls')?.classList.remove('hidden');
     });
 
     document.getElementById('confirm-cancel')?.addEventListener('click', async function() {
       if (!currentOfferId) return;
-      var token = await window.__getAccessToken?.();
-      if (!token) return;
-
       var reason = document.getElementById('cancel-reason')?.value || null;
       var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
         body: JSON.stringify({ reason: reason })
       });
-
       if (res.ok) {
         document.getElementById('offer-detail-section')?.classList.add('hidden');
         document.getElementById('offers-list-section')?.classList.remove('hidden');
@@ -306,23 +510,50 @@ const t = translations[lang];
       }
     });
 
+    // Admin status save
     document.getElementById('save-status')?.addEventListener('click', async function() {
       if (!currentOfferId) return;
-      var token = await window.__getAccessToken?.();
-      if (!token) return;
-
       var status = document.getElementById('status-select')?.value;
       var notes = document.getElementById('admin-notes-input')?.value;
-
       await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/status', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
         body: JSON.stringify({ status: status, adminNotes: notes || null })
       });
+      await showDetail(currentOfferId);
+    });
 
+    // Send comment
+    document.getElementById('send-comment')?.addEventListener('click', async function() {
+      var input = document.getElementById('comment-input');
+      var content = input?.value?.trim();
+      if (!content || !currentOfferId) return;
+
+      var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+        body: JSON.stringify({ content: content })
+      });
+
+      if (res.ok) {
+        if (input) input.value = '';
+        // Reload comments
+        var commentsRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        if (commentsRes.ok) renderComments(await commentsRes.json());
+        // Reload history too
+        var historyRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/history', {
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        if (historyRes.ok) renderHistory(await historyRes.json());
+      }
+    });
+
+    // Back to list
+    document.getElementById('back-to-list')?.addEventListener('click', function() {
       document.getElementById('offer-detail-section')?.classList.add('hidden');
       document.getElementById('offers-list-section')?.classList.remove('hidden');
-      await loadOffers();
     });
 
     function esc(str) {

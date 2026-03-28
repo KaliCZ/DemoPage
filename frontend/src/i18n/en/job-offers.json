@@ -33,11 +33,18 @@
     "adminNotes": "Admin Notes",
     "updateStatus": "Update Status",
     "save": "Save",
+    "edit": "Edit Submission",
+    "editSave": "Save Changes",
+    "editCancel": "Discard Changes",
     "cancel": "Cancel Submission",
     "cancelConfirm": "Are you sure you want to cancel this submission?",
     "cancelReason": "Reason for cancellation (optional)",
     "cancelButton": "Yes, Cancel",
     "history": "Activity Log",
-    "historyEmpty": "No activity recorded yet."
+    "historyEmpty": "No activity recorded yet.",
+    "comments": "Comments",
+    "commentsEmpty": "No comments yet. Start the conversation.",
+    "commentPlaceholder": "Write a comment...",
+    "commentSend": "Send"
   }
 }
