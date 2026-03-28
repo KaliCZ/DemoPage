@@ -53,17 +53,11 @@ jobs:
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
-        run: |
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:5000/api/health > /dev/null 2>&1; then
-              echo "Backend is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30 — waiting 2s..."
-            sleep 2
-          done
-          echo "Backend failed to start"
-          exit 1
+        uses: KaliCZ/verify-deployment@v1
+        with:
+          health-url: http://localhost:5000/api/health
+          max-attempts: 30
+          retry-interval: 2
 
       - name: Install frontend dependencies
         run: npm ci
