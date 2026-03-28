@@ -1,11 +1,15 @@
-name: Backend Deploy
+name: Backend
 
 on:
-  push:
+  pull_request:
     branches: [main]
     paths:
       - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
+      - '.github/workflows/backend.yml'
+  workflow_run:
+    workflows: ["E2E"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -40,6 +44,9 @@ jobs:
 
   build-and-push:
     needs: test
+    if: >
+      github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +75,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
 
   deploy:
     needs: build-and-push
@@ -154,3 +163,14 @@ jobs:
           health-url: https://api.kalandra.tech/api/health
           max-attempts: 20
           retry-interval: 5
+
+      - name: Verify deployed commit
+        run: |
+          DEPLOYED_COMMIT=$(curl -sf https://api.kalandra.tech/api/health | jq -r '.entries.version.data.commit')
+          EXPECTED_COMMIT="${{ github.sha }}"
+          echo "Deployed: $DEPLOYED_COMMIT"
+          echo "Expected: $EXPECTED_COMMIT"
+          if [ "$DEPLOYED_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "::error::Deployed commit does not match expected commit!"
+            exit 1
+          fi

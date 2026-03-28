@@ -12,7 +12,7 @@ test.describe('E2E Smoke Tests', () => {
     const response = await request.get('http://localhost:5000/api/health');
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
-    expect(body.status).toBe('healthy');
+    expect(body.status).toBe('Healthy');
   });
 
   test('hire-me page loads and shows login prompt', async ({ page }) => {

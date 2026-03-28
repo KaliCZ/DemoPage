@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 
@@ -38,6 +39,10 @@ builder.Services.AddSupabaseAuth(builder.Configuration);
 builder.Services.AddAppCors(builder.Configuration);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
+    .AddCheck<CommitHashHealthCheck>("version");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -54,5 +59,10 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapGet("/error", () => Results.Problem());
+
+app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.Run();

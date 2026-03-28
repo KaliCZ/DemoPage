@@ -18,8 +18,8 @@ dev-stop:
 	@echo "Stopping PostgreSQL..."
 	@cd backend && docker compose down
 
-# Run all tests
-test: test-backend test-frontend
+# Run all tests (backend + frontend + e2e)
+test: test-backend test-frontend test-e2e
 
 # Run backend integration tests (requires Docker for Testcontainers)
 test-backend:
