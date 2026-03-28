@@ -10,6 +10,6 @@ public record JobOfferSummary(
     JobOfferStatus Status,
     bool IsRemote,
     string? Location,
-    DateTime CreatedAt);
+    DateTimeOffset CreatedAt);
 
 public record ListJobOffersResponse(List<JobOfferSummary> Items, int TotalCount);

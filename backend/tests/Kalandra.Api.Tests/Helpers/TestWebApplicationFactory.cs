@@ -1,7 +1,6 @@
-using Kalandra.Api.Infrastructure.Database;
+using Marten;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 
@@ -17,17 +16,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     {
         builder.ConfigureServices(services =>
         {
-            // Remove existing DbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (descriptor != null)
-                services.Remove(descriptor);
-
-            // Add test database
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(_postgres.GetConnectionString()));
+            // Override Marten to use the test database
+            services.Configure<StoreOptions>(options =>
+            {
+                options.Connection(_postgres.GetConnectionString());
+            });
         });
 
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "will-be-overridden");
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Auth:SupabaseJwtSecret", JwtTestHelper.TestSecret);
         builder.UseSetting("Auth:AdminUserIds:0", "admin-user-id");

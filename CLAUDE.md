@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core backend with EF Core + PostgreSQL, deployed to Oracle Cloud.
+Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core backend with Marten (event sourcing) + PostgreSQL, deployed to Oracle Cloud.
 
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
@@ -91,7 +91,9 @@ docs/
 - **Accessibility**: skip-to-content link, aria-current on nav, aria-hidden on decorative elements, aria-haspopup on dropdowns, role="menu"/role="menuitem", role="contentinfo" on footer.
 - **Auth**: Supabase Auth with OAuth (Google). JWT validated on backend. Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__getAccessToken()` and `window.__getUser()` for pages.
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
+- **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
 - **Admin role**: Configured via `Auth.AdminUserIds` in appsettings (list of Supabase user UUIDs).
+- **Dev workflow**: `make dev` starts PostgreSQL + backend (dotnet watch) + frontend (astro dev).
 
 ## Build & Deploy
 
@@ -115,6 +117,12 @@ dotnet run               # API at http://localhost:5000, Swagger at /swagger
 ```bash
 cd backend
 dotnet test              # Requires Docker (Testcontainers)
+
+cd frontend
+npx playwright test      # Frontend page tests (builds + serves static site)
+
+make test                # Run all tests (backend + frontend)
+make test-e2e            # Full e2e (starts DB + API + frontend, runs Playwright)
 ```
 
 Frontend deployed via GitHub Actions → Cloudflare Pages on push to main.

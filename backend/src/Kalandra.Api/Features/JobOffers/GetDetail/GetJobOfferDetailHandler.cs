@@ -1,34 +1,27 @@
-using Kalandra.Api.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
+using Kalandra.Api.Features.JobOffers.Entities;
+using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.GetDetail;
 
 public class GetJobOfferDetailHandler
 {
-    private readonly AppDbContext _db;
+    private readonly IQuerySession _session;
 
-    public GetJobOfferDetailHandler(AppDbContext db)
+    public GetJobOfferDetailHandler(IQuerySession session)
     {
-        _db = db;
+        _session = session;
     }
 
-    /// <summary>
-    /// Gets a job offer by ID. Returns null if not found.
-    /// </summary>
     public async Task<GetJobOfferDetailResponse?> HandleAsync(
         Guid id,
         string? requesterUserId,
         bool isAdmin,
         CancellationToken ct)
     {
-        var offer = await _db.JobOffers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(j => j.Id == id, ct);
-
+        var offer = await _session.LoadAsync<JobOffer>(id, ct);
         if (offer == null)
             return null;
 
-        // Non-admin users can only see their own offers
         if (!isAdmin && offer.UserId != requesterUserId)
             return null;
 

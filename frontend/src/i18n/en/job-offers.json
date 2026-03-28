@@ -25,12 +25,19 @@
     "inReview": "In Review",
     "accepted": "Accepted",
     "declined": "Declined",
+    "cancelled": "Cancelled",
     "remote": "Remote",
     "viewDetail": "View Details",
     "back": "Back to list",
     "submittedBy": "Submitted by",
     "adminNotes": "Admin Notes",
     "updateStatus": "Update Status",
-    "save": "Save"
+    "save": "Save",
+    "cancel": "Cancel Submission",
+    "cancelConfirm": "Are you sure you want to cancel this submission?",
+    "cancelReason": "Reason for cancellation (optional)",
+    "cancelButton": "Yes, Cancel",
+    "history": "Activity Log",
+    "historyEmpty": "No activity recorded yet."
   }
 }

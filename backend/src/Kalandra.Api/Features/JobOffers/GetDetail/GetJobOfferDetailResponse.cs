@@ -16,5 +16,5 @@ public record GetJobOfferDetailResponse(
     JobOfferStatus Status,
     string? AdminNotes,
     string UserEmail,
-    DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt);

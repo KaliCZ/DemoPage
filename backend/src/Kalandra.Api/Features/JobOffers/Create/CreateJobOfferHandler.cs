@@ -1,15 +1,15 @@
-using Kalandra.Api.Features.JobOffers.Entities;
-using Kalandra.Api.Infrastructure.Database;
+using Kalandra.Api.Features.JobOffers.Events;
+using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Create;
 
 public class CreateJobOfferHandler
 {
-    private readonly AppDbContext _db;
+    private readonly IDocumentSession _session;
 
-    public CreateJobOfferHandler(AppDbContext db)
+    public CreateJobOfferHandler(IDocumentSession session)
     {
-        _db = db;
+        _session = session;
     }
 
     public async Task<CreateJobOfferResponse> HandleAsync(
@@ -18,27 +18,26 @@ public class CreateJobOfferHandler
         string userEmail,
         CancellationToken ct)
     {
-        var jobOffer = new JobOffer
-        {
-            UserId = userId,
-            UserEmail = userEmail,
-            CompanyName = request.CompanyName,
-            ContactName = request.ContactName,
-            ContactEmail = request.ContactEmail,
-            JobTitle = request.JobTitle,
-            Description = request.Description,
-            SalaryRange = request.SalaryRange,
-            Location = request.Location,
-            IsRemote = request.IsRemote,
-            AdditionalNotes = request.AdditionalNotes,
-            Status = JobOfferStatus.Submitted,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var streamId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
 
-        _db.JobOffers.Add(jobOffer);
-        await _db.SaveChangesAsync(ct);
+        var submitted = new JobOfferSubmitted(
+            UserId: userId,
+            UserEmail: userEmail,
+            CompanyName: request.CompanyName,
+            ContactName: request.ContactName,
+            ContactEmail: request.ContactEmail,
+            JobTitle: request.JobTitle,
+            Description: request.Description,
+            SalaryRange: request.SalaryRange,
+            Location: request.Location,
+            IsRemote: request.IsRemote,
+            AdditionalNotes: request.AdditionalNotes,
+            Timestamp: now);
 
-        return new CreateJobOfferResponse(jobOffer.Id, jobOffer.CreatedAt);
+        _session.Events.StartStream<Entities.JobOffer>(streamId, submitted);
+        await _session.SaveChangesAsync(ct);
+
+        return new CreateJobOfferResponse(streamId, now);
     }
 }

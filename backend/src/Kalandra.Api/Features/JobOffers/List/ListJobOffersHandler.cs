@@ -1,32 +1,27 @@
-using Kalandra.Api.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
+using Kalandra.Api.Features.JobOffers.Entities;
+using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.List;
 
 public class ListJobOffersHandler
 {
-    private readonly AppDbContext _db;
+    private readonly IQuerySession _session;
 
-    public ListJobOffersHandler(AppDbContext db)
+    public ListJobOffersHandler(IQuerySession session)
     {
-        _db = db;
+        _session = session;
     }
 
-    /// <summary>
-    /// Lists job offers. If userId is null, returns all (admin). Otherwise filters by user.
-    /// </summary>
     public async Task<ListJobOffersResponse> HandleAsync(
         string? userId,
         CancellationToken ct)
     {
-        var query = _db.JobOffers.AsNoTracking();
+        var query = _session.Query<JobOffer>();
 
         if (userId != null)
         {
-            query = query.Where(j => j.UserId == userId);
+            query = (IMartenQueryable<JobOffer>)query.Where(j => j.UserId == userId);
         }
-
-        var totalCount = await query.CountAsync(ct);
 
         var items = await query
             .OrderByDescending(j => j.CreatedAt)
@@ -41,6 +36,6 @@ public class ListJobOffersHandler
                 j.CreatedAt))
             .ToListAsync(ct);
 
-        return new ListJobOffersResponse(items, totalCount);
+        return new ListJobOffersResponse(items, items.Count);
     }
 }

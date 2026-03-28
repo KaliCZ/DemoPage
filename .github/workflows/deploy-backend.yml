@@ -22,21 +22,6 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: kalandra
-          POSTGRES_PASSWORD: kalandra_dev
-          POSTGRES_DB: kalandra_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U kalandra"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -56,8 +41,6 @@ jobs:
       - name: Test
         run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
         working-directory: backend
-        env:
-          ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra_test;Username=kalandra;Password=kalandra_dev"
 
   build-and-push:
     needs: test
@@ -106,14 +89,9 @@ jobs:
           username: ${{ secrets.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            # Pull latest image
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-            # Stop existing container
             docker stop kalandra-api || true
             docker rm kalandra-api || true
-
-            # Run new container
             docker run -d \
               --name kalandra-api \
               --restart unless-stopped \
@@ -126,14 +104,5 @@ jobs:
               -e "Cors__AllowedOrigins__0=https://www.kalandra.tech" \
               -e "Cors__AllowedOrigins__1=https://kalandra.tech" \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-            # Run EF migrations via temporary container
-            docker run --rm \
-              --network host \
-              -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-              dotnet Kalandra.Api.dll --migrate
-
-            # Verify health
             sleep 5
             curl -f http://localhost:8080/api/health || exit 1

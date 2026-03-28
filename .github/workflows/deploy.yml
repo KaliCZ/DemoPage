@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Frontend CI/CD
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,6 +30,14 @@ jobs:
 
       - name: Build
         run: npm run build
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run Playwright tests
+        run: npx playwright test
         working-directory: frontend
 
       - name: Deploy to Cloudflare Pages

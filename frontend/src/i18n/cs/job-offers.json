@@ -25,12 +25,19 @@
     "inReview": "V hodnocení",
     "accepted": "Přijato",
     "declined": "Odmítnuto",
+    "cancelled": "Zrušeno",
     "remote": "Vzdáleně",
     "viewDetail": "Zobrazit detail",
     "back": "Zpět na seznam",
     "submittedBy": "Odesláno uživatelem",
     "adminNotes": "Poznámky správce",
     "updateStatus": "Aktualizovat stav",
-    "save": "Uložit"
+    "save": "Uložit",
+    "cancel": "Zrušit nabídku",
+    "cancelConfirm": "Opravdu chcete zrušit tuto nabídku?",
+    "cancelReason": "Důvod zrušení (volitelné)",
+    "cancelButton": "Ano, zrušit",
+    "history": "Historie aktivit",
+    "historyEmpty": "Zatím žádná aktivita."
   }
 }

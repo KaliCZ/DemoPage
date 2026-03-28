@@ -1,31 +1,39 @@
-using Kalandra.Api.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
+using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.Api.Features.JobOffers.Events;
+using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.UpdateStatus;
 
 public class UpdateJobOfferStatusHandler
 {
-    private readonly AppDbContext _db;
+    private readonly IDocumentSession _session;
 
-    public UpdateJobOfferStatusHandler(AppDbContext db)
+    public UpdateJobOfferStatusHandler(IDocumentSession session)
     {
-        _db = db;
+        _session = session;
     }
 
     public async Task<bool> HandleAsync(
         Guid id,
         UpdateJobOfferStatusRequest request,
+        string adminUserId,
+        string adminEmail,
         CancellationToken ct)
     {
-        var offer = await _db.JobOffers.FirstOrDefaultAsync(j => j.Id == id, ct);
+        var offer = await _session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
         if (offer == null)
             return false;
 
-        offer.Status = request.Status;
-        offer.AdminNotes = request.AdminNotes ?? offer.AdminNotes;
-        offer.UpdatedAt = DateTime.UtcNow;
+        var statusChanged = new JobOfferStatusChanged(
+            ChangedByUserId: adminUserId,
+            ChangedByEmail: adminEmail,
+            OldStatus: offer.Status,
+            NewStatus: request.Status,
+            Notes: request.AdminNotes,
+            Timestamp: DateTimeOffset.UtcNow);
 
-        await _db.SaveChangesAsync(ct);
+        _session.Events.Append(id, statusChanged);
+        await _session.SaveChangesAsync(ct);
         return true;
     }
 }

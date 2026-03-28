@@ -93,14 +93,17 @@ dotnet run
 # Swagger UI at http://localhost:5000/swagger
 ```
 
-EF Core migrations are auto-applied in Development mode.
+Marten auto-creates database schema in Development mode (tables for event streams, projections, etc.).
 
-### 2.5 Create First Migration (after any entity changes)
+### 2.5 Run Everything (recommended)
 
 ```bash
-cd backend/src/Kalandra.Api
-dotnet ef migrations add InitialCreate
+# From the repo root — starts PostgreSQL, backend (with hot reload), and frontend
+make dev
 ```
+
+This runs `docker compose up db`, `dotnet watch run`, and `npm run dev` in parallel.
+Press Ctrl+C to stop everything.
 
 ### 2.6 Configure Frontend
 
@@ -283,9 +286,9 @@ Full E2E tests (frontend → backend → DB) are possible because:
 
 ## 6. Architecture Decisions
 
-### EF Core over Marten
+### Marten Event Sourcing
 
-We chose EF Core instead of Marten (event sourcing) for v2–v4. Job offers have a simple lifecycle (Submitted → InReview → Accepted/Declined) that doesn't benefit from event sourcing complexity. Marten can be added later if needed.
+We use Marten for event sourcing on the job offers feature. Events (`JobOfferSubmitted`, `JobOfferStatusChanged`, `JobOfferCancelled`) are appended to streams. Marten's inline snapshot projections maintain a `JobOffer` read model automatically. The event stream serves as the activity log visible in the UI. Marten manages its own PostgreSQL schema — no migrations needed.
 
 ### Admin Role via Config
 
@@ -300,4 +303,11 @@ The backend only validates JWT signatures. It never calls the Supabase API direc
 
 ### Vertical Slices
 
-Code is organized by feature (e.g., `Features/JobOffers/`) rather than by technical layer. Each feature folder contains its controller, DTOs, handlers, and entity configuration.
+Code is organized by feature (e.g., `Features/JobOffers/`) rather than by technical layer. Each feature folder contains its controller, events, DTOs, and handlers.
+
+### Testing Strategy
+
+- **Backend integration tests**: xUnit + Testcontainers. Spins up a real PostgreSQL, starts the full API via `WebApplicationFactory`, tests all endpoints with generated JWTs.
+- **Frontend page tests**: Playwright. Builds the static site, serves it, verifies page rendering, navigation, i18n, and dark mode.
+- **E2E smoke tests**: Playwright against the full stack (frontend + backend + DB). Verifies integration points.
+- **CI/CD**: Backend tests run in the backend pipeline; frontend tests run in the frontend pipeline. Both block deployment on failure.

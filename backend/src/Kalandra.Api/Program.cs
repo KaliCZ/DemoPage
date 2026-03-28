@@ -1,5 +1,6 @@
 using FluentValidation;
 using Kalandra.Api.Infrastructure;
+using Kalandra.Api.Infrastructure.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +33,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddAppDatabase(builder.Configuration);
+builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(builder.Configuration);
 builder.Services.AddAppCors(builder.Configuration);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -43,11 +44,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    // Auto-apply migrations in development
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<Kalandra.Api.Infrastructure.Database.AppDbContext>();
-    db.Database.Migrate();
 }
 
 app.UseExceptionHandler("/error");
@@ -61,5 +57,4 @@ app.MapGet("/error", () => Results.Problem());
 
 app.Run();
 
-// Make Program accessible for integration tests
 public partial class Program { }

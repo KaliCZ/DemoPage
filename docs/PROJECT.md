@@ -83,7 +83,7 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 
 **Features:**
 - [x] ASP.NET Core Web API with vertical slices architecture
-- [x] EF Core + PostgreSQL (replaced Marten — see decision log)
+- [x] Marten event sourcing + PostgreSQL (events track full lifecycle)
 - [x] Backend validates Supabase JWT tokens
 - [x] Docker Compose for local development (PostgreSQL)
 - [x] Dockerfile for production deployment
@@ -92,6 +92,11 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 - [x] User can view their submitted offers and current status
 - [x] Admin view: all job offers from all users
 - [x] Admin can update offer status and add notes
+- [x] Users can cancel their own submissions
+- [x] Full activity log (event history) for each job offer
+- [x] Playwright frontend tests (page rendering, navigation, dark mode)
+- [x] E2E test infrastructure (Playwright against full stack)
+- [x] `make dev` single-command local development (DB + backend + frontend)
 - [ ] Oracle Cloud VM provisioned and configured (manual step — see `docs/SETUP.md`)
 - [ ] DNS A record for api.kalandra.tech (manual step)
 
@@ -183,8 +188,8 @@ Monetize job offer submissions via Stripe.
 |---|---|---|
 | **Runtime** | ASP.NET Core | Strong typing, familiar, good performance |
 | **Hosting** | Oracle Cloud Always Free (ARM A1: 4 OCPUs, 24 GB RAM, 200 GB storage). Fallback: Hetzner VPS (~€4/month). | Free, generous specs, supports long-running processes. See [ADR](#backend-hosting--oracle-cloud-always-free-fallback-hetzner-vps) for risks and fallback plan. |
-| **Database** | PostgreSQL (local Docker for dev, VM-hosted for prod) | EF Core ORM with code-first migrations |
-| **ORM** | Entity Framework Core | Standard .NET ORM, vertical slices architecture. Replaced Marten — see [ADR](#ef-core-over-marten). |
+| **Database** | PostgreSQL (local Docker for dev, VM-hosted for prod) | Marten manages schema automatically |
+| **Event sourcing** | Marten | .NET event sourcing on PostgreSQL. Inline snapshot projections for read models. |
 | **Auth** | Supabase Auth (JWT validation in backend) | Free, includes social logins, standard OAuth flow |
 
 ### Background Tasks
@@ -280,17 +285,18 @@ Monetize job offer submissions via Stripe.
 | **SvelteKit** | Good framework, but i18n is still not built-in. More geared toward interactive apps than content-driven sites. |
 | **Vercel (Next.js/Nuxt/etc.)** | Popular hosting platform, but its SSR model runs server-side functions — effectively a second backend. The goal is a thin static client deployed to a CDN with a single ASP.NET Core backend handling all server logic. Vercel blurs that boundary. |
 
-#### EF Core over Marten
+#### Marten Event Sourcing for Job Offers
 
-**Context:** PROJECT.md originally specified Marten (event sourcing) for data access. During v4 implementation, we re-evaluated.
+**Context:** Job offers have a lifecycle (Submitted → InReview → Accepted/Declined/Cancelled) where tracking the full history of changes is valuable for both the user and admin.
 
-**Decision:** Use EF Core with standard PostgreSQL instead of Marten.
+**Decision:** Use Marten with event sourcing for job offer state management.
 
 **Why:**
-- Job offers have a simple lifecycle (Submitted → InReview → Accepted/Declined) — no complex event streams or temporal queries
-- EF Core is the standard .NET ORM with excellent tooling (migrations, LINQ, etc.)
-- Event sourcing adds significant complexity (projections, snapshots, replay) without proportional benefit at this scale
-- Marten can be added alongside EF Core later if event sourcing becomes valuable (both use PostgreSQL)
+- Events provide a natural audit trail — every status change, cancellation, and note is captured immutably
+- The activity log (event stream) is a first-class feature, not a bolted-on audit table
+- Marten's inline snapshot projections automatically maintain read models (current state) with zero extra code
+- Marten uses PostgreSQL directly — same database, no additional infrastructure
+- The `Apply()` method pattern makes state transitions explicit and testable
 
 ---
 
