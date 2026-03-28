@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Najměte mě — kalandra.tech",
+    "description": "Pošlete Pavlu Kalandrovi pracovní nabídku přímo přes tento formulář."
+  },
+  "hero": {
+    "title": "Najměte mě",
+    "subtitle": "Máte zajímavou příležitost? Pošlete mi pracovní nabídku přímo přes tento formulář."
+  },
+  "loginPrompt": {
+    "title": "Vyžadováno přihlášení",
+    "description": "Pro odeslání pracovní nabídky se prosím přihlaste. Pomáhá mi to reagovat na skutečné nabídky.",
+    "signInButton": "Přihlásit se a pokračovat"
+  },
+  "form": {
+    "companyName": "Název společnosti",
+    "companyNamePlaceholder": "např. Acme s.r.o.",
+    "contactName": "Vaše jméno",
+    "contactNamePlaceholder": "např. Jan Novák",
+    "contactEmail": "Kontaktní email",
+    "contactEmailPlaceholder": "např. jan@acme.cz",
+    "jobTitle": "Název pozice",
+    "jobTitlePlaceholder": "např. VP of Engineering",
+    "description": "Popis pozice",
+    "descriptionPlaceholder": "Řekněte mi o roli, týmu a co na ní je zajímavého...",
+    "salaryRange": "Mzdové rozmezí (volitelné)",
+    "salaryRangePlaceholder": "např. 150 000 – 200 000 Kč",
+    "location": "Lokalita (volitelné)",
+    "locationPlaceholder": "např. Praha",
+    "isRemote": "Vzdálená pozice",
+    "additionalNotes": "Další poznámky (volitelné)",
+    "additionalNotesPlaceholder": "Cokoliv dalšího, co byste chtěli sdílet...",
+    "submit": "Odeslat nabídku",
+    "submitting": "Odesílám...",
+    "successTitle": "Nabídka odeslána!",
+    "successMessage": "Děkuji za váš zájem. Vaši nabídku zkontroluji a ozvu se vám.",
+    "errorMessage": "Něco se pokazilo. Zkuste to prosím znovu.",
+    "viewSubmissions": "Zobrazit mé nabídky"
+  }
+}

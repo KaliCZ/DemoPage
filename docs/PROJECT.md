@@ -43,34 +43,37 @@ Simple site with domain, hosting and deployment pipeline.
 ---
 
 ### Version 2 — Login (Supabase Auth)
-**Status:** Not started
+**Status:** In progress (code complete, needs Supabase project setup)
 
-Integrate Supabase authentication. No new features gated behind login yet.
+Integrate Supabase authentication with OAuth flow.
 
 **Features:**
-- [ ] Users can sign up, log in, and log out
-- [ ] Password reset / change
-- [ ] External login providers (Google at minimum)
-- [ ] Logged-in state visible in UI
+- [x] Users can sign in via Google OAuth
+- [x] Signed-in state visible in UI (profile avatar + name in nav)
+- [x] Profile dropdown with sign out and "My Submissions" link
+- [x] Auth state managed client-side via `@supabase/supabase-js`
+- [ ] Supabase project created and configured (manual step — see `docs/SETUP.md`)
 
 ---
 
 ### Version 3 — Job Offer Form
-**Status:** Not started
+**Status:** In progress (code complete, needs backend running)
 
-Structured job offer submission page. The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.
+Structured job offer submission page. The page is visible to everyone, but the form requires sign-in to interact with.
 
 **Features:**
-- [ ] Job offer submission form with file uploads (up to 30 MB)
-- [ ] Form gated behind authentication (page visible to all)
-- [ ] Frontend-only — no backend processing yet
+- [x] Job offer submission form (Hire Me page in nav)
+- [x] Form gated behind authentication (page visible, form disabled until sign-in)
+- [x] Full i18n (English + Czech) for all form labels and messages
+- [x] Form submits to backend API
+- [ ] File uploads (deferred to later version)
 
 ---
 
 ### Version 4 — Backend & Form Handling
-**Status:** Not started
+**Status:** In progress (code complete, needs deployment setup)
 
-ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions. No frontend changes.
+ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 
 **Job offer states:**
 - **Submitted** — initial state after user submits
@@ -79,11 +82,23 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions. No fro
 - **Accepted** — offer was accepted
 
 **Features:**
-- [ ] ASP.NET Core backend deployed with automated CI/CD
-- [ ] Backend validates Supabase JWT tokens
-- [ ] Form submissions stored in PostgreSQL via Marten (event sourcing)
-- [ ] User can view their submitted offers and current status
-- [ ] SuperAdmin view: all job offers from all users
+- [x] ASP.NET Core Web API with vertical slices architecture
+- [x] Marten event sourcing + PostgreSQL (events track full lifecycle)
+- [x] Backend validates Supabase JWT tokens
+- [x] Docker Compose for local development (PostgreSQL)
+- [x] Dockerfile for production deployment
+- [x] Integration tests with Testcontainers
+- [x] CI/CD pipeline (GitHub Actions → GHCR → Oracle Cloud SSH deploy)
+- [x] User can view their submitted offers and current status
+- [x] Admin view: all job offers from all users
+- [x] Admin can update offer status and add notes
+- [x] Users can cancel their own submissions
+- [x] Full activity log (event history) for each job offer
+- [x] Playwright frontend tests (page rendering, navigation, dark mode)
+- [x] E2E test infrastructure (Playwright against full stack)
+- [x] `make dev` single-command local development (DB + backend + frontend)
+- [ ] Oracle Cloud VM provisioned and configured (manual step — see `docs/SETUP.md`)
+- [ ] DNS A record for api.kalandra.tech (manual step)
 
 ---
 
@@ -173,9 +188,9 @@ Monetize job offer submissions via Stripe.
 |---|---|---|
 | **Runtime** | ASP.NET Core | Strong typing, familiar, good performance |
 | **Hosting** | Oracle Cloud Always Free (ARM A1: 4 OCPUs, 24 GB RAM, 200 GB storage). Fallback: Hetzner VPS (~€4/month). | Free, generous specs, supports long-running processes. See [ADR](#backend-hosting--oracle-cloud-always-free-fallback-hetzner-vps) for risks and fallback plan. |
-| **Database** | Supabase PostgreSQL | Free tier, managed, includes auth |
-| **Event sourcing** | Marten | .NET library, uses PostgreSQL directly |
-| **Auth** | Supabase Auth (JWT validation in backend) | Free, includes social logins |
+| **Database** | PostgreSQL (local Docker for dev, VM-hosted for prod) | Marten manages schema automatically |
+| **Event sourcing** | Marten | .NET event sourcing on PostgreSQL. Inline snapshot projections for read models. |
+| **Auth** | Supabase Auth (JWT validation in backend) | Free, includes social logins, standard OAuth flow |
 
 ### Background Tasks
 
@@ -270,6 +285,19 @@ Monetize job offer submissions via Stripe.
 | **SvelteKit** | Good framework, but i18n is still not built-in. More geared toward interactive apps than content-driven sites. |
 | **Vercel (Next.js/Nuxt/etc.)** | Popular hosting platform, but its SSR model runs server-side functions — effectively a second backend. The goal is a thin static client deployed to a CDN with a single ASP.NET Core backend handling all server logic. Vercel blurs that boundary. |
 
+#### Marten Event Sourcing for Job Offers
+
+**Context:** Job offers have a lifecycle (Submitted → InReview → Accepted/Declined/Cancelled) where tracking the full history of changes is valuable for both the user and admin.
+
+**Decision:** Use Marten with event sourcing for job offer state management.
+
+**Why:**
+- Events provide a natural audit trail — every status change, cancellation, and note is captured immutably
+- The activity log (event stream) is a first-class feature, not a bolted-on audit table
+- Marten's inline snapshot projections automatically maintain read models (current state) with zero extra code
+- Marten uses PostgreSQL directly — same database, no additional infrastructure
+- The `Apply()` method pattern makes state transitions explicit and testable
+
 ---
 
 ## Open Questions
@@ -293,5 +321,6 @@ Monetize job offer submissions via Stripe.
 |---|---|---|---|
 | 2026-03-26 | Setup | — | Initial project setup, documentation |
 | 2026-03-27 | v1 | ~7 hours | Static site, i18n, dark mode, language picker, SEO, accessibility |
+| 2026-03-28 | v2–v4 | — | Auth, job offer form, backend API, CI/CD, Docker, tests |
 
 <!-- Add rows as work progresses. This table will be rendered on the project page. -->

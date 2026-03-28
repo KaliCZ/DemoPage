@@ -2,7 +2,15 @@
   "nav": {
     "home": "Domů",
     "about": "O mně",
-    "project": "Projekt"
+    "project": "Projekt",
+    "hireMe": "Najměte mě",
+    "mySubmissions": "Mé nabídky"
+  },
+  "auth": {
+    "signIn": "Přihlásit se",
+    "signOut": "Odhlásit se",
+    "signInWith": "Přihlásit se přes",
+    "profile": "Profil"
   },
   "theme": {
     "switchToDark": "Přepnout na tmavý režim",

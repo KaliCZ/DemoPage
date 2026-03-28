@@ -1,0 +1,108 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/api
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+        working-directory: backend
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+        working-directory: backend
+
+      - name: Test
+        run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+        working-directory: backend
+
+  build-and-push:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/src/Kalandra.Api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy to Oracle Cloud
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            docker stop kalandra-api || true
+            docker rm kalandra-api || true
+            docker run -d \
+              --name kalandra-api \
+              --restart unless-stopped \
+              --network host \
+              -e ASPNETCORE_ENVIRONMENT=Production \
+              -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
+              -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
+              -e "Auth__SupabaseJwtSecret=${{ secrets.SUPABASE_JWT_SECRET }}" \
+              -e "Auth__AdminUserIds__0=${{ secrets.ADMIN_USER_ID }}" \
+              -e "Cors__AllowedOrigins__0=https://www.kalandra.tech" \
+              -e "Cors__AllowedOrigins__1=https://kalandra.tech" \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            sleep 5
+            curl -f http://localhost:8080/api/health || exit 1

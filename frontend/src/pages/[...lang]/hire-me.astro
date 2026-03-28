@@ -1,0 +1,214 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
+import enStrings from '../../i18n/en/hire-me.json';
+import csStrings from '../../i18n/cs/hire-me.json';
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map(lang => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="hire-me" lang={lang}>
+
+  <!-- Hero -->
+  <section class="max-w-3xl mx-auto px-8 mb-16">
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+    </h1>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+  </section>
+
+  <!-- Login prompt (shown when not authenticated) -->
+  <section id="login-prompt" class="max-w-3xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
+      <button
+        id="hire-me-sign-in"
+        type="button"
+        class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
+        {t.loginPrompt.signInButton}
+      </button>
+    </div>
+  </section>
+
+  <!-- Form (shown when authenticated, initially with disabled fields) -->
+  <section id="job-offer-form-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
+    <form id="job-offer-form" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.companyName}</label>
+          <input type="text" id="companyName" name="companyName" required maxlength="200"
+            placeholder={t.form.companyNamePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactName}</label>
+          <input type="text" id="contactName" name="contactName" required maxlength="200"
+            placeholder={t.form.contactNamePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactEmail}</label>
+          <input type="email" id="contactEmail" name="contactEmail" required maxlength="255"
+            placeholder={t.form.contactEmailPlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.jobTitle}</label>
+          <input type="text" id="jobTitle" name="jobTitle" required maxlength="200"
+            placeholder={t.form.jobTitlePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <div>
+        <label for="description" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.description}</label>
+        <textarea id="description" name="description" required maxlength="5000" rows="5"
+          placeholder={t.form.descriptionPlaceholder}
+          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.salaryRange}</label>
+          <input type="text" id="salaryRange" name="salaryRange" maxlength="100"
+            placeholder={t.form.salaryRangePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="location" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.location}</label>
+          <input type="text" id="location" name="location" maxlength="200"
+            placeholder={t.form.locationPlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <input type="checkbox" id="isRemote" name="isRemote"
+          class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary" />
+        <label for="isRemote" class="text-sm font-label font-semibold text-on-surface">{t.form.isRemote}</label>
+      </div>
+
+      <div>
+        <label for="additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.additionalNotes}</label>
+        <textarea id="additionalNotes" name="additionalNotes" maxlength="2000" rows="3"
+          placeholder={t.form.additionalNotesPlaceholder}
+          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+      </div>
+
+      <div id="form-error" class="hidden text-error text-sm font-body"></div>
+
+      <button
+        type="submit"
+        id="submit-btn"
+        class="w-full px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
+        {t.form.submit}
+      </button>
+    </form>
+  </section>
+
+  <!-- Success state -->
+  <section id="form-success" class="hidden max-w-3xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-tertiary mb-4 block" aria-hidden="true">check_circle</span>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.form.successTitle}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.form.successMessage}</p>
+      <a
+        href={localePath(lang, 'job-offers')}
+        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors"
+      >
+        {t.form.viewSubmissions}
+      </a>
+    </div>
+  </section>
+
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage }}>
+    // Listen for auth changes
+    window.addEventListener('auth-change', function(e) {
+      var user = e.detail?.user;
+      var loginPrompt = document.getElementById('login-prompt');
+      var formSection = document.getElementById('job-offer-form-section');
+
+      if (user) {
+        if (loginPrompt) loginPrompt.classList.add('hidden');
+        if (formSection) formSection.classList.remove('hidden');
+      } else {
+        if (loginPrompt) loginPrompt.classList.remove('hidden');
+        if (formSection) formSection.classList.add('hidden');
+      }
+    });
+
+    // Sign in button on the login prompt
+    document.getElementById('hire-me-sign-in')?.addEventListener('click', function() {
+      document.getElementById('auth-sign-in-desktop')?.click();
+    });
+
+    // Form submission
+    document.getElementById('job-offer-form')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var form = e.target;
+      var submitBtn = document.getElementById('submit-btn');
+      var errorEl = document.getElementById('form-error');
+
+      if (submitBtn) submitBtn.textContent = submittingText;
+      if (submitBtn) submitBtn.disabled = true;
+      if (errorEl) errorEl.classList.add('hidden');
+
+      try {
+        var token = await window.__getAccessToken?.();
+        if (!token) throw new Error('Not authenticated');
+
+        var body = {
+          companyName: form.companyName.value,
+          contactName: form.contactName.value,
+          contactEmail: form.contactEmail.value,
+          jobTitle: form.jobTitle.value,
+          description: form.description.value,
+          salaryRange: form.salaryRange.value || null,
+          location: form.location.value || null,
+          isRemote: form.isRemote.checked,
+          additionalNotes: form.additionalNotes.value || null
+        };
+
+        var response = await fetch(apiUrl + '/api/job-offers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (!response.ok) throw new Error('Failed');
+
+        document.getElementById('job-offer-form-section')?.classList.add('hidden');
+        document.getElementById('form-success')?.classList.remove('hidden');
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = errorText;
+          errorEl.classList.remove('hidden');
+        }
+      } finally {
+        if (submitBtn) submitBtn.textContent = submitText;
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  </script>
+
+</Layout>

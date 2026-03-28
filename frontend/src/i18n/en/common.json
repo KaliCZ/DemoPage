@@ -2,7 +2,15 @@
   "nav": {
     "home": "Home",
     "about": "About Me",
-    "project": "Project"
+    "project": "Project",
+    "hireMe": "Hire Me",
+    "mySubmissions": "My Submissions"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signInWith": "Sign in with",
+    "profile": "Profile"
   },
   "theme": {
     "switchToDark": "Switch to dark mode",
