@@ -58,74 +58,78 @@ WHERE email = 'your@email.com';
 ### 2.1 Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL)
+- [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL + local Supabase)
 - [Node.js 22+](https://nodejs.org/)
 
-### 2.2 Start PostgreSQL
+### 2.2 Run Everything (recommended)
 
 ```bash
-cd backend
-docker compose up db -d
-```
-
-This starts PostgreSQL on port 5432 with:
-- User: `kalandra`
-- Password: `kalandra_dev`
-- Database: `kalandra`
-
-### 2.3 Configure Backend
-
-```bash
-cd backend/src/Kalandra.Api
-
-# Edit appsettings.Development.json with your Supabase values:
-# - Auth.SupabaseProjectUrl
-# - Auth.SupabaseJwtSecret (from Supabase dashboard → Settings → API → JWT Secret)
-# - Auth.AdminUserIds (array of Supabase user UUIDs)
-```
-
-### 2.4 Run Backend
-
-```bash
-cd backend/src/Kalandra.Api
-dotnet run
-# API available at http://localhost:5000
-# Swagger UI at http://localhost:5000/swagger
-```
-
-Marten auto-creates database schema in Development mode (tables for event streams, projections, etc.).
-
-### 2.5 Run Everything (recommended)
-
-```bash
-# From the repo root — starts PostgreSQL, backend (with hot reload), and frontend
+# From the repo root — starts PostgreSQL, local Supabase, backend (with hot reload), and frontend
 make dev
 ```
 
-This runs `docker compose up db`, `dotnet watch run`, and `npm run dev` in parallel.
-Press Ctrl+C to stop everything.
+This starts:
+- **PostgreSQL** (port 5432) — backend event store
+- **Local Supabase** (port 54321) — auth, API gateway, Studio dashboard
+- **Backend** (port 5000) — .NET API with hot reload
+- **Frontend** (port 4321) — Astro dev server
 
-### 2.6 Configure Frontend
+Press Ctrl+C to stop everything. Run `make dev-stop` to stop Docker services.
+
+### 2.3 Local Supabase
+
+The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `npx supabase start` downloads the required Docker images (~2-3 min).
+
+Local services:
+| Service | URL |
+|---------|-----|
+| API gateway | `http://localhost:54321` |
+| Studio dashboard | `http://localhost:54323` |
+| Inbucket (email) | `http://localhost:54324` |
+
+Local credentials (well-known dev values, not secrets):
+- **Anon key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
+- **JWT secret**: `super-secret-jwt-token-with-at-least-32-characters-long`
+
+### 2.4 Configure Frontend
 
 ```bash
 cd frontend
-cp .env.example .env
-# Edit .env with your Supabase public values:
-# - PUBLIC_SUPABASE_URL
-# - PUBLIC_SUPABASE_ANON_KEY
-# - PUBLIC_API_URL=http://localhost:5000
+cp .env.example .env.local
+# The defaults point to local Supabase — ready to use
 ```
 
-### 2.7 Run Frontend
+To point at a different backend or Supabase instance, edit `.env.local`:
+```
+PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+PUBLIC_API_URL=http://localhost:5000
+```
+
+### 2.5 Manual Start (alternative)
+
+If you prefer to start services individually:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# 1. Start PostgreSQL
+cd backend && docker compose up db -d
+
+# 2. Start local Supabase
+npx supabase start
+
+# 3. Start backend
+cd backend/src/Kalandra.Api
+Auth__SupabaseProjectUrl=http://localhost:54321 \
+Auth__SupabaseJwtSecret=super-secret-jwt-token-with-at-least-32-characters-long \
+dotnet run
+# API at http://localhost:5000, Swagger at /swagger
+
+# 4. Start frontend
+cd frontend && npm install && npm run dev
 # Available at http://localhost:4321
 ```
 
-### 2.8 Full Docker Stack (optional)
+### 2.6 Full Docker Stack (optional)
 
 To run everything in Docker (no hot reload):
 
@@ -294,12 +298,14 @@ We use Marten for event sourcing on the job offers feature. Events (`JobOfferSub
 
 Admin users are identified by their Supabase User ID in `appsettings.json` (or environment variables). This is simpler than a database roles table for a single-admin site. The admin check happens in the authorization policy.
 
-### Supabase Auth — No Local Docker
+### Supabase Auth — Local + Production
 
-The backend only validates JWT signatures. It never calls the Supabase API directly. Therefore:
-- **Local dev**: Use a real Supabase project (free tier). Configure the JWT secret in appsettings.
-- **Tests**: Generate JWTs with a known test secret. No Supabase dependency in CI.
-- This avoids running Supabase's 12+ Docker containers locally.
+The backend only validates JWT signatures. It never calls the Supabase API directly.
+
+- **Local dev**: `npx supabase start` runs a local Supabase instance in Docker (auth, API gateway, studio). Email/password sign-in works without any external dependencies.
+- **Production**: Supabase Cloud with Google OAuth + email/password.
+- **E2E tests**: Local Supabase with programmatic user creation via admin API. Tests sign in with `signInWithPassword` — no browser OAuth flows needed.
+- **Backend integration tests**: Generate JWTs with a known test secret via Testcontainers. No Supabase dependency.
 
 ### Vertical Slices
 

@@ -9,8 +9,18 @@
   "auth": {
     "signIn": "Přihlásit se",
     "signOut": "Odhlásit se",
+    "signUp": "Vytvořit účet",
     "signInWith": "Přihlásit se přes",
-    "profile": "Profil"
+    "profile": "Profil",
+    "email": "E-mail",
+    "emailPlaceholder": "vas@email.cz",
+    "password": "Heslo",
+    "passwordPlaceholder": "Min. 6 znaků",
+    "or": "nebo",
+    "continueWithGoogle": "Pokračovat přes Google",
+    "noAccount": "Nemáte účet?",
+    "haveAccount": "Již máte účet?",
+    "cancel": "Zrušit"
   },
   "theme": {
     "switchToDark": "Přepnout na tmavý režim",

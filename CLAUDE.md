@@ -77,6 +77,8 @@ backend/
   tests/
     Kalandra.Api.Tests/    # Integration tests with Testcontainers
   docker-compose.yml       # PostgreSQL for local dev
+supabase/
+  config.toml              # Local Supabase config (auth, ports, email settings)
 docs/
   PROJECT.md               # Source of truth for goals, architecture, roadmap
   SETUP.md                 # Step-by-step setup guide for backend & deployment
@@ -89,12 +91,12 @@ docs/
 - **Route pages** use `[...lang]` dynamic routes with `getStaticPaths()`. One file per page handles all locales. No separate component layer.
 - **Dark mode** uses `.dark` class on `<html>` with CSS custom property overrides. Flash prevention via `.no-transitions` class.
 - **Accessibility**: skip-to-content link, aria-current on nav, aria-hidden on decorative elements, aria-haspopup on dropdowns, role="menu"/role="menuitem", role="contentinfo" on footer.
-- **Auth**: Supabase Auth with OAuth (Google). JWT validated on backend. Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__getAccessToken()` and `window.__getUser()` for pages.
+- **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend. Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__supabase`, `window.__getAccessToken()`, and `window.__getUser()` for pages. Sign-in dialog supports both email/password and Google OAuth.
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
 - **Admin role**: Configured via `Auth.AdminUserIds` in appsettings (list of Supabase user UUIDs).
 - **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
-- **Dev workflow**: `make dev` starts PostgreSQL + backend (dotnet watch) + frontend (astro dev).
+- **Dev workflow**: `make dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 
 ## Build & Deploy
 

@@ -409,7 +409,12 @@ frontend/test-results/
 # Tool configs
 
 .env
+.env.local
 .linear.toml
+
+# Supabase local dev (generated files)
+supabase/.branches
+supabase/.temp
 
 # Local scripts
 scripts/

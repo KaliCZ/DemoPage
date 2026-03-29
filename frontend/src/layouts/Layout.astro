@@ -190,6 +190,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
               aria-haspopup="true"
             >
               <img id="auth-avatar-desktop" class="w-7 h-7 rounded-full" src="" alt="" />
+              <span class="hidden w-7 h-7 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"></span>
               <span id="auth-name-desktop" class="text-sm font-label text-on-surface-variant"></span>
               <span class="material-symbols-outlined text-sm text-on-surface-variant transition-transform group-hover:rotate-180" aria-hidden="true">expand_more</span>
             </button>
@@ -319,6 +320,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
         </button>
         <div id="auth-profile-mobile" class="hidden">
           <img id="auth-avatar-mobile" class="w-6 h-6 rounded-full" src="" alt="" />
+          <span class="hidden w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"></span>
         </div>
       </div>
     </div>
@@ -382,6 +384,70 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     updateToggleIcons();
   </script>
 
+  <!-- Auth dialog (email/password + Google OAuth) -->
+  <dialog id="auth-dialog" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 max-w-sm w-full backdrop:bg-black/50">
+    <div class="space-y-5">
+      <div>
+        <h2 id="auth-dialog-title" class="font-headline text-xl font-bold text-on-surface">{t.auth.signIn}</h2>
+      </div>
+
+      <!-- Email / password form -->
+      <div class="space-y-3">
+        <div>
+          <label for="auth-email" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.email}</label>
+          <input type="email" id="auth-email" placeholder={t.auth.emailPlaceholder} required
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="auth-password" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.password}</label>
+          <input type="password" id="auth-password" placeholder={t.auth.passwordPlaceholder} required minlength="6"
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <p id="auth-dialog-error" class="hidden text-error text-sm font-body"></p>
+
+      <button type="button" id="auth-dialog-submit"
+        class="w-full px-4 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+        {t.auth.signIn}
+      </button>
+
+      <p id="auth-dialog-toggle" class="text-center text-sm font-body text-on-surface-variant">
+        {t.auth.noAccount}
+        <button type="button" id="auth-dialog-switch" class="text-primary font-semibold hover:underline cursor-pointer">{t.auth.signUp}</button>
+      </p>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3">
+        <div class="flex-1 border-t border-outline-variant/20"></div>
+        <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
+        <div class="flex-1 border-t border-outline-variant/20"></div>
+      </div>
+
+      <!-- Google OAuth -->
+      <button type="button" id="auth-dialog-google"
+        class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        {t.auth.continueWithGoogle}
+      </button>
+
+      <button type="button" id="auth-dialog-close"
+        class="w-full px-4 py-2 rounded-xl text-sm font-label text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer">
+        {t.auth.cancel}
+      </button>
+    </div>
+  </dialog>
+
+  <script define:vars={{ authSignInLabel: t.auth.signIn, authSignUpLabel: t.auth.signUp, authNoAccountLabel: t.auth.noAccount, authHaveAccountLabel: t.auth.haveAccount }}>
+    // Auth dialog mode management (sign-in vs sign-up)
+    window.__authDialogLabels = { signIn: authSignInLabel, signUp: authSignUpLabel, noAccount: authNoAccountLabel, haveAccount: authHaveAccountLabel };
+  </script>
+
   <script>
     import { createClient } from '@supabase/supabase-js';
     import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
@@ -389,6 +455,25 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
       ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
+
+    let authDialogMode: 'signin' | 'signup' = 'signin';
+
+    function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
+      if (!imgEl) return;
+      if (avatarUrl) {
+        imgEl.src = avatarUrl;
+        imgEl.alt = name;
+        imgEl.style.display = '';
+        imgEl.nextElementSibling?.classList.add('hidden');
+      } else {
+        imgEl.style.display = 'none';
+        const placeholder = imgEl.nextElementSibling;
+        if (placeholder) {
+          placeholder.classList.remove('hidden');
+          placeholder.textContent = (name.charAt(0) || '?').toUpperCase();
+        }
+      }
+    }
 
     function updateAuthUI(user: any) {
       const signInDesktop = document.getElementById('auth-sign-in-desktop');
@@ -406,16 +491,15 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
         if (signInDesktop) signInDesktop.classList.add('hidden');
         if (profileDesktop) {
           profileDesktop.classList.remove('hidden');
-          if (avatarDesktop) { avatarDesktop.src = avatar; avatarDesktop.alt = name; }
+          setAvatarOrInitial(avatarDesktop, name, avatar);
           if (nameDesktop) nameDesktop.textContent = name;
         }
         if (signInMobile) signInMobile.classList.add('hidden');
         if (profileMobile) {
           profileMobile.classList.remove('hidden');
-          if (avatarMobile) { avatarMobile.src = avatar; avatarMobile.alt = name; }
+          setAvatarOrInitial(avatarMobile, name, avatar);
         }
 
-        // Dispatch event for other scripts
         window.dispatchEvent(new CustomEvent('auth-change', { detail: { user } }));
       } else {
         if (signInDesktop) signInDesktop.classList.remove('hidden');
@@ -427,7 +511,55 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       }
     }
 
-    async function signIn() {
+    function openAuthDialog() {
+      if (!supabase) return;
+      authDialogMode = 'signin';
+      updateAuthDialogMode();
+      (document.getElementById('auth-dialog') as HTMLDialogElement)?.showModal();
+    }
+
+    function updateAuthDialogMode() {
+      const labels = (window as any).__authDialogLabels;
+      const title = document.getElementById('auth-dialog-title');
+      const submit = document.getElementById('auth-dialog-submit');
+      const toggle = document.getElementById('auth-dialog-toggle');
+      const switchBtn = document.getElementById('auth-dialog-switch');
+      const errorEl = document.getElementById('auth-dialog-error');
+
+      if (errorEl) errorEl.classList.add('hidden');
+
+      if (authDialogMode === 'signin') {
+        if (title) title.textContent = labels.signIn;
+        if (submit) submit.textContent = labels.signIn;
+        if (toggle) toggle.childNodes[0].textContent = labels.noAccount + ' ';
+        if (switchBtn) switchBtn.textContent = labels.signUp;
+      } else {
+        if (title) title.textContent = labels.signUp;
+        if (submit) submit.textContent = labels.signUp;
+        if (toggle) toggle.childNodes[0].textContent = labels.haveAccount + ' ';
+        if (switchBtn) switchBtn.textContent = labels.signIn;
+      }
+    }
+
+    async function authDialogSubmit() {
+      if (!supabase) return;
+      const email = (document.getElementById('auth-email') as HTMLInputElement)?.value;
+      const password = (document.getElementById('auth-password') as HTMLInputElement)?.value;
+      const errorEl = document.getElementById('auth-dialog-error');
+      if (errorEl) errorEl.classList.add('hidden');
+
+      const { error } = authDialogMode === 'signup'
+        ? await supabase.auth.signUp({ email, password, options: { data: { full_name: email.split('@')[0] } } })
+        : await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        if (errorEl) { errorEl.textContent = error.message; errorEl.classList.remove('hidden'); }
+      } else {
+        (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
+      }
+    }
+
+    async function authDialogGoogle() {
       if (!supabase) return;
       await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -441,6 +573,21 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       updateAuthUI(null);
     }
 
+    // Auth dialog event listeners
+    document.getElementById('auth-dialog-submit')?.addEventListener('click', authDialogSubmit);
+    document.getElementById('auth-dialog-google')?.addEventListener('click', authDialogGoogle);
+    document.getElementById('auth-dialog-switch')?.addEventListener('click', () => {
+      authDialogMode = authDialogMode === 'signin' ? 'signup' : 'signin';
+      updateAuthDialogMode();
+    });
+    document.getElementById('auth-dialog-close')?.addEventListener('click', () => {
+      (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
+    });
+    // Allow Enter key to submit
+    document.getElementById('auth-password')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') authDialogSubmit();
+    });
+
     // Initialize
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
@@ -452,11 +599,12 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       });
     }
 
-    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', signIn);
-    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', signIn);
+    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', openAuthDialog);
+    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', openAuthDialog);
     document.getElementById('auth-sign-out-desktop')?.addEventListener('click', signOut);
 
-    // Expose getAccessToken globally for other pages
+    // Expose globals for other pages and E2E tests
+    (window as any).__supabase = supabase;
     (window as any).__getAccessToken = async () => {
       if (!supabase) return null;
       const { data: { session } } = await supabase.auth.getSession();

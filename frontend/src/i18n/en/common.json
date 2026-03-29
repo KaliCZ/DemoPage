@@ -9,8 +9,18 @@
   "auth": {
     "signIn": "Sign In",
     "signOut": "Sign Out",
+    "signUp": "Create Account",
     "signInWith": "Sign in with",
-    "profile": "Profile"
+    "profile": "Profile",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Min. 6 characters",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "cancel": "Cancel"
   },
   "theme": {
     "switchToDark": "Switch to dark mode",
