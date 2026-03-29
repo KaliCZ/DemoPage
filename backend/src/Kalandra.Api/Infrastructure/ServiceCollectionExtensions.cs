@@ -41,7 +41,8 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddAppCors(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
         var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
@@ -49,8 +50,12 @@ public static class ServiceCollectionExtensions
         {
             options.AddPolicy("DefaultPolicy", policy =>
             {
+                var origins = environment.IsDevelopment()
+                    ? [.. allowedOrigins, "http://localhost:4321", "http://127.0.0.1:4321"]
+                    : allowedOrigins;
+
                 policy
-                    .WithOrigins(allowedOrigins)
+                    .WithOrigins(origins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();

@@ -123,8 +123,6 @@ jobs:
               -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
               -e "Auth__SupabaseJwtSecret=${{ secrets.SUPABASE_JWT_SECRET }}" \
               -e "Auth__AdminUserIds__0=${{ secrets.ADMIN_USER_ID }}" \
-              -e "Cors__AllowedOrigins__0=https://www.kalandra.tech" \
-              -e "Cors__AllowedOrigins__1=https://kalandra.tech" \
               $IMAGE
 
             # Wait for the new container to become healthy
@@ -163,14 +161,4 @@ jobs:
           health-url: https://api.kalandra.tech/api/health
           max-attempts: 20
           retry-interval: 5
-
-      - name: Verify deployed commit
-        run: |
-          DEPLOYED_COMMIT=$(curl -sf https://api.kalandra.tech/api/health | jq -r '.entries.version.data.commit')
-          EXPECTED_COMMIT="${{ github.sha }}"
-          echo "Deployed: $DEPLOYED_COMMIT"
-          echo "Expected: $EXPECTED_COMMIT"
-          if [ "$DEPLOYED_COMMIT" != "$EXPECTED_COMMIT" ]; then
-            echo "::error::Deployed commit does not match expected commit!"
-            exit 1
-          fi
+          expected-content: ${{ github.sha }}

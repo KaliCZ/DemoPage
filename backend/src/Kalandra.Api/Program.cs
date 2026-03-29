@@ -36,7 +36,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(builder.Configuration);
-builder.Services.AddAppCors(builder.Configuration);
+builder.Services.AddAppCors(builder.Configuration, builder.Environment);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddHealthChecks()
