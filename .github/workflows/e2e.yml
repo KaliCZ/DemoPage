@@ -78,6 +78,38 @@ jobs:
           max-attempts: 30
           retry-interval: 2
 
+      - name: Verify API accepts Supabase JWTs
+        run: |
+          # Create test user
+          curl -sf -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
+            -H "Authorization: Bearer $SB_SERVICE_ROLE_KEY" \
+            -H "apikey: $SB_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"jwt-check@test.local","password":"check-password-123","email_confirm":true}' > /dev/null
+
+          # Sign in to get JWT
+          SIGNIN=$(curl -sf -X POST "http://127.0.0.1:54321/auth/v1/token?grant_type=password" \
+            -H "apikey: $SB_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"jwt-check@test.local","password":"check-password-123"}')
+          TOKEN=$(echo "$SIGNIN" | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')
+
+          # Decode JWT header and payload
+          echo "=== JWT Header ==="
+          echo "$TOKEN" | cut -d. -f1 | (base64 -d 2>/dev/null || base64 -D 2>/dev/null) | python3 -m json.tool
+          echo "=== JWT Payload ==="
+          echo "$TOKEN" | cut -d. -f2 | (base64 -d 2>/dev/null || base64 -D 2>/dev/null) | python3 -m json.tool 2>/dev/null || echo "(padding issue, trying with padding)"
+          PAYLOAD=$(echo "$TOKEN" | cut -d. -f2)
+          echo "${PAYLOAD}==" | base64 -d 2>/dev/null | python3 -m json.tool || true
+
+          # Call API with verbose output to see WWW-Authenticate header
+          echo "=== API call with JWT ==="
+          curl -v -X POST "http://localhost:5000/api/job-offers" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"companyName":"Check Corp","contactName":"Check","contactEmail":"c@c.com","jobTitle":"Check","description":"JWT check"}' \
+            2>&1 || true
+
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
