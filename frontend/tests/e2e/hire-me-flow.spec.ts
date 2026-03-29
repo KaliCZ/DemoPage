@@ -79,8 +79,8 @@ test.describe('Hire Me Flow', () => {
     // 5. Submit the form
     await page.click('#submit-btn');
 
-    // 6. Verify success state
-    await expect(page.locator('#form-success')).toBeVisible();
+    // 6. Verify success state (allow extra time for API call)
+    await expect(page.locator('#form-success')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('#form-success')).toContainText('Offer Submitted');
     await expect(page.locator('#job-offer-form-section')).toBeHidden();
 

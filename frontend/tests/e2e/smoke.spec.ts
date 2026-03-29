@@ -14,7 +14,7 @@ test.describe('E2E Smoke Tests', () => {
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
     expect(body.status).toBe('Healthy');
-    expect(body).toHaveProperty('commitHash');
+    expect(body.entries.version.status).toBe('Healthy');
   });
 
   test('hire-me page shows login prompt with correct content', async ({ page }) => {
