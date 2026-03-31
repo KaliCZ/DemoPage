@@ -46,7 +46,7 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
         var token = JwtTestHelper.GenerateToken();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var request = new CreateJobOfferRequest("", "", "", "", "", null, null, false, null);
+        var request = new CreateJobOfferRequest("", "", "", "", "", null, null, false, null, null);
         var response = await _client.PostAsJsonAsync("/api/job-offers", request);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -228,7 +228,7 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
         // Edit
         var editRequest = new CreateJobOfferRequest(
             "Updated Corp", "Jane Doe", "jane@updated.com", "CTO",
-            "Updated description.", "$200k", "Remote", true, null);
+            "Updated description.", "$200k", "Remote", true, null, null);
         var editRes = await _client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", editRequest);
         Assert.Equal(HttpStatusCode.NoContent, editRes.StatusCode);
 
@@ -325,5 +325,6 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
             SalaryRange: "$120k - $160k",
             Location: "Prague, CZ",
             IsRemote: true,
-            AdditionalNotes: null);
+            AdditionalNotes: null,
+            Attachments: null);
 }
