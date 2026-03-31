@@ -96,7 +96,7 @@ docs/
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
 - **Admin role**: Configured via `Auth.AdminUserIds` in appsettings (list of Supabase user UUIDs).
 - **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
-- **Dev workflow**: `make dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
+- **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 
 ## Build & Deploy
 
@@ -124,8 +124,8 @@ dotnet test              # Requires Docker (Testcontainers)
 cd frontend
 npx playwright test      # Frontend page tests (builds + serves static site)
 
-make test                # Run all tests (backend + frontend)
-make test-e2e            # Full e2e (starts DB + API + frontend, runs Playwright)
+npm test                 # Run all tests (backend + frontend)
+npm run test:e2e         # Full e2e (starts DB + API + frontend, runs Playwright)
 ```
 
 Frontend deployed via GitHub Actions → Cloudflare Pages on push to main.

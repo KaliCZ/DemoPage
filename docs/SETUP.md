@@ -65,7 +65,7 @@ WHERE email = 'your@email.com';
 
 ```bash
 # From the repo root — starts PostgreSQL, local Supabase, backend (with hot reload), and frontend
-make dev
+npm run dev
 ```
 
 This starts:
@@ -74,7 +74,7 @@ This starts:
 - **Backend** (port 5000) — .NET API with hot reload
 - **Frontend** (port 4321) — Astro dev server
 
-Press Ctrl+C to stop everything. Run `make dev-stop` to stop Docker services.
+Press Ctrl+C to stop everything. Run `npm run dev:stop` to stop Docker services.
 
 ### 2.3 Local Supabase
 
@@ -127,17 +127,6 @@ dotnet run
 # 4. Start frontend
 cd frontend && npm install && npm run dev
 # Available at http://localhost:4321
-```
-
-### 2.6 Full Docker Stack (optional)
-
-To run everything in Docker (no hot reload):
-
-```bash
-cd backend
-cp .env.example .env
-# Edit .env with Supabase values
-docker compose --profile full up
 ```
 
 ---

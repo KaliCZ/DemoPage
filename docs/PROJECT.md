@@ -96,7 +96,7 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 - [x] Full activity log (event history) for each job offer
 - [x] Playwright frontend tests (page rendering, navigation, dark mode)
 - [x] E2E test infrastructure (Playwright against full stack)
-- [x] `make dev` single-command local development (DB + backend + frontend)
+- [x] `npm run dev` single-command local development (DB + backend + frontend)
 - [ ] Oracle Cloud VM provisioned and configured (manual step — see `docs/SETUP.md`)
 - [ ] DNS A record for api.kalandra.tech (manual step)
 

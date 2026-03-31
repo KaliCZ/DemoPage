@@ -1,0 +1,23 @@
+{
+  "name": "demopage",
+  "private": true,
+  "description": "kalandra.tech — monorepo task runner",
+  "scripts": {
+    "dev": "npm run dev:db && npm run dev:supabase && npm run dev:services",
+    "dev:db": "cd backend && docker compose up db -d --wait",
+    "dev:supabase": "npx supabase start",
+    "dev:services": "concurrently --kill-others --names backend,frontend --prefix-colors blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend/src/Kalandra.Api && cross-env Auth__SupabaseProjectUrl=http://localhost:54321 Auth__SupabaseJwtSecret=super-secret-jwt-token-with-at-least-32-characters-long dotnet watch run",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:stop": "cd backend && docker compose down && npx supabase stop",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
+    "test:backend": "cd backend && dotnet test --verbosity normal",
+    "test:frontend": "cd frontend && npx playwright test",
+    "test:e2e": "npm run dev:db && npm run dev:supabase && cd frontend && npm run build && concurrently --kill-others --success first --names backend,serve,test \"npm run dev:backend\" \"npx wait-on http://localhost:5000/health && cd frontend && npx serve dist -l 4321\" \"npx wait-on http://localhost:5000/health && npx wait-on http://localhost:4321 && cd frontend && npx playwright test --config playwright.e2e.config.ts\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "wait-on": "^8.0.0"
+  }
+}
