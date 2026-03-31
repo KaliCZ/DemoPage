@@ -16,7 +16,8 @@ public class CancelJobOfferHandler(IDocumentSession session)
         string userEmail,
         CancellationToken ct)
     {
-        var offer = await session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
+        var stream = await session.Events.FetchForWriting<JobOffer>(id, ct);
+        var offer = stream.Aggregate;
         if (offer == null)
             return (false, "Not found");
 
@@ -32,7 +33,7 @@ public class CancelJobOfferHandler(IDocumentSession session)
             Reason: request.Reason,
             Timestamp: DateTimeOffset.UtcNow);
 
-        session.Events.Append(id, cancelled);
+        stream.AppendOne(cancelled);
         await session.SaveChangesAsync(ct);
         return (true, null);
     }

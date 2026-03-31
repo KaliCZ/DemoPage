@@ -13,7 +13,8 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session)
         string adminEmail,
         CancellationToken ct)
     {
-        var offer = await session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
+        var stream = await session.Events.FetchForWriting<JobOffer>(id, ct);
+        var offer = stream.Aggregate;
         if (offer == null)
             return false;
 
@@ -25,7 +26,7 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session)
             Notes: request.AdminNotes,
             Timestamp: DateTimeOffset.UtcNow);
 
-        session.Events.Append(id, statusChanged);
+        stream.AppendOne(statusChanged);
         await session.SaveChangesAsync(ct);
         return true;
     }

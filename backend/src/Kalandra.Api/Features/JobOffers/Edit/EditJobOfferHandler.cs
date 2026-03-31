@@ -14,7 +14,8 @@ public class EditJobOfferHandler(IDocumentSession session)
         string userEmail,
         CancellationToken ct)
     {
-        var offer = await session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
+        var stream = await session.Events.FetchForWriting<JobOffer>(id, ct);
+        var offer = stream.Aggregate;
         if (offer == null)
             return (false, "Not found");
 
@@ -38,7 +39,7 @@ public class EditJobOfferHandler(IDocumentSession session)
             AdditionalNotes: request.AdditionalNotes,
             Timestamp: DateTimeOffset.UtcNow);
 
-        session.Events.Append(id, edited);
+        stream.AppendOne(edited);
         await session.SaveChangesAsync(ct);
         return (true, null);
     }

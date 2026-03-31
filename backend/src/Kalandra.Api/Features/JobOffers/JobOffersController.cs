@@ -9,6 +9,7 @@ using Kalandra.Api.Features.JobOffers.List;
 using Kalandra.Api.Features.JobOffers.UpdateStatus;
 using Kalandra.Api.Infrastructure.Auth;
 using Marten;
+using Marten.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,14 +55,21 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         var email = User.GetEmail() ?? "";
 
         var handler = new EditJobOfferHandler(session);
-        var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
+        try
+        {
+            var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
 
-        if (!success)
-            return error == "Not found" ? NotFound() :
-                   error == "Not authorized" ? Forbid() :
-                   BadRequest(new { error });
+            if (!success)
+                return error == "Not found" ? NotFound() :
+                       error == "Not authorized" ? Forbid() :
+                       BadRequest(new { error });
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (Exception ex) when (IsConcurrencyConflict(ex))
+        {
+            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
+        }
     }
 
     [HttpGet("mine")]
@@ -124,14 +132,21 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         var email = User.GetEmail() ?? "";
 
         var handler = new CancelJobOfferHandler(session);
-        var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
+        try
+        {
+            var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
 
-        if (!success)
-            return error == "Not found" ? NotFound() :
-                   error == "Not authorized" ? Forbid() :
-                   BadRequest(new { error });
+            if (!success)
+                return error == "Not found" ? NotFound() :
+                       error == "Not authorized" ? Forbid() :
+                       BadRequest(new { error });
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (Exception ex) when (IsConcurrencyConflict(ex))
+        {
+            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
+        }
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -145,9 +160,15 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         var adminEmail = User.GetEmail() ?? "";
 
         var handler = new UpdateJobOfferStatusHandler(session);
-        var success = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
-
-        return success ? NoContent() : NotFound();
+        try
+        {
+            var success = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
+            return success ? NoContent() : NotFound();
+        }
+        catch (Exception ex) when (IsConcurrencyConflict(ex))
+        {
+            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
+        }
     }
 
     [HttpGet("{id:guid}/comments")]
@@ -182,13 +203,23 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
             .AuthorizeAsync(User, "Admin")).Succeeded;
 
         var handler = new CommentsHandler(session);
-        var (success, error) = await handler.AddCommentAsync(id, request, userId, email, name, isAdmin, ct);
+        try
+        {
+            var (success, error) = await handler.AddCommentAsync(id, request, userId, email, name, isAdmin, ct);
 
-        if (!success)
-            return error == "Not found" ? NotFound() :
-                   error == "Not authorized" ? Forbid() :
-                   BadRequest(new { error });
+            if (!success)
+                return error == "Not found" ? NotFound() :
+                       error == "Not authorized" ? Forbid() :
+                       BadRequest(new { error });
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (Exception ex) when (IsConcurrencyConflict(ex))
+        {
+            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
+        }
     }
+
+    private static bool IsConcurrencyConflict(Exception exception) =>
+        exception is ConcurrencyException or EventStreamUnexpectedMaxEventIdException;
 }

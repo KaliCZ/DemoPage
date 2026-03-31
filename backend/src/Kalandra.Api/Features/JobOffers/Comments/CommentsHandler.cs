@@ -15,7 +15,8 @@ public class CommentsHandler(IDocumentSession session)
         bool isAdmin,
         CancellationToken ct)
     {
-        var offer = await session.LoadAsync<JobOffer>(jobOfferId, ct);
+        var stream = await session.Events.FetchForWriting<JobOffer>(jobOfferId, ct);
+        var offer = stream.Aggregate;
         if (offer == null)
             return (false, "Not found");
 
@@ -34,7 +35,7 @@ public class CommentsHandler(IDocumentSession session)
             Content: request.Content.Trim(),
             Timestamp: DateTimeOffset.UtcNow);
 
-        session.Events.Append(jobOfferId, commentAdded);
+        stream.AppendOne(commentAdded);
         await session.SaveChangesAsync(ct);
         return (true, null);
     }
