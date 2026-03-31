@@ -20,20 +20,16 @@ public class CommentsHandler(IDocumentSession session)
         if (offer == null)
             return (false, "Not found");
 
-        // Only owner or admin can comment
-        if (!isAdmin && offer.UserId != userId)
-            return (false, "Not authorized");
+        var (success, error, commentAdded) = offer.AddComment(
+            userId,
+            userEmail,
+            userName,
+            request.Content,
+            isAdmin,
+            DateTimeOffset.UtcNow);
 
-        if (string.IsNullOrWhiteSpace(request.Content))
-            return (false, "Content is required");
-
-        var commentAdded = new JobOfferCommentAdded(
-            CommentId: Guid.NewGuid(),
-            UserId: userId,
-            UserEmail: userEmail,
-            UserName: userName,
-            Content: request.Content.Trim(),
-            Timestamp: DateTimeOffset.UtcNow);
+        if (!success || commentAdded == null)
+            return (false, error);
 
         stream.AppendOne(commentAdded);
         await session.SaveChangesAsync(ct);

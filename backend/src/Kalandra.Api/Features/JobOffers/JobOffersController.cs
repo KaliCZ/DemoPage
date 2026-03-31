@@ -162,8 +162,14 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         var handler = new UpdateJobOfferStatusHandler(session);
         try
         {
-            var success = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
-            return success ? NoContent() : NotFound();
+            var (success, error) = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
+
+            if (!success)
+                return error == "Not found"
+                    ? NotFound()
+                    : BadRequest(new { error });
+
+            return NoContent();
         }
         catch (Exception ex) when (IsConcurrencyConflict(ex))
         {

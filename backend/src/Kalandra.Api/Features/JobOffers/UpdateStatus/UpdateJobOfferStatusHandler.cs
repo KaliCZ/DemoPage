@@ -6,7 +6,7 @@ namespace Kalandra.Api.Features.JobOffers.UpdateStatus;
 
 public class UpdateJobOfferStatusHandler(IDocumentSession session)
 {
-    public async Task<bool> HandleAsync(
+    public async Task<(bool Success, string? Error)> HandleAsync(
         Guid id,
         UpdateJobOfferStatusRequest request,
         string adminUserId,
@@ -16,18 +16,20 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session)
         var stream = await session.Events.FetchForWriting<JobOffer>(id, ct);
         var offer = stream.Aggregate;
         if (offer == null)
-            return false;
+            return (false, "Not found");
 
-        var statusChanged = new JobOfferStatusChanged(
-            ChangedByUserId: adminUserId,
-            ChangedByEmail: adminEmail,
-            OldStatus: offer.Status,
-            NewStatus: request.Status,
-            Notes: request.AdminNotes,
-            Timestamp: DateTimeOffset.UtcNow);
+        var (success, error, statusChanged) = offer.ChangeStatus(
+            request.Status,
+            adminUserId,
+            adminEmail,
+            request.AdminNotes,
+            DateTimeOffset.UtcNow);
+
+        if (!success || statusChanged == null)
+            return (false, error);
 
         stream.AppendOne(statusChanged);
         await session.SaveChangesAsync(ct);
-        return true;
+        return (true, null);
     }
 }

@@ -21,17 +21,14 @@ public class CancelJobOfferHandler(IDocumentSession session)
         if (offer == null)
             return (false, "Not found");
 
-        if (offer.UserId != userId)
-            return (false, "Not authorized");
+        var (success, error, cancelled) = offer.Cancel(
+            userId,
+            userEmail,
+            request.Reason,
+            DateTimeOffset.UtcNow);
 
-        if (offer.Status is not (JobOfferStatus.Submitted or JobOfferStatus.InReview))
-            return (false, "Cannot cancel an offer that has already been accepted, declined, or cancelled");
-
-        var cancelled = new JobOfferCancelled(
-            CancelledByUserId: userId,
-            CancelledByEmail: userEmail,
-            Reason: request.Reason,
-            Timestamp: DateTimeOffset.UtcNow);
+        if (!success || cancelled == null)
+            return (false, error);
 
         stream.AppendOne(cancelled);
         await session.SaveChangesAsync(ct);

@@ -135,6 +135,46 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task AdminCannotSetCancelledStatus_ThroughAdminEndpoint()
+    {
+        var userToken = JwtTestHelper.GenerateToken("status-user", "status@test.com");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+
+        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var created = await createResponse.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+
+        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var statusResponse = await client.PatchAsJsonAsync($"/api/job-offers/{created!.Id}/status",
+            new { status = 4, adminNotes = "Force cancelling" }, Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, statusResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminCannotReopenTerminalStatus()
+    {
+        var userToken = JwtTestHelper.GenerateToken("terminal-user", "terminal@test.com");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+
+        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var created = await createResponse.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+
+        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var declineResponse = await client.PatchAsJsonAsync($"/api/job-offers/{created!.Id}/status",
+            new { status = 3, adminNotes = "No fit" }, Ct);
+        Assert.Equal(HttpStatusCode.NoContent, declineResponse.StatusCode);
+
+        var reopenResponse = await client.PatchAsJsonAsync($"/api/job-offers/{created.Id}/status",
+            new { status = 1, adminNotes = "Actually, let's reopen this" }, Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, reopenResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task CannotCancel_OtherUsersOffer()
     {
         // Create as user1

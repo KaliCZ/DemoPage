@@ -19,25 +19,22 @@ public class EditJobOfferHandler(IDocumentSession session)
         if (offer == null)
             return (false, "Not found");
 
-        if (offer.UserId != userId)
-            return (false, "Not authorized");
+        var (success, error, edited) = offer.Edit(
+            userId,
+            userEmail,
+            request.CompanyName,
+            request.ContactName,
+            request.ContactEmail,
+            request.JobTitle,
+            request.Description,
+            request.SalaryRange,
+            request.Location,
+            request.IsRemote,
+            request.AdditionalNotes,
+            DateTimeOffset.UtcNow);
 
-        if (offer.Status != JobOfferStatus.Submitted)
-            return (false, "Can only edit offers with status Submitted");
-
-        var edited = new JobOfferEdited(
-            EditedByUserId: userId,
-            EditedByEmail: userEmail,
-            CompanyName: request.CompanyName,
-            ContactName: request.ContactName,
-            ContactEmail: request.ContactEmail,
-            JobTitle: request.JobTitle,
-            Description: request.Description,
-            SalaryRange: request.SalaryRange,
-            Location: request.Location,
-            IsRemote: request.IsRemote,
-            AdditionalNotes: request.AdditionalNotes,
-            Timestamp: DateTimeOffset.UtcNow);
+        if (!success || edited == null)
+            return (false, error);
 
         stream.AppendOne(edited);
         await session.SaveChangesAsync(ct);
