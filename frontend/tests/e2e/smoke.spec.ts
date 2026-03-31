@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('E2E Smoke Tests', () => {
   test('backend health endpoint is reachable and healthy', async ({ request }) => {
-    const response = await request.get('http://localhost:5000/api/health');
+    const response = await request.get('http://localhost:5000/health');
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
     expect(body.status).toBe('Healthy');

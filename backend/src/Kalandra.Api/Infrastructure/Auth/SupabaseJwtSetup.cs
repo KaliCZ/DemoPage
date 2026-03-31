@@ -2,6 +2,9 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Kalandra.Api.Infrastructure.Auth;
@@ -18,32 +21,23 @@ public static class SupabaseJwtSetup
 
         var projectUrl = authOptions.SupabaseProjectUrl.TrimEnd('/');
         var issuer = $"{projectUrl}/auth/v1";
-
-        // HMAC key for HS256 tokens (production Supabase)
-        var signingKeys = new List<SecurityKey>();
-        if (!string.IsNullOrEmpty(authOptions.SupabaseJwtSecret))
-        {
-            signingKeys.Add(new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(authOptions.SupabaseJwtSecret)));
-        }
-
-        // JWKS keys for ES256 tokens (newer Supabase uses ECDSA)
-        try
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var jwksJson = httpClient.GetStringAsync(
-                $"{projectUrl}/auth/v1/.well-known/jwks.json").GetAwaiter().GetResult();
-            var jwks = new JsonWebKeySet(jwksJson);
-            signingKeys.AddRange(jwks.GetSigningKeys());
-        }
-        catch
-        {
-            // JWKS endpoint not available — HMAC key alone will be used
-        }
+        var metadataAddress = $"{issuer}/.well-known/openid-configuration";
+        var requireHttps = projectUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        var fallbackSigningKey = string.IsNullOrWhiteSpace(authOptions.SupabaseJwtSecret)
+            ? null
+            : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions.SupabaseJwtSecret));
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.RefreshOnIssuerKeyNotFound = true;
+                options.RequireHttpsMetadata = requireHttps;
+                options.MetadataAddress = metadataAddress;
+                options.ConfigurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+                    metadataAddress,
+                    new OpenIdConnectConfigurationRetriever(),
+                    new HttpDocumentRetriever { RequireHttps = requireHttps });
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -51,13 +45,40 @@ public static class SupabaseJwtSetup
                     ValidateAudience = true,
                     ValidAudience = "authenticated",
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKeys = signingKeys,
+                    IssuerSigningKeyResolverUsingConfiguration = (_, _, _, _, config) =>
+                    {
+                        var keys = config?.SigningKeys?.ToList() ?? [];
+
+                        if (fallbackSigningKey != null)
+                        {
+                            keys.Add(fallbackSigningKey);
+                        }
+
+                        return keys;
+                    },
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(30)
                 };
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnAuthenticationFailed = context =>
+                    {
+                        if (IsMissingSigningKeyFailure(context.Exception))
+                        {
+                            var logger = context.HttpContext.RequestServices
+                                .GetRequiredService<ILoggerFactory>()
+                                .CreateLogger("Kalandra.Api.Auth");
+
+                            logger.LogError(
+                                context.Exception,
+                                "JWT validation failed because no signing keys were available for issuer {Issuer}. " +
+                                "Check Supabase JWKS availability and Auth configuration.",
+                                issuer);
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnTokenValidated = context =>
                     {
                         // Extract role from Supabase app_metadata and map to a standard role claim
@@ -84,5 +105,10 @@ public static class SupabaseJwtSetup
             .AddPolicy("Admin", policy => policy.RequireRole("admin"));
 
         return services;
+    }
+
+    private static bool IsMissingSigningKeyFailure(Exception exception)
+    {
+        return exception is SecurityTokenSignatureKeyNotFoundException;
     }
 }

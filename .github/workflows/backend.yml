@@ -127,7 +127,7 @@ jobs:
             # Wait for the new container to become healthy
             echo "Waiting for new container on port $NEW_PORT..."
             ATTEMPTS=0
-            until curl -sf http://localhost:$NEW_PORT/api/health > /dev/null 2>&1; do
+            until curl -sf http://localhost:$NEW_PORT/health > /dev/null 2>&1; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
                 echo "New container failed to start. Rolling back..."
@@ -157,7 +157,7 @@ jobs:
       - name: Verify public endpoint
         uses: KaliCZ/verify-deployment@v1
         with:
-          health-url: https://api.kalandra.tech/api/health
+          health-url: https://api.kalandra.tech/health
           max-attempts: 20
           retry-interval: 5
           expected-content: ${{ github.sha }}
