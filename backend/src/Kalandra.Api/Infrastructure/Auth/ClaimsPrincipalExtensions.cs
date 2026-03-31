@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Kalandra.Api.Infrastructure.Auth;
@@ -10,7 +11,7 @@ public static class ClaimsPrincipalExtensions
     public static string? GetUserId(this ClaimsPrincipal principal)
     {
         return principal.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? principal.FindFirstValue("sub");
+            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
     }
 
     /// <summary>
@@ -19,6 +20,6 @@ public static class ClaimsPrincipalExtensions
     public static string? GetEmail(this ClaimsPrincipal principal)
     {
         return principal.FindFirstValue(ClaimTypes.Email)
-            ?? principal.FindFirstValue("email");
+            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
     }
 }

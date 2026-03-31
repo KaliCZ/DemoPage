@@ -10,14 +10,9 @@ using Kalandra.Api.Tests.Helpers;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;
 
-public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
+public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly HttpClient _client;
-
-    public CreateJobOfferTests(TestWebApplicationFactory factory)
-    {
-        _client = factory.CreateClient();
-    }
+    private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
     public async Task Create_WithoutAuth_Returns401()

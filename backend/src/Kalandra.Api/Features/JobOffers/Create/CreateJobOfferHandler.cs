@@ -3,15 +3,8 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Create;
 
-public class CreateJobOfferHandler
+public class CreateJobOfferHandler(IDocumentSession session)
 {
-    private readonly IDocumentSession _session;
-
-    public CreateJobOfferHandler(IDocumentSession session)
-    {
-        _session = session;
-    }
-
     public async Task<CreateJobOfferResponse> HandleAsync(
         CreateJobOfferRequest request,
         string userId,
@@ -36,8 +29,8 @@ public class CreateJobOfferHandler
             Attachments: request.Attachments ?? [],
             Timestamp: now);
 
-        _session.Events.StartStream<Entities.JobOffer>(streamId, submitted);
-        await _session.SaveChangesAsync(ct);
+        session.Events.StartStream<Entities.JobOffer>(streamId, submitted);
+        await session.SaveChangesAsync(ct);
 
         return new CreateJobOfferResponse(streamId, now);
     }

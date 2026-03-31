@@ -4,15 +4,8 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Comments;
 
-public class CommentsHandler
+public class CommentsHandler(IDocumentSession session)
 {
-    private readonly IDocumentSession _session;
-
-    public CommentsHandler(IDocumentSession session)
-    {
-        _session = session;
-    }
-
     public async Task<(bool Success, string? Error)> AddCommentAsync(
         Guid jobOfferId,
         AddCommentRequest request,
@@ -22,7 +15,7 @@ public class CommentsHandler
         bool isAdmin,
         CancellationToken ct)
     {
-        var offer = await _session.LoadAsync<JobOffer>(jobOfferId, ct);
+        var offer = await session.LoadAsync<JobOffer>(jobOfferId, ct);
         if (offer == null)
             return (false, "Not found");
 
@@ -41,8 +34,8 @@ public class CommentsHandler
             Content: request.Content.Trim(),
             Timestamp: DateTimeOffset.UtcNow);
 
-        _session.Events.Append(jobOfferId, commentAdded);
-        await _session.SaveChangesAsync(ct);
+        session.Events.Append(jobOfferId, commentAdded);
+        await session.SaveChangesAsync(ct);
         return (true, null);
     }
 
@@ -52,14 +45,14 @@ public class CommentsHandler
         bool isAdmin,
         CancellationToken ct)
     {
-        var offer = await _session.LoadAsync<JobOffer>(jobOfferId, ct);
+        var offer = await session.LoadAsync<JobOffer>(jobOfferId, ct);
         if (offer == null)
             return null;
 
         if (!isAdmin && offer.UserId != requesterUserId)
             return null;
 
-        var events = await _session.Events.FetchStreamAsync(jobOfferId, token: ct);
+        var events = await session.Events.FetchStreamAsync(jobOfferId, token: ct);
 
         var comments = events
             .Where(e => e.Data is JobOfferCommentAdded)

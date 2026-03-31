@@ -4,15 +4,8 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Cancel;
 
-public class CancelJobOfferHandler
+public class CancelJobOfferHandler(IDocumentSession session)
 {
-    private readonly IDocumentSession _session;
-
-    public CancelJobOfferHandler(IDocumentSession session)
-    {
-        _session = session;
-    }
-
     /// <summary>
     /// Cancel a job offer. Only the owner can cancel, and only if status is Submitted or InReview.
     /// </summary>
@@ -23,7 +16,7 @@ public class CancelJobOfferHandler
         string userEmail,
         CancellationToken ct)
     {
-        var offer = await _session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
+        var offer = await session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
         if (offer == null)
             return (false, "Not found");
 
@@ -39,8 +32,8 @@ public class CancelJobOfferHandler
             Reason: request.Reason,
             Timestamp: DateTimeOffset.UtcNow);
 
-        _session.Events.Append(id, cancelled);
-        await _session.SaveChangesAsync(ct);
+        session.Events.Append(id, cancelled);
+        await session.SaveChangesAsync(ct);
         return (true, null);
     }
 }

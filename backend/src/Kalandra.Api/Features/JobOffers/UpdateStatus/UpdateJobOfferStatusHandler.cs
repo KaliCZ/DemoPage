@@ -4,15 +4,8 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.UpdateStatus;
 
-public class UpdateJobOfferStatusHandler
+public class UpdateJobOfferStatusHandler(IDocumentSession session)
 {
-    private readonly IDocumentSession _session;
-
-    public UpdateJobOfferStatusHandler(IDocumentSession session)
-    {
-        _session = session;
-    }
-
     public async Task<bool> HandleAsync(
         Guid id,
         UpdateJobOfferStatusRequest request,
@@ -20,7 +13,7 @@ public class UpdateJobOfferStatusHandler
         string adminEmail,
         CancellationToken ct)
     {
-        var offer = await _session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
+        var offer = await session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
         if (offer == null)
             return false;
 
@@ -32,8 +25,8 @@ public class UpdateJobOfferStatusHandler
             Notes: request.AdminNotes,
             Timestamp: DateTimeOffset.UtcNow);
 
-        _session.Events.Append(id, statusChanged);
-        await _session.SaveChangesAsync(ct);
+        session.Events.Append(id, statusChanged);
+        await session.SaveChangesAsync(ct);
         return true;
     }
 }

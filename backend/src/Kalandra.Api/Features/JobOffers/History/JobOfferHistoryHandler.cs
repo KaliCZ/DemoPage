@@ -4,29 +4,22 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.History;
 
-public class JobOfferHistoryHandler
+public class JobOfferHistoryHandler(IQuerySession session)
 {
-    private readonly IQuerySession _session;
-
-    public JobOfferHistoryHandler(IQuerySession session)
-    {
-        _session = session;
-    }
-
     public async Task<JobOfferHistoryResponse?> HandleAsync(
         Guid id,
         string? requesterUserId,
         bool isAdmin,
         CancellationToken ct)
     {
-        var offer = await _session.LoadAsync<JobOffer>(id, ct);
+        var offer = await session.LoadAsync<JobOffer>(id, ct);
         if (offer == null)
             return null;
 
         if (!isAdmin && offer.UserId != requesterUserId)
             return null;
 
-        var events = await _session.Events.FetchStreamAsync(id, token: ct);
+        var events = await session.Events.FetchStreamAsync(id, token: ct);
 
         var entries = events.Select(e => e.Data switch
         {

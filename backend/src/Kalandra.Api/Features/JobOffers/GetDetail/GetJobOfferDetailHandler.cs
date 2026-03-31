@@ -3,22 +3,15 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.GetDetail;
 
-public class GetJobOfferDetailHandler
+public class GetJobOfferDetailHandler(IQuerySession session)
 {
-    private readonly IQuerySession _session;
-
-    public GetJobOfferDetailHandler(IQuerySession session)
-    {
-        _session = session;
-    }
-
     public async Task<GetJobOfferDetailResponse?> HandleAsync(
         Guid id,
         string? requesterUserId,
         bool isAdmin,
         CancellationToken ct)
     {
-        var offer = await _session.LoadAsync<JobOffer>(id, ct);
+        var offer = await session.LoadAsync<JobOffer>(id, ct);
         if (offer == null)
             return null;
 

@@ -5,15 +5,8 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Edit;
 
-public class EditJobOfferHandler
+public class EditJobOfferHandler(IDocumentSession session)
 {
-    private readonly IDocumentSession _session;
-
-    public EditJobOfferHandler(IDocumentSession session)
-    {
-        _session = session;
-    }
-
     public async Task<(bool Success, string? Error)> HandleAsync(
         Guid id,
         CreateJobOfferRequest request,
@@ -21,7 +14,7 @@ public class EditJobOfferHandler
         string userEmail,
         CancellationToken ct)
     {
-        var offer = await _session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
+        var offer = await session.Events.AggregateStreamAsync<JobOffer>(id, token: ct);
         if (offer == null)
             return (false, "Not found");
 
@@ -45,8 +38,8 @@ public class EditJobOfferHandler
             AdditionalNotes: request.AdditionalNotes,
             Timestamp: DateTimeOffset.UtcNow);
 
-        _session.Events.Append(id, edited);
-        await _session.SaveChangesAsync(ct);
+        session.Events.Append(id, edited);
+        await session.SaveChangesAsync(ct);
         return (true, null);
     }
 }

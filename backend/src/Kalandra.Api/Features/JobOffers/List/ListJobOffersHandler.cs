@@ -4,20 +4,13 @@ using Marten.Linq;
 
 namespace Kalandra.Api.Features.JobOffers.List;
 
-public class ListJobOffersHandler
+public class ListJobOffersHandler(IQuerySession session)
 {
-    private readonly IQuerySession _session;
-
-    public ListJobOffersHandler(IQuerySession session)
-    {
-        _session = session;
-    }
-
     public async Task<ListJobOffersResponse> HandleAsync(
         string? userId,
         CancellationToken ct)
     {
-        var query = _session.Query<JobOffer>();
+        var query = session.Query<JobOffer>();
 
         if (userId != null)
         {
