@@ -122,7 +122,6 @@ jobs:
               -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
               -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
               -e "Auth__SupabaseJwtSecret=${{ secrets.SUPABASE_JWT_SECRET }}" \
-              -e "Auth__AdminUserIds__0=${{ secrets.ADMIN_USER_ID }}" \
               $IMAGE
 
             # Wait for the new container to become healthy

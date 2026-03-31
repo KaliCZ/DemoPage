@@ -16,11 +16,16 @@ public static class JwtTestHelper
         string email = "test@example.com",
         bool isAdmin = false)
     {
+        var appMetadata = isAdmin
+            ? """{"provider":"email","providers":["email"],"role":"admin"}"""
+            : """{"provider":"email","providers":["email"]}""";
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Aud, TestAudience),
+            new("app_metadata", appMetadata, JsonClaimValueTypes.Json),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestSecret));

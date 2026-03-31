@@ -16,15 +16,8 @@ namespace Kalandra.Api.Features.JobOffers;
 
 [ApiController]
 [Route("api/job-offers")]
-public class JobOffersController : ControllerBase
+public class JobOffersController(IDocumentSession session) : ControllerBase
 {
-    private readonly IDocumentSession _session;
-
-    public JobOffersController(IDocumentSession session)
-    {
-        _session = session;
-    }
-
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create(
@@ -39,7 +32,7 @@ public class JobOffersController : ControllerBase
         var userId = User.GetUserId()!;
         var email = User.GetEmail() ?? "";
 
-        var handler = new CreateJobOfferHandler(_session);
+        var handler = new CreateJobOfferHandler(session);
         var result = await handler.HandleAsync(request, userId, email, ct);
 
         return CreatedAtAction(nameof(GetDetail), new { id = result.Id }, result);
@@ -60,7 +53,7 @@ public class JobOffersController : ControllerBase
         var userId = User.GetUserId()!;
         var email = User.GetEmail() ?? "";
 
-        var handler = new EditJobOfferHandler(_session);
+        var handler = new EditJobOfferHandler(session);
         var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
 
         if (!success)
@@ -76,7 +69,7 @@ public class JobOffersController : ControllerBase
     public async Task<IActionResult> ListMine(CancellationToken ct)
     {
         var userId = User.GetUserId()!;
-        var handler = new ListJobOffersHandler(_session);
+        var handler = new ListJobOffersHandler(session);
         var result = await handler.HandleAsync(userId, ct);
         return Ok(result);
     }
@@ -85,7 +78,7 @@ public class JobOffersController : ControllerBase
     [Authorize(Policy = "Admin")]
     public async Task<IActionResult> ListAll(CancellationToken ct)
     {
-        var handler = new ListJobOffersHandler(_session);
+        var handler = new ListJobOffersHandler(session);
         var result = await handler.HandleAsync(null, ct);
         return Ok(result);
     }
@@ -99,7 +92,7 @@ public class JobOffersController : ControllerBase
             .GetRequiredService<IAuthorizationService>()
             .AuthorizeAsync(User, "Admin")).Succeeded;
 
-        var handler = new GetJobOfferDetailHandler(_session);
+        var handler = new GetJobOfferDetailHandler(session);
         var result = await handler.HandleAsync(id, userId, isAdmin, ct);
 
         return result == null ? NotFound() : Ok(result);
@@ -114,7 +107,7 @@ public class JobOffersController : ControllerBase
             .GetRequiredService<IAuthorizationService>()
             .AuthorizeAsync(User, "Admin")).Succeeded;
 
-        var handler = new JobOfferHistoryHandler(_session);
+        var handler = new JobOfferHistoryHandler(session);
         var result = await handler.HandleAsync(id, userId, isAdmin, ct);
 
         return result == null ? NotFound() : Ok(result);
@@ -130,7 +123,7 @@ public class JobOffersController : ControllerBase
         var userId = User.GetUserId()!;
         var email = User.GetEmail() ?? "";
 
-        var handler = new CancelJobOfferHandler(_session);
+        var handler = new CancelJobOfferHandler(session);
         var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
 
         if (!success)
@@ -151,7 +144,7 @@ public class JobOffersController : ControllerBase
         var adminUserId = User.GetUserId()!;
         var adminEmail = User.GetEmail() ?? "";
 
-        var handler = new UpdateJobOfferStatusHandler(_session);
+        var handler = new UpdateJobOfferStatusHandler(session);
         var success = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
 
         return success ? NoContent() : NotFound();
@@ -166,7 +159,7 @@ public class JobOffersController : ControllerBase
             .GetRequiredService<IAuthorizationService>()
             .AuthorizeAsync(User, "Admin")).Succeeded;
 
-        var handler = new CommentsHandler(_session);
+        var handler = new CommentsHandler(session);
         var result = await handler.ListCommentsAsync(id, userId, isAdmin, ct);
 
         return result == null ? NotFound() : Ok(result);
@@ -188,7 +181,7 @@ public class JobOffersController : ControllerBase
             .GetRequiredService<IAuthorizationService>()
             .AuthorizeAsync(User, "Admin")).Succeeded;
 
-        var handler = new CommentsHandler(_session);
+        var handler = new CommentsHandler(session);
         var (success, error) = await handler.AddCommentAsync(id, request, userId, email, name, isAdmin, ct);
 
         if (!success)

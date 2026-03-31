@@ -64,7 +64,7 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task ListAll_AsAdmin_Returns200()
     {
-        var token = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com");
+        var token = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/job-offers");
@@ -124,7 +124,7 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
         var id = created!.Id;
 
         // Change status as admin
-        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com");
+        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
         var statusResponse = await _client.PatchAsJsonAsync($"/api/job-offers/{id}/status",
@@ -293,7 +293,7 @@ public class CreateJobOfferTests : IClassFixture<TestWebApplicationFactory>
         var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>();
 
         // Admin adds comment
-        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com");
+        var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
         var commentRes = await _client.PostAsJsonAsync(

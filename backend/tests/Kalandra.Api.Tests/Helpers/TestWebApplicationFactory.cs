@@ -17,7 +17,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Auth:SupabaseJwtSecret", JwtTestHelper.TestSecret);
-        builder.UseSetting("Auth:AdminUserIds:0", "admin-user-id");
     }
 
     public async ValueTask InitializeAsync()
