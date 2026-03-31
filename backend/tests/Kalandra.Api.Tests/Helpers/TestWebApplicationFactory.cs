@@ -1,7 +1,9 @@
+using Kalandra.Api.Features.JobOffers.Attachments;
 using Marten;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
 
 namespace Kalandra.Api.Tests.Helpers;
@@ -17,6 +19,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Auth:SupabaseJwtSecret", JwtTestHelper.TestSecret);
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IJobOfferAttachmentVerifier>();
+            services.AddSingleton<IJobOfferAttachmentVerifier, FakeJobOfferAttachmentVerifier>();
+        });
     }
 
     public async ValueTask InitializeAsync()

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
@@ -24,6 +25,7 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     public async Task<IActionResult> Create(
         [FromBody] CreateJobOfferRequest request,
         [FromServices] IValidator<CreateJobOfferRequest> validator,
+        [FromServices] IJobOfferAttachmentVerifier attachmentVerifier,
         CancellationToken ct)
     {
         var validation = await validator.ValidateAsync(request, ct);
@@ -33,8 +35,11 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         var userId = User.GetUserId()!;
         var email = User.GetEmail() ?? "";
 
-        var handler = new CreateJobOfferHandler(session);
-        var result = await handler.HandleAsync(request, userId, email, ct);
+        var handler = new CreateJobOfferHandler(session, attachmentVerifier);
+        var (success, error, result) = await handler.HandleAsync(request, userId, email, ct);
+
+        if (!success || result == null)
+            return BadRequest(new { error });
 
         return CreatedAtAction(nameof(GetDetail), new { id = result.Id }, result);
     }

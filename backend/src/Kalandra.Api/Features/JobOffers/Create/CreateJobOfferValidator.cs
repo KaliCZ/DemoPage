@@ -20,6 +20,10 @@ public class CreateJobOfferValidator : AbstractValidator<CreateJobOfferRequest>
 
         When(x => x.Attachments != null && x.Attachments.Count > 0, () =>
         {
+            RuleFor(x => x.Id)
+                .NotEmpty()
+                .WithMessage("An offer ID is required when attachments are included.");
+
             RuleFor(x => x.Attachments!.Count)
                 .LessThanOrEqualTo(MaxAttachments)
                 .WithMessage($"Maximum {MaxAttachments} attachments allowed.");

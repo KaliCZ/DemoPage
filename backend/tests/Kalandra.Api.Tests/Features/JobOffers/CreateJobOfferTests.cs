@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
+using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.GetDetail;
 using Kalandra.Api.Features.JobOffers.History;
 using Kalandra.Api.Features.JobOffers.List;
@@ -42,7 +43,7 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
         var token = JwtTestHelper.GenerateToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var request = new CreateJobOfferRequest("", "", "", "", "", null, null, false, null, null);
+        var request = new CreateJobOfferRequest(null, "", "", "", "", "", null, null, false, null, null);
         var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -263,6 +264,7 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
 
         // Edit
         var editRequest = new CreateJobOfferRequest(
+            null,
             "Updated Corp", "Jane Doe", "jane@updated.com", "CTO",
             "Updated description.", "$200k", "Remote", true, null, null);
         var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", editRequest, Ct);
@@ -345,6 +347,66 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task Create_WithVerifiedAttachments_Returns201()
+    {
+        var token = JwtTestHelper.GenerateToken();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var offerId = Guid.NewGuid();
+        var request = new CreateJobOfferRequest(
+            offerId,
+            "Acme Corp",
+            "John Doe",
+            "john@acme.com",
+            "Senior Developer",
+            "We are looking for a senior developer to join our team.",
+            "$120k - $160k",
+            "Prague, CZ",
+            true,
+            null,
+            [
+                new AttachmentInfo(
+                    "portfolio.pdf",
+                    $"test-user-id/{offerId}/portfolio.pdf",
+                    1024,
+                    "application/pdf")
+            ]);
+
+        var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_WithAttachmentOutsideOfferPath_Returns400()
+    {
+        var token = JwtTestHelper.GenerateToken();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var offerId = Guid.NewGuid();
+        var request = new CreateJobOfferRequest(
+            offerId,
+            "Acme Corp",
+            "John Doe",
+            "john@acme.com",
+            "Senior Developer",
+            "We are looking for a senior developer to join our team.",
+            "$120k - $160k",
+            "Prague, CZ",
+            true,
+            null,
+            [
+                new AttachmentInfo(
+                    "portfolio.pdf",
+                    $"test-user-id/{Guid.NewGuid()}/portfolio.pdf",
+                    1024,
+                    "application/pdf")
+            ]);
+
+        var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Health_ReturnsOk()
     {
         var response = await client.GetAsync("/health", Ct);
@@ -353,6 +415,7 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
 
     private static CreateJobOfferRequest CreateValidRequest() =>
         new(
+            Id: null,
             CompanyName: "Acme Corp",
             ContactName: "John Doe",
             ContactEmail: "john@acme.com",

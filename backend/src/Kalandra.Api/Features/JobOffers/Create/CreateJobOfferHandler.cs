@@ -1,17 +1,26 @@
+using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Events;
 using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Create;
 
-public class CreateJobOfferHandler(IDocumentSession session)
+public class CreateJobOfferHandler(
+    IDocumentSession session,
+    IJobOfferAttachmentVerifier attachmentVerifier)
 {
-    public async Task<CreateJobOfferResponse> HandleAsync(
+    public async Task<(bool Success, string? Error, CreateJobOfferResponse? Response)> HandleAsync(
         CreateJobOfferRequest request,
         string userId,
         string userEmail,
         CancellationToken ct)
     {
-        var streamId = Guid.NewGuid();
+        var streamId = request.Id ?? Guid.NewGuid();
+        var attachmentVerification = await attachmentVerifier.VerifyAsync(streamId, userId, request.Attachments, ct);
+        if (!attachmentVerification.Success)
+        {
+            return (false, attachmentVerification.Error, null);
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         var submitted = new JobOfferSubmitted(
@@ -26,12 +35,12 @@ public class CreateJobOfferHandler(IDocumentSession session)
             Location: request.Location,
             IsRemote: request.IsRemote,
             AdditionalNotes: request.AdditionalNotes,
-            Attachments: request.Attachments ?? [],
+            Attachments: attachmentVerification.Attachments,
             Timestamp: now);
 
         session.Events.StartStream<Entities.JobOffer>(streamId, submitted);
         await session.SaveChangesAsync(ct);
 
-        return new CreateJobOfferResponse(streamId, now);
+        return (true, null, new CreateJobOfferResponse(streamId, now));
     }
 }

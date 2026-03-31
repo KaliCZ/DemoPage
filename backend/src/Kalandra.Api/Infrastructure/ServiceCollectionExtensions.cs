@@ -1,3 +1,4 @@
+using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Marten;
 using Marten.Events.Projections;
@@ -61,6 +62,16 @@ public static class ServiceCollectionExtensions
                     .AllowCredentials();
             });
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddJobOfferAttachments(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<SupabaseStorageOptions>(configuration.GetSection(SupabaseStorageOptions.SectionName));
+        services.AddHttpClient<IJobOfferAttachmentVerifier, SupabaseJobOfferAttachmentVerifier>();
 
         return services;
     }
