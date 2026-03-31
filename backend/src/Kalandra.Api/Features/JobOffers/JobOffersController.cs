@@ -1,5 +1,4 @@
 using FluentValidation;
-using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
@@ -9,7 +8,6 @@ using Kalandra.Api.Features.JobOffers.History;
 using Kalandra.Api.Features.JobOffers.List;
 using Kalandra.Api.Features.JobOffers.UpdateStatus;
 using Kalandra.Api.Infrastructure.Auth;
-using Marten;
 using Marten.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,28 +16,40 @@ namespace Kalandra.Api.Features.JobOffers;
 
 [ApiController]
 [Route("api/job-offers")]
-public class JobOffersController(IDocumentSession session) : ControllerBase
+public class JobOffersController(
+    ICurrentUserAccessor currentUser,
+    IValidator<CreateJobOfferRequest> createValidator,
+    CreateJobOfferHandler createHandler,
+    EditJobOfferHandler editHandler,
+    ListJobOffersHandler listHandler,
+    GetJobOfferDetailHandler detailHandler,
+    JobOfferHistoryHandler historyHandler,
+    CancelJobOfferHandler cancelHandler,
+    UpdateJobOfferStatusHandler updateStatusHandler,
+    CommentsHandler commentsHandler) : ControllerBase
 {
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create(
         [FromBody] CreateJobOfferRequest request,
-        [FromServices] IValidator<CreateJobOfferRequest> validator,
-        [FromServices] IJobOfferAttachmentVerifier attachmentVerifier,
         CancellationToken ct)
     {
-        var validation = await validator.ValidateAsync(request, ct);
+        var validation = await createValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
+        {
             return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+        }
 
-        var userId = User.GetUserId()!;
-        var email = User.GetEmail() ?? "";
-
-        var handler = new CreateJobOfferHandler(session, attachmentVerifier);
-        var (success, error, result) = await handler.HandleAsync(request, userId, email, ct);
+        var (success, error, result) = await createHandler.HandleAsync(
+            request,
+            currentUser.RequireUserId(),
+            currentUser.GetEmail() ?? "",
+            ct);
 
         if (!success || result == null)
+        {
             return BadRequest(new { error });
+        }
 
         return CreatedAtAction(nameof(GetDetail), new { id = result.Id }, result);
     }
@@ -49,25 +59,29 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     public async Task<IActionResult> Edit(
         Guid id,
         [FromBody] CreateJobOfferRequest request,
-        [FromServices] IValidator<CreateJobOfferRequest> validator,
         CancellationToken ct)
     {
-        var validation = await validator.ValidateAsync(request, ct);
+        var validation = await createValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
+        {
             return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+        }
 
-        var userId = User.GetUserId()!;
-        var email = User.GetEmail() ?? "";
-
-        var handler = new EditJobOfferHandler(session);
         try
         {
-            var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
+            var (success, error) = await editHandler.HandleAsync(
+                id,
+                request,
+                currentUser.RequireUserId(),
+                currentUser.GetEmail() ?? "",
+                ct);
 
             if (!success)
-                return error == "Not found" ? NotFound() :
-                       error == "Not authorized" ? Forbid() :
-                       BadRequest(new { error });
+            {
+                return error == "Not found" ? NotFound()
+                    : error == "Not authorized" ? Forbid()
+                    : BadRequest(new { error });
+            }
 
             return NoContent();
         }
@@ -81,9 +95,7 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     [Authorize]
     public async Task<IActionResult> ListMine(CancellationToken ct)
     {
-        var userId = User.GetUserId()!;
-        var handler = new ListJobOffersHandler(session);
-        var result = await handler.HandleAsync(userId, ct);
+        var result = await listHandler.HandleAsync(currentUser.RequireUserId(), ct);
         return Ok(result);
     }
 
@@ -91,8 +103,7 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     [Authorize(Policy = "Admin")]
     public async Task<IActionResult> ListAll(CancellationToken ct)
     {
-        var handler = new ListJobOffersHandler(session);
-        var result = await handler.HandleAsync(null, ct);
+        var result = await listHandler.HandleAsync(null, ct);
         return Ok(result);
     }
 
@@ -100,13 +111,11 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetDetail(Guid id, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-        var isAdmin = (await HttpContext.RequestServices
-            .GetRequiredService<IAuthorizationService>()
-            .AuthorizeAsync(User, "Admin")).Succeeded;
-
-        var handler = new GetJobOfferDetailHandler(session);
-        var result = await handler.HandleAsync(id, userId, isAdmin, ct);
+        var result = await detailHandler.HandleAsync(
+            id,
+            currentUser.RequireUserId(),
+            await currentUser.IsAdminAsync(),
+            ct);
 
         return result == null ? NotFound() : Ok(result);
     }
@@ -115,13 +124,11 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-        var isAdmin = (await HttpContext.RequestServices
-            .GetRequiredService<IAuthorizationService>()
-            .AuthorizeAsync(User, "Admin")).Succeeded;
-
-        var handler = new JobOfferHistoryHandler(session);
-        var result = await handler.HandleAsync(id, userId, isAdmin, ct);
+        var result = await historyHandler.HandleAsync(
+            id,
+            currentUser.RequireUserId(),
+            await currentUser.IsAdminAsync(),
+            ct);
 
         return result == null ? NotFound() : Ok(result);
     }
@@ -133,18 +140,21 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         [FromBody] CancelJobOfferRequest request,
         CancellationToken ct)
     {
-        var userId = User.GetUserId()!;
-        var email = User.GetEmail() ?? "";
-
-        var handler = new CancelJobOfferHandler(session);
         try
         {
-            var (success, error) = await handler.HandleAsync(id, request, userId, email, ct);
+            var (success, error) = await cancelHandler.HandleAsync(
+                id,
+                request,
+                currentUser.RequireUserId(),
+                currentUser.GetEmail() ?? "",
+                ct);
 
             if (!success)
-                return error == "Not found" ? NotFound() :
-                       error == "Not authorized" ? Forbid() :
-                       BadRequest(new { error });
+            {
+                return error == "Not found" ? NotFound()
+                    : error == "Not authorized" ? Forbid()
+                    : BadRequest(new { error });
+            }
 
             return NoContent();
         }
@@ -161,18 +171,21 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         [FromBody] UpdateJobOfferStatusRequest request,
         CancellationToken ct)
     {
-        var adminUserId = User.GetUserId()!;
-        var adminEmail = User.GetEmail() ?? "";
-
-        var handler = new UpdateJobOfferStatusHandler(session);
         try
         {
-            var (success, error) = await handler.HandleAsync(id, request, adminUserId, adminEmail, ct);
+            var (success, error) = await updateStatusHandler.HandleAsync(
+                id,
+                request,
+                currentUser.RequireUserId(),
+                currentUser.GetEmail() ?? "",
+                ct);
 
             if (!success)
+            {
                 return error == "Not found"
                     ? NotFound()
                     : BadRequest(new { error });
+            }
 
             return NoContent();
         }
@@ -186,13 +199,11 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
     [Authorize]
     public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-        var isAdmin = (await HttpContext.RequestServices
-            .GetRequiredService<IAuthorizationService>()
-            .AuthorizeAsync(User, "Admin")).Succeeded;
-
-        var handler = new CommentsHandler(session);
-        var result = await handler.ListCommentsAsync(id, userId, isAdmin, ct);
+        var result = await commentsHandler.ListCommentsAsync(
+            id,
+            currentUser.RequireUserId(),
+            await currentUser.IsAdminAsync(),
+            ct);
 
         return result == null ? NotFound() : Ok(result);
     }
@@ -204,24 +215,23 @@ public class JobOffersController(IDocumentSession session) : ControllerBase
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
-        var userId = User.GetUserId()!;
-        var email = User.GetEmail() ?? "";
-        var name = User.FindFirst("user_metadata.full_name")?.Value
-            ?? User.FindFirst("name")?.Value
-            ?? email.Split('@')[0];
-        var isAdmin = (await HttpContext.RequestServices
-            .GetRequiredService<IAuthorizationService>()
-            .AuthorizeAsync(User, "Admin")).Succeeded;
-
-        var handler = new CommentsHandler(session);
         try
         {
-            var (success, error) = await handler.AddCommentAsync(id, request, userId, email, name, isAdmin, ct);
+            var (success, error) = await commentsHandler.AddCommentAsync(
+                id,
+                request,
+                currentUser.RequireUserId(),
+                currentUser.GetEmail() ?? "",
+                currentUser.GetDisplayName(),
+                await currentUser.IsAdminAsync(),
+                ct);
 
             if (!success)
-                return error == "Not found" ? NotFound() :
-                       error == "Not authorized" ? Forbid() :
-                       BadRequest(new { error });
+            {
+                return error == "Not found" ? NotFound()
+                    : error == "Not authorized" ? Forbid()
+                    : BadRequest(new { error });
+            }
 
             return NoContent();
         }

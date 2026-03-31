@@ -1,5 +1,14 @@
 using Kalandra.Api.Features.JobOffers.Attachments;
+using Kalandra.Api.Features.JobOffers.Cancel;
+using Kalandra.Api.Features.JobOffers.Comments;
+using Kalandra.Api.Features.JobOffers.Create;
+using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.Api.Features.JobOffers.GetDetail;
+using Kalandra.Api.Features.JobOffers.History;
+using Kalandra.Api.Features.JobOffers.List;
+using Kalandra.Api.Features.JobOffers.UpdateStatus;
+using Kalandra.Api.Infrastructure.Auth;
 using Marten;
 using Marten.Events.Projections;
 using Weasel.Core;
@@ -72,6 +81,23 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<SupabaseStorageOptions>(configuration.GetSection(SupabaseStorageOptions.SectionName));
         services.AddHttpClient<IJobOfferAttachmentVerifier, SupabaseJobOfferAttachmentVerifier>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddJobOfferFeatures(this IServiceCollection services)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
+
+        services.AddTransient<CreateJobOfferHandler>();
+        services.AddTransient<EditJobOfferHandler>();
+        services.AddTransient<CancelJobOfferHandler>();
+        services.AddTransient<UpdateJobOfferStatusHandler>();
+        services.AddTransient<ListJobOffersHandler>();
+        services.AddTransient<GetJobOfferDetailHandler>();
+        services.AddTransient<JobOfferHistoryHandler>();
+        services.AddTransient<CommentsHandler>();
 
         return services;
     }
