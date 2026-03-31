@@ -21,6 +21,7 @@ public class JobOffer
     public string? Location { get; set; }
     public bool IsRemote { get; set; }
     public string? AdditionalNotes { get; set; }
+    public IReadOnlyList<AttachmentInfo> Attachments { get; set; } = [];
 
     public JobOfferStatus Status { get; set; } = JobOfferStatus.Submitted;
     public string? AdminNotes { get; set; }
@@ -40,6 +41,7 @@ public class JobOffer
         Location = e.Location;
         IsRemote = e.IsRemote;
         AdditionalNotes = e.AdditionalNotes;
+        Attachments = e.Attachments;
         Status = JobOfferStatus.Submitted;
         CreatedAt = e.Timestamp;
         UpdatedAt = e.Timestamp;

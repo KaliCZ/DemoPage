@@ -1,3 +1,5 @@
+using Kalandra.Api.Features.JobOffers.Entities;
+
 namespace Kalandra.Api.Features.JobOffers.Create;
 
 public record CreateJobOfferRequest(
@@ -9,4 +11,5 @@ public record CreateJobOfferRequest(
     string? SalaryRange,
     string? Location,
     bool IsRemote,
-    string? AdditionalNotes);
+    string? AdditionalNotes,
+    IReadOnlyList<AttachmentInfo>? Attachments);

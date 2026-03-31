@@ -33,6 +33,7 @@ public class CreateJobOfferHandler
             Location: request.Location,
             IsRemote: request.IsRemote,
             AdditionalNotes: request.AdditionalNotes,
+            Attachments: request.Attachments ?? [],
             Timestamp: now);
 
         _session.Events.StartStream<Entities.JobOffer>(streamId, submitted);

@@ -45,6 +45,8 @@
     "comments": "Komentáře",
     "commentsEmpty": "Zatím žádné komentáře. Zahajte konverzaci.",
     "commentPlaceholder": "Napište komentář...",
-    "commentSend": "Odeslat"
+    "commentSend": "Odeslat",
+    "attachments": "Přílohy",
+    "download": "Stáhnout"
   }
 }

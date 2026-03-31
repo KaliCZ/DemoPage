@@ -45,6 +45,8 @@
     "comments": "Comments",
     "commentsEmpty": "No comments yet. Start the conversation.",
     "commentPlaceholder": "Write a comment...",
-    "commentSend": "Send"
+    "commentSend": "Send",
+    "attachments": "Attachments",
+    "download": "Download"
   }
 }

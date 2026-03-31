@@ -1,3 +1,5 @@
+using Kalandra.Api.Features.JobOffers.Entities;
+
 namespace Kalandra.Api.Features.JobOffers.Events;
 
 public record JobOfferSubmitted(
@@ -12,4 +14,5 @@ public record JobOfferSubmitted(
     string? Location,
     bool IsRemote,
     string? AdditionalNotes,
+    IReadOnlyList<AttachmentInfo> Attachments,
     DateTimeOffset Timestamp);

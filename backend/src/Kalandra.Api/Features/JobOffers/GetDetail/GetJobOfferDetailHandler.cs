@@ -36,6 +36,7 @@ public class GetJobOfferDetailHandler
             offer.Location,
             offer.IsRemote,
             offer.AdditionalNotes,
+            offer.Attachments,
             offer.Status,
             isAdmin ? offer.AdminNotes : null,
             offer.UserEmail,

@@ -13,6 +13,7 @@ public record GetJobOfferDetailResponse(
     string? Location,
     bool IsRemote,
     string? AdditionalNotes,
+    IReadOnlyList<AttachmentInfo> Attachments,
     JobOfferStatus Status,
     string? AdminNotes,
     string UserEmail,

@@ -78,3 +78,37 @@ BEGIN
   )
   ON CONFLICT DO NOTHING;
 END $$;
+
+-- Storage RLS policies for job-offer-attachments bucket.
+-- Files are stored at: {user_id}/{job_offer_id}/{filename}
+-- Authenticated users can upload to their own folder and read their own files.
+-- Note: admin access is handled by the backend via service role key or signed URLs.
+
+DO $$
+BEGIN
+  -- Allow authenticated users to upload files under their own user ID prefix
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can upload own attachments'
+  ) THEN
+    CREATE POLICY "Users can upload own attachments"
+      ON storage.objects FOR INSERT
+      TO authenticated
+      WITH CHECK (
+        bucket_id = 'job-offer-attachments'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+
+  -- Allow authenticated users to read their own uploaded files
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own attachments'
+  ) THEN
+    CREATE POLICY "Users can read own attachments"
+      ON storage.objects FOR SELECT
+      TO authenticated
+      USING (
+        bucket_id = 'job-offer-attachments'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+END $$;
