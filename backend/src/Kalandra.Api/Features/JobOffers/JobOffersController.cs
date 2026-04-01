@@ -30,7 +30,8 @@ public class JobOffersController(
     JobOfferHistoryHandler historyHandler,
     CancelJobOfferHandler cancelHandler,
     UpdateJobOfferStatusHandler updateStatusHandler,
-    CommentsHandler commentsHandler) : ControllerBase
+    AddCommentHandler addCommentHandler,
+    ListCommentsHandler listCommentsHandler) : ControllerBase
 {
     [HttpPost]
     [Authorize]
@@ -221,7 +222,7 @@ public class JobOffersController(
     [Authorize]
     public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
     {
-        var result = await commentsHandler.ListCommentsAsync(
+        var result = await listCommentsHandler.HandleAsync(
             id,
             currentUser.RequireUserId(),
             await currentUser.IsAdminAsync(),
@@ -245,7 +246,7 @@ public class JobOffersController(
 
         try
         {
-            var (success, error) = await commentsHandler.AddCommentAsync(
+            var (success, error) = await addCommentHandler.HandleAsync(
                 id,
                 request,
                 currentUser.RequireUserId(),

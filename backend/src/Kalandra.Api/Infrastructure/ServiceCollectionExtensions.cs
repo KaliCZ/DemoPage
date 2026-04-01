@@ -97,7 +97,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ListJobOffersHandler>();
         services.AddTransient<GetJobOfferDetailHandler>();
         services.AddTransient<JobOfferHistoryHandler>();
-        services.AddTransient<CommentsHandler>();
+        services.AddTransient<AddCommentHandler>();
+        services.AddTransient<ListCommentsHandler>();
 
         return services;
     }
