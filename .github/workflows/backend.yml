@@ -32,15 +32,12 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
-        working-directory: backend
 
       - name: Build
         run: dotnet build --no-restore -c Release
-        working-directory: backend
 
       - name: Test
         run: dotnet test --no-build -c Release
-        working-directory: backend
 
   build-and-push:
     needs: test
