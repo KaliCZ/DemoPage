@@ -1,15 +1,11 @@
 using Kalandra.Api.Features.JobOffers.Entities;
-using Kalandra.Api.Features.JobOffers.Events;
 using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Cancel;
 
 public class CancelJobOfferHandler(IDocumentSession session, TimeProvider timeProvider)
 {
-    /// <summary>
-    /// Cancel a job offer. Only the owner can cancel, and only if status is Submitted or InReview.
-    /// </summary>
-    public async Task<(bool Success, string? Error)> HandleAsync(
+    public async Task<Try<Unit, CancelJobOfferError>> HandleAsync(
         Guid id,
         CancelJobOfferRequest request,
         string userId,
@@ -19,19 +15,19 @@ public class CancelJobOfferHandler(IDocumentSession session, TimeProvider timePr
         var stream = await session.Events.FetchForWriting<JobOffer>(id, ct);
         var offer = stream.Aggregate;
         if (offer == null)
-            return (false, "Not found");
+            return Try.Error<Unit, CancelJobOfferError>(CancelJobOfferError.NotFound);
 
-        var (success, error, cancelled) = offer.Cancel(
+        var result = offer.Cancel(
             userId: userId,
             userEmail: userEmail,
             reason: request.Reason,
             timestamp: timeProvider.GetUtcNow());
 
-        if (!success || cancelled == null)
-            return (false, error);
+        if (result.IsError)
+            return result.Map<Unit>(_ => Unit.Value);
 
-        stream.AppendOne(cancelled);
+        stream.AppendOne(result.Success.Get((Unit _) => new InvalidOperationException()));
         await session.SaveChangesAsync(ct);
-        return (true, null);
+        return Try.Success<Unit, CancelJobOfferError>(Unit.Value);
     }
 }

@@ -1,3 +1,4 @@
+using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
@@ -40,18 +41,27 @@ public class JobOffersController(
         [FromBody] CreateJobOfferRequest request,
         CancellationToken ct)
     {
-        var (success, error, result) = await createHandler.HandleAsync(
+        var result = await createHandler.HandleAsync(
             request: request,
             userId: AppUser.Id,
             userEmail: AppUser.Email,
             ct: ct);
 
-        if (!success || result == null)
-        {
-            return BadRequest(new { error });
-        }
-
-        return CreatedAtAction(nameof(GetDetail), new { id = result.Id }, result);
+        return result.Match<IActionResult>(
+            response => CreatedAtAction(nameof(GetDetail), new { id = response.Id }, response),
+            error => error switch
+            {
+                CreateJobOfferError.AttachmentServiceUnavailable =>
+                    BadRequest(new { error = "Attachments are temporarily unavailable." }),
+                CreateJobOfferError.AttachmentPathTraversal =>
+                    BadRequest(new { error = "Attachment paths must stay within the user's offer folder." }),
+                CreateJobOfferError.AttachmentWrongFolder =>
+                    BadRequest(new { error = "Attachments must be uploaded into the current offer folder." }),
+                CreateJobOfferError.AttachmentMetadataMismatch =>
+                    BadRequest(new { error = "Attachment metadata does not match the uploaded file." }),
+                CreateJobOfferError.AttachmentFileNotFound =>
+                    BadRequest(new { error = "One or more attachments were not found in storage." }),
+            });
     }
 
     [HttpPut("{id:guid}")]
@@ -69,21 +79,22 @@ public class JobOffersController(
     {
         try
         {
-            var (success, error) = await editHandler.HandleAsync(
+            var result = await editHandler.HandleAsync(
                 id: id,
                 request: request,
                 userId: AppUser.Id,
                 userEmail: AppUser.Email,
                 ct: ct);
 
-            if (!success)
-            {
-                return error == "Not found" ? NotFound()
-                    : error == "Not authorized" ? Forbid()
-                    : BadRequest(new { error });
-            }
-
-            return NoContent();
+            return result.Match<IActionResult>(
+                _ => NoContent(),
+                error => error switch
+                {
+                    EditJobOfferError.NotFound => NotFound(),
+                    EditJobOfferError.NotAuthorized => Forbid(),
+                    EditJobOfferError.NotSubmittedStatus =>
+                        BadRequest(new { error = "Can only edit offers with status Submitted." }),
+                });
         }
         catch (Exception ex) when (IsConcurrencyConflict(ex))
         {
@@ -175,21 +186,22 @@ public class JobOffersController(
     {
         try
         {
-            var (success, error) = await cancelHandler.HandleAsync(
+            var result = await cancelHandler.HandleAsync(
                 id: id,
                 request: request,
                 userId: AppUser.Id,
                 userEmail: AppUser.Email,
                 ct: ct);
 
-            if (!success)
-            {
-                return error == "Not found" ? NotFound()
-                    : error == "Not authorized" ? Forbid()
-                    : BadRequest(new { error });
-            }
-
-            return NoContent();
+            return result.Match<IActionResult>(
+                _ => NoContent(),
+                error => error switch
+                {
+                    CancelJobOfferError.NotFound => NotFound(),
+                    CancelJobOfferError.NotAuthorized => Forbid(),
+                    CancelJobOfferError.InvalidStatus =>
+                        BadRequest(new { error = "Cannot cancel an offer that has already been accepted, declined, or cancelled." }),
+                });
         }
         catch (Exception ex) when (IsConcurrencyConflict(ex))
         {
@@ -212,21 +224,23 @@ public class JobOffersController(
     {
         try
         {
-            var (success, error) = await updateStatusHandler.HandleAsync(
+            var result = await updateStatusHandler.HandleAsync(
                 id: id,
                 request: request,
                 adminUserId: AppUser.Id,
                 adminEmail: AppUser.Email,
                 ct: ct);
 
-            if (!success)
-            {
-                return error == "Not found"
-                    ? NotFound()
-                    : BadRequest(new { error });
-            }
-
-            return NoContent();
+            return result.Match<IActionResult>(
+                _ => NoContent(),
+                error => error switch
+                {
+                    UpdateJobOfferStatusError.NotFound => NotFound(),
+                    UpdateJobOfferStatusError.AlreadyInStatus =>
+                        BadRequest(new { error = "Job offer is already in the requested status." }),
+                    UpdateJobOfferStatusError.InvalidTransition =>
+                        BadRequest(new { error = "The requested status transition is not allowed." }),
+                });
         }
         catch (Exception ex) when (IsConcurrencyConflict(ex))
         {
@@ -265,7 +279,7 @@ public class JobOffersController(
     {
         try
         {
-            var (success, error) = await addCommentHandler.HandleAsync(
+            var result = await addCommentHandler.HandleAsync(
                 jobOfferId: id,
                 request: request,
                 userId: AppUser.Id,
@@ -274,14 +288,15 @@ public class JobOffersController(
                 isAdmin: AppUser.IsAdmin,
                 ct: ct);
 
-            if (!success)
-            {
-                return error == "Not found" ? NotFound()
-                    : error == "Not authorized" ? Forbid()
-                    : BadRequest(new { error });
-            }
-
-            return NoContent();
+            return result.Match<IActionResult>(
+                _ => NoContent(),
+                error => error switch
+                {
+                    AddJobOfferCommentError.NotFound => NotFound(),
+                    AddJobOfferCommentError.NotAuthorized => Forbid(),
+                    AddJobOfferCommentError.ContentRequired =>
+                        BadRequest(new { error = "Comment content is required." }),
+                });
         }
         catch (Exception ex) when (IsConcurrencyConflict(ex))
         {

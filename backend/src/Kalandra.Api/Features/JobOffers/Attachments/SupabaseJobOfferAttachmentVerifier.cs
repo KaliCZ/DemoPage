@@ -11,7 +11,7 @@ public class SupabaseJobOfferAttachmentVerifier(
     IOptions<SupabaseStorageOptions> storageOptions,
     ILogger<SupabaseJobOfferAttachmentVerifier> logger) : IJobOfferAttachmentVerifier
 {
-    public async Task<JobOfferAttachmentVerificationResult> VerifyAsync(
+    public async Task<Try<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>> VerifyAsync(
         Guid jobOfferId,
         string userId,
         IReadOnlyList<AttachmentInfo>? attachments,
@@ -19,7 +19,7 @@ public class SupabaseJobOfferAttachmentVerifier(
     {
         if (attachments == null || attachments.Count == 0)
         {
-            return JobOfferAttachmentVerificationResult.Verified([]);
+            return Try.Success<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>([]);
         }
 
         var projectUrl = authOptions.Value.SupabaseProjectUrl?.TrimEnd('/');
@@ -33,7 +33,8 @@ public class SupabaseJobOfferAttachmentVerifier(
             logger.LogError(
                 "Attachment verification is misconfigured. Supabase project URL, storage bucket, and service key are required.");
 
-            return JobOfferAttachmentVerificationResult.Failed("Attachments are temporarily unavailable.");
+            return Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                AttachmentVerificationError.ServiceUnavailable);
         }
 
         var verifiedAttachments = new List<AttachmentInfo>(attachments.Count);
@@ -43,31 +44,35 @@ public class SupabaseJobOfferAttachmentVerifier(
             var normalizedPath = NormalizePath(attachment.StoragePath);
             if (normalizedPath == null)
             {
-                return JobOfferAttachmentVerificationResult.Failed("Attachment paths must stay within the user's offer folder.");
+                return Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                    AttachmentVerificationError.PathTraversal);
             }
 
             var expectedPrefix = $"{userId}/{jobOfferId}/";
             if (!normalizedPath.StartsWith(expectedPrefix, StringComparison.Ordinal))
             {
-                return JobOfferAttachmentVerificationResult.Failed("Attachments must be uploaded into the current offer folder.");
+                return Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                    AttachmentVerificationError.WrongFolder);
             }
 
             var fileName = Path.GetFileName(normalizedPath);
             if (!string.Equals(fileName, attachment.FileName, StringComparison.Ordinal))
             {
-                return JobOfferAttachmentVerificationResult.Failed("Attachment metadata does not match the uploaded file.");
+                return Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                    AttachmentVerificationError.MetadataMismatch);
             }
 
             var objectExists = await ObjectExistsAsync(projectUrl, bucketName, normalizedPath, serviceKey, ct);
             if (!objectExists)
             {
-                return JobOfferAttachmentVerificationResult.Failed($"Attachment '{attachment.FileName}' was not found.");
+                return Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                    AttachmentVerificationError.FileNotFound);
             }
 
             verifiedAttachments.Add(attachment with { StoragePath = normalizedPath });
         }
 
-        return JobOfferAttachmentVerificationResult.Verified(verifiedAttachments);
+        return Try.Success<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(verifiedAttachments);
     }
 
     private async Task<bool> ObjectExistsAsync(

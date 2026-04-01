@@ -5,7 +5,7 @@ namespace Kalandra.Api.Features.JobOffers.Comments;
 
 public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvider)
 {
-    public async Task<(bool Success, string? Error)> HandleAsync(
+    public async Task<Try<Unit, AddJobOfferCommentError>> HandleAsync(
         Guid jobOfferId,
         AddCommentRequest request,
         string userId,
@@ -17,9 +17,9 @@ public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvid
         var stream = await session.Events.FetchForWriting<JobOffer>(jobOfferId, ct);
         var offer = stream.Aggregate;
         if (offer == null)
-            return (false, "Not found");
+            return Try.Error<Unit, AddJobOfferCommentError>(AddJobOfferCommentError.NotFound);
 
-        var (success, error, commentAdded) = offer.AddComment(
+        var result = offer.AddComment(
             userId: userId,
             userEmail: userEmail,
             userName: userName,
@@ -27,11 +27,11 @@ public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvid
             isAdmin: isAdmin,
             timestamp: timeProvider.GetUtcNow());
 
-        if (!success || commentAdded == null)
-            return (false, error);
+        if (result.IsError)
+            return result.Map<Unit>(_ => Unit.Value);
 
-        stream.AppendOne(commentAdded);
+        stream.AppendOne(result.Success.Get((Unit _) => new InvalidOperationException()));
         await session.SaveChangesAsync(ct);
-        return (true, null);
+        return Try.Success<Unit, AddJobOfferCommentError>(Unit.Value);
     }
 }

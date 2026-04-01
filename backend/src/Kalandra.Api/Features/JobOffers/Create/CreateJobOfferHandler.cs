@@ -9,21 +9,30 @@ public class CreateJobOfferHandler(
     IJobOfferAttachmentVerifier attachmentVerifier,
     TimeProvider timeProvider)
 {
-    public async Task<(bool Success, string? Error, CreateJobOfferResponse? Response)> HandleAsync(
+    public async Task<Try<CreateJobOfferResponse, CreateJobOfferError>> HandleAsync(
         CreateJobOfferRequest request,
         string userId,
         string userEmail,
         CancellationToken ct)
     {
         var streamId = request.Id ?? Guid.NewGuid();
-        var attachmentVerification = await attachmentVerifier.VerifyAsync(
+        var attachmentResult = await attachmentVerifier.VerifyAsync(
             jobOfferId: streamId,
             userId: userId,
             attachments: request.Attachments,
             ct: ct);
-        if (!attachmentVerification.Success)
+
+        if (attachmentResult.IsError)
         {
-            return (false, attachmentVerification.Error, null);
+            var attachmentError = attachmentResult.Error.Get((Unit _) => new InvalidOperationException());
+            return Try.Error<CreateJobOfferResponse, CreateJobOfferError>(attachmentError switch
+            {
+                AttachmentVerificationError.ServiceUnavailable => CreateJobOfferError.AttachmentServiceUnavailable,
+                AttachmentVerificationError.PathTraversal => CreateJobOfferError.AttachmentPathTraversal,
+                AttachmentVerificationError.WrongFolder => CreateJobOfferError.AttachmentWrongFolder,
+                AttachmentVerificationError.MetadataMismatch => CreateJobOfferError.AttachmentMetadataMismatch,
+                AttachmentVerificationError.FileNotFound => CreateJobOfferError.AttachmentFileNotFound,
+            });
         }
 
         var now = timeProvider.GetUtcNow();
@@ -40,12 +49,12 @@ public class CreateJobOfferHandler(
             Location: request.Location,
             IsRemote: request.IsRemote,
             AdditionalNotes: request.AdditionalNotes,
-            Attachments: attachmentVerification.Attachments,
+            Attachments: attachmentResult.Success.Get((Unit _) => new InvalidOperationException()),
             Timestamp: now);
 
         session.Events.StartStream<Entities.JobOffer>(streamId, submitted);
         await session.SaveChangesAsync(ct);
 
-        return (true, null, new CreateJobOfferResponse(streamId, now));
+        return Try.Success<CreateJobOfferResponse, CreateJobOfferError>(new CreateJobOfferResponse(streamId, now));
     }
 }

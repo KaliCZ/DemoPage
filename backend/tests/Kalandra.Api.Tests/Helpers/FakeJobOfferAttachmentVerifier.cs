@@ -5,7 +5,7 @@ namespace Kalandra.Api.Tests.Helpers;
 
 public class FakeJobOfferAttachmentVerifier : IJobOfferAttachmentVerifier
 {
-    public Task<JobOfferAttachmentVerificationResult> VerifyAsync(
+    public Task<Try<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>> VerifyAsync(
         Guid jobOfferId,
         string userId,
         IReadOnlyList<AttachmentInfo>? attachments,
@@ -13,7 +13,9 @@ public class FakeJobOfferAttachmentVerifier : IJobOfferAttachmentVerifier
     {
         if (attachments == null || attachments.Count == 0)
         {
-            return Task.FromResult(JobOfferAttachmentVerificationResult.Verified([]));
+            return Task.FromResult(
+                Try.Success<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                    Array.Empty<AttachmentInfo>()));
         }
 
         var expectedPrefix = $"{userId}/{jobOfferId}/";
@@ -23,23 +25,27 @@ public class FakeJobOfferAttachmentVerifier : IJobOfferAttachmentVerifier
             if (attachment.StoragePath.Contains("/missing/", StringComparison.Ordinal))
             {
                 return Task.FromResult(
-                    JobOfferAttachmentVerificationResult.Failed($"Attachment '{attachment.FileName}' was not found."));
+                    Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                        AttachmentVerificationError.FileNotFound));
             }
 
             if (!attachment.StoragePath.StartsWith(expectedPrefix, StringComparison.Ordinal))
             {
                 return Task.FromResult(
-                    JobOfferAttachmentVerificationResult.Failed("Attachments must be uploaded into the current offer folder."));
+                    Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                        AttachmentVerificationError.WrongFolder));
             }
 
             var fileName = Path.GetFileName(attachment.StoragePath.Replace('\\', '/'));
             if (!string.Equals(fileName, attachment.FileName, StringComparison.Ordinal))
             {
                 return Task.FromResult(
-                    JobOfferAttachmentVerificationResult.Failed("Attachment metadata does not match the uploaded file."));
+                    Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
+                        AttachmentVerificationError.MetadataMismatch));
             }
         }
 
-        return Task.FromResult(JobOfferAttachmentVerificationResult.Verified(attachments));
+        return Task.FromResult(
+            Try.Success<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(attachments));
     }
 }

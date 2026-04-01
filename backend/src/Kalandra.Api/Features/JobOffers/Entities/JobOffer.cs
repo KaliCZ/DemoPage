@@ -1,4 +1,8 @@
+using Kalandra.Api.Features.JobOffers.Cancel;
+using Kalandra.Api.Features.JobOffers.Comments;
+using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.Events;
+using Kalandra.Api.Features.JobOffers.UpdateStatus;
 
 namespace Kalandra.Api.Features.JobOffers.Entities;
 
@@ -28,7 +32,7 @@ public class JobOffer
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
-    public (bool Success, string? Error, JobOfferEdited? Event) Edit(
+    public Try<JobOfferEdited, EditJobOfferError> Edit(
         string userId,
         string userEmail,
         string companyName,
@@ -43,12 +47,12 @@ public class JobOffer
         DateTimeOffset timestamp)
     {
         if (UserId != userId)
-            return (false, "Not authorized", null);
+            return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotAuthorized);
 
         if (Status != JobOfferStatus.Submitted)
-            return (false, "Can only edit offers with status Submitted", null);
+            return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotSubmittedStatus);
 
-        return (true, null, new JobOfferEdited(
+        return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
             EditedByUserId: userId,
             EditedByEmail: userEmail,
             CompanyName: companyName,
@@ -63,26 +67,26 @@ public class JobOffer
             Timestamp: timestamp));
     }
 
-    public (bool Success, string? Error, JobOfferCancelled? Event) Cancel(
+    public Try<JobOfferCancelled, CancelJobOfferError> Cancel(
         string userId,
         string userEmail,
         string? reason,
         DateTimeOffset timestamp)
     {
         if (UserId != userId)
-            return (false, "Not authorized", null);
+            return Try.Error<JobOfferCancelled, CancelJobOfferError>(CancelJobOfferError.NotAuthorized);
 
         if (Status is not (JobOfferStatus.Submitted or JobOfferStatus.InReview))
-            return (false, "Cannot cancel an offer that has already been accepted, declined, or cancelled", null);
+            return Try.Error<JobOfferCancelled, CancelJobOfferError>(CancelJobOfferError.InvalidStatus);
 
-        return (true, null, new JobOfferCancelled(
+        return Try.Success<JobOfferCancelled, CancelJobOfferError>(new JobOfferCancelled(
             CancelledByUserId: userId,
             CancelledByEmail: userEmail,
             Reason: reason,
             Timestamp: timestamp));
     }
 
-    public (bool Success, string? Error, JobOfferStatusChanged? Event) ChangeStatus(
+    public Try<JobOfferStatusChanged, UpdateJobOfferStatusError> ChangeStatus(
         JobOfferStatus newStatus,
         string changedByUserId,
         string changedByEmail,
@@ -90,12 +94,12 @@ public class JobOffer
         DateTimeOffset timestamp)
     {
         if (newStatus == Status)
-            return (false, $"Job offer is already in status {Status}", null);
+            return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.AlreadyInStatus);
 
         if (!CanTransitionTo(newStatus))
-            return (false, $"Cannot change status from {Status} to {newStatus}", null);
+            return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.InvalidTransition);
 
-        return (true, null, new JobOfferStatusChanged(
+        return Try.Success<JobOfferStatusChanged, UpdateJobOfferStatusError>(new JobOfferStatusChanged(
             ChangedByUserId: changedByUserId,
             ChangedByEmail: changedByEmail,
             OldStatus: Status,
@@ -104,7 +108,7 @@ public class JobOffer
             Timestamp: timestamp));
     }
 
-    public (bool Success, string? Error, JobOfferCommentAdded? Event) AddComment(
+    public Try<JobOfferCommentAdded, AddJobOfferCommentError> AddComment(
         string userId,
         string userEmail,
         string userName,
@@ -113,12 +117,12 @@ public class JobOffer
         DateTimeOffset timestamp)
     {
         if (!isAdmin && UserId != userId)
-            return (false, "Not authorized", null);
+            return Try.Error<JobOfferCommentAdded, AddJobOfferCommentError>(AddJobOfferCommentError.NotAuthorized);
 
         if (string.IsNullOrWhiteSpace(content))
-            return (false, "Content is required", null);
+            return Try.Error<JobOfferCommentAdded, AddJobOfferCommentError>(AddJobOfferCommentError.ContentRequired);
 
-        return (true, null, new JobOfferCommentAdded(
+        return Try.Success<JobOfferCommentAdded, AddJobOfferCommentError>(new JobOfferCommentAdded(
             CommentId: Guid.NewGuid(),
             UserId: userId,
             UserEmail: userEmail,
