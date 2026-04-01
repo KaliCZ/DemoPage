@@ -1,8 +1,8 @@
-using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.Events;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Storage;
 using Marten;
 using Marten.Exceptions;
 using Marten.Linq;
@@ -18,7 +18,7 @@ namespace Kalandra.Api.Features.JobOffers;
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
     IDocumentSession session,
-    IJobOfferAttachmentVerifier attachmentVerifier,
+    IStorageFileVerifier fileVerifier,
     TimeProvider timeProvider) : ControllerBase
 {
     private const int MaxPageSize = 100;
@@ -37,27 +37,32 @@ public class JobOffersController(
         CancellationToken ct)
     {
         var streamId = request.Id ?? Guid.NewGuid();
-        var attachmentResult = await attachmentVerifier.VerifyAsync(
-            jobOfferId: streamId,
-            userId: AppUser.Id,
-            attachments: request.Attachments,
-            ct: ct);
+        var expectedPrefix = $"{AppUser.Id}/{streamId}/";
 
-        if (attachmentResult.IsError)
+        var storageFiles = request.Attachments?
+            .Select(a => new StorageFileInfo(a.FileName, a.StoragePath, a.FileSize, a.ContentType))
+            .ToList();
+
+        var verificationResult = await fileVerifier.VerifyAsync(expectedPrefix, storageFiles, ct);
+        if (verificationResult.IsError)
         {
-            var error = attachmentResult.Error.Get((Unit _) => new InvalidOperationException());
+            var error = verificationResult.Error.Get((Unit _) => new InvalidOperationException());
             return BadRequest(new
             {
                 error = error switch
                 {
-                    AttachmentVerificationError.ServiceUnavailable => "Attachments are temporarily unavailable.",
-                    AttachmentVerificationError.PathTraversal => "Attachment paths must stay within the user's offer folder.",
-                    AttachmentVerificationError.WrongFolder => "Attachments must be uploaded into the current offer folder.",
-                    AttachmentVerificationError.MetadataMismatch => "Attachment metadata does not match the uploaded file.",
-                    AttachmentVerificationError.FileNotFound => "One or more attachments were not found in storage.",
+                    FileVerificationError.PathTraversal => "Attachment paths must stay within the user's offer folder.",
+                    FileVerificationError.WrongFolder => "Attachments must be uploaded into the current offer folder.",
+                    FileVerificationError.MetadataMismatch => "Attachment metadata does not match the uploaded file.",
+                    FileVerificationError.FileNotFound => "One or more attachments were not found in storage.",
                 }
             });
         }
+
+        var verifiedFiles = verificationResult.Success.Get((Unit _) => new InvalidOperationException());
+        var verifiedAttachments = verifiedFiles
+            .Select(f => new AttachmentInfo(f.FileName, f.StoragePath, f.FileSize, f.ContentType))
+            .ToList();
 
         var submitted = new JobOfferSubmitted(
             UserId: AppUser.Id,
@@ -71,7 +76,7 @@ public class JobOffersController(
             Location: request.Location,
             IsRemote: request.IsRemote,
             AdditionalNotes: request.AdditionalNotes,
-            Attachments: attachmentResult.Success.Get((Unit _) => new InvalidOperationException()),
+            Attachments: verifiedAttachments,
             Timestamp: timeProvider.GetUtcNow());
 
         session.Events.StartStream<JobOffer>(streamId, submitted);

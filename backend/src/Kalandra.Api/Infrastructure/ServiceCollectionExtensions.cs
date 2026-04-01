@@ -1,6 +1,6 @@
-using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Storage;
 using Marten;
 using Marten.Events.Projections;
 using Weasel.Core;
@@ -69,12 +69,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddJobOfferAttachments(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddStorageFileVerification(this IServiceCollection services)
     {
-        services.Configure<SupabaseStorageOptions>(configuration.GetSection(SupabaseStorageOptions.SectionName));
-        services.AddHttpClient<IJobOfferAttachmentVerifier, SupabaseJobOfferAttachmentVerifier>();
+        services.AddHttpClient<IStorageFileVerifier, SupabaseStorageFileVerifier>();
 
         return services;
     }

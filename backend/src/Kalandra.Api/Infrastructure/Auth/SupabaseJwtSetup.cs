@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Kalandra.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -12,13 +12,9 @@ public static class SupabaseJwtSetup
 {
     public static IServiceCollection AddSupabaseAuth(
         this IServiceCollection services,
-        IConfiguration configuration)
+        SupabaseAuthConfig authConfig)
     {
-        var authOptions = new SupabaseJwtOptions();
-        configuration.GetSection(SupabaseJwtOptions.SectionName).Bind(authOptions);
-        services.Configure<SupabaseJwtOptions>(configuration.GetSection(SupabaseJwtOptions.SectionName));
-
-        var projectUrl = authOptions.SupabaseProjectUrl.TrimEnd('/');
+        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var issuer = $"{projectUrl}/auth/v1";
         var metadataAddress = $"{issuer}/.well-known/openid-configuration";
         var requireHttps = projectUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);

@@ -1,11 +1,10 @@
-using Kalandra.Api.Features.JobOffers.Attachments;
-using Marten;
+using Kalandra.Infrastructure.Configuration;
+using Kalandra.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Testcontainers.PostgreSql;
@@ -22,10 +21,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
+        builder.UseSetting("Storage:BucketName", "test-bucket");
+        builder.UseSetting("Storage:ServiceKey", "test-service-key");
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<IJobOfferAttachmentVerifier>();
-            services.AddSingleton<IJobOfferAttachmentVerifier, FakeJobOfferAttachmentVerifier>();
+            services.RemoveAll<IStorageFileVerifier>();
+            services.AddSingleton<IStorageFileVerifier, FakeStorageFileVerifier>();
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,

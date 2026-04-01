@@ -1,51 +1,48 @@
-using Kalandra.Api.Features.JobOffers.Attachments;
-using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.Infrastructure.Storage;
+using StrongTypes;
 
 namespace Kalandra.Api.Tests.Helpers;
 
-public class FakeJobOfferAttachmentVerifier : IJobOfferAttachmentVerifier
+public class FakeStorageFileVerifier : IStorageFileVerifier
 {
-    public Task<Try<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>> VerifyAsync(
-        Guid jobOfferId,
-        string userId,
-        IReadOnlyList<AttachmentInfo>? attachments,
+    public Task<Try<IReadOnlyList<StorageFileInfo>, FileVerificationError>> VerifyAsync(
+        string expectedFolderPrefix,
+        IReadOnlyList<StorageFileInfo>? files,
         CancellationToken ct)
     {
-        if (attachments == null || attachments.Count == 0)
+        if (files == null || files.Count == 0)
         {
             return Task.FromResult(
-                Try.Success<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
-                    Array.Empty<AttachmentInfo>()));
+                Try.Success<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
+                    Array.Empty<StorageFileInfo>()));
         }
 
-        var expectedPrefix = $"{userId}/{jobOfferId}/";
-
-        foreach (var attachment in attachments)
+        foreach (var file in files)
         {
-            if (attachment.StoragePath.Contains("/missing/", StringComparison.Ordinal))
+            if (file.StoragePath.Contains("/missing/", StringComparison.Ordinal))
             {
                 return Task.FromResult(
-                    Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
-                        AttachmentVerificationError.FileNotFound));
+                    Try.Error<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
+                        FileVerificationError.FileNotFound));
             }
 
-            if (!attachment.StoragePath.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            if (!file.StoragePath.StartsWith(expectedFolderPrefix, StringComparison.Ordinal))
             {
                 return Task.FromResult(
-                    Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
-                        AttachmentVerificationError.WrongFolder));
+                    Try.Error<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
+                        FileVerificationError.WrongFolder));
             }
 
-            var fileName = Path.GetFileName(attachment.StoragePath.Replace('\\', '/'));
-            if (!string.Equals(fileName, attachment.FileName, StringComparison.Ordinal))
+            var fileName = Path.GetFileName(file.StoragePath.Replace('\\', '/'));
+            if (!string.Equals(fileName, file.FileName, StringComparison.Ordinal))
             {
                 return Task.FromResult(
-                    Try.Error<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(
-                        AttachmentVerificationError.MetadataMismatch));
+                    Try.Error<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
+                        FileVerificationError.MetadataMismatch));
             }
         }
 
         return Task.FromResult(
-            Try.Success<IReadOnlyList<AttachmentInfo>, AttachmentVerificationError>(attachments));
+            Try.Success<IReadOnlyList<StorageFileInfo>, FileVerificationError>(files));
     }
 }
