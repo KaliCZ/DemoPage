@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
@@ -16,6 +15,7 @@ namespace Kalandra.Api.Features.JobOffers;
 
 [ApiController]
 [Route("api/job-offers")]
+[Produces("application/json")]
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
     CreateJobOfferHandler createHandler,
@@ -30,6 +30,9 @@ public class JobOffersController(
 {
     [HttpPost]
     [Authorize]
+    [ProducesResponseType<CreateJobOfferResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create(
         [FromBody] CreateJobOfferRequest request,
         CancellationToken ct)
@@ -50,6 +53,12 @@ public class JobOffersController(
 
     [HttpPut("{id:guid}")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Edit(
         Guid id,
         [FromBody] EditJobOfferRequest request,
@@ -81,9 +90,11 @@ public class JobOffersController(
 
     [HttpGet("mine")]
     [Authorize]
+    [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ListMine(
-        [FromQuery, Range(1, int.MaxValue)] int page = 1,
-        [FromQuery, Range(1, 100)] int pageSize = 20,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
         var result = await listHandler.HandleAsync(currentUser.RequireUserId(), page, pageSize, ct);
@@ -92,9 +103,12 @@ public class JobOffersController(
 
     [HttpGet]
     [Authorize(Policy = "Admin")]
+    [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ListAll(
-        [FromQuery, Range(1, int.MaxValue)] int page = 1,
-        [FromQuery, Range(1, 100)] int pageSize = 20,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
         var result = await listHandler.HandleAsync(null, page, pageSize, ct);
@@ -103,6 +117,9 @@ public class JobOffersController(
 
     [HttpGet("{id:guid}")]
     [Authorize]
+    [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDetail(Guid id, CancellationToken ct)
     {
         var result = await detailHandler.HandleAsync(
@@ -116,6 +133,9 @@ public class JobOffersController(
 
     [HttpGet("{id:guid}/history")]
     [Authorize]
+    [ProducesResponseType<JobOfferHistoryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
     {
         var result = await historyHandler.HandleAsync(
@@ -129,6 +149,12 @@ public class JobOffersController(
 
     [HttpPost("{id:guid}/cancel")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Cancel(
         Guid id,
         [FromBody] CancelJobOfferRequest request,
@@ -160,6 +186,12 @@ public class JobOffersController(
 
     [HttpPatch("{id:guid}/status")]
     [Authorize(Policy = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
         [FromBody] UpdateJobOfferStatusRequest request,
@@ -191,6 +223,9 @@ public class JobOffersController(
 
     [HttpGet("{id:guid}/comments")]
     [Authorize]
+    [ProducesResponseType<ListCommentsResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
     {
         var result = await listCommentsHandler.HandleAsync(
@@ -204,6 +239,12 @@ public class JobOffersController(
 
     [HttpPost("{id:guid}/comments")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddComment(
         Guid id,
         [FromBody] AddCommentRequest request,
