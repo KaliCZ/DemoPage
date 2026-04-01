@@ -1,4 +1,3 @@
-using FluentValidation;
 using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
@@ -40,8 +39,6 @@ builder.Services.AddSupabaseAuth(builder.Configuration);
 builder.Services.AddAppCors(builder.Configuration, builder.Environment);
 builder.Services.AddJobOfferAttachments(builder.Configuration);
 builder.Services.AddJobOfferFeatures();
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
     .AddCheck<CommitHashHealthCheck>("version");

@@ -1,4 +1,3 @@
-using FluentValidation;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
@@ -18,11 +17,6 @@ namespace Kalandra.Api.Features.JobOffers;
 [Route("api/job-offers")]
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
-    IValidator<CreateJobOfferRequest> createValidator,
-    IValidator<EditJobOfferRequest> editValidator,
-    IValidator<CancelJobOfferRequest> cancelValidator,
-    IValidator<UpdateJobOfferStatusRequest> updateStatusValidator,
-    IValidator<AddCommentRequest> commentValidator,
     CreateJobOfferHandler createHandler,
     EditJobOfferHandler editHandler,
     ListJobOffersHandler listHandler,
@@ -39,12 +33,6 @@ public class JobOffersController(
         [FromBody] CreateJobOfferRequest request,
         CancellationToken ct)
     {
-        var validation = await createValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
-
         var (success, error, result) = await createHandler.HandleAsync(
             request,
             currentUser.RequireUserId(),
@@ -66,12 +54,6 @@ public class JobOffersController(
         [FromBody] EditJobOfferRequest request,
         CancellationToken ct)
     {
-        var validation = await editValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
-
         try
         {
             var (success, error) = await editHandler.HandleAsync(
@@ -151,12 +133,6 @@ public class JobOffersController(
         [FromBody] CancelJobOfferRequest request,
         CancellationToken ct)
     {
-        var validation = await cancelValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
-
         try
         {
             var (success, error) = await cancelHandler.HandleAsync(
@@ -188,12 +164,6 @@ public class JobOffersController(
         [FromBody] UpdateJobOfferStatusRequest request,
         CancellationToken ct)
     {
-        var validation = await updateStatusValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
-
         try
         {
             var (success, error) = await updateStatusHandler.HandleAsync(
@@ -238,12 +208,6 @@ public class JobOffersController(
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
-        var validation = await commentValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
-
         try
         {
             var (success, error) = await addCommentHandler.HandleAsync(

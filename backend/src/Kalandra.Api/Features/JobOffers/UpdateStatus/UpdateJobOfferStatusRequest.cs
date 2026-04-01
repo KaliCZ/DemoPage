@@ -1,7 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using Kalandra.Api.Features.JobOffers.Entities;
 
 namespace Kalandra.Api.Features.JobOffers.UpdateStatus;
 
 public record UpdateJobOfferStatusRequest(
-    JobOfferStatus Status,
-    string? AdminNotes);
+    [EnumDataType(typeof(JobOfferStatus))] JobOfferStatus Status,
+    [MaxLength(2000)] string? AdminNotes);

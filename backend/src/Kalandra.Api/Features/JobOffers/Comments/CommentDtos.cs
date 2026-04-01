@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kalandra.Api.Features.JobOffers.Comments;
 
-public record AddCommentRequest(string Content);
+public record AddCommentRequest([Required, MaxLength(5000)] string Content);
 
 public record CommentResponse(
     Guid Id,
