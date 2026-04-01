@@ -81,34 +81,13 @@ public static class SupabaseJwtSetup
                     },
                     OnTokenValidated = context =>
                     {
-                        // Extract roles from Supabase app_metadata and map to standard role claims
-                        var appMetadata = context.Principal?.FindFirstValue("app_metadata");
-                        if (appMetadata != null)
-                        {
-                            using var doc = JsonDocument.Parse(appMetadata);
-                            var identity = context.Principal!.Identity as ClaimsIdentity;
+                        var identity = context.Principal?.Identity as ClaimsIdentity;
+                        if (identity == null)
+                            return Task.CompletedTask;
 
-                            if (doc.RootElement.TryGetProperty("roles", out var rolesProp) &&
-                                rolesProp.ValueKind == JsonValueKind.Array)
-                            {
-                                foreach (var item in rolesProp.EnumerateArray())
-                                {
-                                    var role = item.GetString();
-                                    if (!string.IsNullOrEmpty(role))
-                                    {
-                                        identity?.AddClaim(new Claim(ClaimTypes.Role, role));
-                                    }
-                                }
-                            }
-                            else if (doc.RootElement.TryGetProperty("role", out var roleProp))
-                            {
-                                var role = roleProp.GetString();
-                                if (!string.IsNullOrEmpty(role))
-                                {
-                                    identity?.AddClaim(new Claim(ClaimTypes.Role, role));
-                                }
-                            }
-                        }
+                        ExtractRolesFromAppMetadata(context.Principal!, identity);
+                        ExtractDisplayNameFromUserMetadata(context.Principal!, identity);
+
                         return Task.CompletedTask;
                     }
                 };
@@ -118,6 +97,54 @@ public static class SupabaseJwtSetup
             .AddPolicy("Admin", policy => policy.RequireRole("admin"));
 
         return services;
+    }
+
+    private static void ExtractRolesFromAppMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
+    {
+        var appMetadata = principal.FindFirstValue("app_metadata");
+        if (appMetadata == null)
+            return;
+
+        using var doc = JsonDocument.Parse(appMetadata);
+
+        if (doc.RootElement.TryGetProperty("roles", out var rolesProp) &&
+            rolesProp.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in rolesProp.EnumerateArray())
+            {
+                var role = item.GetString();
+                if (!string.IsNullOrEmpty(role))
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                }
+            }
+        }
+        else if (doc.RootElement.TryGetProperty("role", out var roleProp))
+        {
+            var role = roleProp.GetString();
+            if (!string.IsNullOrEmpty(role))
+            {
+                identity.AddClaim(new Claim(ClaimTypes.Role, role));
+            }
+        }
+    }
+
+    private static void ExtractDisplayNameFromUserMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
+    {
+        var userMetadata = principal.FindFirstValue("user_metadata");
+        if (userMetadata == null)
+            return;
+
+        using var doc = JsonDocument.Parse(userMetadata);
+
+        if (doc.RootElement.TryGetProperty("full_name", out var fullName))
+        {
+            var name = fullName.GetString();
+            if (!string.IsNullOrEmpty(name))
+            {
+                identity.AddClaim(new Claim("display_name", name));
+            }
+        }
     }
 
     private static bool IsMissingSigningKeyFailure(Exception exception)

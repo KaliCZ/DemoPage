@@ -15,14 +15,13 @@ public class HttpContextCurrentUserAccessor(
         var principal = httpContextAccessor.HttpContext?.User
             ?? throw new InvalidOperationException("HTTP context is not available.");
 
-        var userId = principal.GetUserId();
-        if (string.IsNullOrWhiteSpace(userId))
-            throw new InvalidOperationException("Authenticated user ID is not available.");
+        var userId = principal.GetUserId()
+            ?? throw new InvalidOperationException("Authenticated user ID is not available.");
 
-        var email = principal.GetEmail() ?? "";
+        var email = principal.GetEmail()
+            ?? throw new InvalidOperationException("Authenticated user email is not available.");
 
-        var displayName = principal.FindFirst("user_metadata.full_name")?.Value
-            ?? principal.FindFirst("name")?.Value
+        var displayName = principal.FindFirstValue("display_name")
             ?? email.Split('@')[0];
 
         var roles = principal.FindAll(ClaimTypes.Role)
