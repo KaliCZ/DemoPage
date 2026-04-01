@@ -12,7 +12,7 @@ Step-by-step guide for setting up the backend, auth, and deployment infrastructu
 2. Note these values from **Settings → API**:
    - **Project URL** (e.g., `https://abcdef.supabase.co`)
    - **Publishable key** (safe for browser)
-   - **JWT Secret** (from Settings → API → JWT Settings → JWT Secret)
+   - **JWT keys** — the backend fetches these automatically via JWKS; no manual configuration needed
 
 ### 1.2 Configure OAuth Provider (Google)
 
@@ -119,7 +119,6 @@ npx supabase start
 # 3. Start backend
 cd backend/src/Kalandra.Api
 Auth__SupabaseProjectUrl=http://localhost:54321 \
-Auth__SupabaseJwtSecret=super-secret-jwt-token-with-at-least-32-characters-long \
 dotnet run
 # API at http://localhost:5000, Swagger at /swagger
 
@@ -214,7 +213,6 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
-| `SUPABASE_JWT_SECRET` | JWT secret from Supabase dashboard |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
 
 ### 4.2 GitHub Actions Environment
