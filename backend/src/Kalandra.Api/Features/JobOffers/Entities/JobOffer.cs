@@ -186,6 +186,5 @@ public class JobOffer
         JobOfferStatus.Accepted => false,
         JobOfferStatus.Declined => false,
         JobOfferStatus.Cancelled => false,
-        _ => false
     };
 }

@@ -66,6 +66,5 @@ public class JobOfferHistoryHandler(IQuerySession session)
         JobOfferStatus.Accepted => "Accepted",
         JobOfferStatus.Declined => "Declined",
         JobOfferStatus.Cancelled => "Cancelled",
-        _ => status.ToString()
     };
 }

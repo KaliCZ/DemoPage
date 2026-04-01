@@ -1,16 +1,18 @@
 using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.Api.Infrastructure.Auth;
 using Marten;
 using Marten.Linq;
 using Marten.Pagination;
 
 namespace Kalandra.Api.Features.JobOffers.List;
 
-public class ListJobOffersHandler(IQuerySession session)
+public class ListJobOffersHandler(
+    IQuerySession session,
+    ICurrentUserAccessor currentUserAccessor)
 {
     private const int MaxPageSize = 100;
 
     public async Task<ListJobOffersResponse> HandleAsync(
-        string? userId,
         JobOfferStatus? status,
         int page,
         int pageSize,
@@ -20,11 +22,12 @@ public class ListJobOffersHandler(IQuerySession session)
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(pageSize, MaxPageSize);
 
+        var user = currentUserAccessor.CurrentUser;
         var query = session.Query<JobOffer>();
 
-        if (userId != null)
+        if (!user.IsAdmin)
         {
-            query = (IMartenQueryable<JobOffer>)query.Where(j => j.UserId == userId);
+            query = (IMartenQueryable<JobOffer>)query.Where(j => j.UserId == user.Id);
         }
 
         if (status != null)

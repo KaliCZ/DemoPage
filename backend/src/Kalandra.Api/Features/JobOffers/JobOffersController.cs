@@ -29,6 +29,8 @@ public class JobOffersController(
     AddCommentHandler addCommentHandler,
     ListCommentsHandler listCommentsHandler) : ControllerBase
 {
+    private CurrentUser AppUser => currentUser.CurrentUser;
+
     [HttpPost]
     [Authorize]
     [ProducesResponseType<CreateJobOfferResponse>(StatusCodes.Status201Created)]
@@ -40,8 +42,8 @@ public class JobOffersController(
     {
         var (success, error, result) = await createHandler.HandleAsync(
             request: request,
-            userId: currentUser.RequireUserId(),
-            userEmail: currentUser.GetEmail() ?? "",
+            userId: AppUser.Id,
+            userEmail: AppUser.Email,
             ct: ct);
 
         if (!success || result == null)
@@ -70,8 +72,8 @@ public class JobOffersController(
             var (success, error) = await editHandler.HandleAsync(
                 id: id,
                 request: request,
-                userId: currentUser.RequireUserId(),
-                userEmail: currentUser.GetEmail() ?? "",
+                userId: AppUser.Id,
+                userEmail: AppUser.Email,
                 ct: ct);
 
             if (!success)
@@ -100,7 +102,6 @@ public class JobOffersController(
         CancellationToken ct = default)
     {
         var result = await listHandler.HandleAsync(
-            userId: currentUser.RequireUserId(),
             status: status,
             page: page,
             pageSize: pageSize,
@@ -120,7 +121,6 @@ public class JobOffersController(
         CancellationToken ct = default)
     {
         var result = await listHandler.HandleAsync(
-            userId: null,
             status: status,
             page: page,
             pageSize: pageSize,
@@ -137,8 +137,8 @@ public class JobOffersController(
     {
         var result = await detailHandler.HandleAsync(
             id: id,
-            requesterUserId: currentUser.RequireUserId(),
-            isAdmin: await currentUser.IsAdminAsync(),
+            requesterUserId: AppUser.Id,
+            isAdmin: AppUser.IsAdmin,
             ct: ct);
 
         return result == null ? NotFound() : Ok(result);
@@ -153,8 +153,8 @@ public class JobOffersController(
     {
         var result = await historyHandler.HandleAsync(
             id: id,
-            requesterUserId: currentUser.RequireUserId(),
-            isAdmin: await currentUser.IsAdminAsync(),
+            requesterUserId: AppUser.Id,
+            isAdmin: AppUser.IsAdmin,
             ct: ct);
 
         return result == null ? NotFound() : Ok(result);
@@ -178,8 +178,8 @@ public class JobOffersController(
             var (success, error) = await cancelHandler.HandleAsync(
                 id: id,
                 request: request,
-                userId: currentUser.RequireUserId(),
-                userEmail: currentUser.GetEmail() ?? "",
+                userId: AppUser.Id,
+                userEmail: AppUser.Email,
                 ct: ct);
 
             if (!success)
@@ -215,8 +215,8 @@ public class JobOffersController(
             var (success, error) = await updateStatusHandler.HandleAsync(
                 id: id,
                 request: request,
-                adminUserId: currentUser.RequireUserId(),
-                adminEmail: currentUser.GetEmail() ?? "",
+                adminUserId: AppUser.Id,
+                adminEmail: AppUser.Email,
                 ct: ct);
 
             if (!success)
@@ -243,8 +243,8 @@ public class JobOffersController(
     {
         var result = await listCommentsHandler.HandleAsync(
             jobOfferId: id,
-            requesterUserId: currentUser.RequireUserId(),
-            isAdmin: await currentUser.IsAdminAsync(),
+            requesterUserId: AppUser.Id,
+            isAdmin: AppUser.IsAdmin,
             ct: ct);
 
         return result == null ? NotFound() : Ok(result);
@@ -268,10 +268,10 @@ public class JobOffersController(
             var (success, error) = await addCommentHandler.HandleAsync(
                 jobOfferId: id,
                 request: request,
-                userId: currentUser.RequireUserId(),
-                userEmail: currentUser.GetEmail() ?? "",
-                userName: currentUser.GetDisplayName(),
-                isAdmin: await currentUser.IsAdminAsync(),
+                userId: AppUser.Id,
+                userEmail: AppUser.Email,
+                userName: AppUser.DisplayName,
+                isAdmin: AppUser.IsAdmin,
                 ct: ct);
 
             if (!success)
