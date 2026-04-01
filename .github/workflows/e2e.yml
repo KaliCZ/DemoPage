@@ -57,13 +57,11 @@ jobs:
           echo "JWT secret (first 30 chars): ${JWT_SECRET:0:30}..."
 
       - name: Build backend
-        run: dotnet build -c Release
-        working-directory: backend
+        run: dotnet build backend/src/Kalandra.Api -c Release
 
       - name: Start backend
         run: |
-          cd backend/src/Kalandra.Api
-          dotnet run -c Release --no-build --urls http://localhost:5000 &
+          dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 &
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
