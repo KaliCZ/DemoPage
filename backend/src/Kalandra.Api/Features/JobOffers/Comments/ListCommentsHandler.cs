@@ -19,10 +19,10 @@ public class ListCommentsHandler(IQuerySession session)
         if (!isAdmin && offer.UserId != requesterUserId)
             return null;
 
-        var events = await session.Events.FetchStreamAsync(jobOfferId, token: ct);
+        var commentStreamId = AddCommentHandler.CommentStreamId(jobOfferId);
+        var events = await session.Events.FetchStreamAsync(commentStreamId, token: ct);
 
         var comments = events
-            .Where(e => e.Data is JobOfferCommentAdded)
             .Select(e => (JobOfferCommentAdded)e.Data)
             .Select(c => new CommentResponse(
                 Id: c.CommentId,

@@ -1,3 +1,4 @@
+using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.Events;
 using Kalandra.Api.Tests.Helpers;
@@ -71,5 +72,74 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         var exception = await Assert.ThrowsAnyAsync<Exception>(() => secondSession.SaveChangesAsync(Ct));
         Assert.True(exception is ConcurrencyException or EventStreamUnexpectedMaxEventIdException);
+    }
+
+    [Fact]
+    public async Task CommentAppend_DoesNotConflict_WithFetchForWriting()
+    {
+        var jobOfferId = Guid.NewGuid();
+
+        await using (var seedSession = store.LightweightSession())
+        {
+            seedSession.Events.StartStream<JobOffer>(
+                id: jobOfferId,
+                new JobOfferSubmitted(
+                    UserId: "owner-user",
+                    UserEmail: "owner@test.com",
+                    CompanyName: "Acme Corp",
+                    ContactName: "John Doe",
+                    ContactEmail: "john@acme.com",
+                    JobTitle: "Senior Developer",
+                    Description: "Original description",
+                    SalaryRange: null,
+                    Location: "Prague",
+                    IsRemote: true,
+                    AdditionalNotes: null,
+                    Attachments: [],
+                    Timestamp: DateTimeOffset.UtcNow));
+
+            await seedSession.SaveChangesAsync(Ct);
+        }
+
+        // Writer fetches stream for an optimistic-concurrency edit
+        await using var writerSession = store.LightweightSession();
+        var writer = await writerSession.Events.FetchForWriting<JobOffer>(jobOfferId, Ct);
+
+        // Meanwhile, a comment is appended to the separate comment stream
+        await using (var commentSession = store.LightweightSession())
+        {
+            var commentStreamId = AddCommentHandler.CommentStreamId(jobOfferId);
+            commentSession.Events.Append(
+                commentStreamId,
+                new JobOfferCommentAdded(
+                    CommentId: Guid.NewGuid(),
+                    UserId: "owner-user",
+                    UserEmail: "owner@test.com",
+                    UserName: "Owner",
+                    Content: "Any updates?",
+                    Timestamp: DateTimeOffset.UtcNow));
+            await commentSession.SaveChangesAsync(Ct);
+        }
+
+        // The writer's save should succeed — comment didn't touch the job offer stream
+        writer.AppendOne(new JobOfferStatusChanged(
+            ChangedByUserId: "admin-1",
+            ChangedByEmail: "admin@test.com",
+            OldStatus: JobOfferStatus.Submitted,
+            NewStatus: JobOfferStatus.InReview,
+            Notes: null,
+            Timestamp: DateTimeOffset.UtcNow));
+
+        await writerSession.SaveChangesAsync(Ct);
+
+        // Verify both the status change and comment are visible
+        await using var verifySession = store.LightweightSession();
+        var offer = await verifySession.LoadAsync<JobOffer>(jobOfferId, Ct);
+        Assert.Equal(JobOfferStatus.InReview, offer!.Status);
+
+        var commentStreamEvents = await verifySession.Events.FetchStreamAsync(
+            AddCommentHandler.CommentStreamId(jobOfferId), token: Ct);
+        Assert.Single(commentStreamEvents);
+        Assert.IsType<JobOfferCommentAdded>(commentStreamEvents[0].Data);
     }
 }

@@ -1,5 +1,4 @@
 using Kalandra.Api.Features.JobOffers.Cancel;
-using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.Events;
@@ -362,75 +361,6 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(
             UpdateJobOfferStatusError.AlreadyInStatus,
-            result.Error.Get((Unit _) => new InvalidOperationException()));
-    }
-
-    // --- AddComment ---
-
-    [Fact]
-    public void AddComment_ByOwner_Succeeds()
-    {
-        var offer = CreateSubmittedOffer();
-        var result = offer.AddComment(
-            userId: "owner",
-            userEmail: "owner@test.com",
-            userName: "Owner",
-            content: "Hello",
-            isAdmin: false,
-            timestamp: Now);
-
-        Assert.True(result.IsSuccess);
-        var evt = result.Success.Get((Unit _) => new InvalidOperationException());
-        Assert.Equal("Hello", evt.Content);
-    }
-
-    [Fact]
-    public void AddComment_ByAdmin_Succeeds()
-    {
-        var offer = CreateSubmittedOffer();
-        var result = offer.AddComment(
-            userId: "admin",
-            userEmail: "admin@test.com",
-            userName: "Admin",
-            content: "Reply",
-            isAdmin: true,
-            timestamp: Now);
-        Assert.True(result.IsSuccess);
-    }
-
-    [Fact]
-    public void AddComment_ByNonOwnerNonAdmin_Fails()
-    {
-        var offer = CreateSubmittedOffer();
-        var result = offer.AddComment(
-            userId: "other",
-            userEmail: "other@test.com",
-            userName: "Other",
-            content: "Hi",
-            isAdmin: false,
-            timestamp: Now);
-
-        Assert.True(result.IsError);
-        Assert.Equal(
-            AddJobOfferCommentError.NotAuthorized,
-            result.Error.Get((Unit _) => new InvalidOperationException()));
-    }
-
-    [Fact]
-    public void AddComment_EmptyContent_Fails()
-    {
-        var offer = CreateSubmittedOffer();
-        var result = offer.AddComment(
-            userId: "owner",
-            userEmail: "owner@test.com",
-            userName: "Owner",
-            content: "   ",
-            isAdmin: false,
-            timestamp: Now);
-
-        Assert.True(result.IsError);
-        Assert.Equal(
-            AddJobOfferCommentError.ContentRequired,
             result.Error.Get((Unit _) => new InvalidOperationException()));
     }
 

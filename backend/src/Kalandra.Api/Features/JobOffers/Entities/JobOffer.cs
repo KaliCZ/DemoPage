@@ -1,5 +1,4 @@
 using Kalandra.Api.Features.JobOffers.Cancel;
-using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.Events;
 using Kalandra.Api.Features.JobOffers.UpdateStatus;
@@ -108,29 +107,6 @@ public class JobOffer
             Timestamp: timestamp));
     }
 
-    public Try<JobOfferCommentAdded, AddJobOfferCommentError> AddComment(
-        string userId,
-        string userEmail,
-        string userName,
-        string content,
-        bool isAdmin,
-        DateTimeOffset timestamp)
-    {
-        if (!isAdmin && UserId != userId)
-            return Try.Error<JobOfferCommentAdded, AddJobOfferCommentError>(AddJobOfferCommentError.NotAuthorized);
-
-        if (string.IsNullOrWhiteSpace(content))
-            return Try.Error<JobOfferCommentAdded, AddJobOfferCommentError>(AddJobOfferCommentError.ContentRequired);
-
-        return Try.Success<JobOfferCommentAdded, AddJobOfferCommentError>(new JobOfferCommentAdded(
-            CommentId: Guid.NewGuid(),
-            UserId: userId,
-            UserEmail: userEmail,
-            UserName: userName,
-            Content: content.Trim(),
-            Timestamp: timestamp));
-    }
-
     public void Apply(JobOfferSubmitted e)
     {
         UserId = e.UserId;
@@ -176,9 +152,6 @@ public class JobOffer
         Status = JobOfferStatus.Cancelled;
         UpdatedAt = e.Timestamp;
     }
-
-    // Comments don't change aggregate state — they're read from the event stream directly
-    public void Apply(JobOfferCommentAdded _) { }
 
     private bool CanTransitionTo(JobOfferStatus newStatus) => Status switch
     {
