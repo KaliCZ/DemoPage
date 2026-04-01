@@ -12,7 +12,7 @@ using Kalandra.Api.Tests.Helpers;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;
 
-public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
+public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient client = factory.CreateClient();
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
