@@ -94,7 +94,7 @@ docs/
 - **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend. Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__supabase`, `window.__getAccessToken()`, and `window.__getUser()` for pages. Sign-in dialog supports both email/password and Google OAuth.
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
-- **Admin role**: Configured via `Auth.AdminUserIds` in appsettings (list of Supabase user UUIDs).
+- **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy. Legacy single-string `"role"` also supported.
 - **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
 - **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 

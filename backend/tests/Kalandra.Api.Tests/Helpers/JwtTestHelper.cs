@@ -17,7 +17,7 @@ public static class JwtTestHelper
         bool isAdmin = false)
     {
         var appMetadata = isAdmin
-            ? """{"provider":"email","providers":["email"],"role":"admin"}"""
+            ? """{"provider":"email","providers":["email"],"roles":["admin"]}"""
             : """{"provider":"email","providers":["email"]}""";
 
         var claims = new List<Claim>

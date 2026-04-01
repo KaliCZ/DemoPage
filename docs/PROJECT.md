@@ -42,38 +42,10 @@ Simple site with domain, hosting and deployment pipeline.
 
 ---
 
-### Version 2 — Login (Supabase Auth)
-**Status:** In progress (code complete, needs Supabase project setup)
+### Version 2 — Backend Included
+**Status:** Done (~10 hours)
 
-Integrate Supabase authentication with OAuth flow.
-
-**Features:**
-- [x] Users can sign in via Google OAuth
-- [x] Signed-in state visible in UI (profile avatar + name in nav)
-- [x] Profile dropdown with sign out and "My Submissions" link
-- [x] Auth state managed client-side via `@supabase/supabase-js`
-- [ ] Supabase project created and configured (manual step — see `docs/SETUP.md`)
-
----
-
-### Version 3 — Job Offer Form
-**Status:** In progress (code complete, needs backend running)
-
-Structured job offer submission page. The page is visible to everyone, but the form requires sign-in to interact with.
-
-**Features:**
-- [x] Job offer submission form (Hire Me page in nav)
-- [x] Form gated behind authentication (page visible, form disabled until sign-in)
-- [x] Full i18n (English + Czech) for all form labels and messages
-- [x] Form submits to backend API
-- [ ] File uploads (deferred to later version)
-
----
-
-### Version 4 — Backend & Form Handling
-**Status:** In progress (code complete, needs deployment setup)
-
-ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
+Supabase Auth with Google OAuth, job offer submission form, and ASP.NET Core backend with Marten event sourcing. Users can submit, track, and cancel offers. Admin can review all submissions and update statuses.
 
 **Job offer states:**
 - **Submitted** — initial state after user submits
@@ -82,9 +54,17 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 - **Accepted** — offer was accepted
 
 **Features:**
+- [x] Users can sign in via Google OAuth and email/password
+- [x] Signed-in state visible in UI (profile avatar + name in nav)
+- [x] Profile dropdown with sign out and "My Submissions" link
+- [x] Auth state managed client-side via `@supabase/supabase-js`
+- [x] Job offer submission form (Hire Me page in nav)
+- [x] Form gated behind authentication (page visible, form disabled until sign-in)
+- [x] Full i18n (English + Czech) for all form labels and messages
+- [x] Form submits to backend API
 - [x] ASP.NET Core Web API with vertical slices architecture
 - [x] Marten event sourcing + PostgreSQL (events track full lifecycle)
-- [x] Backend validates Supabase JWT tokens
+- [x] Backend validates Supabase JWT tokens with role-based authorization
 - [x] Docker Compose for local development (PostgreSQL)
 - [x] Dockerfile for production deployment
 - [x] Integration tests with Testcontainers
@@ -97,12 +77,13 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 - [x] Playwright frontend tests (page rendering, navigation, dark mode)
 - [x] E2E test infrastructure (Playwright against full stack)
 - [x] `npm run dev` single-command local development (DB + backend + frontend)
+- [ ] Supabase project created and configured (manual step — see `docs/SETUP.md`)
 - [ ] Oracle Cloud VM provisioned and configured (manual step — see `docs/SETUP.md`)
 - [ ] DNS A record for api.kalandra.tech (manual step)
 
 ---
 
-### Version 5 — Emails, Slack & Observability
+### Version 3 — Emails, Slack & Observability
 **Status:** Not started
 
 **Features:**
@@ -115,7 +96,7 @@ ASP.NET Core backend on Oracle Cloud. Handles job offer form submissions.
 
 ---
 
-### Version 6 — Background Tasks
+### Version 4 — Background Tasks
 **Status:** Not started
 
 Move async work (emails, notifications) out of the request pipeline into durable background processing.
@@ -128,7 +109,7 @@ Move async work (emails, notifications) out of the request pipeline into durable
 
 ---
 
-### Version 7 — Pay to Win (Stripe)
+### Version 5 — Pay to Win (Stripe)
 **Status:** Not started
 
 Monetize job offer submissions via Stripe.
@@ -207,7 +188,7 @@ Monetize job offer submissions via Stripe.
 | **Backend** | GitHub Actions → Oracle Cloud / Hetzner VPS (SSH deploy or Docker) |
 | **Infrastructure** | GitHub Actions with respective CLIs per service |
 
-### Observability (Version 5+)
+### Observability (Version 3+)
 
 | Tool | Purpose |
 |---|---|
@@ -215,7 +196,7 @@ Monetize job offer submissions via Stripe.
 | **PostHog** | Product analytics and feature flags |
 | **BetterStack** | Logging, tracing, uptime monitoring |
 
-### Payments (Version 7+)
+### Payments (Version 5+)
 
 | Tool | Purpose |
 |---|---|
@@ -321,6 +302,6 @@ Monetize job offer submissions via Stripe.
 |---|---|---|---|
 | 2026-03-26 | Setup | — | Initial project setup, documentation |
 | 2026-03-27 | v1 | ~7 hours | Static site, i18n, dark mode, language picker, SEO, accessibility |
-| 2026-03-28 | v2–v4 | — | Auth, job offer form, backend API, CI/CD, Docker, tests |
+| 2026-03-28 – 2026-04-01 | v2 | ~10 hours | Auth (Supabase + Google OAuth), job offer form, ASP.NET Core backend with Marten event sourcing, CI/CD, Docker, integration + E2E tests |
 
 <!-- Add rows as work progresses. This table will be rendered on the project page. -->

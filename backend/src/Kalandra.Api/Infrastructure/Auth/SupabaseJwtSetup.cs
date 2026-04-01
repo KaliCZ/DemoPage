@@ -81,17 +81,30 @@ public static class SupabaseJwtSetup
                     },
                     OnTokenValidated = context =>
                     {
-                        // Extract role from Supabase app_metadata and map to a standard role claim
+                        // Extract roles from Supabase app_metadata and map to standard role claims
                         var appMetadata = context.Principal?.FindFirstValue("app_metadata");
                         if (appMetadata != null)
                         {
                             using var doc = JsonDocument.Parse(appMetadata);
-                            if (doc.RootElement.TryGetProperty("role", out var roleProp))
+                            var identity = context.Principal!.Identity as ClaimsIdentity;
+
+                            if (doc.RootElement.TryGetProperty("roles", out var rolesProp) &&
+                                rolesProp.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var item in rolesProp.EnumerateArray())
+                                {
+                                    var role = item.GetString();
+                                    if (!string.IsNullOrEmpty(role))
+                                    {
+                                        identity?.AddClaim(new Claim(ClaimTypes.Role, role));
+                                    }
+                                }
+                            }
+                            else if (doc.RootElement.TryGetProperty("role", out var roleProp))
                             {
                                 var role = roleProp.GetString();
                                 if (!string.IsNullOrEmpty(role))
                                 {
-                                    var identity = context.Principal!.Identity as ClaimsIdentity;
                                     identity?.AddClaim(new Claim(ClaimTypes.Role, role));
                                 }
                             }

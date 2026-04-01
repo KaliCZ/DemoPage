@@ -12,11 +12,11 @@
   "quickStats": {
     "title": "Rychlý přehled",
     "statusLabel": "Stav",
-    "statusValue": "MVP",
+    "statusValue": "Použitelné MVP",
     "versionLabel": "Aktuální verze",
-    "versionValue": "v1.0",
+    "versionValue": "v2.0",
     "timeLabel": "Čas strávený",
-    "timeValue": "7 hodin",
+    "timeValue": "17 hodin",
     "sourceLabel": "Zdrojový kód",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "Jednorázové náklady",
@@ -26,12 +26,12 @@
   },
   "techStack": {
     "title": "Postaveno na",
-    "items": ["Cloudflare Pages", "Astro", "Tailwind CSS", "GitHub Actions"]
+    "items": ["Cloudflare Pages", "Astro + Tailwind", "ASP.NET Core", "GitHub Actions"]
   },
   "roadmap": {
     "timelineLabel": "Časová osa",
     "title": "Plán vývoje",
-    "subtitle": "7 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
+    "subtitle": "5 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
     "versions": [
       {
         "number": 1,
@@ -53,28 +53,29 @@
       },
       {
         "number": 2,
-        "title": "Přihlášení (Supabase Auth)",
-        "done": false,
-        "description": "Autentizace uživatelů pomocí Supabase. Registrace, přihlášení, Google OAuth.",
-        "side": "right"
+        "title": "Backend Included",
+        "done": true,
+        "time": "~10 hodin",
+        "description": "Supabase Auth s Google OAuth, formulář pro podání pracovních nabídek a ASP.NET Core backend s Marten event sourcingem. Uživatelé mohou podávat, sledovat a rušit nabídky. Admin může přezkoumávat všechna podání a měnit stavy.",
+        "side": "right",
+        "detailsLabel": "Co se udělalo",
+        "details": [
+          { "author": "pavel", "text": "Integrace Supabase Auth s Google OAuth a email/heslo přihlášením" },
+          { "author": "claude", "text": "Přihlašovací dialog, profilový dropdown, správa auth stavu" },
+          { "author": "claude", "text": "Formulář pracovních nabídek s plnou i18n (angličtina + čeština)" },
+          { "author": "claude", "text": "ASP.NET Core Web API s vertical slices architekturou" },
+          { "author": "claude", "text": "Marten event sourcing s PostgreSQL pro životní cyklus nabídek" },
+          { "author": "pavel", "text": "Validace Supabase JWT s autorizací na základě rolí" },
+          { "author": "claude", "text": "Admin pohled: všechny nabídky, změny stavu, poznámky, log aktivit" },
+          { "author": "claude", "text": "Uživatelský dashboard: podané nabídky s aktuálním stavem" },
+          { "author": "claude", "text": "Docker Compose pro lokální vývoj, Dockerfile pro produkci" },
+          { "author": "claude", "text": "CI/CD pipeline: GitHub Actions → GHCR → Oracle Cloud" },
+          { "author": "claude", "text": "Integrační testy s Testcontainers + Playwright frontend testy" },
+          { "author": "claude", "text": "E2E testovací infrastruktura a single-command lokální dev setup" }
+        ]
       },
       {
         "number": 3,
-        "title": "Formulář pracovních nabídek",
-        "done": false,
-        "description": "Stránka s formulářem pro podání pracovní nabídky s nahráváním souborů (do 30 MB). Stránka je viditelná pro všechny, ale formulář vyžaduje přihlášení. Pouze frontend — zatím bez backendu, po odeslání formuláře se nic nestane.",
-        "description": "Structured job offer submission page with file uploads (up to 30 MB). The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.",
-        "side": "left"
-      },
-      {
-        "number": 4,
-        "title": "Backend a zpracování formuláře",
-        "done": false,
-        "description": "ASP.NET Core backend na Oracle cloud. Zpracování formuláře pracovních nabídek s Marten event sourcingem. Nabídky procházejí stavy: Podáno, V přezkoumání, Odmítnuto, Přijato. Uživatelé mohou sledovat svá podání, SuperAdmin vidí všechna. ",
-        "side": "right"
-      },
-      {
-        "number": 5,
         "title": "Emaily, Slack a observabilita",
         "done": false,
         "faded": true,
@@ -82,7 +83,7 @@
         "side": "left"
       },
       {
-        "number": 6,
+        "number": 4,
         "title": "Úlohy na pozadí",
         "done": false,
         "faded": true,
@@ -90,7 +91,7 @@
         "side": "right"
       },
       {
-        "number": 7,
+        "number": 5,
         "title": "Pay to Win (Stripe)",
         "done": false,
         "faded": true,

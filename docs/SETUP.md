@@ -35,21 +35,20 @@ In **Authentication → URL Configuration**:
 
 ### 1.4 Set Up Admin User
 
-After signing in for the first time, find your Supabase User ID:
+The backend uses role-based authorization. Roles are stored as an array in the user's Supabase `app_metadata`, included in the JWT, and mapped to standard .NET role claims.
 
-1. Go to **Authentication → Users** in the Supabase dashboard
-2. Find your user and copy the **User UID** (a UUID like `d4a3b2c1-...`)
-3. Add this UUID to the backend config (see section 3.2)
+After signing in for the first time, assign the admin role:
 
-This user will have admin privileges (can see all submissions, update statuses).
-
-**Alternative — SQL approach**:
 ```sql
 -- Run in Supabase SQL Editor to set admin via app_metadata
 UPDATE auth.users
-SET raw_app_meta_data = raw_app_meta_data || '{"role": "admin"}'::jsonb
+SET raw_app_meta_data = raw_app_meta_data || '{"roles": ["admin"]}'::jsonb
 WHERE email = 'your@email.com';
 ```
+
+This user will have admin privileges (can see all submissions, update statuses). The backend reads `app_metadata.roles` from the JWT and maps each entry to a .NET role claim. The `Admin` authorization policy uses `RequireRole("admin")`.
+
+> **Note:** The backend also supports a legacy `"role": "admin"` single-string format for backwards compatibility.
 
 ---
 
@@ -231,7 +230,6 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `DB_CONNECTION_STRING` | `Host=localhost;Database=kalandra;Username=kalandra;Password=<STRONG_PASSWORD>` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
 | `SUPABASE_JWT_SECRET` | JWT secret from Supabase dashboard |
-| `ADMIN_USER_ID` | Your Supabase user UUID |
 
 ### 4.2 GitHub Actions Environment
 
@@ -283,9 +281,9 @@ Full E2E tests (frontend → backend → DB) are possible because:
 
 We use Marten for event sourcing on the job offers feature. Events (`JobOfferSubmitted`, `JobOfferStatusChanged`, `JobOfferCancelled`) are appended to streams. Marten's inline snapshot projections maintain a `JobOffer` read model automatically. The event stream serves as the activity log visible in the UI. Marten manages its own PostgreSQL schema — no migrations needed.
 
-### Admin Role via Config
+### Admin Role via JWT
 
-Admin users are identified by their Supabase User ID in `appsettings.json` (or environment variables). This is simpler than a database roles table for a single-admin site. The admin check happens in the authorization policy.
+Roles are stored as an array in Supabase `app_metadata` (e.g., `"roles": ["admin"]`). The backend extracts `app_metadata.roles` from the JWT on each request and maps each entry to a standard .NET role claim. The `Admin` authorization policy uses `RequireRole("admin")`. No server-side user ID list or database roles table needed — roles live in Supabase and travel with the token. A legacy single-string `"role"` field is also supported.
 
 ### Supabase Auth — Local + Production
 

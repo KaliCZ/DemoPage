@@ -12,11 +12,11 @@
   "quickStats": {
     "title": "Quick Stats",
     "statusLabel": "Status",
-    "statusValue": "MVP",
+    "statusValue": "Usable MVP",
     "versionLabel": "Current Version",
-    "versionValue": "v1.0",
+    "versionValue": "v2.0",
     "timeLabel": "Time Spent So Far",
-    "timeValue": "7 hours",
+    "timeValue": "17 hours",
     "sourceLabel": "Source",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "One-Time Cost",
@@ -26,12 +26,12 @@
   },
   "techStack": {
     "title": "Engineered With",
-    "items": ["Cloudflare Pages", "Astro", "Tailwind CSS", "GitHub Actions"]
+    "items": ["Cloudflare Pages", "Astro + Tailwind", "ASP.NET Core", "GitHub Actions"]
   },
   "roadmap": {
     "timelineLabel": "Timeline",
     "title": "Development Roadmap",
-    "subtitle": "7 versions from static site to advanced backend features. Each version adds a layer of complexity.",
+    "subtitle": "5 versions from static site to advanced backend features. Each version adds a layer of complexity.",
     "versions": [
       {
         "number": 1,
@@ -53,27 +53,29 @@
       },
       {
         "number": 2,
-        "title": "Login (Supabase Auth)",
-        "done": false,
-        "description": "User authentication with Supabase. Sign up, log in, Google OAuth.",
-        "side": "right"
+        "title": "Backend Included",
+        "done": true,
+        "time": "~10 hours",
+        "description": "Supabase Auth with Google OAuth, job offer submission form, and ASP.NET Core backend with Marten event sourcing. Users can submit, track, and cancel offers. Admin can review all submissions and update statuses.",
+        "side": "right",
+        "detailsLabel": "What was done",
+        "details": [
+          { "author": "pavel", "text": "Supabase Auth integration with Google OAuth and email/password sign-in" },
+          { "author": "claude", "text": "Sign-in dialog, profile dropdown, auth state management" },
+          { "author": "claude", "text": "Job offer submission form with full i18n (English + Czech)" },
+          { "author": "claude", "text": "ASP.NET Core Web API with vertical slices architecture" },
+          { "author": "claude", "text": "Marten event sourcing with PostgreSQL for job offer lifecycle" },
+          { "author": "pavel", "text": "Supabase JWT validation with role-based authorization" },
+          { "author": "claude", "text": "Admin view: all offers, status updates, notes, activity log" },
+          { "author": "claude", "text": "User dashboard: submitted offers with current status" },
+          { "author": "claude", "text": "Docker Compose for local dev, Dockerfile for production" },
+          { "author": "claude", "text": "CI/CD pipeline: GitHub Actions → GHCR → Oracle Cloud" },
+          { "author": "claude", "text": "Integration tests with Testcontainers + Playwright frontend tests" },
+          { "author": "claude", "text": "E2E test infrastructure and single-command local dev setup" }
+        ]
       },
       {
         "number": 3,
-        "title": "Job Offer Form",
-        "done": false,
-        "description": "Structured job offer submission page with file uploads (up to 30 MB). The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.",
-        "side": "left"
-      },
-      {
-        "number": 4,
-        "title": "Backend & Form Handling",
-        "done": false,
-        "description": "ASP.NET Core backend on Oracle cloud. Handles job offer form submissions with Marten event sourcing. Offers go through states: Submitted, In Review, Declined, Accepted. Users can track their submissions, SuperAdmin sees all submissions.",
-        "side": "right"
-      },
-      {
-        "number": 5,
         "title": "Emails, Slack & Observability",
         "done": false,
         "faded": true,
@@ -81,7 +83,7 @@
         "side": "left"
       },
       {
-        "number": 6,
+        "number": 4,
         "title": "Background Tasks",
         "done": false,
         "faded": true,
@@ -89,7 +91,7 @@
         "side": "right"
       },
       {
-        "number": 7,
+        "number": 5,
         "title": "Pay to Win (Stripe)",
         "done": false,
         "faded": true,
