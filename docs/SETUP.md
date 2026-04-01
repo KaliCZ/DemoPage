@@ -91,13 +91,9 @@ Local credentials (well-known dev values, not secrets):
 
 ### 2.4 Configure Frontend
 
-```bash
-cd frontend
-cp .env.example .env.local
-# The defaults point to local Supabase — ready to use
-```
+The committed `frontend/.env` has local Supabase defaults — ready to use out of the box.
 
-To point at a different backend or Supabase instance, edit `.env.local`:
+To point at a different Supabase instance, create `frontend/.env.local` (gitignored) to override:
 ```
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key

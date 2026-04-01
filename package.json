@@ -13,9 +13,10 @@
     "dev:stop": "cd backend && docker compose down && npx supabase stop",
     "dev:wipe": "cd backend && docker compose down -v && npx supabase stop --no-backup",
     "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
-    "test:backend": "cd backend && dotnet test --verbosity normal",
-    "test:frontend": "cd frontend && npx playwright test",
-    "test:e2e": "npm run dev:db && npm run dev:supabase && cd frontend && npm run build && concurrently --kill-others --success first --names backend,serve,test \"npm run dev:backend\" \"npx wait-on http://localhost:5000/health && cd frontend && npx serve dist -l 4321\" \"npx wait-on http://localhost:5000/health && npx wait-on http://localhost:4321 && cd frontend && npx playwright test --config playwright.e2e.config.ts\""
+    "test:backend": "dotnet test --verbosity normal",
+    "test:frontend": "cd frontend && npx playwright install chromium && npx playwright test",
+    "test:e2e:build": "cd frontend && npm run build",
+    "test:e2e": "npm run dev:db && npm run dev:supabase && npm run test:e2e:build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"npx wait-on http://localhost:5000/health && npx serve frontend/dist -l 4321\" \"npx wait-on http://localhost:5000/health && npx wait-on http://localhost:4321 && cd frontend && npx playwright test --config playwright.e2e.config.ts\""
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

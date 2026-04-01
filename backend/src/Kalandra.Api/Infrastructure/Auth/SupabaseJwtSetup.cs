@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
@@ -23,9 +22,6 @@ public static class SupabaseJwtSetup
         var issuer = $"{projectUrl}/auth/v1";
         var metadataAddress = $"{issuer}/.well-known/openid-configuration";
         var requireHttps = projectUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
-        var fallbackSigningKey = string.IsNullOrWhiteSpace(authOptions.SupabaseJwtSecret)
-            ? null
-            : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions.SupabaseJwtSecret));
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -45,17 +41,6 @@ public static class SupabaseJwtSetup
                     ValidateAudience = true,
                     ValidAudience = "authenticated",
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKeyResolverUsingConfiguration = (_, _, _, _, config) =>
-                    {
-                        var keys = config?.SigningKeys?.ToList() ?? [];
-
-                        if (fallbackSigningKey != null)
-                        {
-                            keys.Add(fallbackSigningKey);
-                        }
-
-                        return keys;
-                    },
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(30)
                 };

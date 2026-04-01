@@ -408,8 +408,8 @@ frontend/test-results/
 
 # Tool configs
 
-.env
-.env.local
+/.env
+/.env.local
 .linear.toml
 
 # Supabase local dev (generated files)

@@ -52,9 +52,7 @@ jobs:
           eval "$(supabase status -o env)"
           echo "SB_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
           echo "SB_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
-          echo "SB_JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
           echo "Anon key (first 30 chars): ${ANON_KEY:0:30}..."
-          echo "JWT secret (first 30 chars): ${JWT_SECRET:0:30}..."
 
       - name: Build backend
         run: dotnet build backend/src/Kalandra.Api -c Release
@@ -65,7 +63,6 @@ jobs:
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
-          Auth__SupabaseJwtSecret: ${{ env.SB_JWT_SECRET }}
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
