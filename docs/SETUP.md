@@ -11,7 +11,7 @@ Step-by-step guide for setting up the backend, auth, and deployment infrastructu
 1. Go to [supabase.com](https://supabase.com) and create a new project
 2. Note these values from **Settings → API**:
    - **Project URL** (e.g., `https://abcdef.supabase.co`)
-   - **anon/public key** (safe for browser)
+   - **Publishable key** (safe for browser)
    - **JWT Secret** (from Settings → API → JWT Settings → JWT Secret)
 
 ### 1.2 Configure OAuth Provider (Google)
@@ -87,7 +87,7 @@ Local services:
 | Inbucket (email) | `http://localhost:54324` |
 
 Local credentials (well-known dev values, not secrets):
-- **Anon key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
+- **Publishable key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
 - **JWT secret**: `super-secret-jwt-token-with-at-least-32-characters-long`
 
 ### 2.4 Configure Frontend
@@ -101,7 +101,7 @@ cp .env.example .env.local
 To point at a different backend or Supabase instance, edit `.env.local`:
 ```
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_API_URL=http://localhost:5000
 ```
 
@@ -172,22 +172,7 @@ Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
 - Add ingress rules for ports 80, 443, 8080
 
-### 3.4 Set Up PostgreSQL on VM
-
-```bash
-# Run PostgreSQL in Docker on the VM
-docker run -d \
-  --name kalandra-db \
-  --restart unless-stopped \
-  -e POSTGRES_USER=kalandra \
-  -e POSTGRES_PASSWORD=<STRONG_PASSWORD> \
-  -e POSTGRES_DB=kalandra \
-  -v pgdata:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:17-alpine
-```
-
-### 3.5 Set Up Reverse Proxy (Caddy)
+### 3.4 Set Up Reverse Proxy (Caddy)
 
 Caddy provides automatic HTTPS:
 
@@ -227,9 +212,10 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `OCI_HOST` | Your OCI VM public IP |
 | `OCI_USERNAME` | SSH username (e.g., `opc` for Oracle Linux) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
-| `DB_CONNECTION_STRING` | `Host=localhost;Database=kalandra;Username=kalandra;Password=<STRONG_PASSWORD>` |
+| `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
 | `SUPABASE_JWT_SECRET` | JWT secret from Supabase dashboard |
+| `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
 
 ### 4.2 GitHub Actions Environment
 

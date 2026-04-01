@@ -84,7 +84,7 @@ jobs:
         working-directory: frontend
         env:
           PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
-          PUBLIC_SUPABASE_ANON_KEY: ${{ env.SB_ANON_KEY }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
           PUBLIC_API_URL: "http://localhost:5000"
 
       - name: Serve frontend

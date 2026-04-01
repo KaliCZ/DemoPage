@@ -169,7 +169,7 @@ Monetize job offer submissions via Stripe.
 |---|---|---|
 | **Runtime** | ASP.NET Core | Strong typing, familiar, good performance |
 | **Hosting** | Oracle Cloud Always Free (ARM A1: 4 OCPUs, 24 GB RAM, 200 GB storage). Fallback: Hetzner VPS (~€4/month). | Free, generous specs, supports long-running processes. See [ADR](#backend-hosting--oracle-cloud-always-free-fallback-hetzner-vps) for risks and fallback plan. |
-| **Database** | PostgreSQL (local Docker for dev, VM-hosted for prod) | Marten manages schema automatically |
+| **Database** | PostgreSQL (local Docker for dev, Supabase PostgreSQL for prod) | Marten manages schema automatically |
 | **Event sourcing** | Marten | .NET event sourcing on PostgreSQL. Inline snapshot projections for read models. |
 | **Auth** | Supabase Auth (JWT validation in backend) | Free, includes social logins, standard OAuth flow |
 

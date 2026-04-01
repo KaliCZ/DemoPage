@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core (.NET 10) backend with Marten (event sourcing) + PostgreSQL, deployed to Oracle Cloud.
+Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core (.NET 10) backend with Marten (event sourcing) deployed to Oracle Cloud, connecting to Supabase PostgreSQL. Local dev uses Docker PostgreSQL.
 
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.

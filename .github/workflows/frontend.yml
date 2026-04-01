@@ -67,6 +67,10 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_API_URL: https://api.kalandra.tech
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

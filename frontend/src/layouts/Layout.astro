@@ -450,10 +450,10 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
 
   <script>
     import { createClient } from '@supabase/supabase-js';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
+    import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../lib/supabase';
 
-    const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
-      ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const supabase = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
+      ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
 
     let authDialogMode: 'signin' | 'signup' = 'signin';
