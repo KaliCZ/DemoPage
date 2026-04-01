@@ -88,7 +88,6 @@ Local services:
 
 Local credentials (well-known dev values, not secrets):
 - **Publishable key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
-- **JWT secret**: `super-secret-jwt-token-with-at-least-32-characters-long`
 
 ### 2.4 Configure Frontend
 
@@ -253,8 +252,8 @@ The test suite:
 ### 5.2 E2E Testing Notes
 
 Full E2E tests (frontend → backend → DB) are possible because:
-- Auth tokens are standard JWTs — tests can generate them with the known JWT secret
-- The backend validates JWTs independently (no Supabase API calls)
+- Auth tokens are standard JWTs — tests generate them with a known test secret via `JwtTestHelper`
+- The backend validates JWTs via JWKS in production; tests use a symmetric fallback key
 - Only the OAuth redirect flow itself requires a real Supabase instance
 
 ---
@@ -271,7 +270,7 @@ Roles are stored as an array in Supabase `app_metadata` (e.g., `"roles": ["admin
 
 ### Supabase Auth — Local + Production
 
-The backend only validates JWT signatures. It never calls the Supabase API directly.
+The backend validates JWT signatures via JWKS (fetching public keys from Supabase's OpenID Connect endpoint). It never calls the Supabase API directly. A symmetric secret fallback exists for tests and local Supabase.
 
 - **Local dev**: `npx supabase start` runs a local Supabase instance in Docker (auth, API gateway, studio). Email/password sign-in works without any external dependencies.
 - **Production**: Supabase Cloud with Google OAuth + email/password.
