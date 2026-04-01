@@ -7,18 +7,12 @@ namespace Kalandra.Api.Features.JobOffers.List;
 
 public class ListJobOffersHandler(IQuerySession session)
 {
-    private const int DefaultPageSize = 20;
-    private const int MaxPageSize = 100;
-
     public async Task<ListJobOffersResponse> HandleAsync(
         string? userId,
         int page,
         int pageSize,
         CancellationToken ct)
     {
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
-
         var query = session.Query<JobOffer>();
 
         if (userId != null)

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
@@ -81,8 +82,8 @@ public class JobOffersController(
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> ListMine(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, 100)] int pageSize = 20,
         CancellationToken ct = default)
     {
         var result = await listHandler.HandleAsync(currentUser.RequireUserId(), page, pageSize, ct);
@@ -92,8 +93,8 @@ public class JobOffersController(
     [HttpGet]
     [Authorize(Policy = "Admin")]
     public async Task<IActionResult> ListAll(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, 100)] int pageSize = 20,
         CancellationToken ct = default)
     {
         var result = await listHandler.HandleAsync(null, page, pageSize, ct);
