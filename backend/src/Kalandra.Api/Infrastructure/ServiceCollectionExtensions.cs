@@ -69,9 +69,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddStorageFileUpload(this IServiceCollection services)
+    public static IServiceCollection AddStorageServices(this IServiceCollection services)
     {
-        services.AddHttpClient<IStorageFileUploader, SupabaseStorageFileUploader>();
+        services.AddHttpClient<IStorageService, SupabaseStorageService>();
 
         return services;
     }

@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 
 /**
  * E2E test for the full hire-me flow:
@@ -14,6 +17,7 @@ import { test, expect } from '@playwright/test';
  *   - Frontend at http://localhost:4321
  */
 
+const API_URL = process.env.PUBLIC_API_URL || 'http://localhost:5000';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
@@ -103,5 +107,83 @@ test.describe('Hire Me Flow', () => {
     await expect(page.locator('#offer-detail')).toContainText('tester@e2etest.com');
     // Verify the offer is in "Submitted" status
     await expect(page.locator('#offer-detail')).toContainText('Submitted');
+  });
+
+  test('submit with attachment → verify file can be downloaded with matching content', async ({ page, request }) => {
+    // Create a temporary text file with known content
+    const fileContent = `E2E attachment test — ${Date.now()}`;
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-'));
+    const filePath = path.join(tmpDir, 'test-attachment.txt');
+    fs.writeFileSync(filePath, fileContent, 'utf-8');
+
+    try {
+      // 1. Navigate and sign in
+      await page.goto('/hire-me');
+      await page.evaluate(async ({ email, password }) => {
+        const supabase = (window as any).__supabase;
+        if (!supabase) throw new Error('Supabase client not available');
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(`Sign-in failed: ${error.message}`);
+      }, { email: testUser.email, password: testUser.password });
+
+      await expect(page.locator('#job-offer-form-section')).toBeVisible();
+
+      // 2. Fill the form
+      await page.fill('#companyName', 'Attachment Test Corp');
+      await page.fill('#contactName', 'File Tester');
+      await page.fill('#contactEmail', 'file@e2etest.com');
+      await page.fill('#jobTitle', 'Attachment Engineer');
+      await page.fill('#description', 'Testing that file uploads round-trip correctly.');
+
+      // 3. Attach the file
+      const fileInput = page.locator('#attachments');
+      await fileInput.setInputFiles(filePath);
+      await expect(page.locator('#file-list')).toContainText('test-attachment.txt');
+
+      // 4. Submit
+      await page.click('#submit-btn');
+      await expect(page.locator('#form-success')).toBeVisible({ timeout: 15000 });
+
+      // 5. Get the access token to fetch the offer detail via API
+      const token = await page.evaluate(async () => {
+        return await (window as any).__getAccessToken?.();
+      });
+      expect(token).toBeTruthy();
+
+      // 6. Find the offer we just created via the API
+      const listResponse = await request.get(`${API_URL}/api/job-offers/mine`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      expect(listResponse.ok()).toBeTruthy();
+      const listData = await listResponse.json();
+      const offer = listData.items.find((o: any) => o.companyName === 'Attachment Test Corp');
+      expect(offer).toBeTruthy();
+
+      // 7. Get the offer detail to verify attachment metadata
+      const detailResponse = await request.get(`${API_URL}/api/job-offers/${offer.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      expect(detailResponse.ok()).toBeTruthy();
+      const detail = await detailResponse.json();
+      expect(detail.attachments).toHaveLength(1);
+      expect(detail.attachments[0].fileName).toBe('test-attachment.txt');
+      expect(detail.attachments[0].contentType).toBe('text/plain');
+
+      // 8. Download the file via the API download endpoint
+      const encodedName = encodeURIComponent('test-attachment.txt');
+      const downloadResponse = await request.get(
+        `${API_URL}/api/job-offers/${offer.id}/attachments/${encodedName}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+        },
+      );
+      expect(downloadResponse.ok(), `Download failed: ${downloadResponse.status()}`).toBeTruthy();
+
+      // 9. Verify the downloaded content matches what we uploaded
+      const downloadedContent = await downloadResponse.text();
+      expect(downloadedContent).toBe(fileContent);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });

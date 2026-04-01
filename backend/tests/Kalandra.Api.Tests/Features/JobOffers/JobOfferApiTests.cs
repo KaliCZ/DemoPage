@@ -381,6 +381,44 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task DownloadAttachment_RoundTrips_MatchingContent()
+    {
+        var token = JwtTestHelper.GenerateToken();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var originalContent = "round-trip test content";
+        var content = CreateValidFormContent();
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(originalContent));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        content.Add(fileContent, "attachments", "roundtrip.pdf");
+
+        var createResponse = await client.PostAsync("/api/job-offers", content, Ct);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
+
+        var downloadResponse = await client.GetAsync(
+            $"/api/job-offers/{created!.Id}/attachments/{Uri.EscapeDataString("roundtrip.pdf")}", Ct);
+        Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
+
+        var downloadedContent = await downloadResponse.Content.ReadAsStringAsync(Ct);
+        Assert.Equal(originalContent, downloadedContent);
+    }
+
+    [Fact]
+    public async Task DownloadAttachment_NonExistentFile_Returns404()
+    {
+        var token = JwtTestHelper.GenerateToken();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
+        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
+
+        var downloadResponse = await client.GetAsync(
+            $"/api/job-offers/{created!.Id}/attachments/{Uri.EscapeDataString("nonexistent.pdf")}", Ct);
+        Assert.Equal(HttpStatusCode.NotFound, downloadResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Create_WithDisallowedFileType_Returns400()
     {
         var token = JwtTestHelper.GenerateToken();

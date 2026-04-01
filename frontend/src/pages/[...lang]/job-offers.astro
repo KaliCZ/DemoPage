@@ -393,7 +393,7 @@ const f = formTranslations[lang].form;
               '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
               '<span class="flex-1 truncate font-body text-on-surface">' + esc(att.fileName) + '</span>' +
               '<span class="text-xs text-on-surface-variant font-label">' + sizeStr + '</span>' +
-              '<button type="button" data-storage-path="' + esc(att.storagePath) + '" data-file-name="' + esc(att.fileName) + '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
+              '<button type="button" data-file-name="' + esc(att.fileName) + '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
                 '<span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>' + downloadLabel +
               '</button>' +
             '</div>';
@@ -405,37 +405,23 @@ const f = formTranslations[lang].form;
       // Bind download buttons
       detail.querySelectorAll('.download-attachment-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
-          var storagePath = btn.getAttribute('data-storage-path');
           var fileName = btn.getAttribute('data-file-name');
-          var supabase = window.__supabase;
-          if (!supabase || !storagePath) return;
+          if (!currentOfferId || !fileName || !currentToken) return;
 
-          var result = await supabase.storage
-            .from('job-offer-attachments')
-            .createSignedUrl(storagePath, 60);
+          var encodedName = encodeURIComponent(fileName);
+          var response = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/attachments/' + encodedName, {
+            headers: { 'Authorization': 'Bearer ' + currentToken }
+          });
 
-          if (result.error) {
-            // Fallback: try download directly
-            var dlResult = await supabase.storage
-              .from('job-offer-attachments')
-              .download(storagePath);
-            if (dlResult.data) {
-              var url = URL.createObjectURL(dlResult.data);
-              var a = document.createElement('a');
-              a.href = url;
-              a.download = fileName || 'download';
-              a.click();
-              URL.revokeObjectURL(url);
-            }
-            return;
-          }
+          if (!response.ok) return;
 
+          var blob = await response.blob();
+          var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
-          a.href = result.data.signedUrl;
-          a.download = fileName || 'download';
-          a.target = '_blank';
-          a.rel = 'noopener';
+          a.href = url;
+          a.download = fileName;
           a.click();
+          URL.revokeObjectURL(url);
         });
       });
     }

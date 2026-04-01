@@ -41,7 +41,7 @@ SupabaseStorageConfig.AddSingleton(builder.Services, builder.Configuration);
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(authConfig);
 builder.Services.AddAppCors(builder.Configuration, builder.Environment);
-builder.Services.AddStorageFileUpload();
+builder.Services.AddStorageServices();
 builder.Services.AddJobOfferFeatures();
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)

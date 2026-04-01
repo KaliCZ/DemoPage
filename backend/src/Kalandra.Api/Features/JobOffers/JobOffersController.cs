@@ -18,7 +18,7 @@ namespace Kalandra.Api.Features.JobOffers;
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
     IDocumentSession session,
-    IStorageFileUploader fileUploader,
+    IStorageService storageService,
     TimeProvider timeProvider) : ControllerBase
 {
     private const int MaxPageSize = 100;
@@ -80,7 +80,7 @@ public class JobOffersController(
 
             try
             {
-                var uploaded = await fileUploader.UploadAsync(folderPrefix, items, ct);
+                var uploaded = await storageService.UploadAsync(folderPrefix, items, ct);
                 uploadedAttachments = uploaded
                     .Select(f => new AttachmentInfo(f.FileName, f.StoragePath, f.FileSize, f.ContentType))
                     .ToList();
@@ -346,6 +346,38 @@ public class JobOffersController(
     {
         var detail = await LoadDetailAsync(id, ct);
         return detail == null ? NotFound() : Ok(detail);
+    }
+
+    // ───── Download Attachment ─────
+
+    [HttpGet("{id:guid}/attachments/{fileName}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadAttachment(Guid id, string fileName, CancellationToken ct)
+    {
+        var offer = await session.LoadAsync<JobOffer>(id, ct);
+        if (offer == null)
+            return NotFound();
+
+        if (!AppUser.IsAdmin && offer.UserId != AppUser.Id)
+            return NotFound();
+
+        var attachment = offer.Attachments.FirstOrDefault(
+            a => string.Equals(a.FileName, fileName, StringComparison.Ordinal));
+        if (attachment == null)
+            return NotFound();
+
+        var download = await storageService.DownloadAsync(attachment.StoragePath, ct);
+        if (download == null)
+            return NotFound();
+
+        return File(
+            fileStream: download.Content,
+            contentType: download.ContentType,
+            fileDownloadName: attachment.FileName,
+            enableRangeProcessing: true);
     }
 
     // ───── History ─────

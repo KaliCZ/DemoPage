@@ -25,8 +25,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Storage:ServiceKey", "test-service-key");
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<IStorageFileUploader>();
-            services.AddSingleton<IStorageFileUploader, FakeStorageFileUploader>();
+            services.RemoveAll<IStorageService>();
+            services.AddSingleton<IStorageService, InMemoryStorageService>();
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,
