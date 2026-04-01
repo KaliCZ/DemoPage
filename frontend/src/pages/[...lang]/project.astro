@@ -15,8 +15,6 @@ export function getStaticPaths() {
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 
-const techIcons = ['public', 'rocket_launch', 'data_object', 'deployed_code'];
-const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="project" lang={lang}>
@@ -73,13 +71,61 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
   <!-- Tech Stack -->
   <section class="max-w-7xl mx-auto px-8 mb-32">
     <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.techStack.title}</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {t.techStack.items.map((item, i) => (
-        <div class="bg-surface-container-high p-6 flex flex-col items-center justify-center gap-4 hover:bg-surface-container-highest transition-all duration-300 group rounded-xl border border-outline-variant/20">
-          <span class:list={["material-symbols-outlined text-3xl group-hover:scale-110 transition-transform", `text-${techColors[i]}`]} aria-hidden="true">{techIcons[i]}</span>
-          <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant">{item}</span>
-        </div>
-      ))}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+        <h3 class="font-label text-sm uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">monitor</span>
+          {t.techStack.frontendLabel}
+        </h3>
+        <ul class="space-y-3">
+          {t.techStack.frontendItems.map((item) => (
+            <li class="font-body text-on-surface-variant flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+        <h3 class="font-label text-sm uppercase tracking-widest text-tertiary mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dns</span>
+          {t.techStack.backendLabel}
+        </h3>
+        <ul class="space-y-3">
+          {t.techStack.backendItems.map((item) => (
+            <li class="font-body text-on-surface-variant flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0"></span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+        <h3 class="font-label text-sm uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">settings</span>
+          {t.techStack.infraLabel}
+        </h3>
+        <ul class="space-y-3">
+          {t.techStack.infraItems.map((item) => (
+            <li class="font-body text-on-surface-variant">
+              <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>
+                {item.text}
+              </div>
+              {item.subItems && (
+                <ul class="ml-5 mt-2 space-y-2">
+                  {item.subItems.map((sub) => (
+                    <li class="flex items-center gap-2 text-sm">
+                      <span class="w-1 h-1 rounded-full bg-outline/60 shrink-0"></span>
+                      {sub}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -171,11 +217,43 @@ const techColors = ['primary', 'tertiary', 'primary', 'tertiary'];
               ) : (
                 <>
                   <div></div>
-                  <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+                  {version.done ? (
+                    <div class="absolute top-5 left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
+                      <span class="material-symbols-outlined text-white text-[14px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
+                    </div>
+                  ) : (
+                    <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
+                  )}
                   <div class="md:pl-16">
-                    <div class="font-label text-primary mb-2 text-sm uppercase">{`Version ${version.number}`}</div>
-                    <h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">{version.title}</h3>
-                    <p class="font-body text-on-surface-variant leading-relaxed">{version.description}</p>
+                    <div class:list={["font-label text-primary mb-2 text-sm uppercase", version.done && "flex items-center gap-1.5"]}>
+                      {`Version ${version.number}`}
+                      {version.done && (
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check_circle</span>
+                      )}
+                    </div>
+                    <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>{version.title}</h3>
+                    {'time' in version && version.time && <p class="font-label text-xs text-on-surface-variant mb-4">{version.time}</p>}
+                    <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>{version.description}</p>
+                    {hasDetails && (
+                      <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
+                        <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
+                          <span class="material-symbols-outlined text-[16px] text-primary transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+                          {version.detailsLabel}
+                        </summary>
+                        <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
+                          {version.details!.map((item) => (
+                            <li class="flex items-center gap-2">
+                              {item.author === 'claude' ? (
+                                <img src="/images/claude-icon.svg" alt="Claude" class="w-4 h-4 rounded-full" />
+                              ) : (
+                                <img src="/images/pavel-portrait-200.webp" alt="Pavel" class="w-4 h-4 rounded-full object-cover" width="16" height="16" />
+                              )}
+                              <span>{item.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                   </div>
                 </>
               )}

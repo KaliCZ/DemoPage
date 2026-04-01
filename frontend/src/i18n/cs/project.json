@@ -26,7 +26,16 @@
   },
   "techStack": {
     "title": "Postaveno na",
-    "items": ["Cloudflare Pages", "Astro + Tailwind", "ASP.NET Core", "GitHub Actions"]
+    "frontendLabel": "Frontend",
+    "frontendItems": ["Astro", "Tailwind CSS", "Supabase Auth", "Cloudflare Pages"],
+    "backendLabel": "Backend",
+    "backendItems": ["C# ASP.NET Core", "PostgreSQL", "Marten Event Sourcing"],
+    "infraLabel": "Infrastruktura",
+    "infraItems": [
+      { "text": "Oracle Cloud VPS" },
+      { "text": "Supabase" },
+      { "text": "GitHub Actions", "subItems": ["Build + Test + Deploy", "E2E testy (Playwright)"] }
+    ]
   },
   "roadmap": {
     "timelineLabel": "Časová osa",
@@ -42,13 +51,11 @@
         "side": "left",
         "detailsLabel": "Co se udělalo",
         "details": [
-          { "author": "claude", "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind" },
           { "author": "pavel", "text": "Nastavení domény, DNS a hostingu na Cloudflare Pages" },
+          { "author": "claude", "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind" },
           { "author": "claude", "text": "Deploy pipeline přes GitHub Actions" },
           { "author": "claude", "text": "Světlý a tmavý režim s detekcí systémových preferencí" },
-          { "author": "claude", "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady" },
-          { "author": "claude", "text": "Responzivní layout, SEO markup, Open Graph a hreflang tagy" },
-          { "author": "claude", "text": "Přístupná navigace se skip-to-content a ARIA atributy" }
+          { "author": "claude", "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady" }
         ]
       },
       {
@@ -56,22 +63,16 @@
         "title": "Backend Included",
         "done": true,
         "time": "~10 hodin",
-        "description": "Supabase Auth s Google OAuth, formulář pro podání pracovních nabídek a ASP.NET Core backend s Marten event sourcingem. Uživatelé mohou podávat, sledovat a rušit nabídky. Admin může přezkoumávat všechna podání a měnit stavy.",
+        "description": "ASP.NET Core backend se Supabase Auth a Marten event sourcingem. Slouží ke správě pracovních nabídek — uživatelé mohou podávat a sledovat nabídky, admini je přezkoumávat a měnit stavy.",
         "side": "right",
         "detailsLabel": "Co se udělalo",
         "details": [
-          { "author": "pavel", "text": "Integrace Supabase Auth s Google OAuth a email/heslo přihlášením" },
-          { "author": "claude", "text": "Přihlašovací dialog, profilový dropdown, správa auth stavu" },
-          { "author": "claude", "text": "Formulář pracovních nabídek s plnou i18n (angličtina + čeština)" },
-          { "author": "claude", "text": "ASP.NET Core Web API s vertical slices architekturou" },
-          { "author": "claude", "text": "Marten event sourcing s PostgreSQL pro životní cyklus nabídek" },
-          { "author": "pavel", "text": "Validace Supabase JWT s autorizací na základě rolí" },
-          { "author": "claude", "text": "Admin pohled: všechny nabídky, změny stavu, poznámky, log aktivit" },
-          { "author": "claude", "text": "Uživatelský dashboard: podané nabídky s aktuálním stavem" },
-          { "author": "claude", "text": "Docker Compose pro lokální vývoj, Dockerfile pro produkci" },
-          { "author": "claude", "text": "CI/CD pipeline: GitHub Actions → GHCR → Oracle Cloud" },
-          { "author": "claude", "text": "Integrační testy s Testcontainers + Playwright frontend testy" },
-          { "author": "claude", "text": "E2E testovací infrastruktura a single-command lokální dev setup" }
+          { "author": "pavel", "text": "Supabase projekt a Google OAuth setup" },
+          { "author": "pavel", "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy" },
+          { "author": "claude", "text": "ASP.NET Core Web API s vertical slices a Marten event sourcingem" },
+          { "author": "claude", "text": "Formulář nabídek, uživatelský dashboard a admin pohled s i18n" },
+          { "author": "claude", "text": "Docker setup, CI/CD pipeline na Oracle Cloud" },
+          { "author": "claude", "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)" }
         ]
       },
       {
