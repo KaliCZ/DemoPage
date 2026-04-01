@@ -118,6 +118,7 @@ jobs:
               -e ASPNETCORE_ENVIRONMENT=Production \
               -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
               -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
+              -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
               $IMAGE
 
             # Wait for the new container to become healthy

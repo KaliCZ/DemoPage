@@ -63,6 +63,7 @@ jobs:
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
+          Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
