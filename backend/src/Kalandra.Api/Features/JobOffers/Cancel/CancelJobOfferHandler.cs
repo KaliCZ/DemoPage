@@ -4,7 +4,7 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Cancel;
 
-public class CancelJobOfferHandler(IDocumentSession session)
+public class CancelJobOfferHandler(IDocumentSession session, TimeProvider timeProvider)
 {
     /// <summary>
     /// Cancel a job offer. Only the owner can cancel, and only if status is Submitted or InReview.
@@ -25,7 +25,7 @@ public class CancelJobOfferHandler(IDocumentSession session)
             userId,
             userEmail,
             request.Reason,
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         if (!success || cancelled == null)
             return (false, error);

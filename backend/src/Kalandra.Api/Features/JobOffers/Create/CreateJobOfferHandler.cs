@@ -6,7 +6,8 @@ namespace Kalandra.Api.Features.JobOffers.Create;
 
 public class CreateJobOfferHandler(
     IDocumentSession session,
-    IJobOfferAttachmentVerifier attachmentVerifier)
+    IJobOfferAttachmentVerifier attachmentVerifier,
+    TimeProvider timeProvider)
 {
     public async Task<(bool Success, string? Error, CreateJobOfferResponse? Response)> HandleAsync(
         CreateJobOfferRequest request,
@@ -21,7 +22,7 @@ public class CreateJobOfferHandler(
             return (false, attachmentVerification.Error, null);
         }
 
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
 
         var submitted = new JobOfferSubmitted(
             UserId: userId,

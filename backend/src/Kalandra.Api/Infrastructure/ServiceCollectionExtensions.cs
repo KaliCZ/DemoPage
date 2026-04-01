@@ -89,6 +89,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
+        services.AddSingleton(TimeProvider.System);
 
         services.AddTransient<CreateJobOfferHandler>();
         services.AddTransient<EditJobOfferHandler>();

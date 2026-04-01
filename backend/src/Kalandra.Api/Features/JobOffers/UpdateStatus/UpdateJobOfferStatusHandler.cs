@@ -4,7 +4,7 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.UpdateStatus;
 
-public class UpdateJobOfferStatusHandler(IDocumentSession session)
+public class UpdateJobOfferStatusHandler(IDocumentSession session, TimeProvider timeProvider)
 {
     public async Task<(bool Success, string? Error)> HandleAsync(
         Guid id,
@@ -23,7 +23,7 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session)
             adminUserId,
             adminEmail,
             request.AdminNotes,
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         if (!success || statusChanged == null)
             return (false, error);

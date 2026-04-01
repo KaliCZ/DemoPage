@@ -4,7 +4,7 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Edit;
 
-public class EditJobOfferHandler(IDocumentSession session)
+public class EditJobOfferHandler(IDocumentSession session, TimeProvider timeProvider)
 {
     public async Task<(bool Success, string? Error)> HandleAsync(
         Guid id,
@@ -30,7 +30,7 @@ public class EditJobOfferHandler(IDocumentSession session)
             request.Location,
             request.IsRemote,
             request.AdditionalNotes,
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         if (!success || edited == null)
             return (false, error);

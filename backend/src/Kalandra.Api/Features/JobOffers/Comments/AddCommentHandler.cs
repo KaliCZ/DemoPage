@@ -3,7 +3,7 @@ using Marten;
 
 namespace Kalandra.Api.Features.JobOffers.Comments;
 
-public class AddCommentHandler(IDocumentSession session)
+public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvider)
 {
     public async Task<(bool Success, string? Error)> HandleAsync(
         Guid jobOfferId,
@@ -25,7 +25,7 @@ public class AddCommentHandler(IDocumentSession session)
             userName,
             request.Content,
             isAdmin,
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         if (!success || commentAdded == null)
             return (false, error);
