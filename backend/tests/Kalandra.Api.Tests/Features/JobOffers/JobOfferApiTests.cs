@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Tests.Helpers;
@@ -15,7 +16,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Create_WithoutAuth_Returns401()
     {
-        var response = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var response = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -25,7 +26,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token = JwtTestHelper.GenerateToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var response = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var result = await response.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
@@ -39,19 +40,17 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token = JwtTestHelper.GenerateToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var request = new CreateJobOfferRequest(
-            Id: null,
-            CompanyName: "",
-            ContactName: "",
-            ContactEmail: "",
-            JobTitle: "",
-            Description: "",
-            SalaryRange: null,
-            Location: null,
-            IsRemote: false,
-            AdditionalNotes: null,
-            Attachments: null);
-        var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
+        var content = new MultipartFormDataContent
+        {
+            { new StringContent(""), "CompanyName" },
+            { new StringContent(""), "ContactName" },
+            { new StringContent(""), "ContactEmail" },
+            { new StringContent(""), "JobTitle" },
+            { new StringContent(""), "Description" },
+            { new StringContent("false"), "IsRemote" },
+        };
+
+        var response = await client.PostAsync("/api/job-offers", content, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -82,7 +81,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Submit
-        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
         var id = created!.Id;
@@ -125,7 +124,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var userToken = JwtTestHelper.GenerateToken("status-user", "status@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
-        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
         var id = created!.Id;
 
@@ -150,7 +149,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var userToken = JwtTestHelper.GenerateToken("status-user", "status@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
-        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
@@ -168,7 +167,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var userToken = JwtTestHelper.GenerateToken("terminal-user", "terminal@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
-        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
@@ -190,7 +189,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         // Create as user1
         var token1 = JwtTestHelper.GenerateToken("owner-user", "owner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
-        var createResponse = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Try to cancel as user2
@@ -208,7 +207,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         // Create as user1
         var token1 = JwtTestHelper.GenerateToken("view-owner", "viewowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Try to view as user2
@@ -231,7 +230,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         // Create as user1
         var token1 = JwtTestHelper.GenerateToken("edit-owner", "editowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Try to edit as user2
@@ -248,7 +247,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         // Create as user1
         var token1 = JwtTestHelper.GenerateToken("list-owner", "listowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // List as user2
@@ -268,7 +267,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Edit
@@ -303,7 +302,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token = JwtTestHelper.GenerateToken("edit-fail-user", "editfail@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         await client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel", new { reason = "" }, Ct);
@@ -319,7 +318,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token = JwtTestHelper.GenerateToken("comment-user", "comment@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Add comment
@@ -342,7 +341,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var userToken = JwtTestHelper.GenerateToken("comment-owner", "owner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
-        var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
+        var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Admin adds comment
@@ -362,64 +361,37 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Create_WithVerifiedAttachments_Returns201()
+    public async Task Create_WithAttachments_Returns201()
     {
         var token = JwtTestHelper.GenerateToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var offerId = Guid.NewGuid();
-        var request = new CreateJobOfferRequest(
-            Id: offerId,
-            CompanyName: "Acme Corp",
-            ContactName: "John Doe",
-            ContactEmail: "john@acme.com",
-            JobTitle: "Senior Developer",
-            Description: "We are looking for a senior developer to join our team.",
-            SalaryRange: "$120k - $160k",
-            Location: "Prague, CZ",
-            IsRemote: true,
-            AdditionalNotes: null,
-            Attachments:
-            [
-                new AttachmentInfo(
-                    FileName: "portfolio.pdf",
-                    StoragePath: $"test-user-id/{offerId}/portfolio.pdf",
-                    FileSize: 1024,
-                    ContentType: "application/pdf")
-            ]);
+        var content = CreateValidFormContent();
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("fake pdf content"));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        content.Add(fileContent, "attachments", "portfolio.pdf");
 
-        var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
+        var response = await client.PostAsync("/api/job-offers", content, Ct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
+        Assert.NotNull(result);
+        Assert.Single(result.Attachments);
+        Assert.Equal("portfolio.pdf", result.Attachments[0].FileName);
     }
 
     [Fact]
-    public async Task Create_WithAttachmentOutsideOfferPath_Returns400()
+    public async Task Create_WithDisallowedFileType_Returns400()
     {
         var token = JwtTestHelper.GenerateToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var offerId = Guid.NewGuid();
-        var request = new CreateJobOfferRequest(
-            Id: offerId,
-            CompanyName: "Acme Corp",
-            ContactName: "John Doe",
-            ContactEmail: "john@acme.com",
-            JobTitle: "Senior Developer",
-            Description: "We are looking for a senior developer to join our team.",
-            SalaryRange: "$120k - $160k",
-            Location: "Prague, CZ",
-            IsRemote: true,
-            AdditionalNotes: null,
-            Attachments:
-            [
-                new AttachmentInfo(
-                    FileName: "portfolio.pdf",
-                    StoragePath: $"test-user-id/{Guid.NewGuid()}/portfolio.pdf",
-                    FileSize: 1024,
-                    ContentType: "application/pdf")
-            ]);
+        var content = CreateValidFormContent();
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("malicious script"));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/x-sh");
+        content.Add(fileContent, "attachments", "hack.sh");
 
-        var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
+        var response = await client.PostAsync("/api/job-offers", content, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -430,19 +402,20 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    private static CreateJobOfferRequest CreateValidRequest() =>
-        new(
-            Id: null,
-            CompanyName: "Acme Corp",
-            ContactName: "John Doe",
-            ContactEmail: "john@acme.com",
-            JobTitle: "Senior Developer",
-            Description: "We are looking for a senior developer to join our team.",
-            SalaryRange: "$120k - $160k",
-            Location: "Prague, CZ",
-            IsRemote: true,
-            AdditionalNotes: null,
-            Attachments: null);
+    private static MultipartFormDataContent CreateValidFormContent()
+    {
+        return new MultipartFormDataContent
+        {
+            { new StringContent("Acme Corp"), "CompanyName" },
+            { new StringContent("John Doe"), "ContactName" },
+            { new StringContent("john@acme.com"), "ContactEmail" },
+            { new StringContent("Senior Developer"), "JobTitle" },
+            { new StringContent("We are looking for a senior developer to join our team."), "Description" },
+            { new StringContent("$120k - $160k"), "SalaryRange" },
+            { new StringContent("Prague, CZ"), "Location" },
+            { new StringContent("true"), "IsRemote" },
+        };
+    }
 
     private static EditJobOfferRequest EditValidRequest() =>
         new(

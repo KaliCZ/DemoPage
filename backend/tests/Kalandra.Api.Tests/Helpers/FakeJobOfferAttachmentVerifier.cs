@@ -1,48 +1,20 @@
 using Kalandra.Infrastructure.Storage;
-using StrongTypes;
 
 namespace Kalandra.Api.Tests.Helpers;
 
-public class FakeStorageFileVerifier : IStorageFileVerifier
+public class FakeStorageFileUploader : IStorageFileUploader
 {
-    public Task<Try<IReadOnlyList<StorageFileInfo>, FileVerificationError>> VerifyAsync(
-        string expectedFolderPrefix,
-        IReadOnlyList<StorageFileInfo>? files,
+    public Task<IReadOnlyList<StorageFileInfo>> UploadAsync(
+        string folderPrefix,
+        IReadOnlyList<FileUploadItem> files,
         CancellationToken ct)
     {
-        if (files == null || files.Count == 0)
-        {
-            return Task.FromResult(
-                Try.Success<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
-                    Array.Empty<StorageFileInfo>()));
-        }
+        var results = files.Select(f => new StorageFileInfo(
+            FileName: f.FileName,
+            StoragePath: $"{folderPrefix}{f.FileName}",
+            FileSize: f.FileSize,
+            ContentType: f.ContentType)).ToList();
 
-        foreach (var file in files)
-        {
-            if (file.StoragePath.Contains("/missing/", StringComparison.Ordinal))
-            {
-                return Task.FromResult(
-                    Try.Error<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
-                        FileVerificationError.FileNotFound));
-            }
-
-            if (!file.StoragePath.StartsWith(expectedFolderPrefix, StringComparison.Ordinal))
-            {
-                return Task.FromResult(
-                    Try.Error<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
-                        FileVerificationError.WrongFolder));
-            }
-
-            var fileName = Path.GetFileName(file.StoragePath.Replace('\\', '/'));
-            if (!string.Equals(fileName, file.FileName, StringComparison.Ordinal))
-            {
-                return Task.FromResult(
-                    Try.Error<IReadOnlyList<StorageFileInfo>, FileVerificationError>(
-                        FileVerificationError.MetadataMismatch));
-            }
-        }
-
-        return Task.FromResult(
-            Try.Success<IReadOnlyList<StorageFileInfo>, FileVerificationError>(files));
+        return Task.FromResult<IReadOnlyList<StorageFileInfo>>(results);
     }
 }

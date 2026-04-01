@@ -154,7 +154,7 @@ const t = translations[lang];
     </div>
   </section>
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, uploadingText: t.form.attachmentsUploading, uploadErrorText: t.form.attachmentsError }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage }}>
     // Listen for auth changes
     window.addEventListener('auth-change', function(e) {
       var user = e.detail?.user;
@@ -241,64 +241,25 @@ const t = translations[lang];
         if (selectedFiles.length > maxFiles) throw new Error('Too many files');
         if (totalSize > maxTotalBytes) throw new Error('Files too large');
 
-        // Upload files to Supabase Storage
-        var attachments = [];
-        var offerId = null;
-        if (selectedFiles.length > 0) {
-          if (submitBtn) submitBtn.textContent = uploadingText;
-          var supabase = window.__supabase;
-          if (!supabase) throw new Error('Supabase not initialized');
+        var formData = new FormData();
+        formData.append('CompanyName', form.companyName.value);
+        formData.append('ContactName', form.contactName.value);
+        formData.append('ContactEmail', form.contactEmail.value);
+        formData.append('JobTitle', form.jobTitle.value);
+        formData.append('Description', form.description.value);
+        if (form.salaryRange.value) formData.append('SalaryRange', form.salaryRange.value);
+        if (form.location.value) formData.append('Location', form.location.value);
+        formData.append('IsRemote', form.isRemote.checked);
+        if (form.additionalNotes.value) formData.append('AdditionalNotes', form.additionalNotes.value);
 
-          var user = await window.__getUser?.();
-          var userId = user?.id;
-          if (!userId) throw new Error('Not authenticated');
-
-          offerId = crypto.randomUUID();
-
-          for (var i = 0; i < selectedFiles.length; i++) {
-            var file = selectedFiles[i];
-            var storagePath = userId + '/' + offerId + '/' + file.name;
-            var uploadResult = await supabase.storage
-              .from('job-offer-attachments')
-              .upload(storagePath, file, { upsert: false });
-
-            if (uploadResult.error) {
-              console.error('Upload error:', uploadResult.error);
-              throw new Error('Upload failed');
-            }
-
-            attachments.push({
-              fileName: file.name,
-              storagePath: storagePath,
-              fileSize: file.size,
-              contentType: file.type || 'application/octet-stream'
-            });
-          }
+        for (var i = 0; i < selectedFiles.length; i++) {
+          formData.append('attachments', selectedFiles[i]);
         }
-
-        if (submitBtn) submitBtn.textContent = submittingText;
-
-        var body = {
-          id: attachments.length > 0 ? offerId : null,
-          companyName: form.companyName.value,
-          contactName: form.contactName.value,
-          contactEmail: form.contactEmail.value,
-          jobTitle: form.jobTitle.value,
-          description: form.description.value,
-          salaryRange: form.salaryRange.value || null,
-          location: form.location.value || null,
-          isRemote: form.isRemote.checked,
-          additionalNotes: form.additionalNotes.value || null,
-          attachments: attachments.length > 0 ? attachments : null
-        };
 
         var response = await fetch(apiUrl + '/api/job-offers', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify(body)
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: formData
         });
 
         if (!response.ok) throw new Error('Failed');
@@ -307,7 +268,7 @@ const t = translations[lang];
         document.getElementById('form-success')?.classList.remove('hidden');
       } catch (err) {
         if (errorEl) {
-          errorEl.textContent = err.message === 'Upload failed' ? uploadErrorText : errorText;
+          errorEl.textContent = errorText;
           errorEl.classList.remove('hidden');
         }
       } finally {

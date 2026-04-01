@@ -33,8 +33,6 @@
     "attachments": "Přílohy (volitelné)",
     "attachmentsHint": "Až 5 souborů, celkem 15 MB. PDF, Word, Excel, obrázky nebo text.",
     "attachmentsBrowse": "Vybrat soubory",
-    "attachmentsUploading": "Nahrávám soubory…",
-    "attachmentsError": "Nahrávání souborů se nezdařilo. Zkuste to prosím znovu.",
     "submit": "Odeslat nabídku",
     "submitting": "Odesílám...",
     "successTitle": "Nabídka odeslána!",

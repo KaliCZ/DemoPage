@@ -18,10 +18,25 @@ namespace Kalandra.Api.Features.JobOffers;
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
     IDocumentSession session,
-    IStorageFileVerifier fileVerifier,
+    IStorageFileUploader fileUploader,
     TimeProvider timeProvider) : ControllerBase
 {
     private const int MaxPageSize = 100;
+    private const int MaxAttachments = 5;
+    private const long MaxTotalBytes = 15 * 1024 * 1024; // 15 MB
+
+    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain",
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+    };
 
     private CurrentUser AppUser => currentUser.CurrentUser;
 
@@ -29,40 +44,53 @@ public class JobOffersController(
 
     [HttpPost]
     [Authorize]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create(
-        [FromBody] CreateJobOfferRequest request,
+        [FromForm] CreateJobOfferRequest request,
+        [FromForm] List<IFormFile>? attachments,
         CancellationToken ct)
     {
-        var streamId = request.Id ?? Guid.NewGuid();
-        var expectedPrefix = $"{AppUser.Id}/{streamId}/";
+        var streamId = Guid.NewGuid();
 
-        var storageFiles = request.Attachments?
-            .Select(a => new StorageFileInfo(a.FileName, a.StoragePath, a.FileSize, a.ContentType))
-            .ToList();
+        var uploadedAttachments = new List<AttachmentInfo>();
 
-        var verificationResult = await fileVerifier.VerifyAsync(expectedPrefix, storageFiles, ct);
-        if (verificationResult.IsError)
+        if (attachments is { Count: > 0 })
         {
-            var error = verificationResult.Error.Get((Unit _) => new InvalidOperationException());
-            return BadRequest(new
-            {
-                error = error switch
-                {
-                    FileVerificationError.PathTraversal => "Attachment paths must stay within the user's offer folder.",
-                    FileVerificationError.WrongFolder => "Attachments must be uploaded into the current offer folder.",
-                    FileVerificationError.MetadataMismatch => "Attachment metadata does not match the uploaded file.",
-                    FileVerificationError.FileNotFound => "One or more attachments were not found in storage.",
-                }
-            });
-        }
+            if (attachments.Count > MaxAttachments)
+                return BadRequest(new { error = $"Maximum {MaxAttachments} attachments allowed." });
 
-        var verifiedFiles = verificationResult.Success.Get((Unit _) => new InvalidOperationException());
-        var verifiedAttachments = verifiedFiles
-            .Select(f => new AttachmentInfo(f.FileName, f.StoragePath, f.FileSize, f.ContentType))
-            .ToList();
+            var totalSize = attachments.Sum(f => f.Length);
+            if (totalSize > MaxTotalBytes)
+                return BadRequest(new { error = "Total attachment size must not exceed 15 MB." });
+
+            var disallowed = attachments.FirstOrDefault(f => !AllowedContentTypes.Contains(f.ContentType));
+            if (disallowed != null)
+                return BadRequest(new { error = $"File type '{disallowed.ContentType}' is not allowed." });
+
+            var folderPrefix = $"{AppUser.Id}/{streamId}/";
+            var items = attachments.Select(f => new FileUploadItem(
+                FileName: f.FileName,
+                FileSize: f.Length,
+                ContentType: f.ContentType,
+                Content: f.OpenReadStream())).ToList();
+
+            try
+            {
+                var uploaded = await fileUploader.UploadAsync(folderPrefix, items, ct);
+                uploadedAttachments = uploaded
+                    .Select(f => new AttachmentInfo(f.FileName, f.StoragePath, f.FileSize, f.ContentType))
+                    .ToList();
+            }
+            finally
+            {
+                foreach (var item in items)
+                    item.Content.Dispose();
+            }
+        }
 
         var submitted = new JobOfferSubmitted(
             UserId: AppUser.Id,
@@ -76,7 +104,7 @@ public class JobOffersController(
             Location: request.Location,
             IsRemote: request.IsRemote,
             AdditionalNotes: request.AdditionalNotes,
-            Attachments: verifiedAttachments,
+            Attachments: uploadedAttachments,
             Timestamp: timeProvider.GetUtcNow());
 
         session.Events.StartStream<JobOffer>(streamId, submitted);

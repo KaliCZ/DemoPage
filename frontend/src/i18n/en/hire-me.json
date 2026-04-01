@@ -33,8 +33,6 @@
     "attachments": "Attachments (optional)",
     "attachmentsHint": "Up to 5 files, 15 MB total. PDF, Word, Excel, images, or text.",
     "attachmentsBrowse": "Browse files",
-    "attachmentsUploading": "Uploading files…",
-    "attachmentsError": "Failed to upload files. Please try again.",
     "submit": "Submit Offer",
     "submitting": "Submitting...",
     "successTitle": "Offer Submitted!",
