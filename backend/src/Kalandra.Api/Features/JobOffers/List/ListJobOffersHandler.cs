@@ -11,6 +11,7 @@ public class ListJobOffersHandler(IQuerySession session)
 
     public async Task<ListJobOffersResponse> HandleAsync(
         string? userId,
+        JobOfferStatus? status,
         int page,
         int pageSize,
         CancellationToken ct)
@@ -24,6 +25,11 @@ public class ListJobOffersHandler(IQuerySession session)
         if (userId != null)
         {
             query = (IMartenQueryable<JobOffer>)query.Where(j => j.UserId == userId);
+        }
+
+        if (status != null)
+        {
+            query = (IMartenQueryable<JobOffer>)query.Where(j => j.Status == status);
         }
 
         var pagedResult = await query

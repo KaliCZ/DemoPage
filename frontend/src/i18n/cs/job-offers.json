@@ -20,6 +20,7 @@
     "cta": "Odeslat pracovní nabídku"
   },
   "list": {
+    "filterAll": "Vše",
     "status": "Stav",
     "submitted": "Odesláno",
     "inReview": "V hodnocení",

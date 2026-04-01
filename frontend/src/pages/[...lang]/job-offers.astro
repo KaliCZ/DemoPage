@@ -45,6 +45,28 @@ const f = formTranslations[lang].form;
 
   <!-- Offers list -->
   <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
+    <!-- Status filter -->
+    <div id="status-filter" class="hidden flex flex-wrap gap-2 mb-6" role="group" aria-label={t.list.status}>
+      <button type="button" data-status="" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-primary text-on-primary">
+        {t.list.filterAll}
+      </button>
+      <button type="button" data-status="Submitted" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
+        {t.list.submitted}
+      </button>
+      <button type="button" data-status="InReview" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
+        {t.list.inReview}
+      </button>
+      <button type="button" data-status="Accepted" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
+        {t.list.accepted}
+      </button>
+      <button type="button" data-status="Declined" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
+        {t.list.declined}
+      </button>
+      <button type="button" data-status="Cancelled" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
+        {t.list.cancelled}
+      </button>
+    </div>
+
     <div id="offers-loading" class="text-center py-12">
       <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
     </div>
@@ -225,6 +247,7 @@ const f = formTranslations[lang].form;
     var currentOfferId = null;
     var currentOffer = null;
     var currentToken = null;
+    var activeStatus = '';
 
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
@@ -262,13 +285,14 @@ const f = formTranslations[lang].form;
       currentToken = await window.__getAccessToken?.();
       if (!currentToken) return;
 
-      var response = await fetch(apiUrl + '/api/job-offers', {
+      var statusParam = activeStatus ? '?status=' + activeStatus : '';
+      var response = await fetch(apiUrl + '/api/job-offers' + statusParam, {
         headers: { 'Authorization': 'Bearer ' + currentToken }
       });
 
       if (response.status === 403) {
         isAdmin = false;
-        response = await fetch(apiUrl + '/api/job-offers/mine', {
+        response = await fetch(apiUrl + '/api/job-offers/mine' + statusParam, {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
       } else {
@@ -280,6 +304,7 @@ const f = formTranslations[lang].form;
       }
 
       document.getElementById('offers-loading')?.classList.add('hidden');
+      document.getElementById('status-filter')?.classList.remove('hidden');
       if (!response.ok) return;
 
       var data = await response.json();
@@ -610,6 +635,18 @@ const f = formTranslations[lang].form;
     document.getElementById('back-to-list')?.addEventListener('click', function() {
       document.getElementById('offer-detail-section')?.classList.add('hidden');
       document.getElementById('offers-list-section')?.classList.remove('hidden');
+    });
+
+    // Status filter buttons
+    document.querySelectorAll('.status-filter-btn').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        activeStatus = btn.getAttribute('data-status') || '';
+        document.querySelectorAll('.status-filter-btn').forEach(function(b) {
+          b.className = 'status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest';
+        });
+        btn.className = 'status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-primary text-on-primary';
+        await loadOffers();
+      });
     });
 
     function esc(str) {
