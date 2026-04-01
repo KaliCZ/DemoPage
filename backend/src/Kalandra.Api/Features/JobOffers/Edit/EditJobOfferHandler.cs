@@ -1,4 +1,3 @@
-using Kalandra.Api.Features.JobOffers.Create;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.Events;
 using Marten;
@@ -9,7 +8,7 @@ public class EditJobOfferHandler(IDocumentSession session)
 {
     public async Task<(bool Success, string? Error)> HandleAsync(
         Guid id,
-        CreateJobOfferRequest request,
+        EditJobOfferRequest request,
         string userId,
         string userEmail,
         CancellationToken ct)

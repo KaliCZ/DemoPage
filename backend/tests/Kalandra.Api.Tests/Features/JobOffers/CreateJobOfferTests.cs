@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Kalandra.Api.Features.JobOffers.Comments;
 using Kalandra.Api.Features.JobOffers.Create;
+using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.GetDetail;
 using Kalandra.Api.Features.JobOffers.History;
@@ -229,7 +230,7 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
         var token2 = JwtTestHelper.GenerateToken("edit-other", "editother@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
 
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", CreateValidRequest(), Ct);
+        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", EditValidRequest(), Ct);
         Assert.Equal(HttpStatusCode.Forbidden, editRes.StatusCode);
     }
 
@@ -263,10 +264,9 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
         var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
 
         // Edit
-        var editRequest = new CreateJobOfferRequest(
-            null,
+        var editRequest = new EditJobOfferRequest(
             "Updated Corp", "Jane Doe", "jane@updated.com", "CTO",
-            "Updated description.", "$200k", "Remote", true, null, null);
+            "Updated description.", "$200k", "Remote", true, null);
         var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", editRequest, Ct);
         Assert.Equal(HttpStatusCode.NoContent, editRes.StatusCode);
 
@@ -294,7 +294,7 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
         await client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel", new { reason = "" }, Ct);
 
         // Try to edit cancelled offer
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created.Id}", CreateValidRequest(), Ct);
+        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created.Id}", EditValidRequest(), Ct);
         Assert.Equal(HttpStatusCode.BadRequest, editRes.StatusCode);
     }
 
@@ -426,4 +426,16 @@ public class CreateJobOfferTests(TestWebApplicationFactory factory) : IClassFixt
             IsRemote: true,
             AdditionalNotes: null,
             Attachments: null);
+
+    private static EditJobOfferRequest EditValidRequest() =>
+        new(
+            CompanyName: "Acme Corp",
+            ContactName: "John Doe",
+            ContactEmail: "john@acme.com",
+            JobTitle: "Senior Developer",
+            Description: "We are looking for a senior developer to join our team.",
+            SalaryRange: "$120k - $160k",
+            Location: "Prague, CZ",
+            IsRemote: true,
+            AdditionalNotes: null);
 }

@@ -19,6 +19,7 @@ namespace Kalandra.Api.Features.JobOffers;
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
     IValidator<CreateJobOfferRequest> createValidator,
+    IValidator<EditJobOfferRequest> editValidator,
     CreateJobOfferHandler createHandler,
     EditJobOfferHandler editHandler,
     ListJobOffersHandler listHandler,
@@ -58,10 +59,10 @@ public class JobOffersController(
     [Authorize]
     public async Task<IActionResult> Edit(
         Guid id,
-        [FromBody] CreateJobOfferRequest request,
+        [FromBody] EditJobOfferRequest request,
         CancellationToken ct)
     {
-        var validation = await createValidator.ValidateAsync(request, ct);
+        var validation = await editValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
         {
             return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
