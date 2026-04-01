@@ -6,7 +6,7 @@ namespace Kalandra.Api.Features.JobOffers.Comments;
 
 public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvider)
 {
-    public async Task<Try<Unit, AddJobOfferCommentError>> HandleAsync(
+    public async Task<Try<CommentResponse, AddJobOfferCommentError>> HandleAsync(
         Guid jobOfferId,
         AddCommentRequest request,
         string userId,
@@ -17,13 +17,13 @@ public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvid
     {
         var offer = await session.LoadAsync<JobOffer>(jobOfferId, ct);
         if (offer == null)
-            return Try.Error<Unit, AddJobOfferCommentError>(AddJobOfferCommentError.NotFound);
+            return Try.Error<CommentResponse, AddJobOfferCommentError>(AddJobOfferCommentError.NotFound);
 
         if (!isAdmin && offer.UserId != userId)
-            return Try.Error<Unit, AddJobOfferCommentError>(AddJobOfferCommentError.NotAuthorized);
+            return Try.Error<CommentResponse, AddJobOfferCommentError>(AddJobOfferCommentError.NotAuthorized);
 
         if (string.IsNullOrWhiteSpace(request.Content))
-            return Try.Error<Unit, AddJobOfferCommentError>(AddJobOfferCommentError.ContentRequired);
+            return Try.Error<CommentResponse, AddJobOfferCommentError>(AddJobOfferCommentError.ContentRequired);
 
         var commentEvent = new JobOfferCommentAdded(
             CommentId: Guid.NewGuid(),
@@ -35,7 +35,14 @@ public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvid
 
         session.Events.Append(CommentStreamId(jobOfferId), commentEvent);
         await session.SaveChangesAsync(ct);
-        return Try.Success<Unit, AddJobOfferCommentError>(Unit.Value);
+
+        return Try.Success<CommentResponse, AddJobOfferCommentError>(new CommentResponse(
+            Id: commentEvent.CommentId,
+            UserId: commentEvent.UserId,
+            UserEmail: commentEvent.UserEmail,
+            UserName: commentEvent.UserName,
+            Content: commentEvent.Content,
+            CreatedAt: commentEvent.Timestamp));
     }
 
     /// <summary>

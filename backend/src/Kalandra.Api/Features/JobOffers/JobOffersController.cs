@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Kalandra.Api.Features.JobOffers.Attachments;
 using Kalandra.Api.Features.JobOffers.Cancel;
 using Kalandra.Api.Features.JobOffers.Comments;
@@ -34,7 +35,7 @@ public class JobOffersController(
 
     [HttpPost]
     [Authorize]
-    [ProducesResponseType<CreateJobOfferResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create(
@@ -47,37 +48,44 @@ public class JobOffersController(
             userEmail: AppUser.Email,
             ct: ct);
 
-        return result.Match<IActionResult>(
-            response => CreatedAtAction(nameof(GetDetail), new { id = response.Id }, response),
-            error => error switch
-            {
-                CreateJobOfferError.AttachmentServiceUnavailable =>
-                    BadRequest(new { error = "Attachments are temporarily unavailable." }),
-                CreateJobOfferError.AttachmentPathTraversal =>
-                    BadRequest(new { error = "Attachment paths must stay within the user's offer folder." }),
-                CreateJobOfferError.AttachmentWrongFolder =>
-                    BadRequest(new { error = "Attachments must be uploaded into the current offer folder." }),
-                CreateJobOfferError.AttachmentMetadataMismatch =>
-                    BadRequest(new { error = "Attachment metadata does not match the uploaded file." }),
-                CreateJobOfferError.AttachmentFileNotFound =>
-                    BadRequest(new { error = "One or more attachments were not found in storage." }),
-            });
+        if (result.IsError)
+        {
+            return result.Match<IActionResult>(
+                _ => throw new UnreachableException(),
+                error => error switch
+                {
+                    CreateJobOfferError.AttachmentServiceUnavailable =>
+                        BadRequest(new { error = "Attachments are temporarily unavailable." }),
+                    CreateJobOfferError.AttachmentPathTraversal =>
+                        BadRequest(new { error = "Attachment paths must stay within the user's offer folder." }),
+                    CreateJobOfferError.AttachmentWrongFolder =>
+                        BadRequest(new { error = "Attachments must be uploaded into the current offer folder." }),
+                    CreateJobOfferError.AttachmentMetadataMismatch =>
+                        BadRequest(new { error = "Attachment metadata does not match the uploaded file." }),
+                    CreateJobOfferError.AttachmentFileNotFound =>
+                        BadRequest(new { error = "One or more attachments were not found in storage." }),
+                });
+        }
+
+        var created = result.Success.Get((Unit _) => new UnreachableException());
+        var detail = await LoadDetailAsync(created.Id, ct);
+        return CreatedAtAction(nameof(GetDetail), new { id = created.Id }, detail);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Edit(
+    public Task<IActionResult> Edit(
         Guid id,
         [FromBody] EditJobOfferRequest request,
         CancellationToken ct)
     {
-        try
+        return WithConcurrencyHandling(async () =>
         {
             var result = await editHandler.HandleAsync(
                 id: id,
@@ -86,20 +94,21 @@ public class JobOffersController(
                 userEmail: AppUser.Email,
                 ct: ct);
 
-            return result.Match<IActionResult>(
-                _ => NoContent(),
-                error => error switch
-                {
-                    EditJobOfferError.NotFound => NotFound(),
-                    EditJobOfferError.NotAuthorized => Forbid(),
-                    EditJobOfferError.NotSubmittedStatus =>
-                        BadRequest(new { error = "Can only edit offers with status Submitted." }),
-                });
-        }
-        catch (Exception ex) when (IsConcurrencyConflict(ex))
-        {
-            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
-        }
+            if (result.IsError)
+            {
+                return result.Match<IActionResult>(
+                    _ => throw new UnreachableException(),
+                    error => error switch
+                    {
+                        EditJobOfferError.NotFound => NotFound(),
+                        EditJobOfferError.NotAuthorized => Forbid(),
+                        EditJobOfferError.NotSubmittedStatus =>
+                            BadRequest(new { error = "Can only edit offers with status Submitted." }),
+                    });
+            }
+
+            return Ok(await LoadDetailAsync(id, ct));
+        });
     }
 
     [HttpGet("mine")]
@@ -173,18 +182,18 @@ public class JobOffersController(
 
     [HttpPost("{id:guid}/cancel")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Cancel(
+    public Task<IActionResult> Cancel(
         Guid id,
         [FromBody] CancelJobOfferRequest request,
         CancellationToken ct)
     {
-        try
+        return WithConcurrencyHandling(async () =>
         {
             var result = await cancelHandler.HandleAsync(
                 id: id,
@@ -193,36 +202,37 @@ public class JobOffersController(
                 userEmail: AppUser.Email,
                 ct: ct);
 
-            return result.Match<IActionResult>(
-                _ => NoContent(),
-                error => error switch
-                {
-                    CancelJobOfferError.NotFound => NotFound(),
-                    CancelJobOfferError.NotAuthorized => Forbid(),
-                    CancelJobOfferError.InvalidStatus =>
-                        BadRequest(new { error = "Cannot cancel an offer that has already been accepted, declined, or cancelled." }),
-                });
-        }
-        catch (Exception ex) when (IsConcurrencyConflict(ex))
-        {
-            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
-        }
+            if (result.IsError)
+            {
+                return result.Match<IActionResult>(
+                    _ => throw new UnreachableException(),
+                    error => error switch
+                    {
+                        CancelJobOfferError.NotFound => NotFound(),
+                        CancelJobOfferError.NotAuthorized => Forbid(),
+                        CancelJobOfferError.InvalidStatus =>
+                            BadRequest(new { error = "Cannot cancel an offer that has already been accepted, declined, or cancelled." }),
+                    });
+            }
+
+            return Ok(await LoadDetailAsync(id, ct));
+        });
     }
 
     [HttpPatch("{id:guid}/status")]
     [Authorize(Policy = "Admin")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateStatus(
+    public Task<IActionResult> UpdateStatus(
         Guid id,
         [FromBody] UpdateJobOfferStatusRequest request,
         CancellationToken ct)
     {
-        try
+        return WithConcurrencyHandling(async () =>
         {
             var result = await updateStatusHandler.HandleAsync(
                 id: id,
@@ -231,21 +241,22 @@ public class JobOffersController(
                 adminEmail: AppUser.Email,
                 ct: ct);
 
-            return result.Match<IActionResult>(
-                _ => NoContent(),
-                error => error switch
-                {
-                    UpdateJobOfferStatusError.NotFound => NotFound(),
-                    UpdateJobOfferStatusError.AlreadyInStatus =>
-                        BadRequest(new { error = "Job offer is already in the requested status." }),
-                    UpdateJobOfferStatusError.InvalidTransition =>
-                        BadRequest(new { error = "The requested status transition is not allowed." }),
-                });
-        }
-        catch (Exception ex) when (IsConcurrencyConflict(ex))
-        {
-            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
-        }
+            if (result.IsError)
+            {
+                return result.Match<IActionResult>(
+                    _ => throw new UnreachableException(),
+                    error => error switch
+                    {
+                        UpdateJobOfferStatusError.NotFound => NotFound(),
+                        UpdateJobOfferStatusError.AlreadyInStatus =>
+                            BadRequest(new { error = "Job offer is already in the requested status." }),
+                        UpdateJobOfferStatusError.InvalidTransition =>
+                            BadRequest(new { error = "The requested status transition is not allowed." }),
+                    });
+            }
+
+            return Ok(await LoadDetailAsync(id, ct));
+        });
     }
 
     [HttpGet("{id:guid}/comments")]
@@ -266,44 +277,52 @@ public class JobOffersController(
 
     [HttpPost("{id:guid}/comments")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<CommentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddComment(
         Guid id,
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
+        var result = await addCommentHandler.HandleAsync(
+            jobOfferId: id,
+            request: request,
+            userId: AppUser.Id,
+            userEmail: AppUser.Email,
+            userName: AppUser.DisplayName,
+            isAdmin: AppUser.IsAdmin,
+            ct: ct);
+
+        return result.Match<IActionResult>(
+            comment => Ok(comment),
+            error => error switch
+            {
+                AddJobOfferCommentError.NotFound => NotFound(),
+                AddJobOfferCommentError.NotAuthorized => Forbid(),
+                AddJobOfferCommentError.ContentRequired =>
+                    BadRequest(new { error = "Comment content is required." }),
+            });
+    }
+
+    private async Task<GetJobOfferDetailResponse> LoadDetailAsync(Guid id, CancellationToken ct)
+        => (await detailHandler.HandleAsync(
+            id: id,
+            requesterUserId: AppUser.Id,
+            isAdmin: AppUser.IsAdmin,
+            ct: ct))!;
+
+    private async Task<IActionResult> WithConcurrencyHandling(Func<Task<IActionResult>> action)
+    {
         try
         {
-            var result = await addCommentHandler.HandleAsync(
-                jobOfferId: id,
-                request: request,
-                userId: AppUser.Id,
-                userEmail: AppUser.Email,
-                userName: AppUser.DisplayName,
-                isAdmin: AppUser.IsAdmin,
-                ct: ct);
-
-            return result.Match<IActionResult>(
-                _ => NoContent(),
-                error => error switch
-                {
-                    AddJobOfferCommentError.NotFound => NotFound(),
-                    AddJobOfferCommentError.NotAuthorized => Forbid(),
-                    AddJobOfferCommentError.ContentRequired =>
-                        BadRequest(new { error = "Comment content is required." }),
-                });
+            return await action();
         }
-        catch (Exception ex) when (IsConcurrencyConflict(ex))
+        catch (Exception ex) when (ex is ConcurrencyException or EventStreamUnexpectedMaxEventIdException)
         {
             return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
         }
     }
-
-    private static bool IsConcurrencyConflict(Exception exception) =>
-        exception is ConcurrencyException or EventStreamUnexpectedMaxEventIdException;
 }
