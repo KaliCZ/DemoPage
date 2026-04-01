@@ -38,10 +38,10 @@ public class JobOffersController(
         CancellationToken ct)
     {
         var (success, error, result) = await createHandler.HandleAsync(
-            request,
-            currentUser.RequireUserId(),
-            currentUser.GetEmail() ?? "",
-            ct);
+            request: request,
+            userId: currentUser.RequireUserId(),
+            userEmail: currentUser.GetEmail() ?? "",
+            ct: ct);
 
         if (!success || result == null)
         {
@@ -67,11 +67,11 @@ public class JobOffersController(
         try
         {
             var (success, error) = await editHandler.HandleAsync(
-                id,
-                request,
-                currentUser.RequireUserId(),
-                currentUser.GetEmail() ?? "",
-                ct);
+                id: id,
+                request: request,
+                userId: currentUser.RequireUserId(),
+                userEmail: currentUser.GetEmail() ?? "",
+                ct: ct);
 
             if (!success)
             {
@@ -97,7 +97,7 @@ public class JobOffersController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var result = await listHandler.HandleAsync(currentUser.RequireUserId(), page, pageSize, ct);
+        var result = await listHandler.HandleAsync(userId: currentUser.RequireUserId(), page, pageSize, ct);
         return Ok(result);
     }
 
@@ -111,7 +111,7 @@ public class JobOffersController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var result = await listHandler.HandleAsync(null, page, pageSize, ct);
+        var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
         return Ok(result);
     }
 
@@ -123,10 +123,10 @@ public class JobOffersController(
     public async Task<IActionResult> GetDetail(Guid id, CancellationToken ct)
     {
         var result = await detailHandler.HandleAsync(
-            id,
-            currentUser.RequireUserId(),
-            await currentUser.IsAdminAsync(),
-            ct);
+            id: id,
+            requesterUserId: currentUser.RequireUserId(),
+            isAdmin: await currentUser.IsAdminAsync(),
+            ct: ct);
 
         return result == null ? NotFound() : Ok(result);
     }
@@ -139,10 +139,10 @@ public class JobOffersController(
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
     {
         var result = await historyHandler.HandleAsync(
-            id,
-            currentUser.RequireUserId(),
-            await currentUser.IsAdminAsync(),
-            ct);
+            id: id,
+            requesterUserId: currentUser.RequireUserId(),
+            isAdmin: await currentUser.IsAdminAsync(),
+            ct: ct);
 
         return result == null ? NotFound() : Ok(result);
     }
@@ -163,11 +163,11 @@ public class JobOffersController(
         try
         {
             var (success, error) = await cancelHandler.HandleAsync(
-                id,
-                request,
-                currentUser.RequireUserId(),
-                currentUser.GetEmail() ?? "",
-                ct);
+                id: id,
+                request: request,
+                userId: currentUser.RequireUserId(),
+                userEmail: currentUser.GetEmail() ?? "",
+                ct: ct);
 
             if (!success)
             {
@@ -200,11 +200,11 @@ public class JobOffersController(
         try
         {
             var (success, error) = await updateStatusHandler.HandleAsync(
-                id,
-                request,
-                currentUser.RequireUserId(),
-                currentUser.GetEmail() ?? "",
-                ct);
+                id: id,
+                request: request,
+                adminUserId: currentUser.RequireUserId(),
+                adminEmail: currentUser.GetEmail() ?? "",
+                ct: ct);
 
             if (!success)
             {
@@ -229,10 +229,10 @@ public class JobOffersController(
     public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
     {
         var result = await listCommentsHandler.HandleAsync(
-            id,
-            currentUser.RequireUserId(),
-            await currentUser.IsAdminAsync(),
-            ct);
+            jobOfferId: id,
+            requesterUserId: currentUser.RequireUserId(),
+            isAdmin: await currentUser.IsAdminAsync(),
+            ct: ct);
 
         return result == null ? NotFound() : Ok(result);
     }
@@ -253,13 +253,13 @@ public class JobOffersController(
         try
         {
             var (success, error) = await addCommentHandler.HandleAsync(
-                id,
-                request,
-                currentUser.RequireUserId(),
-                currentUser.GetEmail() ?? "",
-                currentUser.GetDisplayName(),
-                await currentUser.IsAdminAsync(),
-                ct);
+                jobOfferId: id,
+                request: request,
+                userId: currentUser.RequireUserId(),
+                userEmail: currentUser.GetEmail() ?? "",
+                userName: currentUser.GetDisplayName(),
+                isAdmin: await currentUser.IsAdminAsync(),
+                ct: ct);
 
             if (!success)
             {

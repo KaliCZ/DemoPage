@@ -29,14 +29,14 @@ public class ListJobOffersHandler(IQuerySession session)
         var pagedResult = await query
             .OrderByDescending(j => j.CreatedAt)
             .Select(j => new JobOfferSummary(
-                j.Id,
-                j.CompanyName,
-                j.JobTitle,
-                j.ContactEmail,
-                j.Status,
-                j.IsRemote,
-                j.Location,
-                j.CreatedAt))
+                Id: j.Id,
+                CompanyName: j.CompanyName,
+                JobTitle: j.JobTitle,
+                ContactEmail: j.ContactEmail,
+                Status: j.Status,
+                IsRemote: j.IsRemote,
+                Location: j.Location,
+                CreatedAt: j.CreatedAt))
             .ToPagedListAsync(page, pageSize, ct);
 
         return new ListJobOffersResponse(pagedResult.ToList(), (int)pagedResult.TotalItemCount);

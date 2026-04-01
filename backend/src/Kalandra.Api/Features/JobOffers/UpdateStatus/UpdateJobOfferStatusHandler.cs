@@ -19,11 +19,11 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session, TimeProvider 
             return (false, "Not found");
 
         var (success, error, statusChanged) = offer.ChangeStatus(
-            request.Status,
-            adminUserId,
-            adminEmail,
-            request.AdminNotes,
-            timeProvider.GetUtcNow());
+            newStatus: request.Status,
+            changedByUserId: adminUserId,
+            changedByEmail: adminEmail,
+            notes: request.AdminNotes,
+            timestamp: timeProvider.GetUtcNow());
 
         if (!success || statusChanged == null)
             return (false, error);

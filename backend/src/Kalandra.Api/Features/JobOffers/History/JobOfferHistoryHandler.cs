@@ -24,26 +24,36 @@ public class JobOfferHistoryHandler(IQuerySession session)
         var entries = events.Select(e => e.Data switch
         {
             JobOfferSubmitted s => new JobOfferHistoryEntry(
-                "Submitted", "Job offer submitted", s.UserEmail, s.Timestamp),
+                EventType: "Submitted",
+                Description: "Job offer submitted",
+                ActorEmail: s.UserEmail,
+                Timestamp: s.Timestamp),
             JobOfferEdited ed => new JobOfferHistoryEntry(
-                "Edited", "Job offer edited", ed.EditedByEmail, ed.Timestamp),
+                EventType: "Edited",
+                Description: "Job offer edited",
+                ActorEmail: ed.EditedByEmail,
+                Timestamp: ed.Timestamp),
             JobOfferStatusChanged sc => new JobOfferHistoryEntry(
-                "StatusChanged",
-                $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
+                EventType: "StatusChanged",
+                Description: $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
                     + (sc.Notes != null ? $" — {sc.Notes}" : ""),
-                sc.ChangedByEmail,
-                sc.Timestamp),
+                ActorEmail: sc.ChangedByEmail,
+                Timestamp: sc.Timestamp),
             JobOfferCancelled c => new JobOfferHistoryEntry(
-                "Cancelled",
-                "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
-                c.CancelledByEmail,
-                c.Timestamp),
+                EventType: "Cancelled",
+                Description: "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
+                ActorEmail: c.CancelledByEmail,
+                Timestamp: c.Timestamp),
             JobOfferCommentAdded cm => new JobOfferHistoryEntry(
-                "Comment",
-                cm.Content,
-                cm.UserEmail,
-                cm.Timestamp),
-            _ => new JobOfferHistoryEntry("Unknown", "Unknown event", "", DateTimeOffset.MinValue)
+                EventType: "Comment",
+                Description: cm.Content,
+                ActorEmail: cm.UserEmail,
+                Timestamp: cm.Timestamp),
+            _ => new JobOfferHistoryEntry(
+                EventType: "Unknown",
+                Description: "Unknown event",
+                ActorEmail: "",
+                Timestamp: DateTimeOffset.MinValue)
         }).ToList();
 
         return new JobOfferHistoryResponse(entries);

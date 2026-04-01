@@ -16,7 +16,11 @@ public class CreateJobOfferHandler(
         CancellationToken ct)
     {
         var streamId = request.Id ?? Guid.NewGuid();
-        var attachmentVerification = await attachmentVerifier.VerifyAsync(streamId, userId, request.Attachments, ct);
+        var attachmentVerification = await attachmentVerifier.VerifyAsync(
+            jobOfferId: streamId,
+            userId: userId,
+            attachments: request.Attachments,
+            ct: ct);
         if (!attachmentVerification.Success)
         {
             return (false, attachmentVerification.Error, null);

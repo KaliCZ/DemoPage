@@ -22,10 +22,10 @@ public class CancelJobOfferHandler(IDocumentSession session, TimeProvider timePr
             return (false, "Not found");
 
         var (success, error, cancelled) = offer.Cancel(
-            userId,
-            userEmail,
-            request.Reason,
-            timeProvider.GetUtcNow());
+            userId: userId,
+            userEmail: userEmail,
+            reason: request.Reason,
+            timestamp: timeProvider.GetUtcNow());
 
         if (!success || cancelled == null)
             return (false, error);

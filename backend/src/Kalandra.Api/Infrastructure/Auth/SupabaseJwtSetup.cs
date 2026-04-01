@@ -34,9 +34,9 @@ public static class SupabaseJwtSetup
                 options.RequireHttpsMetadata = requireHttps;
                 options.MetadataAddress = metadataAddress;
                 options.ConfigurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
-                    metadataAddress,
-                    new OpenIdConnectConfigurationRetriever(),
-                    new HttpDocumentRetriever { RequireHttps = requireHttps });
+                    metadataAddress: metadataAddress,
+                    configRetriever: new OpenIdConnectConfigurationRetriever(),
+                    docRetriever: new HttpDocumentRetriever { RequireHttps = requireHttps });
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

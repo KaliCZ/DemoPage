@@ -20,7 +20,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         await using (var seedSession = store.LightweightSession())
         {
             seedSession.Events.StartStream<JobOffer>(
-                jobOfferId,
+                id: jobOfferId,
                 new JobOfferSubmitted(
                     UserId: "owner-user",
                     UserEmail: "owner@test.com",

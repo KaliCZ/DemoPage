@@ -84,6 +84,35 @@ docs/
   SETUP.md                 # Step-by-step setup guide for backend & deployment
 ```
 
+### C# Named Arguments
+
+Two rules for method/constructor calls:
+
+1. **Multi-line calls**: When a call spans multiple lines, every argument gets a named parameter.
+2. **Opaque literal values**: When passing `null`, `true`, `false`, `0`, `""`, `[]`, or similar literals where the meaning isn't obvious from context, use named parameters. If the meaning is obvious from the variable name (e.g., `userId`, `request`), the name can be omitted on single-line calls.
+
+```csharp
+// Good — multi-line, all named
+var (success, error, edited) = offer.Edit(
+    userId: userId,
+    userEmail: userEmail,
+    companyName: request.CompanyName,
+    timestamp: timeProvider.GetUtcNow());
+
+// Good — single line, null is labeled
+var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
+
+// Bad — multi-line without names
+var (success, error, edited) = offer.Edit(
+    userId,
+    userEmail,
+    request.CompanyName,
+    timeProvider.GetUtcNow());
+
+// Bad — null without label
+var result = await listHandler.HandleAsync(null, page, pageSize, ct);
+```
+
 ## Key Conventions
 
 - **UI changes** go in `src/pages/[...lang]/` — one file per page, all languages served from it

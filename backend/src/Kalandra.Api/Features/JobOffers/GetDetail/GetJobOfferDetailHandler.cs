@@ -19,21 +19,21 @@ public class GetJobOfferDetailHandler(IQuerySession session)
             return null;
 
         return new GetJobOfferDetailResponse(
-            offer.Id,
-            offer.CompanyName,
-            offer.ContactName,
-            offer.ContactEmail,
-            offer.JobTitle,
-            offer.Description,
-            offer.SalaryRange,
-            offer.Location,
-            offer.IsRemote,
-            offer.AdditionalNotes,
-            offer.Attachments,
-            offer.Status,
-            isAdmin ? offer.AdminNotes : null,
-            offer.UserEmail,
-            offer.CreatedAt,
-            offer.UpdatedAt);
+            Id: offer.Id,
+            CompanyName: offer.CompanyName,
+            ContactName: offer.ContactName,
+            ContactEmail: offer.ContactEmail,
+            JobTitle: offer.JobTitle,
+            Description: offer.Description,
+            SalaryRange: offer.SalaryRange,
+            Location: offer.Location,
+            IsRemote: offer.IsRemote,
+            AdditionalNotes: offer.AdditionalNotes,
+            Attachments: offer.Attachments,
+            Status: offer.Status,
+            AdminNotes: isAdmin ? offer.AdminNotes : null,
+            UserEmail: offer.UserEmail,
+            CreatedAt: offer.CreatedAt,
+            UpdatedAt: offer.UpdatedAt);
     }
 }

@@ -19,18 +19,18 @@ public class EditJobOfferHandler(IDocumentSession session, TimeProvider timeProv
             return (false, "Not found");
 
         var (success, error, edited) = offer.Edit(
-            userId,
-            userEmail,
-            request.CompanyName,
-            request.ContactName,
-            request.ContactEmail,
-            request.JobTitle,
-            request.Description,
-            request.SalaryRange,
-            request.Location,
-            request.IsRemote,
-            request.AdditionalNotes,
-            timeProvider.GetUtcNow());
+            userId: userId,
+            userEmail: userEmail,
+            companyName: request.CompanyName,
+            contactName: request.ContactName,
+            contactEmail: request.ContactEmail,
+            jobTitle: request.JobTitle,
+            description: request.Description,
+            salaryRange: request.SalaryRange,
+            location: request.Location,
+            isRemote: request.IsRemote,
+            additionalNotes: request.AdditionalNotes,
+            timestamp: timeProvider.GetUtcNow());
 
         if (!success || edited == null)
             return (false, error);

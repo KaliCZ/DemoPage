@@ -20,12 +20,12 @@ public class AddCommentHandler(IDocumentSession session, TimeProvider timeProvid
             return (false, "Not found");
 
         var (success, error, commentAdded) = offer.AddComment(
-            userId,
-            userEmail,
-            userName,
-            request.Content,
-            isAdmin,
-            timeProvider.GetUtcNow());
+            userId: userId,
+            userEmail: userEmail,
+            userName: userName,
+            content: request.Content,
+            isAdmin: isAdmin,
+            timestamp: timeProvider.GetUtcNow());
 
         if (!success || commentAdded == null)
             return (false, error);

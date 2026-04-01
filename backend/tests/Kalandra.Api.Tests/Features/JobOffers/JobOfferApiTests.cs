@@ -44,7 +44,18 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token = JwtTestHelper.GenerateToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var request = new CreateJobOfferRequest(null, "", "", "", "", "", null, null, false, null, null);
+        var request = new CreateJobOfferRequest(
+            Id: null,
+            CompanyName: "",
+            ContactName: "",
+            ContactEmail: "",
+            JobTitle: "",
+            Description: "",
+            SalaryRange: null,
+            Location: null,
+            IsRemote: false,
+            AdditionalNotes: null,
+            Attachments: null);
         var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -265,8 +276,15 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         // Edit
         var editRequest = new EditJobOfferRequest(
-            "Updated Corp", "Jane Doe", "jane@updated.com", "CTO",
-            "Updated description.", "$200k", "Remote", true, null);
+            CompanyName: "Updated Corp",
+            ContactName: "Jane Doe",
+            ContactEmail: "jane@updated.com",
+            JobTitle: "CTO",
+            Description: "Updated description.",
+            SalaryRange: "$200k",
+            Location: "Remote",
+            IsRemote: true,
+            AdditionalNotes: null);
         var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", editRequest, Ct);
         Assert.Equal(HttpStatusCode.NoContent, editRes.StatusCode);
 
@@ -354,22 +372,23 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var offerId = Guid.NewGuid();
         var request = new CreateJobOfferRequest(
-            offerId,
-            "Acme Corp",
-            "John Doe",
-            "john@acme.com",
-            "Senior Developer",
-            "We are looking for a senior developer to join our team.",
-            "$120k - $160k",
-            "Prague, CZ",
-            true,
-            null,
+            Id: offerId,
+            CompanyName: "Acme Corp",
+            ContactName: "John Doe",
+            ContactEmail: "john@acme.com",
+            JobTitle: "Senior Developer",
+            Description: "We are looking for a senior developer to join our team.",
+            SalaryRange: "$120k - $160k",
+            Location: "Prague, CZ",
+            IsRemote: true,
+            AdditionalNotes: null,
+            Attachments:
             [
                 new AttachmentInfo(
-                    "portfolio.pdf",
-                    $"test-user-id/{offerId}/portfolio.pdf",
-                    1024,
-                    "application/pdf")
+                    FileName: "portfolio.pdf",
+                    StoragePath: $"test-user-id/{offerId}/portfolio.pdf",
+                    FileSize: 1024,
+                    ContentType: "application/pdf")
             ]);
 
         var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);
@@ -384,22 +403,23 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var offerId = Guid.NewGuid();
         var request = new CreateJobOfferRequest(
-            offerId,
-            "Acme Corp",
-            "John Doe",
-            "john@acme.com",
-            "Senior Developer",
-            "We are looking for a senior developer to join our team.",
-            "$120k - $160k",
-            "Prague, CZ",
-            true,
-            null,
+            Id: offerId,
+            CompanyName: "Acme Corp",
+            ContactName: "John Doe",
+            ContactEmail: "john@acme.com",
+            JobTitle: "Senior Developer",
+            Description: "We are looking for a senior developer to join our team.",
+            SalaryRange: "$120k - $160k",
+            Location: "Prague, CZ",
+            IsRemote: true,
+            AdditionalNotes: null,
+            Attachments:
             [
                 new AttachmentInfo(
-                    "portfolio.pdf",
-                    $"test-user-id/{Guid.NewGuid()}/portfolio.pdf",
-                    1024,
-                    "application/pdf")
+                    FileName: "portfolio.pdf",
+                    StoragePath: $"test-user-id/{Guid.NewGuid()}/portfolio.pdf",
+                    FileSize: 1024,
+                    ContentType: "application/pdf")
             ]);
 
         var response = await client.PostAsJsonAsync("/api/job-offers", request, Ct);

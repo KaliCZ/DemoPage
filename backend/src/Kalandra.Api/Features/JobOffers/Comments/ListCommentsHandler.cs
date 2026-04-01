@@ -25,12 +25,12 @@ public class ListCommentsHandler(IQuerySession session)
             .Where(e => e.Data is JobOfferCommentAdded)
             .Select(e => (JobOfferCommentAdded)e.Data)
             .Select(c => new CommentResponse(
-                c.CommentId,
-                c.UserId,
-                c.UserEmail,
-                c.UserName,
-                c.Content,
-                c.Timestamp))
+                Id: c.CommentId,
+                UserId: c.UserId,
+                UserEmail: c.UserEmail,
+                UserName: c.UserName,
+                Content: c.Content,
+                CreatedAt: c.Timestamp))
             .ToList();
 
         return new ListCommentsResponse(comments);
