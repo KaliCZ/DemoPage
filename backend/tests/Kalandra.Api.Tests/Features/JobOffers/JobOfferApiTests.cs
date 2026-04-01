@@ -1,13 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Kalandra.Api.Features.JobOffers.Comments;
-using Kalandra.Api.Features.JobOffers.Create;
-using Kalandra.Api.Features.JobOffers.Edit;
+using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Features.JobOffers.Entities;
-using Kalandra.Api.Features.JobOffers.GetDetail;
-using Kalandra.Api.Features.JobOffers.History;
-using Kalandra.Api.Features.JobOffers.List;
 using Kalandra.Api.Tests.Helpers;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;
@@ -214,7 +209,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("view-owner", "viewowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Try to view as user2
         var token2 = JwtTestHelper.GenerateToken("view-other", "viewother@test.com");
@@ -237,7 +232,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("edit-owner", "editowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Try to edit as user2
         var token2 = JwtTestHelper.GenerateToken("edit-other", "editother@test.com");
@@ -254,7 +249,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("list-owner", "listowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // List as user2
         var token2 = JwtTestHelper.GenerateToken("list-other", "listother@test.com");
@@ -274,7 +269,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         // Create
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Edit
         var editRequest = new EditJobOfferRequest(
@@ -309,7 +304,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         await client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel", new { reason = "" }, Ct);
 
@@ -325,7 +320,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Add comment
         var commentRes = await client.PostAsJsonAsync(
@@ -348,7 +343,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         var createRes = await client.PostAsJsonAsync("/api/job-offers", CreateValidRequest(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<CreateJobOfferResponse>(cancellationToken: Ct);
+        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(cancellationToken: Ct);
 
         // Admin adds comment
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);

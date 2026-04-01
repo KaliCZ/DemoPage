@@ -1,4 +1,4 @@
-using Kalandra.Api.Features.JobOffers.Comments;
+using Kalandra.Api.Features.JobOffers;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.Events;
 using Kalandra.Api.Tests.Helpers;
@@ -108,7 +108,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         // Meanwhile, a comment is appended to the separate comment stream
         await using (var commentSession = store.LightweightSession())
         {
-            var commentStreamId = AddCommentHandler.CommentStreamId(jobOfferId);
+            var commentStreamId = CommentStreamId.For(jobOfferId);
             commentSession.Events.Append(
                 commentStreamId,
                 new JobOfferCommentAdded(
@@ -138,7 +138,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         Assert.Equal(JobOfferStatus.InReview, offer!.Status);
 
         var commentStreamEvents = await verifySession.Events.FetchStreamAsync(
-            AddCommentHandler.CommentStreamId(jobOfferId), token: Ct);
+            CommentStreamId.For(jobOfferId), token: Ct);
         Assert.Single(commentStreamEvents);
         Assert.IsType<JobOfferCommentAdded>(commentStreamEvents[0].Data);
     }

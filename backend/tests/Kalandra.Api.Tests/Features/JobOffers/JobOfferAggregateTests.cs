@@ -1,8 +1,5 @@
-using Kalandra.Api.Features.JobOffers.Cancel;
-using Kalandra.Api.Features.JobOffers.Edit;
 using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Features.JobOffers.Events;
-using Kalandra.Api.Features.JobOffers.UpdateStatus;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;
 
