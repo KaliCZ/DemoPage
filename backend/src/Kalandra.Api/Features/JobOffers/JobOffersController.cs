@@ -20,6 +20,9 @@ public class JobOffersController(
     ICurrentUserAccessor currentUser,
     IValidator<CreateJobOfferRequest> createValidator,
     IValidator<EditJobOfferRequest> editValidator,
+    IValidator<CancelJobOfferRequest> cancelValidator,
+    IValidator<UpdateJobOfferStatusRequest> updateStatusValidator,
+    IValidator<AddCommentRequest> commentValidator,
     CreateJobOfferHandler createHandler,
     EditJobOfferHandler editHandler,
     ListJobOffersHandler listHandler,
@@ -141,6 +144,12 @@ public class JobOffersController(
         [FromBody] CancelJobOfferRequest request,
         CancellationToken ct)
     {
+        var validation = await cancelValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+        {
+            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+        }
+
         try
         {
             var (success, error) = await cancelHandler.HandleAsync(
@@ -172,6 +181,12 @@ public class JobOffersController(
         [FromBody] UpdateJobOfferStatusRequest request,
         CancellationToken ct)
     {
+        var validation = await updateStatusValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+        {
+            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+        }
+
         try
         {
             var (success, error) = await updateStatusHandler.HandleAsync(
@@ -216,6 +231,12 @@ public class JobOffersController(
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
+        var validation = await commentValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+        {
+            return BadRequest(validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+        }
+
         try
         {
             var (success, error) = await commentsHandler.AddCommentAsync(
