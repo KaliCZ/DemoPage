@@ -1,15 +1,24 @@
 using Kalandra.Api.Features.JobOffers.Entities;
 using Marten;
 using Marten.Linq;
+using Marten.Pagination;
 
 namespace Kalandra.Api.Features.JobOffers.List;
 
 public class ListJobOffersHandler(IQuerySession session)
 {
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
+
     public async Task<ListJobOffersResponse> HandleAsync(
         string? userId,
+        int page,
+        int pageSize,
         CancellationToken ct)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+
         var query = session.Query<JobOffer>();
 
         if (userId != null)
@@ -17,7 +26,7 @@ public class ListJobOffersHandler(IQuerySession session)
             query = (IMartenQueryable<JobOffer>)query.Where(j => j.UserId == userId);
         }
 
-        var items = await query
+        var pagedResult = await query
             .OrderByDescending(j => j.CreatedAt)
             .Select(j => new JobOfferSummary(
                 j.Id,
@@ -28,8 +37,8 @@ public class ListJobOffersHandler(IQuerySession session)
                 j.IsRemote,
                 j.Location,
                 j.CreatedAt))
-            .ToListAsync(ct);
+            .ToPagedListAsync(page, pageSize, ct);
 
-        return new ListJobOffersResponse(items, items.Count);
+        return new ListJobOffersResponse(pagedResult.ToList(), (int)pagedResult.TotalItemCount);
     }
 }

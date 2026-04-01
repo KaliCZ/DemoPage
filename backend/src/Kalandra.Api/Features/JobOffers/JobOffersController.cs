@@ -97,17 +97,23 @@ public class JobOffersController(
 
     [HttpGet("mine")]
     [Authorize]
-    public async Task<IActionResult> ListMine(CancellationToken ct)
+    public async Task<IActionResult> ListMine(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
     {
-        var result = await listHandler.HandleAsync(currentUser.RequireUserId(), ct);
+        var result = await listHandler.HandleAsync(currentUser.RequireUserId(), page, pageSize, ct);
         return Ok(result);
     }
 
     [HttpGet]
     [Authorize(Policy = "Admin")]
-    public async Task<IActionResult> ListAll(CancellationToken ct)
+    public async Task<IActionResult> ListAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
     {
-        var result = await listHandler.HandleAsync(null, ct);
+        var result = await listHandler.HandleAsync(null, page, pageSize, ct);
         return Ok(result);
     }
 
