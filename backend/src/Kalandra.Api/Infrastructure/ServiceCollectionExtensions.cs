@@ -32,6 +32,8 @@ public static class ServiceCollectionExtensions
             // automatically by applying events as they are appended
             options.Projections.Snapshot<JobOffer>(SnapshotLifecycle.Inline);
 
+            options.Schema.For<JobOffer>().Duplicate(j => j.Status);
+
             // Use snake_case for database identifiers
             options.UseSystemTextJsonForSerialization();
 
