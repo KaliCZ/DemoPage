@@ -34,16 +34,20 @@ test.describe('E2E Smoke Tests', () => {
   });
 
   test('unauthenticated API request returns 401', async ({ request }) => {
-    const response = await request.post('http://localhost:5000/api/job-offers', {
-      data: {
-        companyName: 'Test',
-        contactName: 'Test',
-        contactEmail: 'test@test.com',
-        jobTitle: 'Test',
-        description: 'Test',
-      },
-    });
-    expect(response.status()).toBe(401);
+    const [postResponse, getResponse] = await Promise.all([
+      request.post('http://localhost:5000/api/job-offers', {
+        multipart: {
+          companyName: 'Test',
+          contactName: 'Test',
+          contactEmail: 'test@test.com',
+          jobTitle: 'Test',
+          description: 'Test',
+        },
+      }),
+      request.get('http://localhost:5000/api/job-offers'),
+    ]);
+    expect(postResponse.status()).toBe(401);
+    expect(getResponse.status()).toBe(401);
   });
 
   test('nav sign-in button is visible when not authenticated', async ({ page }) => {

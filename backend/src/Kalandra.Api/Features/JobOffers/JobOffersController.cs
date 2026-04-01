@@ -44,7 +44,6 @@ public class JobOffersController(
 
     [HttpPost]
     [Authorize]
-    [Consumes("multipart/form-data")]
     [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
