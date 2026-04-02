@@ -58,27 +58,8 @@ jobs:
         with:
           version: latest
 
-      - name: Get Supabase CLI version
-        id: supabase-version
-        run: echo "version=$(supabase --version | awk '{print $2}')" >> $GITHUB_OUTPUT
-
-      - name: Cache Supabase Docker images
-        id: supabase-cache
-        uses: actions/cache@v4
-        with:
-          path: /tmp/supabase-images.tar
-          key: supabase-images-${{ steps.supabase-version.outputs.version }}
-
-      - name: Load cached Supabase images
-        if: steps.supabase-cache.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-images.tar
-
       - name: Start local Supabase (auth only)
         run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor
-
-      - name: Save Supabase images for cache
-        if: steps.supabase-cache.outputs.cache-hit != 'true'
-        run: docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgrest|gotrue|kong' | xargs docker save -o /tmp/supabase-images.tar
 
       - name: Extract Supabase credentials
         run: |
