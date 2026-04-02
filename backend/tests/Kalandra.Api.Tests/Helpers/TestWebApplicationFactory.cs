@@ -13,8 +13,7 @@ namespace Kalandra.Api.Tests.Helpers;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

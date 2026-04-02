@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Kalicz.StrongTypes" Version="0.1.0" />
-    <PackageReference Include="Marten" Version="7.34.1" />
+    <PackageReference Include="Kalicz.StrongTypes" Version="0.2.0" />
+    <PackageReference Include="Marten" Version="8.28.0" />
   </ItemGroup>
 
   <ItemGroup>

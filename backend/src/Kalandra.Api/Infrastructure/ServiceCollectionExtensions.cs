@@ -1,8 +1,8 @@
+using JasperFx;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers;
 using Marten;
-using Weasel.Core;
 
 namespace Kalandra.Api.Infrastructure;
 

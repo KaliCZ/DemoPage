@@ -1,9 +1,10 @@
+using JasperFx;
 using Kalandra.JobOffers;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Kalandra.Api.Tests.Helpers;
+using JasperFx.Events;
 using Marten;
-using Marten.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;

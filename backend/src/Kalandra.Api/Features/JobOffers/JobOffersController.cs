@@ -1,12 +1,12 @@
+using JasperFx;
+using JasperFx.Events;
 using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
-using Kalandra.JobOffers.Events;
 using Kalandra.JobOffers.Queries;
 using Marten;
-using Marten.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
