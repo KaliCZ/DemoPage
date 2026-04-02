@@ -86,7 +86,7 @@ jobs:
           PUBLIC_API_URL: "http://localhost:5000"
 
       - name: Serve frontend
-        run: serve dist -l 4321 &
+        run: npm run serve &
         working-directory: frontend
 
       - name: Install Playwright browsers

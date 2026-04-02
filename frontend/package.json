@@ -12,7 +12,8 @@
     "astro": "astro",
     "test": "playwright test",
     "test:install": "playwright install chromium",
-    "test:e2e": "playwright test --config playwright.e2e.config.ts"
+    "test:e2e": "playwright test --config playwright.e2e.config.ts",
+    "serve": "serve dist -l 4321"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
