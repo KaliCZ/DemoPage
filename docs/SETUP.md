@@ -77,7 +77,7 @@ Press Ctrl+C to stop everything. Run `npm run dev:stop` to stop Docker services.
 
 ### 2.3 Local Supabase
 
-The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `npx supabase start` downloads the required Docker images (~2-3 min).
+The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `supabase start` (via `npm run dev:supabase`) downloads the required Docker images (~2-3 min).
 
 Local services:
 | Service | URL |
@@ -109,7 +109,7 @@ If you prefer to start services individually:
 cd backend && docker compose up db -d
 
 # 2. Start local Supabase
-npx supabase start
+npm run dev:supabase
 
 # 3. Start backend
 cd backend/src/Kalandra.Api
@@ -131,7 +131,7 @@ cd frontend && npm install && npm run dev
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Oracle Linux 9 or Ubuntu 22.04
+   - Image: Canonical Ubuntu 24.04 Minimal aarch64 (ARM image for A1 shape)
    - Add your SSH public key
 3. Note the **public IP address**
 
@@ -140,13 +140,10 @@ cd frontend && npm install && npm run dev
 SSH into the instance and install Docker:
 
 ```bash
-# Oracle Linux 9
-sudo dnf install -y docker
+# Ubuntu 24.04
+sudo apt update && sudo apt install -y docker.io docker-compose-plugin
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
-
-# Install Docker Compose plugin
-sudo dnf install -y docker-compose-plugin
 
 # Log out and back in for group changes
 exit
@@ -155,11 +152,11 @@ exit
 ### 3.3 Configure Firewall
 
 ```bash
-# Open port 8080 (API) and 443 (HTTPS via reverse proxy)
-sudo firewall-cmd --permanent --add-port=8080/tcp
-sudo firewall-cmd --permanent --add-port=443/tcp
-sudo firewall-cmd --permanent --add-port=80/tcp
-sudo firewall-cmd --reload
+# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
+sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+sudo netfilter-persistent save
 ```
 
 Also add ingress rules in OCI Console:
@@ -268,7 +265,7 @@ Roles are stored as an array in Supabase `app_metadata` (e.g., `"roles": ["admin
 
 The backend validates JWT signatures via JWKS (fetching public keys from Supabase's OpenID Connect endpoint). It never calls the Supabase API directly. A symmetric secret fallback exists for tests and local Supabase.
 
-- **Local dev**: `npx supabase start` runs a local Supabase instance in Docker (auth, API gateway, studio). Email/password sign-in works without any external dependencies.
+- **Local dev**: `npm run dev:supabase` runs a local Supabase instance in Docker (auth, API gateway, studio). Email/password sign-in works without any external dependencies.
 - **Production**: Supabase Cloud with Google OAuth + email/password.
 - **E2E tests**: Local Supabase with programmatic user creation via admin API. Tests sign in with `signInWithPassword` — no browser OAuth flows needed.
 - **Backend integration tests**: Generate JWTs with a known test secret via Testcontainers. No Supabase dependency.

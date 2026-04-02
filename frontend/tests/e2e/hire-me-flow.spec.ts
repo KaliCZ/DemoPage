@@ -12,7 +12,7 @@ import * as os from 'os';
  *   5. Navigate to job-offers and verify the submission appears
  *
  * Requires:
- *   - Local Supabase running (npx supabase start)
+ *   - Local Supabase running (npm run dev:supabase)
  *   - Backend API at http://localhost:5000
  *   - Frontend at http://localhost:4321
  */

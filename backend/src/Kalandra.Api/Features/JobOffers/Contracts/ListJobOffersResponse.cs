@@ -1,4 +1,4 @@
-using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.JobOffers.Entities;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 

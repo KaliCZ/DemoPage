@@ -1,6 +1,6 @@
-using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.JobOffers.Entities;
 
-namespace Kalandra.Api.Features.JobOffers.Events;
+namespace Kalandra.JobOffers.Events;
 
 public record JobOfferSubmitted(
     string UserId,

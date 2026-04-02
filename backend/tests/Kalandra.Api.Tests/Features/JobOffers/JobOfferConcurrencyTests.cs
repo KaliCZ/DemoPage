@@ -1,6 +1,6 @@
-using Kalandra.Api.Features.JobOffers;
-using Kalandra.Api.Features.JobOffers.Entities;
-using Kalandra.Api.Features.JobOffers.Events;
+using Kalandra.JobOffers;
+using Kalandra.JobOffers.Entities;
+using Kalandra.JobOffers.Events;
 using Kalandra.Api.Tests.Helpers;
 using Marten;
 using Marten.Exceptions;

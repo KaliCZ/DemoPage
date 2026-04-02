@@ -133,8 +133,8 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 ```bash
 cd frontend
 npm install
-npx astro build          # Output: frontend/dist/
-npx astro dev            # Dev server: http://localhost:4321
+npm run build            # Output: frontend/dist/
+npm run dev              # Dev server: http://localhost:4321
 ```
 
 ### Backend
@@ -151,7 +151,7 @@ cd backend
 dotnet test              # Requires Docker (Testcontainers)
 
 cd frontend
-npx playwright test      # Frontend page tests (builds + serves static site)
+playwright test          # Frontend page tests (builds + serves static site)
 
 npm test                 # Run all tests (backend + frontend)
 npm run test:e2e         # Full e2e (starts DB + API + frontend, runs Playwright)

@@ -1,5 +1,5 @@
-using Kalandra.Api.Features.JobOffers.Entities;
-using Kalandra.Api.Features.JobOffers.Events;
+using Kalandra.JobOffers.Entities;
+using Kalandra.JobOffers.Events;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;
 

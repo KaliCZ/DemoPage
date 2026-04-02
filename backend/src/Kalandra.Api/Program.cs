@@ -2,6 +2,7 @@ using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
+using Kalandra.JobOffers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +43,8 @@ builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(authConfig);
 builder.Services.AddAppCors(builder.Configuration, builder.Environment);
 builder.Services.AddStorageServices();
-builder.Services.AddJobOfferFeatures();
+builder.Services.AddApiServices();
+builder.Services.AddJobOffersDomain();
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
     .AddCheck<CommitHashHealthCheck>("version");

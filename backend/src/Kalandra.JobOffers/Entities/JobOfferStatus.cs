@@ -1,4 +1,4 @@
-namespace Kalandra.Api.Features.JobOffers.Entities;
+namespace Kalandra.JobOffers.Entities;
 
 public enum JobOfferStatus
 {

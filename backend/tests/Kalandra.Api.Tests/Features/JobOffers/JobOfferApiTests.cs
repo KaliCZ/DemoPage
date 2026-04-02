@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using Kalandra.Api.Features.JobOffers.Contracts;
-using Kalandra.Api.Features.JobOffers.Entities;
+using Kalandra.JobOffers.Entities;
 using Kalandra.Api.Tests.Helpers;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;

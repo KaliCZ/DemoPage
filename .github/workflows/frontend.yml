@@ -32,11 +32,11 @@ jobs:
         working-directory: frontend
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: playwright install --with-deps chromium
         working-directory: frontend
 
       - name: Run Playwright tests (pages only — e2e requires backend)
-        run: npx playwright test tests/pages.spec.ts
+        run: playwright test tests/pages.spec.ts
         working-directory: frontend
 
   deploy:

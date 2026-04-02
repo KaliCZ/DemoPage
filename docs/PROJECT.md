@@ -223,7 +223,7 @@ Monetize job offer submissions via Stripe.
 | **Account suspension** | Rare reports of accounts suspended without clear reason | Keep PAYG enabled; maintain real usage |
 
 **Setup notes:**
-- Use **Ubuntu** (not Oracle Linux) for straightforward Docker support
+- Use **Ubuntu 24.04 Minimal aarch64** (not Oracle Linux) for straightforward Docker support
 - Set a large **boot volume** (~150 GB) at creation to avoid iSCSI block volume complexity
 - Open ports in **both** OCI security list AND OS firewall
 

@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Kalandra.Api.Features.JobOffers;
+namespace Kalandra.JobOffers;
 
 /// <summary>
 /// Deterministic stream ID for a job offer's comments, separate from the main job offer stream.

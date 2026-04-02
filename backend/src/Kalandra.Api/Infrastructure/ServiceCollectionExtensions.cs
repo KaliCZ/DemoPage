@@ -1,8 +1,7 @@
-using Kalandra.Api.Features.JobOffers.Entities;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.JobOffers;
 using Marten;
-using Marten.Events.Projections;
 using Weasel.Core;
 
 namespace Kalandra.Api.Infrastructure;
@@ -20,11 +19,8 @@ public static class ServiceCollectionExtensions
         {
             options.Connection(connectionString);
 
-            // Inline projection: Marten maintains the JobOffer document
-            // automatically by applying events as they are appended
-            options.Projections.Snapshot<JobOffer>(SnapshotLifecycle.Inline);
-
-            options.Schema.For<JobOffer>().Duplicate(j => j.Status);
+            // Domain-specific Marten configuration
+            options.ConfigureJobOffers();
 
             // Use snake_case for database identifiers
             options.UseSystemTextJsonForSerialization();
@@ -76,7 +72,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddJobOfferFeatures(this IServiceCollection services)
+    public static IServiceCollection AddApiServices(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();

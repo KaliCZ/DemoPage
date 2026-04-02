@@ -1,10 +1,11 @@
-using Kalandra.Api.Features.JobOffers.Events;
+using Kalandra.JobOffers.Events;
 
-namespace Kalandra.Api.Features.JobOffers.Entities;
+namespace Kalandra.JobOffers.Entities;
 
-public enum EditJobOfferError { NotAuthorized, NotSubmittedStatus }
-public enum CancelJobOfferError { NotAuthorized, InvalidStatus }
-public enum UpdateJobOfferStatusError { AlreadyInStatus, InvalidTransition }
+public enum EditJobOfferError { NotFound, NotAuthorized, NotSubmittedStatus }
+public enum CancelJobOfferError { NotFound, NotAuthorized, InvalidStatus }
+public enum UpdateJobOfferStatusError { NotFound, AlreadyInStatus, InvalidTransition }
+public enum AddCommentError { NotFound, NotAuthorized }
 
 /// <summary>
 /// Marten event-sourced aggregate for job offers.
