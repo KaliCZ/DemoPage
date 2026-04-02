@@ -74,7 +74,11 @@ jobs:
       # By now ~30s of setup/build work has overlapped with the ~50s startup.
       - name: Wait for Supabase and extract credentials
         run: |
-          supabase status -o env > /dev/null 2>&1 || sleep 5
+          echo "Waiting for Supabase to be ready..."
+          until supabase status -o env > /dev/null 2>&1; do
+            echo "Still waiting..."
+            sleep 3
+          done
           eval "$(supabase status -o env)"
           echo "SB_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
           echo "SB_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
