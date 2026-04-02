@@ -23,6 +23,11 @@ env:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # Local Supabase always generates the same deterministic keys from its JWT secret.
+    # Hardcoding them avoids waiting for 'supabase status' before building.
+    env:
+      SB_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SB_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
     services:
       postgres:
         image: postgres:17-alpine
@@ -77,20 +82,6 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      # Wait for Supabase to be ready and extract credentials.
-      # By now ~30s of setup/build work has overlapped with the ~50s startup.
-      - name: Wait for Supabase and extract credentials
-        run: |
-          echo "Waiting for Supabase to be ready..."
-          until supabase status -o env > /dev/null 2>&1; do
-            echo "Still waiting..."
-            sleep 3
-          done
-          eval "$(supabase status -o env)"
-          echo "SB_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
-          echo "SB_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
-          echo "Anon key (first 30 chars): ${ANON_KEY:0:30}..."
-
       - name: Build frontend
         run: npm run build
         working-directory: frontend
@@ -98,6 +89,21 @@ jobs:
           PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
           PUBLIC_API_URL: "http://localhost:5000"
+
+      - name: Serve frontend
+        run: npm run serve &
+        working-directory: frontend
+
+      # Wait for Supabase before starting the backend (which needs it running).
+      # By now ~40s of setup/build work has overlapped with the ~50s startup.
+      - name: Wait for Supabase
+        run: |
+          echo "Waiting for Supabase to be ready..."
+          until supabase status > /dev/null 2>&1; do
+            echo "Still waiting..."
+            sleep 3
+          done
+          echo "Supabase is ready."
 
       - name: Start backend
         run: |
@@ -114,10 +120,6 @@ jobs:
           health-url: http://localhost:5000/health
           max-attempts: 30
           retry-interval: 2
-
-      - name: Serve frontend
-        run: npm run serve &
-        working-directory: frontend
 
       - name: Get Playwright version
         id: playwright-version
