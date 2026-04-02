@@ -237,8 +237,8 @@ jobs:
       - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME }}
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
@@ -271,7 +271,7 @@ jobs:
               -e ASPNETCORE_URLS=http://+:$NEW_PORT \
               -e ASPNETCORE_ENVIRONMENT=Production \
               -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
-              -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
+              -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
               -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
               $IMAGE
 
@@ -340,8 +340,8 @@ jobs:
         run: npm run build
         working-directory: frontend
         env:
-          PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
-          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
 
       - name: Deploy to Cloudflare Pages
