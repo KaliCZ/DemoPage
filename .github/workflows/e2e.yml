@@ -86,15 +86,15 @@ jobs:
           PUBLIC_API_URL: "http://localhost:5000"
 
       - name: Serve frontend
-        run: serve dist -l 4321 &
+        run: npx serve dist -l 4321 &
         working-directory: frontend
 
       - name: Install Playwright browsers
-        run: playwright install --with-deps chromium
+        run: npm run test:install -- --with-deps
         working-directory: frontend
 
       - name: Run E2E tests
-        run: playwright test --config playwright.e2e.config.ts
+        run: npm run test:e2e
         working-directory: frontend
         env:
           SUPABASE_URL: "http://127.0.0.1:54321"
