@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Set via -p:SourceRevisionId=$(git rev-parse HEAD) at build time; embeds into AssemblyInformationalVersion -->
+    <SourceRevisionId Condition="'$(SourceRevisionId)' == ''">local</SourceRevisionId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kalandra.Infrastructure\Kalandra.Infrastructure.csproj" />
+    <ProjectReference Include="..\Kalandra.JobOffers\Kalandra.JobOffers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageReference Include="Kalicz.StrongTypes" Version="0.2.0" />
+    <PackageReference Include="Marten" Version="8.28.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+  </ItemGroup>
+
+</Project>

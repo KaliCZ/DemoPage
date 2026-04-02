@@ -6,6 +6,7 @@
 # User-specific files
 .claude/
 .idea/
+.astro/
 *.rsuser
 *.suo
 *.user
@@ -401,10 +402,19 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
+
 # Tool configs
 
-.env
+/.env
+/.env.local
 .linear.toml
+
+# Supabase local dev (generated files)
+supabase/.branches
+supabase/.temp
 
 # Local scripts
 scripts/

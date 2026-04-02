@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "title": "Hire Me — kalandra.tech",
+    "description": "Send Pavel Kalandra a job offer directly through this form."
+  },
+  "hero": {
+    "title": "Hire Me",
+    "subtitle": "Have an exciting opportunity? Send me a job offer directly through this form."
+  },
+  "loginPrompt": {
+    "title": "Authentication Required",
+    "description": "Please sign in to submit a job offer. This helps me respond to real inquiries.",
+    "signInButton": "Sign In to Continue"
+  },
+  "form": {
+    "companyName": "Company Name",
+    "companyNamePlaceholder": "e.g. Acme Corp",
+    "contactName": "Your Name",
+    "contactNamePlaceholder": "e.g. John Doe",
+    "contactEmail": "Contact Email",
+    "contactEmailPlaceholder": "e.g. john@acme.com",
+    "jobTitle": "Job Title",
+    "jobTitlePlaceholder": "e.g. VP of Engineering",
+    "description": "Job Description",
+    "descriptionPlaceholder": "Tell me about the role, team, and what makes it exciting...",
+    "salaryRange": "Salary Range (optional)",
+    "salaryRangePlaceholder": "e.g. $150k – $200k",
+    "location": "Location (optional)",
+    "locationPlaceholder": "e.g. Prague, CZ",
+    "isRemote": "Remote position",
+    "additionalNotes": "Additional Notes (optional)",
+    "additionalNotesPlaceholder": "Anything else you'd like to share...",
+    "attachments": "Attachments (optional)",
+    "attachmentsHint": "Up to 5 files, 15 MB total. PDF, Word, Excel, images, or text.",
+    "attachmentsBrowse": "Browse files",
+    "submit": "Submit Offer",
+    "submitting": "Submitting...",
+    "successTitle": "Offer Submitted!",
+    "successMessage": "Thank you for your interest. I'll review your offer and get back to you.",
+    "errorMessage": "Something went wrong. Please try again.",
+    "viewSubmissions": "View My Submissions"
+  }
+}

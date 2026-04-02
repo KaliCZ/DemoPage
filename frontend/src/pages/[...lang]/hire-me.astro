@@ -1,0 +1,281 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
+import enStrings from '../../i18n/en/hire-me.json';
+import csStrings from '../../i18n/cs/hire-me.json';
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map(lang => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="hire-me" lang={lang}>
+
+  <!-- Hero -->
+  <section class="max-w-3xl mx-auto px-8 mb-16">
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+    </h1>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+  </section>
+
+  <!-- Login prompt (shown when not authenticated) -->
+  <section id="login-prompt" class="max-w-3xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
+      <button
+        id="hire-me-sign-in"
+        type="button"
+        class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
+        {t.loginPrompt.signInButton}
+      </button>
+    </div>
+  </section>
+
+  <!-- Form (shown when authenticated, initially with disabled fields) -->
+  <section id="job-offer-form-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
+    <form id="job-offer-form" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.companyName}</label>
+          <input type="text" id="companyName" name="companyName" required maxlength="200"
+            placeholder={t.form.companyNamePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactName}</label>
+          <input type="text" id="contactName" name="contactName" required maxlength="200"
+            placeholder={t.form.contactNamePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactEmail}</label>
+          <input type="email" id="contactEmail" name="contactEmail" required maxlength="255"
+            placeholder={t.form.contactEmailPlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.jobTitle}</label>
+          <input type="text" id="jobTitle" name="jobTitle" required maxlength="200"
+            placeholder={t.form.jobTitlePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <div>
+        <label for="description" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.description}</label>
+        <textarea id="description" name="description" required maxlength="5000" rows="5"
+          placeholder={t.form.descriptionPlaceholder}
+          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.salaryRange}</label>
+          <input type="text" id="salaryRange" name="salaryRange" maxlength="100"
+            placeholder={t.form.salaryRangePlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label for="location" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.location}</label>
+          <input type="text" id="location" name="location" maxlength="200"
+            placeholder={t.form.locationPlaceholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <input type="checkbox" id="isRemote" name="isRemote"
+          class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary" />
+        <label for="isRemote" class="text-sm font-label font-semibold text-on-surface">{t.form.isRemote}</label>
+      </div>
+
+      <div>
+        <label for="additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.additionalNotes}</label>
+        <textarea id="additionalNotes" name="additionalNotes" maxlength="2000" rows="3"
+          placeholder={t.form.additionalNotesPlaceholder}
+          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+      </div>
+
+      <div>
+        <label for="attachments" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.attachments}</label>
+        <p class="text-xs text-on-surface-variant font-body mb-3">{t.form.attachmentsHint}</p>
+        <label
+          for="attachments"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-label text-sm cursor-pointer hover:border-primary/30 transition-colors"
+        >
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">attach_file</span>
+          {t.form.attachmentsBrowse}
+        </label>
+        <input type="file" id="attachments" name="attachments" multiple
+          accept=".pdf,.doc,.docx,.xlsx,.pptx,.txt,.png,.jpg,.jpeg,.webp"
+          class="hidden" />
+        <div id="file-list" class="mt-3 space-y-2"></div>
+      </div>
+
+      <div id="form-error" class="hidden text-error text-sm font-body"></div>
+
+      <button
+        type="submit"
+        id="submit-btn"
+        class="w-full px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
+        {t.form.submit}
+      </button>
+    </form>
+  </section>
+
+  <!-- Success state -->
+  <section id="form-success" class="hidden max-w-3xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-tertiary mb-4 block" aria-hidden="true">check_circle</span>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.form.successTitle}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.form.successMessage}</p>
+      <a
+        href={localePath(lang, 'job-offers')}
+        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors"
+      >
+        {t.form.viewSubmissions}
+      </a>
+    </div>
+  </section>
+
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage }}>
+    // Listen for auth changes
+    window.addEventListener('auth-change', function(e) {
+      var user = e.detail?.user;
+      var loginPrompt = document.getElementById('login-prompt');
+      var formSection = document.getElementById('job-offer-form-section');
+
+      if (user) {
+        if (loginPrompt) loginPrompt.classList.add('hidden');
+        if (formSection) formSection.classList.remove('hidden');
+      } else {
+        if (loginPrompt) loginPrompt.classList.remove('hidden');
+        if (formSection) formSection.classList.add('hidden');
+      }
+    });
+
+    // Sign in button on the login prompt
+    document.getElementById('hire-me-sign-in')?.addEventListener('click', function() {
+      document.getElementById('auth-sign-in-desktop')?.click();
+    });
+
+    // File input handling
+    var maxFiles = 5;
+    var maxTotalBytes = 15 * 1024 * 1024; // 15 MB
+    var selectedFiles = [];
+
+    document.getElementById('attachments')?.addEventListener('change', function(e) {
+      var newFiles = Array.from(e.target.files || []);
+      // Merge with existing, enforcing max count
+      selectedFiles = selectedFiles.concat(newFiles).slice(0, maxFiles);
+      renderFileList();
+      e.target.value = ''; // allow re-selecting same file
+    });
+
+    function renderFileList() {
+      var listEl = document.getElementById('file-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      selectedFiles.forEach(function(file, idx) {
+        var item = document.createElement('div');
+        item.className = 'flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm';
+        var sizeKb = (file.size / 1024).toFixed(0);
+        var sizeStr = file.size >= 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + ' MB' : sizeKb + ' KB';
+        item.innerHTML =
+          '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
+          '<span class="flex-1 truncate font-body text-on-surface">' + esc(file.name) + '</span>' +
+          '<span class="text-xs text-on-surface-variant font-label">' + sizeStr + '</span>';
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'text-on-surface-variant hover:text-error transition-colors cursor-pointer';
+        removeBtn.innerHTML = '<span class="material-symbols-outlined text-lg">close</span>';
+        removeBtn.addEventListener('click', function() {
+          selectedFiles.splice(idx, 1);
+          renderFileList();
+        });
+        item.appendChild(removeBtn);
+        listEl.appendChild(item);
+      });
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Form submission
+    document.getElementById('job-offer-form')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var form = e.target;
+      var submitBtn = document.getElementById('submit-btn');
+      var errorEl = document.getElementById('form-error');
+
+      if (submitBtn) submitBtn.textContent = submittingText;
+      if (submitBtn) submitBtn.disabled = true;
+      if (errorEl) errorEl.classList.add('hidden');
+
+      try {
+        var token = await window.__getAccessToken?.();
+        if (!token) throw new Error('Not authenticated');
+
+        // Validate file constraints client-side
+        var totalSize = selectedFiles.reduce(function(sum, f) { return sum + f.size; }, 0);
+        if (selectedFiles.length > maxFiles) throw new Error('Too many files');
+        if (totalSize > maxTotalBytes) throw new Error('Files too large');
+
+        var formData = new FormData();
+        formData.append('CompanyName', form.companyName.value);
+        formData.append('ContactName', form.contactName.value);
+        formData.append('ContactEmail', form.contactEmail.value);
+        formData.append('JobTitle', form.jobTitle.value);
+        formData.append('Description', form.description.value);
+        if (form.salaryRange.value) formData.append('SalaryRange', form.salaryRange.value);
+        if (form.location.value) formData.append('Location', form.location.value);
+        formData.append('IsRemote', form.isRemote.checked);
+        if (form.additionalNotes.value) formData.append('AdditionalNotes', form.additionalNotes.value);
+
+        for (var i = 0; i < selectedFiles.length; i++) {
+          formData.append('attachments', selectedFiles[i]);
+        }
+
+        var response = await fetch(apiUrl + '/api/job-offers', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Failed');
+
+        document.getElementById('job-offer-form-section')?.classList.add('hidden');
+        document.getElementById('form-success')?.classList.remove('hidden');
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = errorText;
+          errorEl.classList.remove('hidden');
+        }
+      } finally {
+        if (submitBtn) submitBtn.textContent = submitText;
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  </script>
+
+</Layout>

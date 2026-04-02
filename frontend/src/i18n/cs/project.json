@@ -12,11 +12,11 @@
   "quickStats": {
     "title": "Rychlý přehled",
     "statusLabel": "Stav",
-    "statusValue": "MVP",
+    "statusValue": "Použitelné MVP",
     "versionLabel": "Aktuální verze",
-    "versionValue": "v1.0",
+    "versionValue": "v2.0",
     "timeLabel": "Čas strávený",
-    "timeValue": "7 hodin",
+    "timeValue": "17 hodin",
     "sourceLabel": "Zdrojový kód",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "Jednorázové náklady",
@@ -26,12 +26,21 @@
   },
   "techStack": {
     "title": "Postaveno na",
-    "items": ["Cloudflare Pages", "Astro", "Tailwind CSS", "GitHub Actions"]
+    "frontendLabel": "Frontend",
+    "frontendItems": ["Astro", "Tailwind CSS", "Supabase Auth", "Cloudflare Pages"],
+    "backendLabel": "Backend",
+    "backendItems": ["C# ASP.NET Core", "PostgreSQL", "Marten Event Sourcing"],
+    "infraLabel": "Infrastruktura",
+    "infraItems": [
+      { "text": "Oracle Cloud VPS" },
+      { "text": "Supabase" },
+      { "text": "GitHub Actions", "subItems": ["Build + Test + Deploy", "E2E testy (Playwright)"] }
+    ]
   },
   "roadmap": {
     "timelineLabel": "Časová osa",
     "title": "Plán vývoje",
-    "subtitle": "7 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
+    "subtitle": "5 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
     "versions": [
       {
         "number": 1,
@@ -42,39 +51,32 @@
         "side": "left",
         "detailsLabel": "Co se udělalo",
         "details": [
-          { "author": "claude", "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind" },
           { "author": "pavel", "text": "Nastavení domény, DNS a hostingu na Cloudflare Pages" },
+          { "author": "claude", "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind" },
           { "author": "claude", "text": "Deploy pipeline přes GitHub Actions" },
           { "author": "claude", "text": "Světlý a tmavý režim s detekcí systémových preferencí" },
-          { "author": "claude", "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady" },
-          { "author": "claude", "text": "Responzivní layout, SEO markup, Open Graph a hreflang tagy" },
-          { "author": "claude", "text": "Přístupná navigace se skip-to-content a ARIA atributy" }
+          { "author": "claude", "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady" }
         ]
       },
       {
         "number": 2,
-        "title": "Přihlášení (Supabase Auth)",
-        "done": false,
-        "description": "Autentizace uživatelů pomocí Supabase. Registrace, přihlášení, Google OAuth.",
-        "side": "right"
+        "title": "Backend Included",
+        "done": true,
+        "time": "~10 hodin",
+        "description": "ASP.NET Core backend se Supabase Auth a Marten event sourcingem. Slouží ke správě pracovních nabídek — uživatelé mohou podávat a sledovat nabídky, admini je přezkoumávat a měnit stavy.",
+        "side": "right",
+        "detailsLabel": "Co se udělalo",
+        "details": [
+          { "author": "pavel", "text": "Supabase projekt a Google OAuth setup" },
+          { "author": "pavel", "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy" },
+          { "author": "claude", "text": "ASP.NET Core Web API s vertical slices a Marten event sourcingem" },
+          { "author": "claude", "text": "Formulář nabídek, uživatelský dashboard a admin pohled s i18n" },
+          { "author": "claude", "text": "Docker setup, CI/CD pipeline na Oracle Cloud" },
+          { "author": "claude", "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)" }
+        ]
       },
       {
         "number": 3,
-        "title": "Formulář pracovních nabídek",
-        "done": false,
-        "description": "Stránka s formulářem pro podání pracovní nabídky s nahráváním souborů (do 30 MB). Stránka je viditelná pro všechny, ale formulář vyžaduje přihlášení. Pouze frontend — zatím bez backendu, po odeslání formuláře se nic nestane.",
-        "description": "Structured job offer submission page with file uploads (up to 30 MB). The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.",
-        "side": "left"
-      },
-      {
-        "number": 4,
-        "title": "Backend a zpracování formuláře",
-        "done": false,
-        "description": "ASP.NET Core backend na Oracle cloud. Zpracování formuláře pracovních nabídek s Marten event sourcingem. Nabídky procházejí stavy: Podáno, V přezkoumání, Odmítnuto, Přijato. Uživatelé mohou sledovat svá podání, SuperAdmin vidí všechna. ",
-        "side": "right"
-      },
-      {
-        "number": 5,
         "title": "Emaily, Slack a observabilita",
         "done": false,
         "faded": true,
@@ -82,7 +84,7 @@
         "side": "left"
       },
       {
-        "number": 6,
+        "number": 4,
         "title": "Úlohy na pozadí",
         "done": false,
         "faded": true,
@@ -90,7 +92,7 @@
         "side": "right"
       },
       {
-        "number": 7,
+        "number": 5,
         "title": "Pay to Win (Stripe)",
         "done": false,
         "faded": true,

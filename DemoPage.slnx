@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="backend/src/Kalandra.Api/Kalandra.Api.csproj" />
+  <Project Path="backend/src/Kalandra.Infrastructure/Kalandra.Infrastructure.csproj" />
+  <Project Path="backend/src/Kalandra.JobOffers/Kalandra.JobOffers.csproj" />
+  <Project Path="backend/tests/Kalandra.Api.Tests/Kalandra.Api.Tests.csproj" />
+  <Folder Name="/docs/">
+    <File Path="docs/PROJECT.md" />
+    <File Path="docs/SETUP.md" />
+    <File Path="CLAUDE.md" />
+    <File Path="README.md" />
+  </Folder>
+</Solution>

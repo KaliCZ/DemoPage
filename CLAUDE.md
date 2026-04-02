@@ -2,9 +2,10 @@
 
 ## Project Overview
 
-Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages.
+Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core (.NET 10) backend with Marten (event sourcing) deployed to Oracle Cloud, connecting to Supabase PostgreSQL. Local dev uses Docker PostgreSQL.
 
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
+See `docs/SETUP.md` for setup instructions.
 
 ## Design Principles
 
@@ -18,15 +19,19 @@ We use **per-page translation files** (pattern 2) instead of a single file per l
 src/i18n/
   utils.ts                 # Locale type, helper functions
   en/
-    common.json            # Nav, footer, theme, a11y strings
+    common.json            # Nav, footer, theme, auth, a11y strings
     home.json              # Home page content
     about.json             # About page content
     project.json           # Project page content
+    hire-me.json           # Hire Me form page content
+    job-offers.json        # Job Offers list/detail page content
   cs/
     common.json
     home.json
     about.json
     project.json
+    hire-me.json
+    job-offers.json
 ```
 
 **Why pattern 2 over pattern 1?**
@@ -50,17 +55,62 @@ frontend/
       utils.ts             # Locale type, localePath(), alternateLangUrl()
       en/*.json            # English translations (per page)
       cs/*.json            # Czech translations (per page)
+    lib/
+      supabase.ts          # Supabase config (public env vars, API URL)
     layouts/
-      Layout.astro         # Shell: nav, footer, SEO, dark mode
+      Layout.astro         # Shell: nav, footer, SEO, dark mode, auth UI
     pages/
       [...lang]/           # Dynamic routes — one file per page, all locales
         index.astro        # Home (/, /cs/)
         about.astro        # About (/about, /cs/about)
         project.astro      # Project (/project, /cs/project)
+        hire-me.astro      # Hire Me form (/hire-me, /cs/hire-me)
+        job-offers.astro   # Job Offers list (/job-offers, /cs/job-offers)
     styles/
       global.css           # Tailwind + CSS custom properties + dark mode
+backend/
+  src/
+    Kalandra.Api/          # ASP.NET Core Web API
+      Infrastructure/      # Auth, Database, CORS setup
+      Features/            # Vertical slices (JobOffers, Health)
+      Program.cs           # Host builder
+  tests/
+    Kalandra.Api.Tests/    # Integration tests with Testcontainers
+  docker-compose.yml       # PostgreSQL for local dev
+supabase/
+  config.toml              # Local Supabase config (auth, ports, email settings)
 docs/
   PROJECT.md               # Source of truth for goals, architecture, roadmap
+  SETUP.md                 # Step-by-step setup guide for backend & deployment
+```
+
+### C# Named Arguments
+
+Two rules for method/constructor calls:
+
+1. **Multi-line calls**: When a call spans multiple lines, every argument gets a named parameter.
+2. **Opaque literal values**: When passing `null`, `true`, `false`, `0`, `""`, `[]`, or similar literals where the meaning isn't obvious from context, use named parameters. If the meaning is obvious from the variable name (e.g., `userId`, `request`), the name can be omitted on single-line calls.
+
+```csharp
+// Good — multi-line, all named
+var (success, error, edited) = offer.Edit(
+    userId: userId,
+    userEmail: userEmail,
+    companyName: request.CompanyName,
+    timestamp: timeProvider.GetUtcNow());
+
+// Good — single line, null is labeled
+var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
+
+// Bad — multi-line without names
+var (success, error, edited) = offer.Edit(
+    userId,
+    userEmail,
+    request.CompanyName,
+    timeProvider.GetUtcNow());
+
+// Bad — null without label
+var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 ```
 
 ## Key Conventions
@@ -70,14 +120,42 @@ docs/
 - **Route pages** use `[...lang]` dynamic routes with `getStaticPaths()`. One file per page handles all locales. No separate component layer.
 - **Dark mode** uses `.dark` class on `<html>` with CSS custom property overrides. Flash prevention via `.no-transitions` class.
 - **Accessibility**: skip-to-content link, aria-current on nav, aria-hidden on decorative elements, aria-haspopup on dropdowns, role="menu"/role="menuitem", role="contentinfo" on footer.
+- **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend via JWKS (public keys fetched from Supabase's OpenID Connect endpoint; symmetric secret fallback for tests). Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__supabase`, `window.__getAccessToken()`, and `window.__getUser()` for pages. Sign-in dialog supports both email/password and Google OAuth.
+- **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
+- **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
+- **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy. Legacy single-string `"role"` also supported.
+- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
+- **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 
 ## Build & Deploy
 
+### Frontend
 ```bash
 cd frontend
 npm install
-npx astro build          # Output: frontend/dist/
-npx astro dev            # Dev server: http://localhost:4321
+npm run build            # Output: frontend/dist/
+npm run dev              # Dev server: http://localhost:4321
 ```
 
-Deployed via GitHub Actions → Cloudflare Pages on push to main.
+### Backend
+```bash
+cd backend
+docker compose up db -d  # Start PostgreSQL
+cd src/Kalandra.Api
+dotnet run               # API at http://localhost:5000, Swagger at /swagger
+```
+
+### Tests
+```bash
+cd backend
+dotnet test              # Requires Docker (Testcontainers)
+
+cd frontend
+playwright test          # Frontend page tests (builds + serves static site)
+
+npm test                 # Run all tests (backend + frontend)
+npm run test:e2e         # Full e2e (starts DB + API + frontend, runs Playwright)
+```
+
+Frontend deployed via GitHub Actions → Cloudflare Pages on push to main.
+Backend deployed via GitHub Actions → Docker image → Oracle Cloud on push to main.

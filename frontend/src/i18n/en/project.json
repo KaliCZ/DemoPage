@@ -12,11 +12,11 @@
   "quickStats": {
     "title": "Quick Stats",
     "statusLabel": "Status",
-    "statusValue": "MVP",
+    "statusValue": "Usable MVP",
     "versionLabel": "Current Version",
-    "versionValue": "v1.0",
+    "versionValue": "v2.0",
     "timeLabel": "Time Spent So Far",
-    "timeValue": "7 hours",
+    "timeValue": "17 hours",
     "sourceLabel": "Source",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "One-Time Cost",
@@ -26,12 +26,21 @@
   },
   "techStack": {
     "title": "Engineered With",
-    "items": ["Cloudflare Pages", "Astro", "Tailwind CSS", "GitHub Actions"]
+    "frontendLabel": "Frontend",
+    "frontendItems": ["Astro", "Tailwind CSS", "Supabase Auth", "Cloudflare Pages"],
+    "backendLabel": "Backend",
+    "backendItems": ["C# ASP.NET Core", "PostgreSQL", "Marten Event Sourcing"],
+    "infraLabel": "Infrastructure",
+    "infraItems": [
+      { "text": "Oracle Cloud VPS" },
+      { "text": "Supabase" },
+      { "text": "GitHub Actions", "subItems": ["Build + Test + Deploy", "E2E Tests (Playwright)"] }
+    ]
   },
   "roadmap": {
     "timelineLabel": "Timeline",
     "title": "Development Roadmap",
-    "subtitle": "7 versions from static site to advanced backend features. Each version adds a layer of complexity.",
+    "subtitle": "5 versions from static site to advanced backend features. Each version adds a layer of complexity.",
     "versions": [
       {
         "number": 1,
@@ -42,38 +51,32 @@
         "side": "left",
         "detailsLabel": "What was done",
         "details": [
-          { "author": "claude", "text": "Designed pages in Google Stitch, built with Astro + Tailwind" },
           { "author": "pavel", "text": "Set up domain, DNS and Cloudflare Pages hosting" },
+          { "author": "claude", "text": "Designed pages in Google Stitch, built with Astro + Tailwind" },
           { "author": "claude", "text": "GitHub Actions deploy pipeline" },
           { "author": "claude", "text": "Light and dark theme with system preference detection" },
-          { "author": "claude", "text": "Language picker (English / Czech) with per-page translations" },
-          { "author": "claude", "text": "Responsive layout, SEO markup, Open Graph and hreflang tags" },
-          { "author": "claude", "text": "Accessible navigation with skip-to-content and ARIA attributes" }
+          { "author": "claude", "text": "Language picker (English / Czech) with per-page translations" }
         ]
       },
       {
         "number": 2,
-        "title": "Login (Supabase Auth)",
-        "done": false,
-        "description": "User authentication with Supabase. Sign up, log in, Google OAuth.",
-        "side": "right"
+        "title": "Backend Included",
+        "done": true,
+        "time": "~10 hours",
+        "description": "ASP.NET Core backend with Supabase Auth and Marten event sourcing. Used for managing job offers — users can submit and track offers, admins can review and update statuses.",
+        "side": "right",
+        "detailsLabel": "What was done",
+        "details": [
+          { "author": "pavel", "text": "Supabase project and Google OAuth setup" },
+          { "author": "pavel", "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy" },
+          { "author": "claude", "text": "ASP.NET Core Web API with vertical slices and Marten event sourcing" },
+          { "author": "claude", "text": "Job offer form, user dashboard and admin view with i18n" },
+          { "author": "claude", "text": "Docker setup, CI/CD pipeline to Oracle Cloud" },
+          { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" }
+        ]
       },
       {
         "number": 3,
-        "title": "Job Offer Form",
-        "done": false,
-        "description": "Structured job offer submission page with file uploads (up to 30 MB). The page is visible to everyone, but the form requires sign-in to interact with. Frontend only — no backend yet, so nothing happens after submission.",
-        "side": "left"
-      },
-      {
-        "number": 4,
-        "title": "Backend & Form Handling",
-        "done": false,
-        "description": "ASP.NET Core backend on Oracle cloud. Handles job offer form submissions with Marten event sourcing. Offers go through states: Submitted, In Review, Declined, Accepted. Users can track their submissions, SuperAdmin sees all submissions.",
-        "side": "right"
-      },
-      {
-        "number": 5,
         "title": "Emails, Slack & Observability",
         "done": false,
         "faded": true,
@@ -81,7 +84,7 @@
         "side": "left"
       },
       {
-        "number": 6,
+        "number": 4,
         "title": "Background Tasks",
         "done": false,
         "faded": true,
@@ -89,7 +92,7 @@
         "side": "right"
       },
       {
-        "number": 7,
+        "number": 5,
         "title": "Pay to Win (Stripe)",
         "done": false,
         "faded": true,
