@@ -1,0 +1,318 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/api
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kalandra
+          POSTGRES_PASSWORD: kalandra_dev
+          POSTGRES_DB: kalandra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kalandra"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Extract Supabase credentials
+        run: |
+          eval "$(supabase status -o env)"
+          echo "SB_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SB_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
+          echo "Anon key (first 30 chars): ${ANON_KEY:0:30}..."
+
+      - name: Build backend
+        run: dotnet build backend/src/Kalandra.Api -c Release
+
+      - name: Start backend
+        run: |
+          dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 &
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
+          Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
+          Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
+          ASPNETCORE_ENVIRONMENT: Development
+
+      - name: Wait for backend
+        uses: KaliCZ/verify-deployment@v1
+        with:
+          health-url: http://localhost:5000/health
+          max-attempts: 30
+          retry-interval: 2
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
+          PUBLIC_API_URL: "http://localhost:5000"
+
+      - name: Serve frontend
+        run: npx serve dist -l 4321 &
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run E2E tests
+        run: npx playwright test --config playwright.e2e.config.ts
+        working-directory: frontend
+        env:
+          SUPABASE_URL: "http://127.0.0.1:54321"
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SB_SERVICE_ROLE_KEY }}
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: frontend/test-results/
+          retention-days: 7
+
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        run: dotnet test --no-build -c Release
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run Playwright tests (pages only — e2e requires backend)
+        run: npx playwright test tests/pages.spec.ts
+        working-directory: frontend
+
+  backend-deploy:
+    needs: [e2e, backend-test, frontend-test]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/src/Kalandra.Api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+
+      - name: Deploy to Oracle Cloud (blue-green)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            MAX_ATTEMPTS=20
+
+            # Pull the new image
+            docker pull $IMAGE
+
+            # Determine which slot is active (blue=8080, green=8081)
+            if docker ps --format '{{.Names}}' | grep -q kalandra-api-blue; then
+              OLD_NAME="kalandra-api-blue"
+              NEW_NAME="kalandra-api-green"
+              NEW_PORT=8081
+            else
+              OLD_NAME="kalandra-api-green"
+              NEW_NAME="kalandra-api-blue"
+              NEW_PORT=8080
+            fi
+            echo "Active: $OLD_NAME → Deploying: $NEW_NAME on port $NEW_PORT"
+
+            # Clean up any leftover container with the new name
+            docker stop $NEW_NAME 2>/dev/null || true
+            docker rm $NEW_NAME 2>/dev/null || true
+
+            # Start new container on its slot port
+            docker run -d \
+              --name $NEW_NAME \
+              --restart unless-stopped \
+              --network host \
+              -e ASPNETCORE_URLS=http://+:$NEW_PORT \
+              -e ASPNETCORE_ENVIRONMENT=Production \
+              -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
+              -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
+              -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              $IMAGE
+
+            # Wait for the new container to become healthy
+            echo "Waiting for new container on port $NEW_PORT..."
+            ATTEMPTS=0
+            until curl -sf http://localhost:$NEW_PORT/health > /dev/null 2>&1; do
+              ATTEMPTS=$((ATTEMPTS + 1))
+              if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+                echo "New container failed to start. Rolling back..."
+                docker stop $NEW_NAME || true
+                docker rm $NEW_NAME || true
+                exit 1
+              fi
+              echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
+              sleep 3
+            done
+            echo "New container is healthy on port $NEW_PORT."
+
+            # Switch Caddy upstream to the new port (zero-downtime swap)
+            cat > ~/Caddyfile << EOF
+            api.kalandra.tech {
+                reverse_proxy localhost:$NEW_PORT
+            }
+            EOF
+            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+            # Stop the old container
+            docker stop $OLD_NAME 2>/dev/null || true
+            docker rm $OLD_NAME 2>/dev/null || true
+
+            echo "Deployment complete — $NEW_NAME serving on port $NEW_PORT."
+
+      - name: Verify public endpoint
+        uses: KaliCZ/verify-deployment@v1
+        with:
+          health-url: https://api.kalandra.tech/health
+          max-attempts: 20
+          retry-interval: 5
+          expected-content: ${{ github.sha }}
+
+  frontend-deploy:
+    needs: backend-deploy
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_API_URL: https://api.kalandra.tech
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=kalandra-tech
