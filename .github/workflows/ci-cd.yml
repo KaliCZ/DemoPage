@@ -41,6 +41,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Start Supabase first in background — it pulls Docker images (~50s)
+      # which overlaps with .NET/Node setup, backend build, and npm ci below.
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase in background
+        run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -53,23 +63,30 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      - name: Build backend
+        run: dotnet build backend/src/Kalandra.Api -c Release
 
-      - name: Start local Supabase (auth only)
-        run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
 
-      - name: Extract Supabase credentials
+      # Wait for Supabase to be ready and extract credentials.
+      # By now ~30s of setup/build work has overlapped with the ~50s startup.
+      - name: Wait for Supabase and extract credentials
         run: |
+          supabase status -o env > /dev/null 2>&1 || sleep 5
           eval "$(supabase status -o env)"
           echo "SB_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
           echo "SB_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
           echo "Anon key (first 30 chars): ${ANON_KEY:0:30}..."
 
-      - name: Build backend
-        run: dotnet build backend/src/Kalandra.Api -c Release
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
+          PUBLIC_API_URL: "http://localhost:5000"
 
       - name: Start backend
         run: |
@@ -86,18 +103,6 @@ jobs:
           health-url: http://localhost:5000/health
           max-attempts: 30
           retry-interval: 2
-
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-
-      - name: Build frontend
-        run: npm run build
-        working-directory: frontend
-        env:
-          PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
-          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
-          PUBLIC_API_URL: "http://localhost:5000"
 
       - name: Serve frontend
         run: npm run serve &
