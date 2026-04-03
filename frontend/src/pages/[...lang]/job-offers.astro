@@ -56,7 +56,7 @@ const f = formTranslations[lang].form;
       <button type="button" data-status="InReview" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
         {t.list.inReview}
       </button>
-      <button type="button" data-status="Accepted" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
+      <button type="button" data-status="LetsTalk" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
         {t.list.accepted}
       </button>
       <button type="button" data-status="Declined" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
@@ -189,7 +189,7 @@ const f = formTranslations[lang].form;
         <select id="status-select" class="px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
           <option value="Submitted">{t.list.submitted}</option>
           <option value="InReview">{t.list.inReview}</option>
-          <option value="Accepted">{t.list.accepted}</option>
+          <option value="LetsTalk">{t.list.accepted}</option>
           <option value="Declined">{t.list.declined}</option>
         </select>
         <textarea id="admin-notes-input" rows="2" placeholder={t.list.adminNotes}
@@ -231,7 +231,7 @@ const f = formTranslations[lang].form;
   <script define:vars={{
     apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000',
     hireMeUrl: localePath(lang, 'hire-me'),
-    statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, Accepted: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
+    statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
     remoteLabel: t.list.remote,
     submittedByLabel: t.list.submittedBy,
     adminNotesLabel: t.list.adminNotes,
@@ -256,7 +256,7 @@ const f = formTranslations[lang].form;
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
       InReview: 'bg-primary-container text-on-primary-container',
-      Accepted: 'bg-tertiary-container text-on-surface',
+      LetsTalk: 'bg-tertiary-container text-on-surface',
       Declined: 'bg-error-container text-on-surface',
       Cancelled: 'bg-surface-container-high text-on-surface-variant'
     };

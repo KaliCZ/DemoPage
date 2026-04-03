@@ -70,7 +70,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
     {
         JobOfferStatus.Submitted => "Submitted",
         JobOfferStatus.InReview => "In Review",
-        JobOfferStatus.Accepted => "Accepted",
+        JobOfferStatus.LetsTalk => "Let's Talk",
         JobOfferStatus.Declined => "Declined",
         JobOfferStatus.Cancelled => "Cancelled",
     };

@@ -129,33 +129,5 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 
 ## Build & Deploy
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run build            # Output: frontend/dist/
-npm run dev              # Dev server: http://localhost:4321
-```
-
-### Backend
-```bash
-cd backend
-docker compose up db -d  # Start PostgreSQL
-cd src/Kalandra.Api
-dotnet run               # API at http://localhost:5000, Swagger at /swagger
-```
-
-### Tests
-```bash
-cd backend
-dotnet test              # Requires Docker (Testcontainers)
-
-cd frontend
-playwright test          # Frontend page tests (builds + serves static site)
-
-npm test                 # Run all tests (backend + frontend)
-npm run test:e2e         # Full e2e (starts DB + API + frontend, runs Playwright)
-```
-
-Frontend deployed via GitHub Actions → Cloudflare Pages on push to main.
-Backend deployed via GitHub Actions → Docker image → Oracle Cloud on push to main.
+See `docs/SETUP.md` for local development setup, run configurations, test commands, and deployment infrastructure.
+See `docs/PROJECT.md` for architecture, tech stack, decision log, and roadmap.

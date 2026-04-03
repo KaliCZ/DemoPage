@@ -146,14 +146,14 @@ public class JobOfferAggregateTests
     }
 
     [Fact]
-    public void Cancel_WhenAccepted_Fails()
+    public void Cancel_WhenLetsTalk_Fails()
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: "admin",
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
-            NewStatus: JobOfferStatus.Accepted,
+            NewStatus: JobOfferStatus.LetsTalk,
             Notes: null,
             Timestamp: Now));
 
@@ -199,11 +199,11 @@ public class JobOfferAggregateTests
     }
 
     [Fact]
-    public void ChangeStatus_Submitted_To_Accepted_Succeeds()
+    public void ChangeStatus_Submitted_To_LetsTalk_Succeeds()
     {
         var offer = CreateSubmittedOffer();
         var result = offer.ChangeStatus(
-            newStatus: JobOfferStatus.Accepted,
+            newStatus: JobOfferStatus.LetsTalk,
             changedByUserId: "admin",
             changedByEmail: "admin@test.com",
             notes: null,
@@ -242,7 +242,7 @@ public class JobOfferAggregateTests
     }
 
     [Fact]
-    public void ChangeStatus_InReview_To_Accepted_Succeeds()
+    public void ChangeStatus_InReview_To_LetsTalk_Succeeds()
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
@@ -254,7 +254,7 @@ public class JobOfferAggregateTests
             Timestamp: Now));
 
         var result = offer.ChangeStatus(
-            newStatus: JobOfferStatus.Accepted,
+            newStatus: JobOfferStatus.LetsTalk,
             changedByUserId: "admin",
             changedByEmail: "admin@test.com",
             notes: null,
@@ -284,14 +284,14 @@ public class JobOfferAggregateTests
     }
 
     [Fact]
-    public void ChangeStatus_Accepted_To_Anything_Fails()
+    public void ChangeStatus_LetsTalk_To_Anything_Fails()
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: "admin",
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
-            NewStatus: JobOfferStatus.Accepted,
+            NewStatus: JobOfferStatus.LetsTalk,
             Notes: null,
             Timestamp: Now));
 
