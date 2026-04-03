@@ -5,7 +5,7 @@ using Marten.Pagination;
 
 namespace Kalandra.JobOffers.Queries;
 
-public record ListJobOffersQuery(string? UserId, bool IsAdmin, JobOfferStatus? Status, int Page, int PageSize);
+public record ListJobOffersQuery(string? UserId, bool IsAdmin, JobOfferStatus[]? Statuses, int Page, int PageSize);
 
 public record ListJobOffersResult(IReadOnlyList<JobOffer> Items, int TotalCount);
 
@@ -26,9 +26,9 @@ public class ListJobOffersHandler(IQuerySession session)
             q = (IMartenQueryable<JobOffer>)q.Where(j => j.UserId == query.UserId);
         }
 
-        if (query.Status != null)
+        if (query.Statuses is { Length: > 0 })
         {
-            q = (IMartenQueryable<JobOffer>)q.Where(j => j.Status == query.Status);
+            q = (IMartenQueryable<JobOffer>)q.Where(j => j.Status.In(query.Statuses));
         }
 
         var pagedResult = await q

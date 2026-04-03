@@ -38,6 +38,12 @@
     "successTitle": "Offer Submitted!",
     "successMessage": "Thank you for your interest. I'll review your offer and get back to you.",
     "errorMessage": "Something went wrong. Please try again.",
-    "viewSubmissions": "View My Submissions"
+    "viewSubmissions": "View My Submissions",
+    "validation": {
+      "required": "This field is required.",
+      "emailInvalid": "Please enter a valid email address.",
+      "maxLength": "Must be {max} characters or fewer.",
+      "descriptionMinLength": "Please enter at least {min} characters."
+    }
   }
 }

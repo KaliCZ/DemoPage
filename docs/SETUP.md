@@ -15,13 +15,11 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
   - [1.4 CLI Alternative](#14-cli-alternative)
   - [1.5 Local Supabase](#15-local-supabase)
   - [1.6 Frontend Environment](#16-frontend-environment)
-  - [1.7 Manual Start](#17-manual-start)
-  - [1.8 Stopping Services](#18-stopping-services)
+  - [1.7 Stopping Services](#17-stopping-services)
 - [2. Running Tests](#2-running-tests)
   - [2.1 Backend Integration Tests](#21-backend-integration-tests)
   - [2.2 Frontend Page Tests](#22-frontend-page-tests)
   - [2.3 E2E Tests](#23-e2e-tests)
-  - [2.4 All Tests](#24-all-tests)
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
@@ -47,8 +45,7 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
 Run once after cloning (or when dependencies change):
 
 ```bash
-npm install            # Root — installs Supabase CLI, concurrently, etc.
-cd frontend && npm install  # Frontend — installs Astro, Tailwind, Playwright, etc.
+npm install            # Installs root + frontend dependencies (via postinstall)
 ```
 
 ### 1.3 JetBrains Run Configurations (recommended)
@@ -100,29 +97,7 @@ PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_API_URL=http://localhost:5000
 ```
 
-### 1.7 Manual Start
-
-If you prefer to start services individually:
-
-```bash
-# 1. Start PostgreSQL
-cd backend && docker compose up db -d
-
-# 2. Start local Supabase
-npm run dev:supabase
-
-# 3. Start backend
-cd backend/src/Kalandra.Api
-Auth__SupabaseProjectUrl=http://localhost:54321 \
-dotnet run
-# API at http://localhost:5000, Swagger at /swagger
-
-# 4. Start frontend
-cd frontend && npm run dev
-# Available at http://localhost:4321
-```
-
-### 1.8 Stopping Services
+### 1.7 Stopping Services
 
 ```bash
 npm run dev:stop     # Stop PostgreSQL + local Supabase
@@ -133,13 +108,16 @@ npm run dev:wipe     # Stop and delete all data (clean slate)
 
 ## 2. Running Tests
 
+```bash
+npm test               # Runs all tests: backend + frontend + E2E
+```
+
 ### 2.1 Backend Integration Tests
 
 Requires Docker (Testcontainers spins up a real PostgreSQL container):
 
 ```bash
-cd backend
-dotnet test
+npm run test:backend
 ```
 
 ### 2.2 Frontend Page Tests
@@ -147,9 +125,7 @@ dotnet test
 Builds the static site, serves it, and verifies page rendering, navigation, i18n, and dark mode:
 
 ```bash
-cd frontend
-npm run test:install   # Install Playwright browsers (once)
-npm test
+npm run test:frontend  # Installs Playwright browsers automatically
 ```
 
 ### 2.3 E2E Tests
@@ -158,12 +134,6 @@ Runs Playwright against the full stack (frontend + backend + DB):
 
 ```bash
 npm run test:e2e
-```
-
-### 2.4 All Tests
-
-```bash
-npm test               # Backend + frontend + E2E
 ```
 
 ---

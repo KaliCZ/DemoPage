@@ -45,26 +45,38 @@ const f = formTranslations[lang].form;
 
   <!-- Offers list -->
   <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
-    <!-- Status filter -->
-    <div id="status-filter" class="hidden flex flex-wrap gap-2 mb-6" role="group" aria-label={t.list.status}>
-      <button type="button" data-status="" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-primary text-on-primary">
-        {t.list.filterAll}
+    <!-- Status filter dropdown -->
+    <div id="status-filter" class="hidden relative mb-6">
+      <button id="status-filter-toggle" type="button"
+        class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-sm font-label font-semibold text-on-surface hover:border-primary/30 transition-colors cursor-pointer"
+        aria-haspopup="listbox" aria-expanded="false">
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_list</span>
+        <span id="filter-label">{t.list.filterByStatus}</span>
+        <span id="filter-count" class="hidden px-1.5 py-0.5 rounded-full text-xs bg-primary text-on-primary"></span>
+        <span class="material-symbols-outlined text-lg ml-1" aria-hidden="true">expand_more</span>
       </button>
-      <button type="button" data-status="Submitted" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
-        {t.list.submitted}
-      </button>
-      <button type="button" data-status="InReview" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
-        {t.list.inReview}
-      </button>
-      <button type="button" data-status="LetsTalk" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
-        {t.list.accepted}
-      </button>
-      <button type="button" data-status="Declined" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
-        {t.list.declined}
-      </button>
-      <button type="button" data-status="Cancelled" class="status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest">
-        {t.list.cancelled}
-      </button>
+      <div id="status-filter-menu" class="hidden absolute left-0 top-full mt-1 z-10 min-w-[200px] bg-surface-container-low rounded-xl border border-outline-variant/20 shadow-lg py-1" role="listbox" aria-multiselectable="true" aria-label={t.list.filterByStatus}>
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
+          <input type="checkbox" value="Submitted" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <span class="text-sm font-label text-on-surface">{t.list.submitted}</span>
+        </label>
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
+          <input type="checkbox" value="InReview" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <span class="text-sm font-label text-on-surface">{t.list.inReview}</span>
+        </label>
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
+          <input type="checkbox" value="LetsTalk" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <span class="text-sm font-label text-on-surface">{t.list.accepted}</span>
+        </label>
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
+          <input type="checkbox" value="Declined" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <span class="text-sm font-label text-on-surface">{t.list.declined}</span>
+        </label>
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
+          <input type="checkbox" value="Cancelled" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <span class="text-sm font-label text-on-surface">{t.list.cancelled}</span>
+        </label>
+      </div>
     </div>
 
     <div id="offers-loading" class="text-center py-12">
@@ -92,7 +104,7 @@ const f = formTranslations[lang].form;
 
     <!-- Edit form (hidden by default, shown when editing) -->
     <div id="edit-form-section" class="hidden mt-6">
-      <form id="edit-form" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
+      <form id="edit-form" novalidate class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label for="edit-companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.companyName}</label>
@@ -231,6 +243,7 @@ const f = formTranslations[lang].form;
   <script define:vars={{
     apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000',
     hireMeUrl: localePath(lang, 'hire-me'),
+    filterByStatusLabel: t.list.filterByStatus,
     statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
     remoteLabel: t.list.remote,
     submittedByLabel: t.list.submittedBy,
@@ -241,7 +254,8 @@ const f = formTranslations[lang].form;
     commentsEmptyLabel: t.list.commentsEmpty,
     errorText: 'Something went wrong. Please try again.',
     attachmentsLabel: t.list.attachments,
-    downloadLabel: t.list.download
+    downloadLabel: t.list.download,
+    validationStrings: f.validation
   }}>
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
@@ -251,7 +265,7 @@ const f = formTranslations[lang].form;
     var currentOfferId = null;
     var currentOffer = null;
     var currentToken = null;
-    var activeStatus = '';
+    var activeStatuses = [];
 
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
@@ -289,14 +303,15 @@ const f = formTranslations[lang].form;
       currentToken = await window.__getAccessToken?.();
       if (!currentToken) return;
 
-      var statusParam = activeStatus ? '?status=' + activeStatus : '';
+      var statusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
       var response = await fetch(apiUrl + '/api/job-offers' + statusParam, {
         headers: { 'Authorization': 'Bearer ' + currentToken }
       });
 
       if (response.status === 403) {
         isAdmin = false;
-        response = await fetch(apiUrl + '/api/job-offers/mine' + statusParam, {
+        var mineStatusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
+        response = await fetch(apiUrl + '/api/job-offers/mine' + mineStatusParam, {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
       } else {
@@ -530,11 +545,74 @@ const f = formTranslations[lang].form;
       document.getElementById('user-actions')?.classList.remove('hidden');
     });
 
+    // --- Inline validation (shared with hire-me) ---
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function getFieldError(field) {
+      var value = field.value.trim();
+      var name = field.name;
+      if (field.hasAttribute('required') && !value) return validationStrings.required;
+      if (name === 'contactEmail' && value && !emailRegex.test(value)) return validationStrings.emailInvalid;
+      if (name === 'description' && value && value.length < 20) return validationStrings.descriptionMinLength.replace('{min}', '20');
+      var ml = field.getAttribute('maxlength');
+      if (ml && value.length > parseInt(ml, 10)) return validationStrings.maxLength.replace('{max}', ml);
+      return '';
+    }
+
+    function showFieldError(field, message) {
+      clearFieldError(field);
+      if (!message) return;
+      field.classList.add('border-error');
+      field.classList.remove('border-outline-variant/20');
+      var errorSpan = document.createElement('p');
+      errorSpan.className = 'field-error text-error text-xs font-body mt-1';
+      errorSpan.textContent = message;
+      field.parentElement.appendChild(errorSpan);
+    }
+
+    function clearFieldError(field) {
+      field.classList.remove('border-error');
+      field.classList.add('border-outline-variant/20');
+      var existing = field.parentElement.querySelector('.field-error');
+      if (existing) existing.remove();
+    }
+
+    function validateField(field) {
+      var error = getFieldError(field);
+      showFieldError(field, error);
+      return !error;
+    }
+
+    function validateAllFields(form) {
+      var valid = true;
+      var firstInvalid = null;
+      form.querySelectorAll('input[name], textarea[name]').forEach(function(field) {
+        if (field.type === 'checkbox' || field.type === 'file') return;
+        if (!validateField(field)) { if (!firstInvalid) firstInvalid = field; valid = false; }
+      });
+      if (firstInvalid) firstInvalid.focus();
+      return valid;
+    }
+
+    // Attach blur/input validation to edit form fields
+    var editFormEl = document.getElementById('edit-form');
+    if (editFormEl) {
+      editFormEl.querySelectorAll('input[name], textarea[name]').forEach(function(field) {
+        if (field.type === 'checkbox' || field.type === 'file') return;
+        field.addEventListener('blur', function() { validateField(field); });
+        field.addEventListener('input', function() {
+          if (field.parentElement.querySelector('.field-error')) validateField(field);
+        });
+      });
+    }
+
     document.getElementById('edit-form')?.addEventListener('submit', async function(e) {
       e.preventDefault();
       var form = e.target;
       var errEl = document.getElementById('edit-error');
       if (errEl) errEl.classList.add('hidden');
+
+      if (!validateAllFields(form)) return;
 
       var body = {
         companyName: form.companyName.value,
@@ -627,14 +705,39 @@ const f = formTranslations[lang].form;
       document.getElementById('offers-list-section')?.classList.remove('hidden');
     });
 
-    // Status filter buttons
-    document.querySelectorAll('.status-filter-btn').forEach(function(btn) {
-      btn.addEventListener('click', async function() {
-        activeStatus = btn.getAttribute('data-status') || '';
-        document.querySelectorAll('.status-filter-btn').forEach(function(b) {
-          b.className = 'status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-surface-container-high text-on-surface hover:bg-surface-container-highest';
+    // Status filter dropdown
+    var filterToggle = document.getElementById('status-filter-toggle');
+    var filterMenu = document.getElementById('status-filter-menu');
+    var filterLabel = document.getElementById('filter-label');
+    var filterCount = document.getElementById('filter-count');
+
+    filterToggle?.addEventListener('click', function() {
+      var open = !filterMenu.classList.contains('hidden');
+      filterMenu.classList.toggle('hidden', open);
+      filterToggle.setAttribute('aria-expanded', String(!open));
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!filterToggle?.contains(e.target) && !filterMenu?.contains(e.target)) {
+        filterMenu?.classList.add('hidden');
+        filterToggle?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.querySelectorAll('.status-checkbox').forEach(function(cb) {
+      cb.addEventListener('change', async function() {
+        activeStatuses = [];
+        document.querySelectorAll('.status-checkbox:checked').forEach(function(c) {
+          activeStatuses.push(c.value);
         });
-        btn.className = 'status-filter-btn px-4 py-2 rounded-full text-sm font-label font-semibold transition-colors cursor-pointer bg-primary text-on-primary';
+        if (activeStatuses.length > 0) {
+          filterCount.textContent = activeStatuses.length;
+          filterCount.classList.remove('hidden');
+          filterLabel.textContent = activeStatuses.map(function(s) { return statusLabels[s] || s; }).join(', ');
+        } else {
+          filterCount.classList.add('hidden');
+          filterLabel.textContent = filterByStatusLabel;
+        }
         await loadOffers();
       });
     });

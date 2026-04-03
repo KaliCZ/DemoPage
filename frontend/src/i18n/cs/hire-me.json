@@ -38,6 +38,12 @@
     "successTitle": "Nabídka odeslána!",
     "successMessage": "Děkuji za váš zájem. Vaši nabídku zkontroluji a ozvu se vám.",
     "errorMessage": "Něco se pokazilo. Zkuste to prosím znovu.",
-    "viewSubmissions": "Zobrazit mé nabídky"
+    "viewSubmissions": "Zobrazit mé nabídky",
+    "validation": {
+      "required": "Toto pole je povinné.",
+      "emailInvalid": "Zadejte prosím platnou e-mailovou adresu.",
+      "maxLength": "Maximálně {max} znaků.",
+      "descriptionMinLength": "Zadejte prosím alespoň {min} znaků."
+    }
   }
 }
