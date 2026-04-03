@@ -171,6 +171,16 @@ In **Authentication → URL Configuration**:
   - `https://kalandra.tech/**`
   - `http://localhost:4321/**` (for local development)
 
+#### Create Storage Bucket
+
+1. In Supabase dashboard: **Storage → New bucket**
+2. Name: `job-offer-attachments`
+3. Public: **off**
+4. File size limit: `15 MB`
+5. Allowed MIME types: `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/vnd.openxmlformats-officedocument.presentationml.presentation`, `text/plain`, `image/png`, `image/jpeg`, `image/webp`
+
+> Locally, the bucket is auto-created by `supabase start` from the `[storage.buckets.job-offer-attachments]` section in `supabase/config.toml`.
+
 #### Set Up Admin User
 
 After signing in for the first time, assign the admin role:
@@ -263,6 +273,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key from Supabase dashboard (**Settings → API**) — used by the backend for storage uploads |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
 
 ### 4.2 GitHub Actions Environment

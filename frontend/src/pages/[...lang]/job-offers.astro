@@ -266,6 +266,7 @@ const f = formTranslations[lang].form;
     var currentOffer = null;
     var currentToken = null;
     var activeStatuses = [];
+    var loadedForUserId = null;
 
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
@@ -286,10 +287,15 @@ const f = formTranslations[lang].form;
     window.addEventListener('auth-change', async function(e) {
       var user = e.detail?.user;
       if (user) {
+        if (loadedForUserId === user.id) return;
+        loadedForUserId = user.id;
+        isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf('admin') !== -1;
         document.getElementById('login-prompt')?.classList.add('hidden');
         document.getElementById('offers-list-section')?.classList.remove('hidden');
         await loadOffers();
       } else {
+        loadedForUserId = null;
+        isAdmin = false;
         document.getElementById('login-prompt')?.classList.remove('hidden');
         document.getElementById('offers-list-section')?.classList.add('hidden');
       }
@@ -304,18 +310,12 @@ const f = formTranslations[lang].form;
       if (!currentToken) return;
 
       var statusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
-      var response = await fetch(apiUrl + '/api/job-offers' + statusParam, {
+      var endpoint = isAdmin ? '/api/job-offers' : '/api/job-offers/mine';
+      var response = await fetch(apiUrl + endpoint + statusParam, {
         headers: { 'Authorization': 'Bearer ' + currentToken }
       });
 
-      if (response.status === 403) {
-        isAdmin = false;
-        var mineStatusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
-        response = await fetch(apiUrl + '/api/job-offers/mine' + mineStatusParam, {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
-        });
-      } else {
-        isAdmin = true;
+      if (isAdmin) {
         var titleEl = document.getElementById('page-title');
         var subtitleEl = document.getElementById('page-subtitle');
         if (titleEl) titleEl.innerHTML = '<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">' + heroTitleAdmin + '</span>';
@@ -673,7 +673,7 @@ const f = formTranslations[lang].form;
     });
 
     // Send comment
-    document.getElementById('send-comment')?.addEventListener('click', async function() {
+    async function sendComment() {
       var input = document.getElementById('comment-input');
       var content = input?.value?.trim();
       if (!content || !currentOfferId) return;
@@ -696,6 +696,15 @@ const f = formTranslations[lang].form;
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
         if (historyRes.ok) renderHistory(await historyRes.json());
+      }
+    }
+
+    document.getElementById('send-comment')?.addEventListener('click', sendComment);
+
+    document.getElementById('comment-input')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendComment();
       }
     });
 

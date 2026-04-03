@@ -6,7 +6,6 @@ namespace Kalandra.Infrastructure.Storage;
 
 public class SupabaseStorageService(
     HttpClient httpClient,
-    SupabaseAuthConfig authConfig,
     SupabaseStorageConfig storageConfig,
     ILogger<SupabaseStorageService> logger) : IStorageService
 {
@@ -15,7 +14,7 @@ public class SupabaseStorageService(
         IReadOnlyList<FileUploadItem> files,
         CancellationToken ct)
     {
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
+        var projectUrl = storageConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = storageConfig.ServiceKey.Value;
         var bucketName = storageConfig.BucketName.Value;
 
@@ -23,7 +22,8 @@ public class SupabaseStorageService(
 
         foreach (var file in files)
         {
-            var storagePath = $"{folderPrefix}{file.FileName}";
+            var extension = Path.GetExtension(file.FileName);
+            var storagePath = $"{folderPrefix}{Guid.NewGuid()}{extension}";
 
             using var content = new StreamContent(file.Content);
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
@@ -40,10 +40,12 @@ public class SupabaseStorageService(
 
             if (!response.IsSuccessStatusCode)
             {
+                var responseBody = await response.Content.ReadAsStringAsync(ct);
                 logger.LogError(
-                    "Failed to upload {StoragePath} to Supabase Storage. Status: {StatusCode}",
+                    "Failed to upload {StoragePath} to Supabase Storage. Status: {StatusCode}. Response: {ResponseBody}",
                     storagePath,
-                    (int)response.StatusCode);
+                    (int)response.StatusCode,
+                    responseBody);
 
                 // Best-effort cleanup of already-uploaded files
                 await CleanupAsync(projectUrl, bucketName, serviceKey, uploaded, ct);
@@ -64,7 +66,7 @@ public class SupabaseStorageService(
 
     public async Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct)
     {
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
+        var projectUrl = storageConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = storageConfig.ServiceKey.Value;
         var bucketName = storageConfig.BucketName.Value;
 
