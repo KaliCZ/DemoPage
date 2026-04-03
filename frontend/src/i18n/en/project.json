@@ -73,7 +73,10 @@
           { "author": "claude", "text": "ASP.NET Core Web API with vertical slices and Marten event sourcing" },
           { "author": "claude", "text": "Job offer form, user dashboard and admin view with i18n" },
           { "author": "claude", "text": "Docker setup, CI/CD pipeline to Oracle Cloud" },
-          { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" }
+          { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" },
+          { "author": "pavel", "text": "Optimizing CI/CD pipeline" },
+          { "author": "pavel", "text": "Improving run configs for DevX" },
+          { "author": "pavel", "text": "Restructuring code a few times" }
         ]
       },
       {
