@@ -243,6 +243,9 @@ const f = formTranslations[lang].form;
     attachmentsLabel: t.list.attachments,
     downloadLabel: t.list.download
   }}>
+    // Wake up the database (see hire-me.astro for details).
+    fetch(apiUrl + '/health').catch(function() {});
+
     var isAdmin = false;
     var currentOfferId = null;
     var currentOffer = null;
