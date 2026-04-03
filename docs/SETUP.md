@@ -75,7 +75,14 @@ This starts:
 
 Press Ctrl+C to stop everything. Run `npm run dev:stop` to stop Docker services.
 
-### 2.3 Local Supabase
+### 2.3 JetBrains Run Configurations
+
+The `.run/` directory contains shared run configurations:
+
+- **Debug Backend** — launches the .NET backend with debugger attached + Astro dev server. Infrastructure (PostgreSQL + local Supabase) starts automatically as a before-launch step.
+- **Watch BE+FE** — launches `dotnet watch` + `astro dev` side-by-side with separate log panels. Both backend and frontend hot-reload on file changes.
+
+### 2.4 Local Supabase
 
 The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `supabase start` (via `npm run dev:supabase`) downloads the required Docker images (~2-3 min).
 
@@ -89,7 +96,7 @@ Local services:
 Local credentials (well-known dev values, not secrets):
 - **Publishable key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
 
-### 2.4 Configure Frontend
+### 2.5 Configure Frontend
 
 The committed `frontend/.env` has local Supabase defaults — ready to use out of the box.
 
@@ -100,7 +107,7 @@ PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_API_URL=http://localhost:5000
 ```
 
-### 2.5 Manual Start (alternative)
+### 2.6 Manual Start (alternative)
 
 If you prefer to start services individually:
 
