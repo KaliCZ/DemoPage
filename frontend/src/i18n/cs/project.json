@@ -63,7 +63,7 @@
         "title": "Backend Included",
         "done": true,
         "time": "~20 hodin",
-        "nextTime": "Příště bych to zvládl za ~5 hodin — většinu času zabralo učení se Supabase Auth, Marten a nastavení Oracle Cloud.",
+        "nextTime": "Příště bych to zvládl za ~5 hodin.",
         "description": "ASP.NET Core backend se Supabase Auth a Marten event sourcingem. Slouží ke správě pracovních nabídek — uživatelé mohou podávat a sledovat nabídky, admini je přezkoumávat a měnit stavy.",
         "side": "right",
         "detailsLabel": "Co se udělalo",

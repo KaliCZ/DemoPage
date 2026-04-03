@@ -63,7 +63,7 @@
         "title": "Backend Included",
         "done": true,
         "time": "~20 hours",
-        "nextTime": "Could redo in ~5 hours — most time went into learning Supabase Auth, Marten, and Oracle Cloud setup.",
+        "nextTime": "Could do it in ~5 hours next time.",
         "description": "ASP.NET Core backend with Supabase Auth and Marten event sourcing. Used for managing job offers — users can submit and track offers, admins can review and update statuses.",
         "side": "right",
         "detailsLabel": "What was done",
