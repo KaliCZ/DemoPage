@@ -155,6 +155,7 @@ const t = translations[lang];
   </section>
 
   <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage }}>
+    // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database in case the provider suspended it (e.g. Neon free tier).
     // The health endpoint runs a Postgres check, so this warms the connection
     // while the user is filling out the form.

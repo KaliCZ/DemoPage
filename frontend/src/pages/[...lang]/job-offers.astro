@@ -243,6 +243,7 @@ const f = formTranslations[lang].form;
     attachmentsLabel: t.list.attachments,
     downloadLabel: t.list.download
   }}>
+    // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
     fetch(apiUrl + '/health').catch(function() {});
 
