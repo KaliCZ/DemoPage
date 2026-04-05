@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 
 permissions:
   contents: read
@@ -19,6 +23,11 @@ env:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # Local Supabase always generates the same deterministic keys from its JWT secret.
+    # Hardcoding them avoids waiting for 'supabase status' before building.
+    env:
+      SB_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SB_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
     services:
       postgres:
         image: postgres:17-alpine
@@ -37,6 +46,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Start Supabase first in background — it pulls Docker images (~50s)
+      # which overlaps with .NET/Node setup, backend build, and npm ci below.
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase in background
+        run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -49,23 +68,42 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
         with:
-          version: latest
-
-      - name: Start local Supabase
-        run: supabase start
-
-      - name: Extract Supabase credentials
-        run: |
-          eval "$(supabase status -o env)"
-          echo "SB_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
-          echo "SB_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
-          echo "Anon key (first 30 chars): ${ANON_KEY:0:30}..."
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
 
       - name: Build backend
         run: dotnet build backend/src/Kalandra.Api -c Release
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
+          PUBLIC_API_URL: "http://localhost:5000"
+
+      - name: Serve frontend
+        run: npm run serve &
+        working-directory: frontend
+
+      # Wait for Supabase before starting the backend (which needs it running).
+      # By now ~40s of setup/build work has overlapped with the ~50s startup.
+      - name: Wait for Supabase
+        run: |
+          echo "Waiting for Supabase to be ready..."
+          until supabase status > /dev/null 2>&1; do
+            echo "Still waiting..."
+            sleep 3
+          done
+          echo "Supabase is ready."
 
       - name: Start backend
         run: |
@@ -83,28 +121,26 @@ jobs:
           max-attempts: 30
           retry-interval: 2
 
-      - name: Install frontend dependencies
-        run: npm ci
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_OUTPUT
         working-directory: frontend
 
-      - name: Build frontend
-        run: npm run build
-        working-directory: frontend
-        env:
-          PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
-          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
-          PUBLIC_API_URL: "http://localhost:5000"
-
-      - name: Serve frontend
-        run: npx serve dist -l 4321 &
-        working-directory: frontend
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: ./node_modules/.bin/playwright install --with-deps chromium
         working-directory: frontend
 
+
       - name: Run E2E tests
-        run: npx playwright test --config playwright.e2e.config.ts
+        run: ./node_modules/.bin/playwright test --config playwright.e2e.config.ts
         working-directory: frontend
         env:
           SUPABASE_URL: "http://127.0.0.1:54321"
@@ -127,6 +163,13 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore dependencies
         run: dotnet restore
@@ -158,12 +201,26 @@ jobs:
         run: npm run build
         working-directory: frontend
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_OUTPUT
         working-directory: frontend
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: ./node_modules/.bin/playwright install --with-deps chromium
+        working-directory: frontend
+
+
       - name: Run Playwright tests (pages only — e2e requires backend)
-        run: npx playwright test tests/pages.spec.ts
+        run: ./node_modules/.bin/playwright test tests/pages.spec.ts
         working-directory: frontend
 
   backend-deploy:
@@ -204,8 +261,8 @@ jobs:
       - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME }}
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
@@ -238,7 +295,7 @@ jobs:
               -e ASPNETCORE_URLS=http://+:$NEW_PORT \
               -e ASPNETCORE_ENVIRONMENT=Production \
               -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
-              -e "Auth__SupabaseProjectUrl=${{ secrets.SUPABASE_PROJECT_URL }}" \
+              -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
               -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
               $IMAGE
 
@@ -307,13 +364,13 @@ jobs:
         run: npm run build
         working-directory: frontend
         env:
-          PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
-          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy frontend/dist --project-name=kalandra-tech

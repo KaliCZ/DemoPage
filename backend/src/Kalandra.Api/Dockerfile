@@ -2,13 +2,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG COMMIT_SHA=unknown
 WORKDIR /src
 
-# Copy csproj and restore
-COPY src/Kalandra.Api/Kalandra.Api.csproj src/Kalandra.Api/
-RUN dotnet restore src/Kalandra.Api/Kalandra.Api.csproj
-
-# Copy everything and build
+# Copy source, restore, and publish
 COPY src/ src/
 WORKDIR /src/src/Kalandra.Api
+RUN dotnet restore
 RUN dotnet publish -c Release -o /app --no-restore -p:SourceRevisionId=$COMMIT_SHA
 
 # Runtime image
