@@ -7,10 +7,14 @@ namespace Kalandra.Infrastructure.Configuration;
 public record SupabaseAuthConfig
 {
     public NonEmptyString ProjectUrl { get; }
+    public NonEmptyString ServiceKey { get; }
 
-    private SupabaseAuthConfig(NonEmptyString projectUrl)
+    private SupabaseAuthConfig(
+        NonEmptyString projectUrl,
+        NonEmptyString serviceKey)
     {
         ProjectUrl = projectUrl;
+        ServiceKey = serviceKey;
     }
 
     public static SupabaseAuthConfig AddSingleton(
@@ -20,7 +24,8 @@ public record SupabaseAuthConfig
         var section = configuration.GetSection("Auth");
 
         var config = new SupabaseAuthConfig(
-            projectUrl: NonEmptyString.CreateUnsafe(section["SupabaseProjectUrl"]));
+            projectUrl: NonEmptyString.CreateUnsafe(section["SupabaseProjectUrl"]),
+            serviceKey: NonEmptyString.CreateUnsafe(section["ServiceKey"]));
 
         services.AddSingleton(config);
 
