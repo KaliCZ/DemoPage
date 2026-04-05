@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Kalandra.Infrastructure.Auth;
 
 public interface ISupabaseAdminService
@@ -11,18 +9,6 @@ public interface ISupabaseAdminService
     Task<SupabaseAdminResult> UpdateUserAsync(
         string userId,
         object updatePayload,
-        CancellationToken ct);
-
-    /// <summary>
-    /// Gets a Supabase user by ID via the Admin API.
-    /// </summary>
-    Task<JsonElement?> GetUserAsync(string userId, CancellationToken ct);
-
-    /// <summary>
-    /// Deletes an identity from a Supabase user via the Admin API.
-    /// </summary>
-    Task<SupabaseAdminResult> DeleteIdentityAsync(
-        string identityId,
         CancellationToken ct);
 }
 

@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -44,67 +43,6 @@ public class SupabaseAdminService(
         logger.LogError(
             "Supabase Admin API PUT /admin/users/{UserId} failed. Status: {StatusCode}. Response: {Body}",
             userId,
-            (int)response.StatusCode,
-            body);
-
-        var errorMessage = TryExtractErrorMessage(body) ?? $"Supabase returned {(int)response.StatusCode}";
-        return new SupabaseAdminResult(Success: false, Error: errorMessage);
-    }
-
-    public async Task<JsonElement?> GetUserAsync(string userId, CancellationToken ct)
-    {
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
-        var serviceKey = authConfig.ServiceKey.Value;
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Get,
-            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId)}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceKey);
-        request.Headers.Add("apikey", serviceKey);
-
-        using var response = await httpClient.SendAsync(request, ct);
-
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            return null;
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var body = await response.Content.ReadAsStringAsync(ct);
-            logger.LogError(
-                "Supabase Admin API GET /admin/users/{UserId} failed. Status: {StatusCode}. Response: {Body}",
-                userId,
-                (int)response.StatusCode,
-                body);
-            return null;
-        }
-
-        var doc = await JsonDocument.ParseAsync(
-            await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
-        return doc.RootElement.Clone();
-    }
-
-    public async Task<SupabaseAdminResult> DeleteIdentityAsync(
-        string identityId,
-        CancellationToken ct)
-    {
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
-        var serviceKey = authConfig.ServiceKey.Value;
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Delete,
-            $"{projectUrl}/auth/v1/admin/identities/{Uri.EscapeDataString(identityId)}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceKey);
-        request.Headers.Add("apikey", serviceKey);
-
-        using var response = await httpClient.SendAsync(request, ct);
-
-        if (response.IsSuccessStatusCode)
-            return new SupabaseAdminResult(Success: true);
-
-        var body = await response.Content.ReadAsStringAsync(ct);
-        logger.LogError(
-            "Supabase Admin API DELETE /admin/identities/{IdentityId} failed. Status: {StatusCode}. Response: {Body}",
-            identityId,
             (int)response.StatusCode,
             body);
 
