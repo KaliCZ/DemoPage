@@ -76,7 +76,8 @@
           { "author": "claude", "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)" },
           { "author": "pavel", "text": "Optimalizace CI/CD pipeline" },
           { "author": "pavel", "text": "Vylepšení run konfigurací pro DevX" },
-          { "author": "pavel", "text": "Několikrát restrukturalizace kódu" }
+          { "author": "pavel", "text": "Několikrát restrukturalizace kódu" },
+          { "author": "claude", "text": "Cloudflare Turnstile CAPTCHA na formuláři pracovních nabídek" }
         ]
       },
       {

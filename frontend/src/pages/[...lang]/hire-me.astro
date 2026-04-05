@@ -129,6 +129,8 @@ const t = translations[lang];
 
       <div id="form-error" class="hidden text-error text-sm font-body"></div>
 
+      <div id="turnstile-container" class="cf-turnstile" data-sitekey={import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} data-theme="auto"></div>
+
       <button
         type="submit"
         id="submit-btn"
@@ -140,7 +142,7 @@ const t = translations[lang];
   </section>
 
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, successText: t.form.successTitle, validationStrings: t.form.validation, jobOffersPath: localePath(lang, 'job-offers') }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, captchaError: t.form.captchaError, successText: t.form.successTitle, validationStrings: t.form.validation, jobOffersPath: localePath(lang, 'job-offers') }}>
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database in case the provider suspended it (e.g. Neon free tier).
     // The health endpoint runs a Postgres check, so this warms the connection
@@ -311,7 +313,16 @@ const t = translations[lang];
         if (selectedFiles.length > maxFiles) throw new Error('Too many files');
         if (totalSize > maxTotalBytes) throw new Error('Files too large');
 
+        // Get Turnstile token
+        var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
+        if (!turnstileResponse) {
+          window.__showSnackbar?.(captchaError, 'error');
+          if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+          return;
+        }
+
         var formData = new FormData();
+        formData.append('cf-turnstile-response', turnstileResponse);
         formData.append('CompanyName', form.companyName.value);
         formData.append('ContactName', form.contactName.value);
         formData.append('ContactEmail', form.contactEmail.value);
@@ -340,6 +351,9 @@ const t = translations[lang];
       } catch (err) {
         window.__showSnackbar?.(err.message || errorText, 'error');
         if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+      } finally {
+        // Reset Turnstile widget for next attempt
+        if (window.turnstile) window.turnstile.reset('#turnstile-container');
       }
     });
   </script>

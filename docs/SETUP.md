@@ -95,6 +95,20 @@ To point at a different Supabase instance, create `frontend/.env.local` (gitigno
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_API_URL=http://localhost:5000
+PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
+```
+
+#### Cloudflare Turnstile (CAPTCHA)
+
+The committed `.env` uses Cloudflare's [always-pass test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) so the form works locally without a real Turnstile widget. The backend `appsettings.json` uses the matching always-pass test secret (`1x0000000000000000000000000000000AA`).
+
+To test with a real widget locally, override in `.env.local` (frontend) and `appsettings.Development.json` or user-secrets (backend):
+```
+# frontend/.env.local
+PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
+
+# backend — via environment variable or appsettings override
+Turnstile__SecretKey=your-real-secret-key
 ```
 
 ### 1.7 Stopping Services
@@ -275,6 +289,8 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key from Supabase dashboard (**Settings → API**) — used by the backend for storage uploads |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key (from [Turnstile dashboard](https://dash.cloudflare.com/?to=/:account/turnstile)) — used by backend to verify CAPTCHA tokens |
+| `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 
 ### 4.2 GitHub Actions Environment
 
