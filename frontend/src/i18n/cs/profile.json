@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "Profil — kalandra.tech",
+    "description": "Spravujte nastavení účtu, zobrazované jméno, e-mail a heslo."
+  },
+  "hero": {
+    "title": "Profil",
+    "subtitle": "Spravujte nastavení svého účtu."
+  },
+  "loginPrompt": {
+    "title": "Přihlaste se pro zobrazení profilu",
+    "description": "Pro správu nastavení účtu musíte být přihlášeni.",
+    "signInButton": "Přihlásit se"
+  },
+  "displayName": {
+    "label": "Zobrazované jméno",
+    "placeholder": "Vaše jméno",
+    "save": "Uložit",
+    "saving": "Ukládání…",
+    "success": "Zobrazované jméno bylo aktualizováno.",
+    "error": "Nepodařilo se aktualizovat zobrazované jméno."
+  },
+  "email": {
+    "label": "E-mailová adresa",
+    "hint": "Tento e-mail zároveň používáte k přihlášení.",
+    "placeholder": "vas@email.cz",
+    "save": "Změnit e-mail",
+    "saving": "Aktualizace…",
+    "success": "Potvrzovací e-mail odeslán. Zkontrolujte svou schránku pro ověření nové adresy.",
+    "error": "Nepodařilo se aktualizovat e-mail."
+  },
+  "password": {
+    "title": "Změna hesla",
+    "newPassword": "Nové heslo",
+    "newPasswordPlaceholder": "Min. 6 znaků",
+    "confirmPassword": "Potvrzení hesla",
+    "confirmPasswordPlaceholder": "Zopakujte nové heslo",
+    "save": "Změnit heslo",
+    "saving": "Měním…",
+    "success": "Heslo bylo úspěšně změněno.",
+    "error": "Nepodařilo se změnit heslo.",
+    "mismatch": "Hesla se neshodují.",
+    "tooShort": "Heslo musí mít alespoň 6 znaků."
+  },
+  "provider": {
+    "title": "Způsoby přihlášení",
+    "emailPassword": "E-mail a heslo",
+    "google": "Google",
+    "linkEmail": "Propojit e-mail a heslo",
+    "linkEmailPassword": "Zvolte heslo",
+    "linkEmailPasswordPlaceholder": "Min. 6 znaků",
+    "linkEmailSubmit": "Propojit",
+    "linkEmailSubmitting": "Propojuji…",
+    "linkEmailSuccess": "Přihlášení e-mailem úspěšně propojeno.",
+    "linkEmailError": "Nepodařilo se propojit přihlášení e-mailem.",
+    "linkEmailTooShort": "Heslo musí mít alespoň 6 znaků.",
+    "linkGoogle": "Propojit účet Google",
+    "linkGoogleError": "Nepodařilo se propojit účet Google.",
+    "unlinkGoogle": "Odpojit",
+    "unlinkGoogleDisabled": "Nejprve propojte e-mail a heslo, aby bylo možné odpojit",
+    "unlinkGoogleSuccess": "Účet Google byl úspěšně odpojen.",
+    "unlinkGoogleError": "Nepodařilo se odpojit účet Google."
+  }
+}

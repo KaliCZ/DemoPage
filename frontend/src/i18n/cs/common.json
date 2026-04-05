@@ -17,6 +17,9 @@
     "password": "Heslo",
     "passwordPlaceholder": "Min. 6 znaků",
     "or": "nebo",
+    "sendMagicLink": "Poslat přihlašovací odkaz",
+    "sendingMagicLink": "Odesílání…",
+    "magicLinkSent": "Zkontrolujte svůj e-mail, poslali jsme vám přihlašovací odkaz!",
     "continueWithGoogle": "Pokračovat přes Google",
     "noAccount": "Nemáte účet?",
     "haveAccount": "Již máte účet?",
@@ -32,10 +35,24 @@
     "toggleDarkMode": "Přepnout tmavý režim",
     "changeLanguage": "Změnit jazyk"
   },
+  "errors": {
+    "generic": "Něco se pokazilo. Zkuste to znovu nebo mi napište na pavel@kalandra.tech.",
+    "notFound": "Požadovaný zdroj nebyl nalezen. Zkuste to znovu nebo mi napište na pavel@kalandra.tech.",
+    "downloadFailed": "Stažení souboru selhalo. Soubor již nemusí existovat. Napište mi na pavel@kalandra.tech.",
+    "serverError": "Chyba serveru. Zkuste to později nebo mi napište na pavel@kalandra.tech.",
+    "networkError": "Server není dostupný. Zkontrolujte připojení nebo mi napište na pavel@kalandra.tech."
+  },
+  "success": {
+    "offerSubmitted": "Pracovní nabídka byla úspěšně odeslána!"
+  },
   "footer": {
+    "emailTitle": "E-mail — pavel@kalandra.tech",
+    "emailAriaLabel": "Poslat e-mail",
     "linkedinTitle": "LinkedIn — Pavel Kalandra",
     "linkedinAriaLabel": "LinkedIn profil",
     "githubTitle": "GitHub — KaliCZ",
-    "githubAriaLabel": "GitHub profil"
+    "githubAriaLabel": "GitHub profil",
+    "privacy": "Ochrana osobních údajů",
+    "terms": "Podmínky používání"
   }
 }

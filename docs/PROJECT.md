@@ -77,6 +77,8 @@ Supabase Auth with Google OAuth, job offer submission form, and ASP.NET Core bac
 - [x] Playwright frontend tests (page rendering, navigation, dark mode)
 - [x] E2E test infrastructure (Playwright against full stack)
 - [x] `npm run dev` single-command local development (DB + backend + frontend)
+- [x] Custom email domain (kalandra.tech) with Brevo for transactional email delivery
+- [x] Supabase Auth configured with Brevo SMTP for auth emails (confirmations, magic links)
 - [ ] Supabase project created and configured (manual step — see `docs/SETUP.md`)
 - [ ] Oracle Cloud VM provisioned and configured (manual step — see `docs/SETUP.md`)
 - [ ] DNS A record for api.kalandra.tech (manual step)

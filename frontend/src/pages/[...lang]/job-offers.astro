@@ -5,9 +5,12 @@ import enStrings from '../../i18n/en/job-offers.json';
 import csStrings from '../../i18n/cs/job-offers.json';
 import enHireMe from '../../i18n/en/hire-me.json';
 import csHireMe from '../../i18n/cs/hire-me.json';
+import enCommon from '../../i18n/en/common.json';
+import csCommon from '../../i18n/cs/common.json';
 
 const translations = { en: enStrings, cs: csStrings };
 const formTranslations = { en: enHireMe, cs: csHireMe };
+const commonTranslations = { en: enCommon, cs: csCommon };
 
 export function getStaticPaths() {
   return locales.map(lang => ({
@@ -18,6 +21,7 @@ export function getStaticPaths() {
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 const f = formTranslations[lang].form;
+const c = commonTranslations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="job-offers" lang={lang}>
@@ -252,7 +256,11 @@ const f = formTranslations[lang].form;
     heroSubtitleAdmin: t.hero.subtitleAdmin,
     historyEmptyLabel: t.list.historyEmpty,
     commentsEmptyLabel: t.list.commentsEmpty,
-    errorText: 'Something went wrong. Please try again.',
+    errorText: c.errors.generic,
+    errorNotFound: c.errors.notFound,
+    errorDownload: c.errors.downloadFailed,
+    errorServer: c.errors.serverError,
+    errorNetwork: c.errors.networkError,
     attachmentsLabel: t.list.attachments,
     downloadLabel: t.list.download,
     validationStrings: f.validation
@@ -260,6 +268,24 @@ const f = formTranslations[lang].form;
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
     fetch(apiUrl + '/health').catch(function() {});
+
+    function showError(status) {
+      var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;
+      window.__showSnackbar?.(msg, 'error');
+    }
+
+    async function showApiError(res) {
+      if (res.status >= 400 && res.status < 500) {
+        try {
+          var body = await res.json();
+          if (body && body.error) {
+            window.__showSnackbar?.(body.error, 'error');
+            return body.error;
+          }
+        } catch (e) {}
+      }
+      showError(res.status);
+    }
 
     var isAdmin = false;
     var currentOfferId = null;
@@ -293,6 +319,7 @@ const f = formTranslations[lang].form;
         document.getElementById('login-prompt')?.classList.add('hidden');
         document.getElementById('offers-list-section')?.classList.remove('hidden');
         await loadOffers();
+        checkHashOnLoad();
       } else {
         loadedForUserId = null;
         isAdmin = false;
@@ -309,11 +336,17 @@ const f = formTranslations[lang].form;
       currentToken = await window.__getAccessToken?.();
       if (!currentToken) return;
 
-      var statusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
-      var endpoint = isAdmin ? '/api/job-offers' : '/api/job-offers/mine';
-      var response = await fetch(apiUrl + endpoint + statusParam, {
-        headers: { 'Authorization': 'Bearer ' + currentToken }
-      });
+      var response;
+      try {
+        var statusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
+        var endpoint = isAdmin ? '/api/job-offers' : '/api/job-offers/mine';
+        response = await fetch(apiUrl + endpoint + statusParam, {
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+      } catch (e) {
+        document.getElementById('offers-loading')?.classList.add('hidden');
+        showError(); return;
+      }
 
       if (isAdmin) {
         var titleEl = document.getElementById('page-title');
@@ -324,7 +357,7 @@ const f = formTranslations[lang].form;
 
       document.getElementById('offers-loading')?.classList.add('hidden');
       document.getElementById('status-filter')?.classList.remove('hidden');
-      if (!response.ok) return;
+      if (!response.ok) { showError(response.status); return; }
 
       var data = await response.json();
       if (data.items.length === 0) {
@@ -358,21 +391,27 @@ const f = formTranslations[lang].form;
       });
     }
 
-    async function showDetail(id) {
+    async function showDetail(id, skipHashUpdate) {
       currentOfferId = id;
+      if (!skipHashUpdate) history.pushState(null, '', '#' + id);
       document.getElementById('offers-list-section')?.classList.add('hidden');
       document.getElementById('offer-detail-section')?.classList.remove('hidden');
       document.getElementById('edit-form-section')?.classList.add('hidden');
       document.getElementById('cancel-controls')?.classList.add('hidden');
 
       var headers = { 'Authorization': 'Bearer ' + currentToken };
-      var [detailRes, historyRes, commentsRes] = await Promise.all([
-        fetch(apiUrl + '/api/job-offers/' + id, { headers }),
-        fetch(apiUrl + '/api/job-offers/' + id + '/history', { headers }),
-        fetch(apiUrl + '/api/job-offers/' + id + '/comments', { headers })
-      ]);
+      var detailRes, historyRes, commentsRes;
+      try {
+        [detailRes, historyRes, commentsRes] = await Promise.all([
+          fetch(apiUrl + '/api/job-offers/' + id, { headers }),
+          fetch(apiUrl + '/api/job-offers/' + id + '/history', { headers }),
+          fetch(apiUrl + '/api/job-offers/' + id + '/comments', { headers })
+        ]);
+      } catch (e) {
+        showError(); return;
+      }
 
-      if (!detailRes.ok) return;
+      if (!detailRes.ok) { showError(detailRes.status); return; }
       var offer = await detailRes.json();
       currentOffer = offer;
 
@@ -427,20 +466,27 @@ const f = formTranslations[lang].form;
           var fileName = btn.getAttribute('data-file-name');
           if (!currentOfferId || !fileName || !currentToken) return;
 
-          var encodedName = encodeURIComponent(fileName);
-          var response = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/attachments/' + encodedName, {
-            headers: { 'Authorization': 'Bearer ' + currentToken }
-          });
+          try {
+            var encodedName = encodeURIComponent(fileName);
+            var response = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/attachments/' + encodedName, {
+              headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
 
-          if (!response.ok) return;
+            if (!response.ok) {
+              window.__showSnackbar?.(response.status === 404 ? errorDownload : response.status >= 500 ? errorServer : errorText, 'error');
+              return;
+            }
 
-          var blob = await response.blob();
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
+            var blob = await response.blob();
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            showError();
+          }
         });
       });
     }
@@ -626,16 +672,22 @@ const f = formTranslations[lang].form;
         additionalNotes: form.additionalNotes.value || null
       };
 
-      var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-        body: JSON.stringify(body)
-      });
+      try {
+        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+          body: JSON.stringify(body)
+        });
+      } catch (e) {
+        if (errEl) { errEl.textContent = errorNetwork; errEl.classList.remove('hidden'); }
+        showError(); return;
+      }
 
       if (res.ok) {
         await showDetail(currentOfferId);
       } else {
-        if (errEl) { errEl.textContent = errorText; errEl.classList.remove('hidden'); }
+        var apiMsg = await showApiError(res);
+        if (errEl) { errEl.textContent = apiMsg || errorText; errEl.classList.remove('hidden'); }
       }
     });
 
@@ -647,15 +699,21 @@ const f = formTranslations[lang].form;
     document.getElementById('confirm-cancel')?.addEventListener('click', async function() {
       if (!currentOfferId) return;
       var reason = document.getElementById('cancel-reason')?.value || null;
-      var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-        body: JSON.stringify({ reason: reason })
-      });
+      try {
+        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+          body: JSON.stringify({ reason: reason })
+        });
+      } catch (e) {
+        showError(); return;
+      }
       if (res.ok) {
-        document.getElementById('offer-detail-section')?.classList.add('hidden');
-        document.getElementById('offers-list-section')?.classList.remove('hidden');
+        history.pushState(null, '', location.pathname + location.search);
+        backToList();
         await loadOffers();
+      } else {
+        await showApiError(res);
       }
     });
 
@@ -664,11 +722,16 @@ const f = formTranslations[lang].form;
       if (!currentOfferId) return;
       var status = document.getElementById('status-select')?.value;
       var notes = document.getElementById('admin-notes-input')?.value;
-      await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/status', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-        body: JSON.stringify({ status: status, adminNotes: notes || null })
-      });
+      try {
+        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+          body: JSON.stringify({ status: status, adminNotes: notes || null })
+        });
+      } catch (e) {
+        showError(); return;
+      }
+      if (!res.ok) { await showApiError(res); return; }
       await showDetail(currentOfferId);
     });
 
@@ -678,11 +741,15 @@ const f = formTranslations[lang].form;
       var content = input?.value?.trim();
       if (!content || !currentOfferId) return;
 
-      var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-        body: JSON.stringify({ content: content })
-      });
+      try {
+        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+          body: JSON.stringify({ content: content })
+        });
+      } catch (e) {
+        showError(); return;
+      }
 
       if (res.ok) {
         if (input) input.value = '';
@@ -696,6 +763,8 @@ const f = formTranslations[lang].form;
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
         if (historyRes.ok) renderHistory(await historyRes.json());
+      } else {
+        await showApiError(res);
       }
     }
 
@@ -709,10 +778,35 @@ const f = formTranslations[lang].form;
     });
 
     // Back to list
-    document.getElementById('back-to-list')?.addEventListener('click', function() {
+    function backToList() {
+      currentOfferId = null;
+      currentOffer = null;
       document.getElementById('offer-detail-section')?.classList.add('hidden');
       document.getElementById('offers-list-section')?.classList.remove('hidden');
+    }
+
+    document.getElementById('back-to-list')?.addEventListener('click', function() {
+      history.pushState(null, '', location.pathname + location.search);
+      backToList();
     });
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', function() {
+      var hash = location.hash.replace('#', '');
+      if (hash && currentToken) {
+        showDetail(hash, true);
+      } else {
+        backToList();
+      }
+    });
+
+    // Open offer from URL hash after auth
+    function checkHashOnLoad() {
+      var hash = location.hash.replace('#', '');
+      if (hash && currentToken) {
+        showDetail(hash, true);
+      }
+    }
 
     // Status filter dropdown
     var filterToggle = document.getElementById('status-filter-toggle');

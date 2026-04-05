@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "title": "Terms of Service — kalandra.tech",
+    "description": "Terms of service for kalandra.tech — rules and conditions for using our website."
+  },
+  "heading": "Terms of Service",
+  "lastUpdated": "Last updated: April 4, 2026",
+  "intro": "By accessing and using kalandra.tech (\"the website\"), you agree to be bound by these terms of service. If you do not agree with any part of these terms, please do not use the website.",
+  "sections": [
+    {
+      "title": "Acceptable Use",
+      "content": "When using the website, you agree not to:",
+      "items": [
+        "Submit false, misleading, or spam content",
+        "Attempt to gain unauthorized access to any part of the website or its systems",
+        "Use the website for any unlawful or prohibited purpose",
+        "Interfere with or disrupt the website's functionality or infrastructure",
+        "Scrape, harvest, or collect data from the website without permission"
+      ]
+    },
+    {
+      "title": "Account Termination",
+      "content": "We reserve the right to suspend or terminate your account at our discretion if you violate these terms or engage in behavior that is harmful to the website or other users."
+    },
+    {
+      "title": "Contact",
+      "content": "If you have any questions about these terms, please contact us at pavel@kalandra.tech."
+    }
+  ]
+}

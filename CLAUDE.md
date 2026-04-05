@@ -7,6 +7,22 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ast
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
 
+## Commands (all from repo root)
+
+```bash
+# Install
+npm install                         # Root + frontend deps (via postinstall)
+
+# Build
+dotnet build                        # Backend — all projects via DemoPage.slnx
+npm run build:frontend              # Frontend — Astro static build
+
+# Test
+dotnet test                         # Backend integration tests (needs Docker for Testcontainers)
+npm run test:frontend               # Frontend Playwright page tests
+npm test                            # All tests: backend + frontend + E2E
+```
+
 ## Design Principles
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
