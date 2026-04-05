@@ -49,11 +49,7 @@ public static class ServiceCollectionExtensions
             {
                 if (environment.IsDevelopment())
                 {
-                    policy.SetIsOriginAllowed(origin =>
-                    {
-                        var host = new Uri(origin).Host;
-                        return host is "localhost" or "127.0.0.1";
-                    });
+                    policy.SetIsOriginAllowed(_ => true);
                 }
                 else
                 {
