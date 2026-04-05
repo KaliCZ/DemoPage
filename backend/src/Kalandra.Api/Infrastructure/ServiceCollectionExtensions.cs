@@ -54,7 +54,6 @@ public static class ServiceCollectionExtensions
                 {
                     policy.SetIsOriginAllowed(origin =>
                     {
-                        if (allowedOrigins.Contains(origin)) return true;
                         var host = new Uri(origin).Host;
                         return host is "localhost" or "127.0.0.1";
                     });
