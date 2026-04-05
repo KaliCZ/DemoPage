@@ -26,6 +26,14 @@ test.describe('Page rendering', () => {
     await expect(page.locator('#offers-list-section')).toBeHidden();
   });
 
+  test('admin job-offers page shows access denied when not authenticated', async ({ page }) => {
+    await page.goto('/admin/job-offers');
+    // Wait for auth check to complete (loading spinner disappears)
+    await expect(page.locator('#admin-loading')).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('#access-denied')).toBeVisible();
+    await expect(page.locator('#offers-list-section')).toBeHidden();
+  });
+
   test('about page loads', async ({ page }) => {
     await page.goto('/about');
     await expect(page).toHaveTitle(/About/);

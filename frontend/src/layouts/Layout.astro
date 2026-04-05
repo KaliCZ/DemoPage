@@ -8,7 +8,7 @@ import csCommon from '../i18n/cs/common.json';
 interface Props {
   title: string;
   description?: string;
-  activePage: 'home' | 'about' | 'project' | 'hire-me' | 'job-offers' | 'profile' | 'privacy' | 'terms';
+  activePage: 'home' | 'about' | 'project' | 'hire-me' | 'job-offers' | 'admin/job-offers' | 'profile' | 'privacy' | 'terms';
   lang?: Locale;
 }
 
@@ -210,6 +210,15 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
               >
                 <span class="material-symbols-outlined text-lg" aria-hidden="true">description</span>
                 {t.nav.mySubmissions}
+              </a>
+              <a
+                id="auth-admin-link-desktop"
+                href={localePath(lang, 'admin/job-offers')}
+                class="hidden flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                role="menuitem"
+              >
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">admin_panel_settings</span>
+                {t.nav.admin}
               </a>
               <button
                 id="auth-sign-out-desktop"
@@ -501,10 +510,12 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       const signInMobile = document.getElementById('auth-sign-in-mobile');
       const profileMobile = document.getElementById('auth-profile-mobile');
       const avatarMobile = document.getElementById('auth-avatar-mobile') as HTMLImageElement;
+      const adminLinkDesktop = document.getElementById('auth-admin-link-desktop');
 
       if (user) {
         const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
         const avatar = user.user_metadata?.avatar_url || '';
+        const isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf('admin') !== -1;
 
         if (signInDesktop) signInDesktop.classList.add('hidden');
         if (profileDesktop) {
@@ -517,6 +528,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
           profileMobile.classList.remove('hidden');
           setAvatarOrInitial(avatarMobile, name, avatar);
         }
+        if (adminLinkDesktop) adminLinkDesktop.classList.toggle('hidden', !isAdmin);
 
         window.dispatchEvent(new CustomEvent('auth-change', { detail: { user } }));
       } else {
@@ -524,6 +536,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
         if (profileDesktop) profileDesktop.classList.add('hidden');
         if (signInMobile) signInMobile.classList.remove('hidden');
         if (profileMobile) profileMobile.classList.add('hidden');
+        if (adminLinkDesktop) adminLinkDesktop.classList.add('hidden');
 
         window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: null } }));
       }
