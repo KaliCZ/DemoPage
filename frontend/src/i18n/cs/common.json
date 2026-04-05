@@ -23,7 +23,8 @@
     "continueWithGoogle": "Pokračovat přes Google",
     "noAccount": "Nemáte účet?",
     "haveAccount": "Již máte účet?",
-    "cancel": "Zrušit"
+    "cancel": "Zrušit",
+    "confirmationSent": "Zkontrolujte svůj e-mail a potvrďte svůj účet."
   },
   "theme": {
     "switchToDark": "Přepnout na tmavý režim",

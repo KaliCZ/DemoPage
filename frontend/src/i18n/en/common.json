@@ -23,7 +23,8 @@
     "continueWithGoogle": "Continue with Google",
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "confirmationSent": "Check your email to confirm your account."
   },
   "theme": {
     "switchToDark": "Switch to dark mode",

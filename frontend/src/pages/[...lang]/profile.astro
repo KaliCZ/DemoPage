@@ -67,45 +67,6 @@ const t = translations[lang];
       <p id="name-feedback" class="hidden text-sm font-body mt-2"></p>
     </div>
 
-    <!-- Email -->
-    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
-      <label for="profile-email" class="block text-sm font-label font-semibold text-on-surface mb-1">{t.email.label}</label>
-      <p class="text-xs text-on-surface-variant font-body mb-2">{t.email.hint}</p>
-      <div class="flex gap-3">
-        <input type="email" id="profile-email" maxlength="255"
-          placeholder={t.email.placeholder}
-          class="flex-1 px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-        <button type="button" id="save-email-btn"
-          class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
-          {t.email.save}
-        </button>
-      </div>
-      <p id="email-feedback" class="hidden text-sm font-body mt-2"></p>
-    </div>
-
-    <!-- Change password -->
-    <div id="password-section" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
-      <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.password.title}</h2>
-      <div class="space-y-4">
-        <div>
-          <label for="new-password" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.password.newPassword}</label>
-          <input type="password" id="new-password" minlength="6"
-            placeholder={t.password.newPasswordPlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-        </div>
-        <div>
-          <label for="confirm-password" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.password.confirmPassword}</label>
-          <input type="password" id="confirm-password" minlength="6"
-            placeholder={t.password.confirmPasswordPlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-        </div>
-        <button type="button" id="save-password-btn"
-          class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
-          {t.password.save}
-        </button>
-        <p id="password-feedback" class="hidden text-sm font-body"></p>
-      </div>
-    </div>
 
 
 
@@ -159,35 +120,41 @@ const t = translations[lang];
         providerList.innerHTML = '';
         var linked = [];
         var unlinked = [];
-        var inputClass = 'flex-1 px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors';
+        var inputClass = 'w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors';
+        var btnClass = 'px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap';
+        var linkClass = 'text-xs font-label font-semibold text-primary hover:text-primary/80 cursor-pointer';
 
         // Email & Password
         if (hasEmail) {
-          var emailBadge = document.createElement('div');
-          emailBadge.className = 'flex items-center gap-3';
-          emailBadge.innerHTML =
-            '<span class="material-symbols-outlined text-xl text-on-surface-variant" aria-hidden="true">mail</span>' +
-            '<div><span class="text-sm font-label text-on-surface">' + strings.provider.emailPassword + '</span>' +
-            '<p class="text-xs font-body text-on-surface-variant">' + esc(user.email) + '</p></div>';
-          linked.push(emailBadge);
-        } else {
-          var linkEmailRow = document.createElement('div');
-          linkEmailRow.className = 'flex flex-col gap-2';
-          linkEmailRow.innerHTML =
+          var emailBlock = document.createElement('div');
+          emailBlock.className = 'flex flex-col gap-3';
+          emailBlock.innerHTML =
             '<div class="flex items-center gap-3">' +
               '<span class="material-symbols-outlined text-xl text-on-surface-variant" aria-hidden="true">mail</span>' +
-              '<span class="text-sm font-label text-on-surface">' + strings.provider.linkEmail + '</span>' +
+              '<div class="flex-1"><span class="text-sm font-label text-on-surface">' + strings.provider.emailPassword + '</span>' +
+              '<p class="text-xs font-body text-on-surface-variant">' + esc(user.email) + '</p></div>' +
+              '<div class="flex gap-3">' +
+                '<button type="button" id="toggle-change-email" class="' + linkClass + '">' + strings.provider.changeEmail + '</button>' +
+                '<button type="button" id="toggle-change-password" class="' + linkClass + '">' + strings.provider.changePassword + '</button>' +
+              '</div>' +
             '</div>' +
-            '<div class="flex flex-col sm:flex-row gap-3 ml-8">' +
-              '<input type="password" id="link-email-password" minlength="6" placeholder="' + esc(strings.provider.linkEmailPasswordPlaceholder) + '"' +
-                ' class="' + inputClass + '" />' +
-              '<button type="button" id="link-email-btn"' +
-                ' class="px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap">' +
-                strings.provider.linkEmailSubmit +
-              '</button>' +
+            // Change email form (hidden by default)
+            '<div id="change-email-form" class="hidden ml-8 space-y-3">' +
+              '<div class="flex flex-col sm:flex-row gap-3">' +
+                '<input type="email" id="profile-email" autocomplete="email" maxlength="255" placeholder="' + esc(strings.email.placeholder) + '" value="' + esc(user.email) + '" class="flex-1 ' + inputClass + '" />' +
+                '<button type="button" id="save-email-btn" class="' + btnClass + '">' + strings.email.save + '</button>' +
+              '</div>' +
+              '<p id="email-feedback" class="hidden text-sm font-body"></p>' +
             '</div>' +
-            '<p id="link-email-feedback" class="hidden text-sm font-body ml-8"></p>';
-          unlinked.push(linkEmailRow);
+            // Change password form (hidden by default)
+            '<div id="change-password-form" class="hidden ml-8 space-y-3">' +
+              '<input type="password" id="current-password" autocomplete="current-password" minlength="6" placeholder="' + esc(strings.password.currentPasswordPlaceholder) + '" class="' + inputClass + '" />' +
+              '<input type="password" id="new-password" autocomplete="new-password" minlength="6" placeholder="' + esc(strings.password.newPasswordPlaceholder) + '" class="' + inputClass + '" />' +
+              '<input type="password" id="confirm-password" autocomplete="new-password" minlength="6" placeholder="' + esc(strings.password.confirmPasswordPlaceholder) + '" class="' + inputClass + '" />' +
+              '<button type="button" id="save-password-btn" class="' + btnClass + '">' + strings.password.save + '</button>' +
+              '<p id="password-feedback" class="hidden text-sm font-body"></p>' +
+            '</div>';
+          linked.push(emailBlock);
         }
 
         // Google
@@ -200,12 +167,14 @@ const t = translations[lang];
             googleSvg +
             '<div class="flex-1"><span class="text-sm font-label text-on-surface">' + strings.provider.google + '</span>' +
             (googleEmail ? '<p class="text-xs font-body text-on-surface-variant">' + esc(googleEmail) + '</p>' : '') + '</div>';
-          var unlinkBtn = document.createElement('button');
-          unlinkBtn.type = 'button';
-          unlinkBtn.textContent = strings.provider.unlinkGoogle;
-          unlinkBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-label font-semibold text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors cursor-pointer';
-          unlinkBtn.addEventListener('click', function() { unlinkGoogle(googleIdentity); });
-          googleBadge.appendChild(unlinkBtn);
+          if (hasEmail) {
+            var unlinkBtn = document.createElement('button');
+            unlinkBtn.type = 'button';
+            unlinkBtn.textContent = strings.provider.unlinkGoogle;
+            unlinkBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-label font-semibold text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors cursor-pointer';
+            unlinkBtn.addEventListener('click', function() { unlinkGoogle(googleIdentity); });
+            googleBadge.appendChild(unlinkBtn);
+          }
           linked.push(googleBadge);
         } else {
           var linkBtn = document.createElement('button');
@@ -221,10 +190,37 @@ const t = translations[lang];
         linked.forEach(function(el) { providerList.appendChild(el); });
         unlinked.forEach(function(el) { providerList.appendChild(el); });
 
-        // Bind link-email button after DOM insertion
-        if (!hasEmail) {
+        // Bind toggle and action buttons after DOM insertion
+        if (hasEmail) {
           setTimeout(function() {
-            document.getElementById('link-email-btn')?.addEventListener('click', linkEmail);
+            document.getElementById('toggle-change-email')?.addEventListener('click', function() {
+              var form = document.getElementById('change-email-form');
+              var other = document.getElementById('change-password-form');
+              if (other) other.classList.add('hidden');
+              if (form) form.classList.toggle('hidden');
+            });
+            document.getElementById('toggle-change-password')?.addEventListener('click', function() {
+              var form = document.getElementById('change-password-form');
+              var other = document.getElementById('change-email-form');
+              if (other) other.classList.add('hidden');
+              if (form) form.classList.toggle('hidden');
+            });
+            document.getElementById('save-email-btn')?.addEventListener('click', saveEmail);
+            document.getElementById('profile-email')?.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveEmail(); });
+            var pwBtn = document.getElementById('save-password-btn');
+            if (pwBtn) { pwBtn.disabled = true; pwBtn.classList.add('opacity-50'); }
+            function validatePasswordForm() {
+              var cur = document.getElementById('current-password')?.value || '';
+              var np = document.getElementById('new-password')?.value || '';
+              var cp = document.getElementById('confirm-password')?.value || '';
+              var valid = cur.length > 0 && np.length >= 6 && np === cp;
+              if (pwBtn) { pwBtn.disabled = !valid; if (valid) pwBtn.classList.remove('opacity-50'); else pwBtn.classList.add('opacity-50'); }
+            }
+            ['current-password', 'new-password', 'confirm-password'].forEach(function(id) {
+              document.getElementById(id)?.addEventListener('input', validatePasswordForm);
+            });
+            document.getElementById('save-password-btn')?.addEventListener('click', savePassword);
+            document.getElementById('change-password-form')?.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !pwBtn?.disabled) savePassword(); });
           }, 0);
         }
       }
@@ -240,61 +236,13 @@ const t = translations[lang];
 
         var result = await supabase.auth.linkIdentity({
           provider: 'google',
-          options: { redirectTo: window.location.origin + window.location.pathname }
+          options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account' } }
         });
         if (result.error) throw result.error;
-        // OAuth flow redirects — user will return to this page after linking
+        // OAuth flow redirects — store success message for when user returns
+        sessionStorage.setItem('snackbar', JSON.stringify({ message: strings.provider.linkGoogleSuccess, type: 'success' }));
       } catch (err) {
-        if (feedback) {
-          feedback.textContent = strings.provider.linkGoogleError;
-          feedback.className = 'text-sm font-body mt-3 text-error';
-        }
-      }
-    }
-
-    async function linkEmail() {
-      var btn = document.getElementById('link-email-btn');
-      var feedback = document.getElementById('link-email-feedback');
-      var passwordInput = document.getElementById('link-email-password');
-      var password = passwordInput?.value;
-
-      if (feedback) feedback.classList.add('hidden');
-
-      if (!password || password.length < 6) {
-        if (feedback) {
-          feedback.textContent = strings.provider.linkEmailTooShort;
-          feedback.className = 'text-sm font-body ml-8 text-error';
-        }
-        return;
-      }
-
-      if (btn) { btn.textContent = strings.provider.linkEmailSubmitting; btn.disabled = true; }
-
-      try {
-        var supabase = window.__supabase;
-        if (!supabase) throw new Error('No client');
-
-        var result = await supabase.auth.updateUser({ password: password });
-        if (result.error) throw result.error;
-
-        // Refresh session to pick up the new identity
-        await supabase.auth.refreshSession();
-        var session = await supabase.auth.getSession();
-        var user = session.data?.session?.user;
-        if (user) populateProfile(user);
-
-        var globalFeedback = document.getElementById('provider-feedback');
-        if (globalFeedback) {
-          globalFeedback.textContent = strings.provider.linkEmailSuccess;
-          globalFeedback.className = 'text-sm font-body mt-3 text-tertiary';
-        }
-      } catch (err) {
-        if (feedback) {
-          feedback.textContent = err.message || strings.provider.linkEmailError;
-          feedback.className = 'text-sm font-body ml-8 text-error';
-        }
-      } finally {
-        if (btn) { btn.textContent = strings.provider.linkEmailSubmit; btn.disabled = false; }
+        window.__showSnackbar?.(err.message || strings.provider.linkGoogleError, 'error');
       }
     }
 
@@ -309,20 +257,13 @@ const t = translations[lang];
         var result = await supabase.auth.unlinkIdentity(identity);
         if (result.error) throw result.error;
 
-        // Refresh user data to update the UI
-        var session = await supabase.auth.getSession();
-        var user = session.data?.session?.user;
-        if (user) populateProfile(user);
+        // Fetch fresh user data from server (session cache may be stale)
+        var { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) populateProfile(userData.user);
 
-        if (feedback) {
-          feedback.textContent = strings.provider.unlinkGoogleSuccess;
-          feedback.className = 'text-sm font-body mt-3 text-tertiary';
-        }
+        window.__showSnackbar?.(strings.provider.unlinkGoogleSuccess, 'success');
       } catch (err) {
-        if (feedback) {
-          feedback.textContent = strings.provider.unlinkGoogleError;
-          feedback.className = 'text-sm font-body mt-3 text-error';
-        }
+        window.__showSnackbar?.(err.message || strings.provider.unlinkGoogleError, 'error');
       }
     }
 
@@ -351,11 +292,9 @@ const t = translations[lang];
         var result = await supabase.auth.updateUser({ data: { full_name: newName } });
         if (result.error) throw result.error;
 
-        feedback.textContent = strings.displayName.success;
-        feedback.className = 'text-sm font-body mt-2 text-tertiary';
+        window.__showSnackbar?.(strings.displayName.success, 'success');
       } catch (err) {
-        feedback.textContent = strings.displayName.error;
-        feedback.className = 'text-sm font-body mt-2 text-error';
+        window.__showSnackbar?.(err.message || strings.displayName.error, 'error');
       } finally {
         btn.textContent = strings.displayName.save;
         btn.disabled = false;
@@ -363,17 +302,17 @@ const t = translations[lang];
     });
 
     // --- Save email ---
-    document.getElementById('save-email-btn')?.addEventListener('click', async function() {
+    async function saveEmail() {
       var btn = document.getElementById('save-email-btn');
       var feedback = document.getElementById('email-feedback');
       var emailInput = document.getElementById('profile-email');
       var newEmail = emailInput?.value.trim();
 
       if (!newEmail) return;
+      if (feedback) feedback.classList.add('hidden');
 
       btn.textContent = strings.email.saving;
       btn.disabled = true;
-      feedback.classList.add('hidden');
 
       try {
         var supabase = window.__supabase;
@@ -382,35 +321,36 @@ const t = translations[lang];
         var result = await supabase.auth.updateUser({ email: newEmail });
         if (result.error) throw result.error;
 
-        feedback.textContent = strings.email.success;
-        feedback.className = 'text-sm font-body mt-2 text-tertiary';
+        window.__showSnackbar?.(strings.email.success, 'success');
       } catch (err) {
-        feedback.textContent = strings.email.error;
-        feedback.className = 'text-sm font-body mt-2 text-error';
+        window.__showSnackbar?.(err.message || strings.email.error, 'error');
       } finally {
-        btn.textContent = strings.email.save;
-        btn.disabled = false;
+        if (btn) { btn.textContent = strings.email.save; btn.disabled = false; }
       }
-    });
+    }
 
     // --- Change password ---
-    document.getElementById('save-password-btn')?.addEventListener('click', async function() {
+    async function savePassword() {
       var btn = document.getElementById('save-password-btn');
       var feedback = document.getElementById('password-feedback');
+      var currentPw = document.getElementById('current-password')?.value;
       var newPw = document.getElementById('new-password')?.value;
       var confirmPw = document.getElementById('confirm-password')?.value;
 
-      feedback.classList.add('hidden');
+      if (feedback) feedback.classList.add('hidden');
+
+      if (!currentPw) {
+        if (feedback) { feedback.textContent = strings.password.currentRequired; feedback.className = 'text-sm font-body text-error'; }
+        return;
+      }
 
       if (!newPw || newPw.length < 6) {
-        feedback.textContent = strings.password.tooShort;
-        feedback.className = 'text-sm font-body text-error';
+        if (feedback) { feedback.textContent = strings.password.tooShort; feedback.className = 'text-sm font-body text-error'; }
         return;
       }
 
       if (newPw !== confirmPw) {
-        feedback.textContent = strings.password.mismatch;
-        feedback.className = 'text-sm font-body text-error';
+        if (feedback) { feedback.textContent = strings.password.mismatch; feedback.className = 'text-sm font-body text-error'; }
         return;
       }
 
@@ -421,22 +361,20 @@ const t = translations[lang];
         var supabase = window.__supabase;
         if (!supabase) throw new Error('No client');
 
-        var result = await supabase.auth.updateUser({ password: newPw });
+        var result = await supabase.auth.updateUser({ password: newPw, current_password: currentPw });
         if (result.error) throw result.error;
 
-        feedback.textContent = strings.password.success;
-        feedback.className = 'text-sm font-body text-tertiary';
+        window.__showSnackbar?.(strings.password.success, 'success');
 
+        document.getElementById('current-password').value = '';
         document.getElementById('new-password').value = '';
         document.getElementById('confirm-password').value = '';
       } catch (err) {
-        feedback.textContent = strings.password.error;
-        feedback.className = 'text-sm font-body text-error';
+        window.__showSnackbar?.(err.message || strings.password.error, 'error');
       } finally {
-        btn.textContent = strings.password.save;
-        btn.disabled = false;
+        if (btn) { btn.textContent = strings.password.save; btn.disabled = false; }
       }
-    });
+    }
   </script>
 
 </Layout>

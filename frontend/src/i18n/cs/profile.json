@@ -31,6 +31,8 @@
   },
   "password": {
     "title": "Změna hesla",
+    "currentPassword": "Současné heslo",
+    "currentPasswordPlaceholder": "Vaše současné heslo",
     "newPassword": "Nové heslo",
     "newPasswordPlaceholder": "Min. 6 znaků",
     "confirmPassword": "Potvrzení hesla",
@@ -40,11 +42,14 @@
     "success": "Heslo bylo úspěšně změněno.",
     "error": "Nepodařilo se změnit heslo.",
     "mismatch": "Hesla se neshodují.",
-    "tooShort": "Heslo musí mít alespoň 6 znaků."
+    "tooShort": "Heslo musí mít alespoň 6 znaků.",
+    "currentRequired": "Současné heslo je povinné."
   },
   "provider": {
     "title": "Způsoby přihlášení",
     "emailPassword": "E-mail a heslo",
+    "changeEmail": "Změnit e-mail",
+    "changePassword": "Změnit heslo",
     "google": "Google",
     "linkEmail": "Propojit e-mail a heslo",
     "linkEmailPassword": "Zvolte heslo",
@@ -55,6 +60,7 @@
     "linkEmailError": "Nepodařilo se propojit přihlášení e-mailem.",
     "linkEmailTooShort": "Heslo musí mít alespoň 6 znaků.",
     "linkGoogle": "Propojit účet Google",
+    "linkGoogleSuccess": "Účet Google byl úspěšně propojen.",
     "linkGoogleError": "Nepodařilo se propojit účet Google.",
     "unlinkGoogle": "Odpojit",
     "unlinkGoogleDisabled": "Nejprve propojte e-mail a heslo, aby bylo možné odpojit",

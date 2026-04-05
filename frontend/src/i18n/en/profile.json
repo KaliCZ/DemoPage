@@ -31,6 +31,8 @@
   },
   "password": {
     "title": "Change Password",
+    "currentPassword": "Current Password",
+    "currentPasswordPlaceholder": "Your current password",
     "newPassword": "New Password",
     "newPasswordPlaceholder": "Min. 6 characters",
     "confirmPassword": "Confirm Password",
@@ -40,11 +42,14 @@
     "success": "Password updated successfully.",
     "error": "Failed to update password.",
     "mismatch": "Passwords do not match.",
-    "tooShort": "Password must be at least 6 characters."
+    "tooShort": "Password must be at least 6 characters.",
+    "currentRequired": "Current password is required."
   },
   "provider": {
     "title": "Sign-in Methods",
     "emailPassword": "Email & Password",
+    "changeEmail": "Change email",
+    "changePassword": "Change password",
     "google": "Google",
     "linkEmail": "Link Email & Password",
     "linkEmailPassword": "Choose a password",
@@ -55,6 +60,7 @@
     "linkEmailError": "Failed to link email sign-in.",
     "linkEmailTooShort": "Password must be at least 6 characters.",
     "linkGoogle": "Link Google Account",
+    "linkGoogleSuccess": "Google account linked successfully.",
     "linkGoogleError": "Failed to link Google account.",
     "unlinkGoogle": "Unlink",
     "unlinkGoogleDisabled": "Link Email & Password first to enable unlinking",
