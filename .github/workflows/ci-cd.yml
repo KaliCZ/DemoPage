@@ -264,6 +264,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
+          passphrase: ${{ secrets.OCI_SSH_PASSPHRASE }}
           script: |
             IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
             MAX_ATTEMPTS=20
