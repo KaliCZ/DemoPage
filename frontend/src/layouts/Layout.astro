@@ -646,7 +646,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <!-- Global snackbar -->
   <div id="snackbar" role="status" aria-live="polite"
     class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 -translate-y-4">
-    <div class="pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md">
+    <div class="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md">
       <span id="snackbar-icon" class="material-symbols-outlined text-lg flex-shrink-0" aria-hidden="true"></span>
       <span id="snackbar-message" class="flex-1"></span>
       <button id="snackbar-close" type="button" class="hidden material-symbols-outlined text-lg flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" aria-label="Close">close</button>
@@ -689,15 +689,15 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       }
 
       // Show
-      snackbar.classList.remove('opacity-0', '-translate-y-4');
-      snackbar.classList.add('opacity-100', 'translate-y-0');
+      snackbar.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+      snackbar.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
 
       // Auto-hide (0 = persistent, dismissed via close button or by next snackbar)
       clearTimeout((window as any).__snackbarTimer);
       if (duration > 0) {
         (window as any).__snackbarTimer = setTimeout(() => {
-          snackbar.classList.remove('opacity-100', 'translate-y-0');
-          snackbar.classList.add('opacity-0', '-translate-y-4');
+          snackbar.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+          snackbar.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
         }, duration);
       }
     };
@@ -705,8 +705,8 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     document.getElementById('snackbar-close')?.addEventListener('click', () => {
       const snackbar = document.getElementById('snackbar');
       if (snackbar) {
-        snackbar.classList.remove('opacity-100', 'translate-y-0');
-        snackbar.classList.add('opacity-0', '-translate-y-4');
+        snackbar.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+        snackbar.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
       }
     });
 
