@@ -35,6 +35,7 @@ builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(authConfig);
 builder.Services.AddAppCors(builder.Configuration, builder.Environment);
 builder.Services.AddStorageServices();
+builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 builder.Services.AddHealthChecks()
