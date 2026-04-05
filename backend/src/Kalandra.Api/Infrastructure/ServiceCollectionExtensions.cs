@@ -41,11 +41,8 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddAppCors(
         this IServiceCollection services,
-        IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
         services.AddCors(options =>
         {
             options.AddPolicy("DefaultPolicy", policy =>
@@ -60,7 +57,7 @@ public static class ServiceCollectionExtensions
                 }
                 else
                 {
-                    policy.WithOrigins(allowedOrigins);
+                    policy.WithOrigins("https://www.kalandra.tech");
                 }
 
                 policy
