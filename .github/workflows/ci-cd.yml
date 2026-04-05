@@ -18,7 +18,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/api
 
 jobs:
   e2e:
@@ -242,7 +241,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}
           tags: |
             type=sha
             type=raw,value=latest
@@ -265,7 +264,7 @@ jobs:
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            IMAGE="${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest"
             MAX_ATTEMPTS=20
 
             # Pull the new image
