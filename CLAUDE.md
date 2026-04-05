@@ -140,7 +140,7 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
 - **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy. Legacy single-string `"role"` also supported.
-- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
+- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner. API integration tests must **never** reference request/response contract classes — send anonymous objects and assert on raw JSON (`JsonElement`) properties so that any contract change (renamed field, changed enum) is caught as a test failure. Domain entity/event types are fine for test setup, DB seeding, and direct DB assertions.
 - **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 
 ## Build & Deploy

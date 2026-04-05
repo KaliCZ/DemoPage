@@ -3,21 +3,12 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Kalandra.Api.Features.JobOffers.Contracts;
-using Kalandra.JobOffers.Entities;
 using Kalandra.Api.Tests.Helpers;
 
 namespace Kalandra.Api.Tests.Features.JobOffers;
 
 public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
-    };
-
     private readonly HttpClient client = factory.CreateClient();
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -37,9 +28,8 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var response = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
-        Assert.NotNull(result);
-        Assert.NotEqual(Guid.Empty, result.Id);
+        var json = await ParseJsonAsync(response);
+        Assert.NotEqual("00000000-0000-0000-0000-000000000000", json.GetProperty("id").GetString());
     }
 
     [Fact]
@@ -91,14 +81,16 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         // Submit
         var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
-        var id = created!.Id;
+        var created = await ParseJsonAsync(createResponse);
+        var id = created.GetProperty("id").GetString();
 
         // List mine
         var listResponse = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
-        var list = await listResponse.Content.ReadFromJsonAsync<ListJobOffersResponse>(JsonOptions, Ct);
-        Assert.Contains(list!.Items, i => i.Id == id);
+        var list = await ParseJsonAsync(listResponse);
+        Assert.Contains(
+            list.GetProperty("items").EnumerateArray(),
+            item => item.GetProperty("id").GetString() == id);
 
         // Get detail
         var detailResponse = await client.GetAsync($"/api/job-offers/{id}", Ct);
@@ -107,22 +99,26 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         // Get history
         var historyResponse = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
         Assert.Equal(HttpStatusCode.OK, historyResponse.StatusCode);
-        var history = await historyResponse.Content.ReadFromJsonAsync<JobOfferHistoryResponse>(JsonOptions, Ct);
-        Assert.Single(history!.Entries);
-        Assert.Equal("Submitted", history.Entries[0].EventType);
+        var history = await ParseJsonAsync(historyResponse);
+        var entries = history.GetProperty("entries");
+        Assert.Equal(1, entries.GetArrayLength());
+        Assert.Equal("Submitted", entries[0].GetProperty("eventType").GetString());
 
         // Cancel — returns the updated offer
-        var cancelResponse = await client.PostAsJsonAsync($"/api/job-offers/{id}/cancel",
-            new { reason = "Made a mistake" }, Ct);
+        var cancelResponse = await client.PostAsJsonAsync(
+            $"/api/job-offers/{id}/cancel",
+            new { reason = "Made a mistake" },
+            Ct);
         Assert.Equal(HttpStatusCode.OK, cancelResponse.StatusCode);
-        var cancelled = await cancelResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
-        Assert.Equal(JobOfferStatus.Cancelled, cancelled!.Status);
+        var cancelled = await ParseJsonAsync(cancelResponse);
+        Assert.Equal("Cancelled", cancelled.GetProperty("status").GetString());
 
         // Verify history after cancel
         var historyAfter = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
-        var historyData = await historyAfter.Content.ReadFromJsonAsync<JobOfferHistoryResponse>(JsonOptions, Ct);
-        Assert.Equal(2, historyData!.Entries.Count);
-        Assert.Equal("Cancelled", historyData.Entries[1].EventType);
+        var historyData = await ParseJsonAsync(historyAfter);
+        var afterEntries = historyData.GetProperty("entries");
+        Assert.Equal(2, afterEntries.GetArrayLength());
+        Assert.Equal("Cancelled", afterEntries[1].GetProperty("eventType").GetString());
     }
 
     [Fact]
@@ -133,22 +129,25 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
-        var id = created!.Id;
+        var created = await ParseJsonAsync(createResponse);
+        var id = created.GetProperty("id").GetString();
 
         // Change status as admin
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        var statusResponse = await client.PatchAsJsonAsync($"/api/job-offers/{id}/status",
-            new { status = 1, adminNotes = "Looks promising" }, Ct); // InReview = 1
+        var statusResponse = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}/status",
+            new { status = "InReview", adminNotes = "Looks promising" },
+            Ct);
         Assert.Equal(HttpStatusCode.OK, statusResponse.StatusCode);
 
         // Verify history
         var historyResponse = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
-        var history = await historyResponse.Content.ReadFromJsonAsync<JobOfferHistoryResponse>(JsonOptions, Ct);
-        Assert.Equal(2, history!.Entries.Count);
-        Assert.Equal("StatusChanged", history.Entries[1].EventType);
+        var history = await ParseJsonAsync(historyResponse);
+        var entries = history.GetProperty("entries");
+        Assert.Equal(2, entries.GetArrayLength());
+        Assert.Equal("StatusChanged", entries[1].GetProperty("eventType").GetString());
     }
 
     [Fact]
@@ -158,13 +157,15 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createResponse);
 
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        var statusResponse = await client.PatchAsJsonAsync($"/api/job-offers/{created!.Id}/status",
-            new { status = 4, adminNotes = "Force cancelling" }, Ct);
+        var statusResponse = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{created.GetProperty("id").GetString()}/status",
+            new { status = "Cancelled", adminNotes = "Force cancelling" },
+            Ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, statusResponse.StatusCode);
     }
@@ -176,17 +177,22 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createResponse);
+        var id = created.GetProperty("id").GetString();
 
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        var declineResponse = await client.PatchAsJsonAsync($"/api/job-offers/{created!.Id}/status",
-            new { status = 3, adminNotes = "No fit" }, Ct);
+        var declineResponse = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}/status",
+            new { status = "Declined", adminNotes = "No fit" },
+            Ct);
         Assert.Equal(HttpStatusCode.OK, declineResponse.StatusCode);
 
-        var reopenResponse = await client.PatchAsJsonAsync($"/api/job-offers/{created.Id}/status",
-            new { status = 1, adminNotes = "Actually, let's reopen this" }, Ct);
+        var reopenResponse = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}/status",
+            new { status = "InReview", adminNotes = "Actually, let's reopen this" },
+            Ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, reopenResponse.StatusCode);
     }
@@ -198,14 +204,16 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("owner-user", "owner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createResponse);
 
         // Try to cancel as user2
         var token2 = JwtTestHelper.GenerateToken("other-user", "other@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
 
-        var cancelResponse = await client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel",
-            new { reason = "Trying to cancel someone else's offer" }, Ct);
+        var cancelResponse = await client.PostAsJsonAsync(
+            $"/api/job-offers/{created.GetProperty("id").GetString()}/cancel",
+            new { reason = "Trying to cancel someone else's offer" },
+            Ct);
         Assert.Equal(HttpStatusCode.Forbidden, cancelResponse.StatusCode);
     }
 
@@ -216,19 +224,20 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("view-owner", "viewowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
+        var id = created.GetProperty("id").GetString();
 
         // Try to view as user2
         var token2 = JwtTestHelper.GenerateToken("view-other", "viewother@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
 
-        var detailRes = await client.GetAsync($"/api/job-offers/{created!.Id}", Ct);
+        var detailRes = await client.GetAsync($"/api/job-offers/{id}", Ct);
         Assert.Equal(HttpStatusCode.NotFound, detailRes.StatusCode);
 
-        var historyRes = await client.GetAsync($"/api/job-offers/{created.Id}/history", Ct);
+        var historyRes = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
         Assert.Equal(HttpStatusCode.NotFound, historyRes.StatusCode);
 
-        var commentsRes = await client.GetAsync($"/api/job-offers/{created.Id}/comments", Ct);
+        var commentsRes = await client.GetAsync($"/api/job-offers/{id}/comments", Ct);
         Assert.Equal(HttpStatusCode.NotFound, commentsRes.StatusCode);
     }
 
@@ -239,13 +248,16 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("edit-owner", "editowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
 
         // Try to edit as user2
         var token2 = JwtTestHelper.GenerateToken("edit-other", "editother@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
 
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", EditValidRequest(), Ct);
+        var editRes = await client.PutAsJsonAsync(
+            $"/api/job-offers/{created.GetProperty("id").GetString()}",
+            CreateValidEditBody(),
+            Ct);
         Assert.Equal(HttpStatusCode.Forbidden, editRes.StatusCode);
     }
 
@@ -256,7 +268,8 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var token1 = JwtTestHelper.GenerateToken("list-owner", "listowner@test.com");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
+        var createdId = created.GetProperty("id").GetString();
 
         // List as user2
         var token2 = JwtTestHelper.GenerateToken("list-other", "listother@test.com");
@@ -264,8 +277,10 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var listRes = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, listRes.StatusCode);
-        var list = await listRes.Content.ReadFromJsonAsync<ListJobOffersResponse>(JsonOptions, Ct);
-        Assert.DoesNotContain(list!.Items, i => i.Id == created!.Id);
+        var list = await ParseJsonAsync(listRes);
+        Assert.DoesNotContain(
+            list.GetProperty("items").EnumerateArray(),
+            item => item.GetProperty("id").GetString() == createdId);
     }
 
     [Fact]
@@ -276,31 +291,39 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         // Create
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
+        var id = created.GetProperty("id").GetString();
 
         // Edit
-        var editRequest = new EditJobOfferRequest(
-            CompanyName: "Updated Corp",
-            ContactName: "Jane Doe",
-            ContactEmail: "jane@updated.com",
-            JobTitle: "CTO",
-            Description: "Updated description.",
-            SalaryRange: "$200k",
-            Location: "Remote",
-            IsRemote: true,
-            AdditionalNotes: null);
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created!.Id}", editRequest, Ct);
+        var editRes = await client.PutAsJsonAsync(
+            $"/api/job-offers/{id}",
+            new
+            {
+                companyName = "Updated Corp",
+                contactName = "Jane Doe",
+                contactEmail = "jane@updated.com",
+                jobTitle = "CTO",
+                description = "Updated description.",
+                salaryRange = "$200k",
+                location = "Remote",
+                isRemote = true,
+                additionalNotes = (string?)null,
+            },
+            Ct);
         Assert.Equal(HttpStatusCode.OK, editRes.StatusCode);
 
         // Verify detail reflects edit
-        var detail = await client.GetFromJsonAsync<GetJobOfferDetailResponse>($"/api/job-offers/{created.Id}", JsonOptions, Ct);
-        Assert.Equal("Updated Corp", detail!.CompanyName);
-        Assert.Equal("CTO", detail.JobTitle);
+        var detailRes = await client.GetAsync($"/api/job-offers/{id}", Ct);
+        var detail = await ParseJsonAsync(detailRes);
+        Assert.Equal("Updated Corp", detail.GetProperty("companyName").GetString());
+        Assert.Equal("CTO", detail.GetProperty("jobTitle").GetString());
 
         // Verify history has Edited event
-        var history = await client.GetFromJsonAsync<JobOfferHistoryResponse>($"/api/job-offers/{created.Id}/history", JsonOptions, Ct);
-        Assert.Equal(2, history!.Entries.Count);
-        Assert.Equal("Edited", history.Entries[1].EventType);
+        var historyRes = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
+        var history = await ParseJsonAsync(historyRes);
+        var entries = history.GetProperty("entries");
+        Assert.Equal(2, entries.GetArrayLength());
+        Assert.Equal("Edited", entries[1].GetProperty("eventType").GetString());
     }
 
     [Fact]
@@ -311,12 +334,13 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
+        var id = created.GetProperty("id").GetString();
 
-        await client.PostAsJsonAsync($"/api/job-offers/{created!.Id}/cancel", new { reason = "" }, Ct);
+        await client.PostAsJsonAsync($"/api/job-offers/{id}/cancel", new { reason = "" }, Ct);
 
         // Try to edit cancelled offer
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{created.Id}", EditValidRequest(), Ct);
+        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{id}", CreateValidEditBody(), Ct);
         Assert.Equal(HttpStatusCode.BadRequest, editRes.StatusCode);
     }
 
@@ -327,19 +351,23 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
+        var id = created.GetProperty("id").GetString();
 
         // Add comment
         var commentRes = await client.PostAsJsonAsync(
-            $"/api/job-offers/{created!.Id}/comments", new { content = "Hello, any update?" }, Ct);
+            $"/api/job-offers/{id}/comments",
+            new { content = "Hello, any update?" },
+            Ct);
         Assert.Equal(HttpStatusCode.OK, commentRes.StatusCode);
 
         // List comments
-        var listRes = await client.GetAsync($"/api/job-offers/{created.Id}/comments", Ct);
+        var listRes = await client.GetAsync($"/api/job-offers/{id}/comments", Ct);
         Assert.Equal(HttpStatusCode.OK, listRes.StatusCode);
-        var comments = await listRes.Content.ReadFromJsonAsync<ListCommentsResponse>(JsonOptions, Ct);
-        Assert.Single(comments!.Comments);
-        Assert.Equal("Hello, any update?", comments.Comments[0].Content);
+        var comments = await ParseJsonAsync(listRes);
+        var commentArray = comments.GetProperty("comments");
+        Assert.Equal(1, commentArray.GetArrayLength());
+        Assert.Equal("Hello, any update?", commentArray[0].GetProperty("content").GetString());
     }
 
     [Fact]
@@ -350,22 +378,26 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
         var createRes = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createRes.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createRes);
+        var id = created.GetProperty("id").GetString();
 
         // Admin adds comment
         var adminToken = JwtTestHelper.GenerateToken("admin-user-id", "admin@test.com", isAdmin: true);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
         var commentRes = await client.PostAsJsonAsync(
-            $"/api/job-offers/{created!.Id}/comments", new { content = "Thanks, reviewing now!" }, Ct);
+            $"/api/job-offers/{id}/comments",
+            new { content = "Thanks, reviewing now!" },
+            Ct);
         Assert.Equal(HttpStatusCode.OK, commentRes.StatusCode);
 
         // Verify as user
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
-        var listRes = await client.GetFromJsonAsync<ListCommentsResponse>(
-            $"/api/job-offers/{created.Id}/comments", JsonOptions, Ct);
-        Assert.Single(listRes!.Comments);
-        Assert.Equal("Thanks, reviewing now!", listRes.Comments[0].Content);
+        var listRes = await client.GetAsync($"/api/job-offers/{id}/comments", Ct);
+        var comments = await ParseJsonAsync(listRes);
+        var commentArray = comments.GetProperty("comments");
+        Assert.Equal(1, commentArray.GetArrayLength());
+        Assert.Equal("Thanks, reviewing now!", commentArray[0].GetProperty("content").GetString());
     }
 
     [Fact]
@@ -382,10 +414,10 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var response = await client.PostAsync("/api/job-offers", content, Ct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
-        Assert.NotNull(result);
-        Assert.Single(result.Attachments);
-        Assert.Equal("portfolio.pdf", result.Attachments[0].FileName);
+        var json = await ParseJsonAsync(response);
+        var attachments = json.GetProperty("attachments");
+        Assert.Equal(1, attachments.GetArrayLength());
+        Assert.Equal("portfolio.pdf", attachments[0].GetProperty("fileName").GetString());
     }
 
     [Fact]
@@ -402,10 +434,11 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var createResponse = await client.PostAsync("/api/job-offers", content, Ct);
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createResponse);
+        var id = created.GetProperty("id").GetString();
 
         var downloadResponse = await client.GetAsync(
-            $"/api/job-offers/{created!.Id}/attachments/{Uri.EscapeDataString("roundtrip.pdf")}", Ct);
+            $"/api/job-offers/{id}/attachments/{Uri.EscapeDataString("roundtrip.pdf")}", Ct);
         Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
 
         var downloadedContent = await downloadResponse.Content.ReadAsStringAsync(Ct);
@@ -419,10 +452,11 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createResponse = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
-        var created = await createResponse.Content.ReadFromJsonAsync<GetJobOfferDetailResponse>(JsonOptions, Ct);
+        var created = await ParseJsonAsync(createResponse);
+        var id = created.GetProperty("id").GetString();
 
         var downloadResponse = await client.GetAsync(
-            $"/api/job-offers/{created!.Id}/attachments/{Uri.EscapeDataString("nonexistent.pdf")}", Ct);
+            $"/api/job-offers/{id}/attachments/{Uri.EscapeDataString("nonexistent.pdf")}", Ct);
         Assert.Equal(HttpStatusCode.NotFound, downloadResponse.StatusCode);
     }
 
@@ -448,6 +482,13 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    private static async Task<JsonElement> ParseJsonAsync(HttpResponseMessage response)
+    {
+        var doc = await JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(), cancellationToken: CancellationToken.None);
+        return doc.RootElement;
+    }
+
     private static MultipartFormDataContent CreateValidFormContent()
     {
         return new MultipartFormDataContent
@@ -463,15 +504,17 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         };
     }
 
-    private static EditJobOfferRequest EditValidRequest() =>
-        new(
-            CompanyName: "Acme Corp",
-            ContactName: "John Doe",
-            ContactEmail: "john@acme.com",
-            JobTitle: "Senior Developer",
-            Description: "We are looking for a senior developer to join our team.",
-            SalaryRange: "$120k - $160k",
-            Location: "Prague, CZ",
-            IsRemote: true,
-            AdditionalNotes: null);
+    private static object CreateValidEditBody() =>
+        new
+        {
+            companyName = "Acme Corp",
+            contactName = "John Doe",
+            contactEmail = "john@acme.com",
+            jobTitle = "Senior Developer",
+            description = "We are looking for a senior developer to join our team.",
+            salaryRange = "$120k - $160k",
+            location = "Prague, CZ",
+            isRemote = true,
+            additionalNotes = (string?)null,
+        };
 }
