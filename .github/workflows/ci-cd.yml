@@ -272,7 +272,7 @@ jobs:
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             IMAGE="${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest"
-            MAX_ATTEMPTS=20
+            MAX_ATTEMPTS=40
 
             # Pull the new image
             docker pull $IMAGE
@@ -311,7 +311,9 @@ jobs:
             until curl -sf http://localhost:$NEW_PORT/health > /dev/null 2>&1; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
-                echo "New container failed to start. Rolling back..."
+                echo "New container failed to start. Container logs:"
+                docker logs $NEW_NAME 2>&1 || true
+                echo "Rolling back..."
                 docker stop $NEW_NAME || true
                 docker rm $NEW_NAME || true
                 exit 1
