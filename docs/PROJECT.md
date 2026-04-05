@@ -1,6 +1,6 @@
 # kalandra.tech — Project Documentation
 
-> **This document is the single source of truth** for project goals, architecture, requirements, and progress.
+> Project goals, architecture, requirements, and progress.
 > The frontend will consume this file directly — do not duplicate this content elsewhere.
 
 ## Project Goals
@@ -77,6 +77,8 @@ Supabase Auth with Google OAuth, job offer submission form, and ASP.NET Core bac
 - [x] Playwright frontend tests (page rendering, navigation, dark mode)
 - [x] E2E test infrastructure (Playwright against full stack)
 - [x] `npm run dev` single-command local development (DB + backend + frontend)
+- [x] Custom email domain (kalandra.tech) with Brevo for transactional email delivery
+- [x] Supabase Auth configured with Brevo SMTP for auth emails (confirmations, magic links)
 - [ ] Supabase project created and configured (manual step — see `docs/SETUP.md`)
 - [ ] Oracle Cloud VM provisioned and configured (manual step — see `docs/SETUP.md`)
 - [ ] DNS A record for api.kalandra.tech (manual step)
@@ -279,6 +281,51 @@ Monetize job offer submissions via Stripe.
 - Marten uses PostgreSQL directly — same database, no additional infrastructure
 - The `Apply()` method pattern makes state transitions explicit and testable
 
+#### Admin Role via JWT
+
+**Context:** The app needs role-based authorization (regular users vs admin) without maintaining a separate roles table in the backend.
+
+**Decision:** Roles are stored as an array in Supabase `app_metadata` (e.g., `"roles": ["admin"]`). The backend extracts `app_metadata.roles` from the JWT on each request and maps each entry to a standard .NET role claim. The `Admin` authorization policy uses `RequireRole("admin")`.
+
+**Why:**
+- No server-side user ID list or database roles table needed — roles live in Supabase and travel with the token
+- Standard .NET authorization infrastructure (`RequireRole`) works out of the box
+- Adding new roles = updating `app_metadata` in Supabase, no backend changes
+- A legacy single-string `"role"` field is also supported for backwards compatibility
+
+#### Supabase Auth — Local + Production
+
+**Context:** The backend needs to validate Supabase JWTs, and local development needs to work without an internet connection or external Supabase project.
+
+**Decision:** The backend validates JWT signatures via JWKS (fetching public keys from Supabase's OpenID Connect endpoint). It never calls the Supabase API directly. A symmetric secret fallback exists for tests and local Supabase.
+
+**How it works across environments:**
+- **Local dev**: `npm run dev:supabase` runs a local Supabase instance in Docker (auth, API gateway, studio). Email/password sign-in works without any external dependencies.
+- **Production**: Supabase Cloud with Google OAuth + email/password.
+- **E2E tests**: Local Supabase with programmatic user creation via admin API. Tests sign in with `signInWithPassword` — no browser OAuth flows needed.
+- **Backend integration tests**: Generate JWTs with a known test secret via Testcontainers. No Supabase dependency.
+
+#### Vertical Slices
+
+**Context:** Need a backend code organization strategy that keeps related code together and avoids the "change one feature, touch five layers" problem.
+
+**Decision:** Code is organized by feature (e.g., `Features/JobOffers/`) rather than by technical layer. Each feature folder contains its controller, events, DTOs, and handlers.
+
+**Why:**
+- Adding a new feature = adding a new folder with all its files, no changes to shared layers
+- Each feature is self-contained — easy to understand, review, and test in isolation
+- Avoids the typical layered architecture problem where a single change touches `Controllers/`, `Services/`, `Models/`, `DTOs/`, etc.
+
+#### Testing Strategy
+
+**Context:** Need a testing approach that provides high confidence with minimal mocking, covering the full stack from API endpoints to database.
+
+**Decisions:**
+- **Backend integration tests**: xUnit + Testcontainers. Spins up a real PostgreSQL container, starts the full API via `WebApplicationFactory`, tests all endpoints with generated JWTs. No mocks — tests exercise the real database, real event sourcing, and real auth validation.
+- **Frontend page tests**: Playwright. Builds the static site, serves it, verifies page rendering, navigation, i18n, and dark mode.
+- **E2E smoke tests**: Playwright against the full stack (frontend + backend + DB). Verifies integration points between frontend and backend.
+- **CI/CD**: Backend tests run in the backend pipeline; frontend tests run in the frontend pipeline. Both block deployment on failure.
+
 ---
 
 ## Open Questions
@@ -302,6 +349,6 @@ Monetize job offer submissions via Stripe.
 |---|---|---|---|
 | 2026-03-26 | Setup | — | Initial project setup, documentation |
 | 2026-03-27 | v1 | ~7 hours | Static site, i18n, dark mode, language picker, SEO, accessibility |
-| 2026-03-28 – 2026-04-01 | v2 | ~10 hours | Auth (Supabase + Google OAuth), job offer form, ASP.NET Core backend with Marten event sourcing, CI/CD, Docker, integration + E2E tests |
+| 2026-03-28 – 2026-04-01 | v2 | ~20 hours | Auth (Supabase + Google OAuth), job offer form, ASP.NET Core backend with Marten event sourcing, CI/CD, Docker, integration + E2E tests |
 
 <!-- Add rows as work progresses. This table will be rendered on the project page. -->

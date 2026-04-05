@@ -158,11 +158,11 @@ public class JobOffer
     private bool CanTransitionTo(JobOfferStatus newStatus) => Status switch
     {
         JobOfferStatus.Submitted => newStatus is JobOfferStatus.InReview
-            or JobOfferStatus.Accepted
+            or JobOfferStatus.LetsTalk
             or JobOfferStatus.Declined,
-        JobOfferStatus.InReview => newStatus is JobOfferStatus.Accepted
+        JobOfferStatus.InReview => newStatus is JobOfferStatus.LetsTalk
             or JobOfferStatus.Declined,
-        JobOfferStatus.Accepted => false,
+        JobOfferStatus.LetsTalk => false,
         JobOfferStatus.Declined => false,
         JobOfferStatus.Cancelled => false,
     };

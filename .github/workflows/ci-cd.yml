@@ -110,6 +110,7 @@ jobs:
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
+          Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
           ASPNETCORE_ENVIRONMENT: Development
 
@@ -302,6 +303,7 @@ jobs:
               -e ASPNETCORE_ENVIRONMENT=Production \
               -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
               -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
+              -e "Storage__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
               -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
               $IMAGE
 

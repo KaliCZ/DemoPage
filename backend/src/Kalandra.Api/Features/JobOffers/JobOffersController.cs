@@ -296,7 +296,7 @@ public class JobOffersController(
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ListMine(
-        [FromQuery] JobOfferStatus? status = null,
+        [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
@@ -310,7 +310,7 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ListAll(
-        [FromQuery] JobOfferStatus? status = null,
+        [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
@@ -430,7 +430,7 @@ public class JobOffersController(
     }
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
-        JobOfferStatus? status,
+        JobOfferStatus[]? status,
         int page,
         int pageSize,
         CancellationToken ct)
@@ -438,7 +438,7 @@ public class JobOffersController(
         var query = new ListJobOffersQuery(
             UserId: AppUser.Id,
             IsAdmin: AppUser.IsAdmin,
-            Status: status,
+            Statuses: status,
             Page: page,
             PageSize: pageSize);
 

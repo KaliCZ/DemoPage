@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "title": "Podmínky používání — kalandra.tech",
+    "description": "Podmínky používání webu kalandra.tech — pravidla a podmínky pro používání našich stránek."
+  },
+  "heading": "Podmínky používání",
+  "lastUpdated": "Poslední aktualizace: 4. dubna 2026",
+  "intro": "Přístupem na kalandra.tech (\"webové stránky\") a jejich používáním souhlasíte s těmito podmínkami používání. Pokud s jakoukoli částí těchto podmínek nesouhlasíte, stránky prosím nepoužívejte.",
+  "sections": [
+    {
+      "title": "Přijatelné použití",
+      "content": "Při používání webových stránek se zavazujete, že nebudete:",
+      "items": [
+        "Odesílat nepravdivý, zavádějící nebo spamový obsah",
+        "Pokoušet se o neoprávněný přístup k jakékoli části webu nebo jeho systémům",
+        "Používat stránky k jakémukoli nezákonnému nebo zakázanému účelu",
+        "Zasahovat do funkčnosti nebo infrastruktury webových stránek",
+        "Stahovat, sbírat nebo shromažďovat data z webu bez povolení"
+      ]
+    },
+    {
+      "title": "Zrušení účtu",
+      "content": "Vyhrazujeme si právo pozastavit nebo zrušit váš účet dle vlastního uvážení, pokud porušíte tyto podmínky nebo se budete chovat způsobem, který je škodlivý pro webové stránky nebo ostatní uživatele."
+    },
+    {
+      "title": "Kontakt",
+      "content": "Pokud máte jakékoli dotazy ohledně těchto podmínek, kontaktujte nás na pavel@kalandra.tech."
+    }
+  ]
+}

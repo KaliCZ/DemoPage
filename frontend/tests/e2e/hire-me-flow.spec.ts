@@ -80,28 +80,14 @@ test.describe('Hire Me Flow', () => {
     await page.fill('#location', 'Remote');
     await page.check('#isRemote');
 
-    // 5. Submit the form
+    // 5. Submit the form — redirects to /job-offers#<offerId> on success
     await page.click('#submit-btn');
 
-    // 6. Verify success state (allow extra time for API call)
-    await expect(page.locator('#form-success')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('#form-success')).toContainText('Offer Submitted');
-    await expect(page.locator('#job-offer-form-section')).toBeHidden();
+    // 6. Verify redirect to job-offers page (allow extra time for API call)
+    await expect(page).toHaveURL(/\/job-offers/, { timeout: 15000 });
 
-    // 7. Navigate to job-offers via the success page link
-    await page.click('#form-success a');
-    await expect(page).toHaveURL('/job-offers');
-
-    // 8. Verify the submission appears in the offers list
-    await expect(page.locator('#offers-list-section')).toBeVisible();
-    await expect(page.locator('#login-prompt')).toBeHidden();
-    await expect(page.locator('#offers-grid')).toBeVisible();
-    await expect(page.locator('#offers-grid')).toContainText('Senior Engineer');
-    await expect(page.locator('#offers-grid')).toContainText('E2E Test Corp');
-
-    // 9. Click the offer to see the detail view
-    await page.locator('#offers-grid > div').first().click();
-    await expect(page.locator('#offer-detail-section')).toBeVisible();
+    // 7. Verify the submission appears — redirected with hash, so detail view opens
+    await expect(page.locator('#offer-detail-section')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#offer-detail')).toContainText('Senior Engineer');
     await expect(page.locator('#offer-detail')).toContainText('E2E Test Corp');
     await expect(page.locator('#offer-detail')).toContainText('tester@e2etest.com');
@@ -140,9 +126,9 @@ test.describe('Hire Me Flow', () => {
       await fileInput.setInputFiles(filePath);
       await expect(page.locator('#file-list')).toContainText('test-attachment.txt');
 
-      // 4. Submit
+      // 4. Submit — redirects to /job-offers#<offerId> on success
       await page.click('#submit-btn');
-      await expect(page.locator('#form-success')).toBeVisible({ timeout: 15000 });
+      await expect(page).toHaveURL(/\/job-offers/, { timeout: 15000 });
 
       // 5. Get the access token to fetch the offer detail via API
       const token = await page.evaluate(async () => {

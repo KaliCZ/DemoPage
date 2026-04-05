@@ -17,10 +17,14 @@
     "password": "Password",
     "passwordPlaceholder": "Min. 6 characters",
     "or": "or",
+    "sendMagicLink": "Send magic link",
+    "sendingMagicLink": "Sending…",
+    "magicLinkSent": "Check your email for the login link!",
     "continueWithGoogle": "Continue with Google",
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "confirmationSent": "Check your email to confirm your account."
   },
   "theme": {
     "switchToDark": "Switch to dark mode",
@@ -32,10 +36,24 @@
     "toggleDarkMode": "Toggle dark mode",
     "changeLanguage": "Change language"
   },
+  "errors": {
+    "generic": "Something went wrong. Please try again or email me at pavel@kalandra.tech.",
+    "notFound": "The requested resource was not found. Please try again or email me at pavel@kalandra.tech.",
+    "downloadFailed": "File download failed. The file may no longer exist. Please email me at pavel@kalandra.tech.",
+    "serverError": "Server error. Please try again later or email me at pavel@kalandra.tech.",
+    "networkError": "Could not reach the server. Check your connection or email me at pavel@kalandra.tech."
+  },
+  "success": {
+    "offerSubmitted": "Job offer submitted successfully!"
+  },
   "footer": {
+    "emailTitle": "Email — pavel@kalandra.tech",
+    "emailAriaLabel": "Send email",
     "linkedinTitle": "LinkedIn — Pavel Kalandra",
     "linkedinAriaLabel": "LinkedIn profile",
     "githubTitle": "GitHub — KaliCZ",
-    "githubAriaLabel": "GitHub profile"
+    "githubAriaLabel": "GitHub profile",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
   }
 }

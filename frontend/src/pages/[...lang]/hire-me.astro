@@ -44,7 +44,7 @@ const t = translations[lang];
 
   <!-- Form (shown when authenticated, initially with disabled fields) -->
   <section id="job-offer-form-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
-    <form id="job-offer-form" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
+    <form id="job-offer-form" novalidate class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -139,22 +139,14 @@ const t = translations[lang];
     </form>
   </section>
 
-  <!-- Success state -->
-  <section id="form-success" class="hidden max-w-3xl mx-auto px-8 mb-16">
-    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
-      <span class="material-symbols-outlined text-5xl text-tertiary mb-4 block" aria-hidden="true">check_circle</span>
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.form.successTitle}</h2>
-      <p class="text-on-surface-variant font-body mb-6">{t.form.successMessage}</p>
-      <a
-        href={localePath(lang, 'job-offers')}
-        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors"
-      >
-        {t.form.viewSubmissions}
-      </a>
-    </div>
-  </section>
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, successText: t.form.successTitle, validationStrings: t.form.validation, jobOffersPath: localePath(lang, 'job-offers') }}>
+    // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
+    // Wake up the database in case the provider suspended it (e.g. Neon free tier).
+    // The health endpoint runs a Postgres check, so this warms the connection
+    // while the user is filling out the form.
+    fetch(apiUrl + '/health').catch(function() {});
+
     // Listen for auth changes
     window.addEventListener('auth-change', function(e) {
       var user = e.detail?.user;
@@ -221,12 +213,90 @@ const t = translations[lang];
       return div.innerHTML;
     }
 
+    // --- Inline validation ---
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function getFieldError(field) {
+      var value = field.value.trim();
+      var name = field.name;
+
+      if (field.hasAttribute('required') && !value) {
+        return validationStrings.required;
+      }
+      if (name === 'contactEmail' && value && !emailRegex.test(value)) {
+        return validationStrings.emailInvalid;
+      }
+      if (name === 'description' && value && value.length < 20) {
+        return validationStrings.descriptionMinLength.replace('{min}', '20');
+      }
+      var ml = field.getAttribute('maxlength');
+      if (ml && value.length > parseInt(ml, 10)) {
+        return validationStrings.maxLength.replace('{max}', ml);
+      }
+      return '';
+    }
+
+    function showFieldError(field, message) {
+      clearFieldError(field);
+      if (!message) return;
+      field.classList.add('border-error');
+      field.classList.remove('border-outline-variant/20');
+      var errorSpan = document.createElement('p');
+      errorSpan.className = 'field-error text-error text-xs font-body mt-1';
+      errorSpan.textContent = message;
+      field.parentElement.appendChild(errorSpan);
+    }
+
+    function clearFieldError(field) {
+      field.classList.remove('border-error');
+      field.classList.add('border-outline-variant/20');
+      var existing = field.parentElement.querySelector('.field-error');
+      if (existing) existing.remove();
+    }
+
+    function validateField(field) {
+      var error = getFieldError(field);
+      showFieldError(field, error);
+      return !error;
+    }
+
+    function validateAllFields(form) {
+      var valid = true;
+      var fields = form.querySelectorAll('input[name], textarea[name]');
+      var firstInvalid = null;
+      fields.forEach(function(field) {
+        if (field.type === 'checkbox' || field.type === 'file') return;
+        if (!validateField(field) && !firstInvalid) {
+          firstInvalid = field;
+          valid = false;
+        } else if (!validateField(field)) {
+          valid = false;
+        }
+      });
+      if (firstInvalid) firstInvalid.focus();
+      return valid;
+    }
+
+    // Attach blur validation to all form fields
+    var formEl = document.getElementById('job-offer-form');
+    if (formEl) {
+      formEl.querySelectorAll('input[name], textarea[name]').forEach(function(field) {
+        if (field.type === 'checkbox' || field.type === 'file') return;
+        field.addEventListener('blur', function() { validateField(field); });
+        field.addEventListener('input', function() {
+          if (field.parentElement.querySelector('.field-error')) validateField(field);
+        });
+      });
+    }
+
     // Form submission
     document.getElementById('job-offer-form')?.addEventListener('submit', async function(e) {
       e.preventDefault();
       var form = e.target;
       var submitBtn = document.getElementById('submit-btn');
       var errorEl = document.getElementById('form-error');
+
+      if (!validateAllFields(form)) return;
 
       if (submitBtn) submitBtn.textContent = submittingText;
       if (submitBtn) submitBtn.disabled = true;
@@ -264,16 +334,12 @@ const t = translations[lang];
 
         if (!response.ok) throw new Error('Failed');
 
-        document.getElementById('job-offer-form-section')?.classList.add('hidden');
-        document.getElementById('form-success')?.classList.remove('hidden');
+        var offer = await response.json();
+        sessionStorage.setItem('snackbar', JSON.stringify({ message: successText, type: 'success' }));
+        window.location.href = jobOffersPath + '#' + offer.id;
       } catch (err) {
-        if (errorEl) {
-          errorEl.textContent = errorText;
-          errorEl.classList.remove('hidden');
-        }
-      } finally {
-        if (submitBtn) submitBtn.textContent = submitText;
-        if (submitBtn) submitBtn.disabled = false;
+        window.__showSnackbar?.(err.message || errorText, 'error');
+        if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
       }
     });
   </script>

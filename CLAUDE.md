@@ -7,6 +7,22 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ast
 See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
 
+## Commands (all from repo root)
+
+```bash
+# Install
+npm install                         # Root + frontend deps (via postinstall)
+
+# Build
+dotnet build                        # Backend — all projects via DemoPage.slnx
+npm run build:frontend              # Frontend — Astro static build
+
+# Test
+dotnet test                         # Backend integration tests (needs Docker for Testcontainers)
+npm run test:frontend               # Frontend Playwright page tests
+npm test                            # All tests: backend + frontend + E2E
+```
+
 ## Design Principles
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
@@ -124,38 +140,10 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
 - **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy. Legacy single-string `"role"` also supported.
-- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner.
+- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner. API integration tests must **never** reference request/response contract classes — send anonymous objects and assert on raw JSON (`JsonElement`) properties so that any contract change (renamed field, changed enum) is caught as a test failure. Domain entity/event types are fine for test setup, DB seeding, and direct DB assertions.
 - **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 
 ## Build & Deploy
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run build            # Output: frontend/dist/
-npm run dev              # Dev server: http://localhost:4321
-```
-
-### Backend
-```bash
-cd backend
-docker compose up db -d  # Start PostgreSQL
-cd src/Kalandra.Api
-dotnet run               # API at http://localhost:5000, Swagger at /swagger
-```
-
-### Tests
-```bash
-cd backend
-dotnet test              # Requires Docker (Testcontainers)
-
-cd frontend
-playwright test          # Frontend page tests (builds + serves static site)
-
-npm test                 # Run all tests (backend + frontend)
-npm run test:e2e         # Full e2e (starts DB + API + frontend, runs Playwright)
-```
-
-Frontend deployed via GitHub Actions → Cloudflare Pages on push to main.
-Backend deployed via GitHub Actions → Docker image → Oracle Cloud on push to main.
+See `docs/SETUP.md` for local development setup, run configurations, test commands, and deployment infrastructure.
+See `docs/PROJECT.md` for architecture, tech stack, decision log, and roadmap.

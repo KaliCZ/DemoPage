@@ -3,6 +3,7 @@
   "private": true,
   "description": "kalandra.tech — monorepo task runner",
   "scripts": {
+    "postinstall": "cd frontend && npm install",
     "dev": "npm run dev:db && npm run dev:supabase && npm run dev:services",
     "dev:infra": "npm run dev:db && npm run dev:supabase",
     "dev:db": "cd backend && docker compose up db -d --wait",
@@ -12,6 +13,7 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev:stop": "cd backend && docker compose down && supabase stop",
     "dev:wipe": "cd backend && docker compose down -v && supabase stop --no-backup",
+    "build:frontend": "cd frontend && npm run build",
     "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
     "test:backend": "dotnet test --verbosity normal",
     "test:frontend": "cd frontend && npm run test:install && npm test",

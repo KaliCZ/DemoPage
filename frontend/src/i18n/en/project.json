@@ -16,7 +16,7 @@
     "versionLabel": "Current Version",
     "versionValue": "v2.0",
     "timeLabel": "Time Spent So Far",
-    "timeValue": "17 hours",
+    "timeValue": "27 hours",
     "sourceLabel": "Source",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "One-Time Cost",
@@ -62,7 +62,8 @@
         "number": 2,
         "title": "Backend Included",
         "done": true,
-        "time": "~10 hours",
+        "time": "~20 hours",
+        "nextTime": "Could do it in ~5 hours next time.",
         "description": "ASP.NET Core backend with Supabase Auth and Marten event sourcing. Used for managing job offers — users can submit and track offers, admins can review and update statuses.",
         "side": "right",
         "detailsLabel": "What was done",
@@ -72,7 +73,10 @@
           { "author": "claude", "text": "ASP.NET Core Web API with vertical slices and Marten event sourcing" },
           { "author": "claude", "text": "Job offer form, user dashboard and admin view with i18n" },
           { "author": "claude", "text": "Docker setup, CI/CD pipeline to Oracle Cloud" },
-          { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" }
+          { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" },
+          { "author": "pavel", "text": "Optimizing CI/CD pipeline" },
+          { "author": "pavel", "text": "Improving run configs for DevX" },
+          { "author": "pavel", "text": "Restructuring code a few times" }
         ]
       },
       {

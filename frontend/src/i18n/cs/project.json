@@ -16,7 +16,7 @@
     "versionLabel": "Aktuální verze",
     "versionValue": "v2.0",
     "timeLabel": "Čas strávený",
-    "timeValue": "17 hodin",
+    "timeValue": "27 hodin",
     "sourceLabel": "Zdrojový kód",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "Jednorázové náklady",
@@ -62,7 +62,8 @@
         "number": 2,
         "title": "Backend Included",
         "done": true,
-        "time": "~10 hodin",
+        "time": "~20 hodin",
+        "nextTime": "Příště bych to zvládl za ~5 hodin.",
         "description": "ASP.NET Core backend se Supabase Auth a Marten event sourcingem. Slouží ke správě pracovních nabídek — uživatelé mohou podávat a sledovat nabídky, admini je přezkoumávat a měnit stavy.",
         "side": "right",
         "detailsLabel": "Co se udělalo",
@@ -72,7 +73,10 @@
           { "author": "claude", "text": "ASP.NET Core Web API s vertical slices a Marten event sourcingem" },
           { "author": "claude", "text": "Formulář nabídek, uživatelský dashboard a admin pohled s i18n" },
           { "author": "claude", "text": "Docker setup, CI/CD pipeline na Oracle Cloud" },
-          { "author": "claude", "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)" }
+          { "author": "claude", "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)" },
+          { "author": "pavel", "text": "Optimalizace CI/CD pipeline" },
+          { "author": "pavel", "text": "Vylepšení run konfigurací pro DevX" },
+          { "author": "pavel", "text": "Několikrát restrukturalizace kódu" }
         ]
       },
       {

@@ -1,69 +1,68 @@
-# Setup Guide — kalandra.tech v2–v4
+# Setup Guide — kalandra.tech
 
-Step-by-step guide for setting up the backend, auth, and deployment infrastructure.
+Step-by-step guide for local development, testing, and deployment infrastructure.
 
----
-
-## 1. Supabase Project Setup
-
-### 1.1 Create Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Note these values from **Settings → API**:
-   - **Project URL** (e.g., `https://abcdef.supabase.co`)
-   - **Publishable key** (safe for browser)
-   - **JWT keys** — the backend fetches these automatically via JWKS; no manual configuration needed
-
-### 1.2 Configure OAuth Provider (Google)
-
-1. In Supabase dashboard: **Authentication → Providers → Google**
-2. Enable Google provider
-3. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
-   - Application type: Web application
-   - Authorized redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`
-4. Paste the Client ID and Client Secret into Supabase
-5. Optionally enable GitHub as a second provider (same flow)
-
-### 1.3 Configure Redirect URLs
-
-In **Authentication → URL Configuration**:
-- **Site URL**: `https://www.kalandra.tech`
-- **Redirect URLs** (add all):
-  - `https://www.kalandra.tech/**`
-  - `https://kalandra.tech/**`
-  - `http://localhost:4321/**` (for local development)
-
-### 1.4 Set Up Admin User
-
-The backend uses role-based authorization. Roles are stored as an array in the user's Supabase `app_metadata`, included in the JWT, and mapped to standard .NET role claims.
-
-After signing in for the first time, assign the admin role:
-
-```sql
--- Run in Supabase SQL Editor to set admin via app_metadata
-UPDATE auth.users
-SET raw_app_meta_data = raw_app_meta_data || '{"roles": ["admin"]}'::jsonb
-WHERE email = 'your@email.com';
-```
-
-This user will have admin privileges (can see all submissions, update statuses). The backend reads `app_metadata.roles` from the JWT and maps each entry to a .NET role claim. The `Admin` authorization policy uses `RequireRole("admin")`.
-
-> **Note:** The backend also supports a legacy `"role": "admin"` single-string format for backwards compatibility.
+For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
 
 ---
 
-## 2. Local Development Setup
+## Table of Contents
 
-### 2.1 Prerequisites
+- [1. Local Development](#1-local-development)
+  - [1.1 Prerequisites](#11-prerequisites)
+  - [1.2 Install Dependencies](#12-install-dependencies)
+  - [1.3 JetBrains Run Configurations (recommended)](#13-jetbrains-run-configurations-recommended)
+  - [1.4 CLI Alternative](#14-cli-alternative)
+  - [1.5 Local Supabase](#15-local-supabase)
+  - [1.6 Frontend Environment](#16-frontend-environment)
+  - [1.7 Stopping Services](#17-stopping-services)
+- [2. Running Tests](#2-running-tests)
+  - [2.1 Backend Integration Tests](#21-backend-integration-tests)
+  - [2.2 Frontend Page Tests](#22-frontend-page-tests)
+  - [2.3 E2E Tests](#23-e2e-tests)
+- [3. Infrastructure Setup](#3-infrastructure-setup)
+  - [3.1 Supabase Project](#31-supabase-project)
+  - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
+  - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
+  - [3.4 DNS](#34-dns)
+- [4. CI/CD Configuration](#4-cicd-configuration)
+  - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
+  - [4.2 GitHub Actions Environment](#42-github-actions-environment)
+  - [4.3 Container Registry Auth](#43-container-registry-auth)
+
+---
+
+## 1. Local Development
+
+### 1.1 Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL + local Supabase)
 - [Node.js 22+](https://nodejs.org/)
 
-### 2.2 Run Everything (recommended)
+### 1.2 Install Dependencies
+
+Run once after cloning (or when dependencies change):
 
 ```bash
-# From the repo root — starts PostgreSQL, local Supabase, backend (with hot reload), and frontend
+npm install            # Installs root + frontend dependencies (via postinstall)
+```
+
+### 1.3 JetBrains Run Configurations (recommended)
+
+The `.run/` directory contains shared run configurations that handle dependency installation and infrastructure startup automatically:
+
+- **Debug Backend** — launches the .NET backend with debugger attached + Astro dev server. Infrastructure (PostgreSQL + local Supabase) starts automatically as a before-launch step. Use this when you need to set breakpoints in the backend.
+- **Watch BE+FE** — launches `dotnet watch` + `astro dev` side-by-side with separate log panels. Both backend and frontend hot-reload on file changes. Use this for everyday development.
+
+Both configurations run `npm install` as a before-launch step, so dependencies are always up to date.
+
+> The remaining configurations in `.run/` (`Backend`, `Frontend`, `Watch Backend`) are building blocks used by the compound configs above.
+
+### 1.4 CLI Alternative
+
+```bash
+# From the repo root — starts PostgreSQL, local Supabase, backend (dotnet watch), and frontend (astro dev)
 npm run dev
 ```
 
@@ -73,11 +72,9 @@ This starts:
 - **Backend** (port 5000) — .NET API with hot reload
 - **Frontend** (port 4321) — Astro dev server
 
-Press Ctrl+C to stop everything. Run `npm run dev:stop` to stop Docker services.
+### 1.5 Local Supabase
 
-### 2.3 Local Supabase
-
-The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `supabase start` (via `npm run dev:supabase`) downloads the required Docker images (~2-3 min).
+The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `supabase start` downloads the required Docker images (~2-3 min).
 
 Local services:
 | Service | URL |
@@ -89,7 +86,7 @@ Local services:
 Local credentials (well-known dev values, not secrets):
 - **Publishable key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
 
-### 2.4 Configure Frontend
+### 1.6 Frontend Environment
 
 The committed `frontend/.env` has local Supabase defaults — ready to use out of the box.
 
@@ -100,33 +97,104 @@ PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_API_URL=http://localhost:5000
 ```
 
-### 2.5 Manual Start (alternative)
-
-If you prefer to start services individually:
+### 1.7 Stopping Services
 
 ```bash
-# 1. Start PostgreSQL
-cd backend && docker compose up db -d
-
-# 2. Start local Supabase
-npm run dev:supabase
-
-# 3. Start backend
-cd backend/src/Kalandra.Api
-Auth__SupabaseProjectUrl=http://localhost:54321 \
-dotnet run
-# API at http://localhost:5000, Swagger at /swagger
-
-# 4. Start frontend
-cd frontend && npm install && npm run dev
-# Available at http://localhost:4321
+npm run dev:stop     # Stop PostgreSQL + local Supabase
+npm run dev:wipe     # Stop and delete all data (clean slate)
 ```
 
 ---
 
-## 3. Oracle Cloud Infrastructure (OCI) Setup
+## 2. Running Tests
 
-### 3.1 Create Always Free VM
+```bash
+npm test               # Runs all tests: backend + frontend + E2E
+```
+
+### 2.1 Backend Integration Tests
+
+Requires Docker (Testcontainers spins up a real PostgreSQL container):
+
+```bash
+npm run test:backend
+```
+
+### 2.2 Frontend Page Tests
+
+Builds the static site, serves it, and verifies page rendering, navigation, i18n, and dark mode:
+
+```bash
+npm run test:frontend  # Installs Playwright browsers automatically
+```
+
+### 2.3 E2E Tests
+
+Runs Playwright against the full stack (frontend + backend + DB):
+
+```bash
+npm run test:e2e
+```
+
+---
+
+## 3. Infrastructure Setup
+
+This section covers the one-time setup needed to host this project yourself.
+
+### 3.1 Supabase Project
+
+#### Create Project
+
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Note these values from **Settings → API**:
+   - **Project URL** (e.g., `https://abcdef.supabase.co`)
+   - **Publishable key** (safe for browser)
+   - **JWT keys** — the backend fetches these automatically via JWKS; no manual configuration needed
+
+#### Configure OAuth Provider (Google)
+
+1. In Supabase dashboard: **Authentication → Providers → Google**
+2. Enable Google provider
+3. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
+   - Application type: Web application
+   - Authorized redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`
+4. Paste the Client ID and Client Secret into Supabase
+5. Optionally enable GitHub as a second provider (same flow)
+
+#### Configure Redirect URLs
+
+In **Authentication → URL Configuration**:
+- **Site URL**: `https://www.kalandra.tech`
+- **Redirect URLs** (add all):
+  - `https://www.kalandra.tech/**`
+  - `https://kalandra.tech/**`
+  - `http://localhost:4321/**` (for local development)
+
+#### Create Storage Bucket
+
+1. In Supabase dashboard: **Storage → New bucket**
+2. Name: `job-offer-attachments`
+3. Public: **off**
+4. File size limit: `15 MB`
+5. Allowed MIME types: `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/vnd.openxmlformats-officedocument.presentationml.presentation`, `text/plain`, `image/png`, `image/jpeg`, `image/webp`
+
+> Locally, the bucket is auto-created by `supabase start` from the `[storage.buckets.job-offer-attachments]` section in `supabase/config.toml`.
+
+#### Set Up Admin User
+
+After signing in for the first time, assign the admin role:
+
+```sql
+-- Run in Supabase SQL Editor to set admin via app_metadata
+UPDATE auth.users
+SET raw_app_meta_data = raw_app_meta_data || '{"roles": ["admin"]}'::jsonb
+WHERE email = 'your@email.com';
+```
+
+### 3.2 Oracle Cloud VM
+
+#### Create Always Free VM
 
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
@@ -135,7 +203,7 @@ cd frontend && npm install && npm run dev
    - Add your SSH public key
 3. Note the **public IP address**
 
-### 3.2 Configure VM
+#### Configure VM
 
 SSH into the instance and install Docker:
 
@@ -149,7 +217,7 @@ sudo usermod -aG docker $USER
 exit
 ```
 
-### 3.3 Configure Firewall
+#### Configure Firewall
 
 ```bash
 # Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
@@ -163,7 +231,7 @@ Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
 - Add ingress rules for ports 80, 443, 8080
 
-### 3.4 Set Up Reverse Proxy (Caddy)
+### 3.3 Reverse Proxy (Caddy)
 
 Caddy provides automatic HTTPS:
 
@@ -186,7 +254,7 @@ docker run -d \
   caddy:2-alpine
 ```
 
-### 3.6 DNS Configuration
+### 3.4 DNS
 
 Add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP.
 
@@ -205,6 +273,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key from Supabase dashboard (**Settings → API**) — used by the backend for storage uploads |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
 
 ### 4.2 GitHub Actions Environment
@@ -222,61 +291,3 @@ echo <GITHUB_PAT> | docker login ghcr.io -u <GITHUB_USERNAME> --password-stdin
 ```
 
 Create a GitHub Personal Access Token with `read:packages` scope.
-
----
-
-## 5. Running Tests
-
-### 5.1 Unit/Integration Tests
-
-Tests use Testcontainers (requires Docker):
-
-```bash
-cd backend
-dotnet test
-```
-
-The test suite:
-- Spins up a real PostgreSQL container
-- Creates a test database
-- Generates test JWTs (no Supabase dependency)
-- Tests all API endpoints
-
-### 5.2 E2E Testing Notes
-
-Full E2E tests (frontend → backend → DB) are possible because:
-- Auth tokens are standard JWTs — tests generate them with a known test secret via `JwtTestHelper`
-- The backend validates JWTs via JWKS in production; tests use a symmetric fallback key
-- Only the OAuth redirect flow itself requires a real Supabase instance
-
----
-
-## 6. Architecture Decisions
-
-### Marten Event Sourcing
-
-We use Marten for event sourcing on the job offers feature. Events (`JobOfferSubmitted`, `JobOfferStatusChanged`, `JobOfferCancelled`) are appended to streams. Marten's inline snapshot projections maintain a `JobOffer` read model automatically. The event stream serves as the activity log visible in the UI. Marten manages its own PostgreSQL schema — no migrations needed.
-
-### Admin Role via JWT
-
-Roles are stored as an array in Supabase `app_metadata` (e.g., `"roles": ["admin"]`). The backend extracts `app_metadata.roles` from the JWT on each request and maps each entry to a standard .NET role claim. The `Admin` authorization policy uses `RequireRole("admin")`. No server-side user ID list or database roles table needed — roles live in Supabase and travel with the token. A legacy single-string `"role"` field is also supported.
-
-### Supabase Auth — Local + Production
-
-The backend validates JWT signatures via JWKS (fetching public keys from Supabase's OpenID Connect endpoint). It never calls the Supabase API directly. A symmetric secret fallback exists for tests and local Supabase.
-
-- **Local dev**: `npm run dev:supabase` runs a local Supabase instance in Docker (auth, API gateway, studio). Email/password sign-in works without any external dependencies.
-- **Production**: Supabase Cloud with Google OAuth + email/password.
-- **E2E tests**: Local Supabase with programmatic user creation via admin API. Tests sign in with `signInWithPassword` — no browser OAuth flows needed.
-- **Backend integration tests**: Generate JWTs with a known test secret via Testcontainers. No Supabase dependency.
-
-### Vertical Slices
-
-Code is organized by feature (e.g., `Features/JobOffers/`) rather than by technical layer. Each feature folder contains its controller, events, DTOs, and handlers.
-
-### Testing Strategy
-
-- **Backend integration tests**: xUnit + Testcontainers. Spins up a real PostgreSQL, starts the full API via `WebApplicationFactory`, tests all endpoints with generated JWTs.
-- **Frontend page tests**: Playwright. Builds the static site, serves it, verifies page rendering, navigation, i18n, and dark mode.
-- **E2E smoke tests**: Playwright against the full stack (frontend + backend + DB). Verifies integration points.
-- **CI/CD**: Backend tests run in the backend pipeline; frontend tests run in the frontend pipeline. Both block deployment on failure.

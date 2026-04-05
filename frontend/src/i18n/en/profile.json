@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "title": "Profile — kalandra.tech",
+    "description": "Manage your account settings, display name, email, and password."
+  },
+  "hero": {
+    "title": "Profile",
+    "subtitle": "Manage your account settings."
+  },
+  "loginPrompt": {
+    "title": "Sign in to view your profile",
+    "description": "You need to be signed in to manage your account settings.",
+    "signInButton": "Sign In"
+  },
+  "displayName": {
+    "label": "Display Name",
+    "placeholder": "Your name",
+    "save": "Save",
+    "saving": "Saving…",
+    "success": "Display name updated.",
+    "error": "Failed to update display name."
+  },
+  "email": {
+    "label": "Email Address",
+    "hint": "This is also the email you use to sign in.",
+    "placeholder": "you@example.com",
+    "save": "Update Email",
+    "saving": "Updating…",
+    "success": "Confirmation email sent. Check your inbox to verify the new address.",
+    "error": "Failed to update email."
+  },
+  "password": {
+    "title": "Change Password",
+    "currentPassword": "Current Password",
+    "currentPasswordPlaceholder": "Your current password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Min. 6 characters",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Repeat new password",
+    "save": "Change Password",
+    "saving": "Changing…",
+    "success": "Password updated successfully.",
+    "error": "Failed to update password.",
+    "mismatch": "Passwords do not match.",
+    "tooShort": "Password must be at least 6 characters.",
+    "currentRequired": "Current password is required."
+  },
+  "provider": {
+    "title": "Sign-in Methods",
+    "emailPassword": "Email & Password",
+    "changeEmail": "Change email",
+    "changePassword": "Change password",
+    "google": "Google",
+    "linkEmail": "Link Email & Password",
+    "linkEmailPassword": "Choose a password",
+    "linkEmailPasswordPlaceholder": "Min. 6 characters",
+    "linkEmailSubmit": "Link",
+    "linkEmailSubmitting": "Linking…",
+    "linkEmailSuccess": "Email sign-in linked successfully.",
+    "linkEmailError": "Failed to link email sign-in.",
+    "linkEmailTooShort": "Password must be at least 6 characters.",
+    "linkGoogle": "Link Google Account",
+    "linkGoogleSuccess": "Google account linked successfully.",
+    "linkGoogleError": "Failed to link Google account.",
+    "unlinkGoogle": "Unlink",
+    "unlinkGoogleDisabled": "Link Email & Password first to enable unlinking",
+    "unlinkGoogleSuccess": "Google account unlinked successfully.",
+    "unlinkGoogleError": "Failed to unlink Google account."
+  }
+}

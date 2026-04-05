@@ -21,10 +21,11 @@
   },
   "list": {
     "filterAll": "Vše",
+    "filterByStatus": "Filtrovat podle stavu",
     "status": "Stav",
     "submitted": "Odesláno",
     "inReview": "V hodnocení",
-    "accepted": "Přijato",
+    "accepted": "Zavolejme si",
     "declined": "Odmítnuto",
     "cancelled": "Zrušeno",
     "remote": "Vzdáleně",
