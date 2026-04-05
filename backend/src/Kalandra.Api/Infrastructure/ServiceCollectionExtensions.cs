@@ -41,21 +41,26 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddAppCors(
         this IServiceCollection services,
-        IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
         services.AddCors(options =>
         {
             options.AddPolicy("DefaultPolicy", policy =>
             {
-                var origins = environment.IsDevelopment()
-                    ? [.. allowedOrigins, "http://localhost:4321", "http://127.0.0.1:4321"]
-                    : allowedOrigins;
+                if (environment.IsDevelopment())
+                {
+                    policy.SetIsOriginAllowed(origin =>
+                    {
+                        var host = new Uri(origin).Host;
+                        return host is "localhost" or "127.0.0.1";
+                    });
+                }
+                else
+                {
+                    policy.WithOrigins("https://www.kalandra.tech");
+                }
 
                 policy
-                    .WithOrigins(origins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
