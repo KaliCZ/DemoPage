@@ -4,7 +4,8 @@
     "about": "O mně",
     "project": "Projekt",
     "hireMe": "Najměte mě",
-    "mySubmissions": "Mé nabídky"
+    "mySubmissions": "Mé nabídky",
+    "admin": "Administrace"
   },
   "auth": {
     "signIn": "Přihlásit se",

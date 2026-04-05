@@ -34,9 +34,10 @@ TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(authConfig);
-builder.Services.AddAppCors(builder.Configuration, builder.Environment);
+builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile();
+builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 builder.Services.AddHealthChecks()

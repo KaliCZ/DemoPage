@@ -312,7 +312,7 @@ public class JobOffersController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(status, page, pageSize, ct));
+        return Ok(await ListOffersAsync(showAll: false, status, page, pageSize, ct));
     }
 
     [HttpGet]
@@ -326,7 +326,7 @@ public class JobOffersController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(status, page, pageSize, ct));
+        return Ok(await ListOffersAsync(showAll: true, status, page, pageSize, ct));
     }
 
     // ───── Get Detail ─────
@@ -441,6 +441,7 @@ public class JobOffersController(
     }
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
+        bool showAll,
         JobOfferStatus[]? status,
         int page,
         int pageSize,
@@ -448,7 +449,7 @@ public class JobOffersController(
     {
         var query = new ListJobOffersQuery(
             UserId: AppUser.Id,
-            IsAdmin: AppUser.IsAdmin,
+            IsAdmin: showAll,
             Statuses: status,
             Page: page,
             PageSize: pageSize);
