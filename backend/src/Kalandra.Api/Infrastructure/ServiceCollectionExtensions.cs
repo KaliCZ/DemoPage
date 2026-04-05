@@ -50,12 +50,21 @@ public static class ServiceCollectionExtensions
         {
             options.AddPolicy("DefaultPolicy", policy =>
             {
-                var origins = environment.IsDevelopment()
-                    ? [.. allowedOrigins, "http://localhost:4321", "http://127.0.0.1:4321"]
-                    : allowedOrigins;
+                if (environment.IsDevelopment())
+                {
+                    policy.SetIsOriginAllowed(origin =>
+                    {
+                        if (allowedOrigins.Contains(origin)) return true;
+                        var host = new Uri(origin).Host;
+                        return host is "localhost" or "127.0.0.1";
+                    });
+                }
+                else
+                {
+                    policy.WithOrigins(allowedOrigins);
+                }
 
                 policy
-                    .WithOrigins(origins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
