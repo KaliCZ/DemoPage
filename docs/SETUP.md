@@ -200,7 +200,7 @@ WHERE email = 'your@email.com';
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Canonical Ubuntu 24.04 Minimal aarch64 (ARM image for A1 shape)
+   - Image: Oracle Linux 8 aarch64 (ARM image for A1 shape)
    - Add your SSH public key
 3. Note the **public IP address**
 
@@ -209,8 +209,8 @@ WHERE email = 'your@email.com';
 SSH into the instance and install Docker:
 
 ```bash
-# Ubuntu 24.04
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin
+# Oracle Linux 8
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
 
@@ -305,46 +305,26 @@ In **Security Lists** (or your Network Security Group), add:
 4. Choose **Automatically assign from subnet prefix**
 5. Click **Assign**
 
-#### 3.4.6 Configure Ubuntu for IPv6
+#### 3.4.6 Verify IPv6 on the VM
 
-SSH into the VM and verify/enable DHCPv6:
+SSH into the VM (`ssh opc@<public-ip>`) and verify:
 
 ```bash
 # Verify IPv6 is not disabled (should return 0)
 sysctl net.ipv6.conf.all.disable_ipv6
 
-# Check netplan config
-cat /etc/netplan/*.yaml
-```
-
-Ensure the primary interface has `dhcp6: true`. If missing, add it:
-
-```yaml
-network:
-  version: 2
-  ethernets:
-    enp0s6:        # your interface name — check with 'ip link'
-      dhcp4: true
-      dhcp6: true   # add this line
-```
-
-Apply and verify:
-
-```bash
-sudo netplan apply
-
-# Confirm a GUA (2xxx:...) address is assigned
+# Confirm a GUA (2603:...) address is assigned
 ip -6 addr show
 
-# Test outbound IPv6
-ping6 -c 3 ipv6.google.com
+# Test outbound IPv6 (TCP — ICMP ping may be blocked by OCI)
+curl -6 -v --connect-timeout 5 https://ipv6.google.com 2>&1 | head -5
 ```
 
-If the OS firewall has restrictive rules (`sudo ip6tables -L -n`), allow outbound:
+Oracle Linux uses `firewalld`. If ICMPv6 is needed for debugging:
 
 ```bash
-sudo ip6tables -A OUTPUT -p tcp --dport 5432 -j ACCEPT
-sudo ip6tables -A OUTPUT -p tcp --dport 443 -j ACCEPT
+sudo firewall-cmd --add-protocol=ipv6-icmp --permanent
+sudo firewall-cmd --reload
 ```
 
 > **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
@@ -364,7 +344,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | Secret | Value |
 |--------|-------|
 | `OCI_HOST` | Your OCI VM public IP |
-| `OCI_USERNAME` | SSH username (`ubuntu` for Ubuntu images) |
+| `OCI_USERNAME` | SSH username (`opc` for Oracle Linux) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
