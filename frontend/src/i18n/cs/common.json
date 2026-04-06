@@ -36,6 +36,12 @@
     "toggleDarkMode": "Přepnout tmavý režim",
     "changeLanguage": "Změnit jazyk"
   },
+  "notFound": {
+    "title": "Stránka nenalezena",
+    "heading": "404",
+    "message": "Stránka, kterou hledáte, neexistuje nebo byla přesunuta.",
+    "goHome": "Přejít na hlavní stránku"
+  },
   "errors": {
     "generic": "Něco se pokazilo. Zkuste to znovu nebo mi napište na pavel@kalandra.tech.",
     "notFound": "Požadovaný zdroj nebyl nalezen. Zkuste to znovu nebo mi napište na pavel@kalandra.tech.",
