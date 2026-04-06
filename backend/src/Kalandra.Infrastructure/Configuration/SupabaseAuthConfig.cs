@@ -4,19 +4,22 @@ using StrongTypes;
 
 namespace Kalandra.Infrastructure.Configuration;
 
-public record SupabaseAuthConfig(
-    NonEmptyString ProjectUrl,
-    NonEmptyString ServiceKey)
+public record SupabaseAuthConfig
 {
+    public NonEmptyString ProjectUrl { get; private init; } = null!;
+    public NonEmptyString ServiceKey { get; private init; } = null!;
+
     public static SupabaseAuthConfig AddSingleton(
         IServiceCollection services,
         IConfiguration configuration)
     {
         var section = configuration.GetSection("Auth");
 
-        var config = new SupabaseAuthConfig(
-            ProjectUrl: NonEmptyString.CreateUnsafe(section["SupabaseProjectUrl"]),
-            ServiceKey: NonEmptyString.CreateUnsafe(section["ServiceKey"]));
+        var config = new SupabaseAuthConfig
+        {
+            ProjectUrl = NonEmptyString.CreateUnsafe(section["SupabaseProjectUrl"]),
+            ServiceKey = NonEmptyString.CreateUnsafe(section["ServiceKey"])
+        };
 
         services.AddSingleton(config);
 
