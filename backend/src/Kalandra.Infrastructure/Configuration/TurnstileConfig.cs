@@ -4,20 +4,16 @@ using StrongTypes;
 
 namespace Kalandra.Infrastructure.Configuration;
 
-public record TurnstileConfig
+public record TurnstileConfig(NonEmptyString SecretKey)
 {
-    public NonEmptyString SecretKey { get; private init; } = null!;
-
     public static TurnstileConfig AddSingleton(
         IServiceCollection services,
         IConfiguration configuration)
     {
         var section = configuration.GetSection("Turnstile");
 
-        var config = new TurnstileConfig
-        {
-            SecretKey = NonEmptyString.CreateUnsafe(section["SecretKey"])
-        };
+        var config = new TurnstileConfig(
+            SecretKey: NonEmptyString.CreateUnsafe(section["SecretKey"]));
 
         services.AddSingleton(config);
 
