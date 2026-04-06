@@ -24,6 +24,10 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
   - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
+    - [3.3.1 Create Cloudflare Origin Certificate](#331-create-cloudflare-origin-certificate)
+    - [3.3.2 Upload Certificate to VM](#332-upload-certificate-to-vm)
+    - [3.3.3 Configure and Run Caddy](#333-configure-and-run-caddy)
+    - [3.3.4 Configure Cloudflare SSL Mode](#334-configure-cloudflare-ssl-mode)
   - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
   - [3.5 DNS](#35-dns)
 - [4. CI/CD Configuration](#4-cicd-configuration)
@@ -234,27 +238,53 @@ Also add ingress rules in OCI Console:
 
 ### 3.3 Reverse Proxy (Caddy)
 
-Caddy provides automatic HTTPS:
+Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare.
+
+#### 3.3.1 Create Cloudflare Origin Certificate
+
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**
+2. Hostnames: `api.kalandra.tech`
+3. Validity: 15 years (default)
+4. Format: PEM
+5. Copy both the **certificate** and **private key**
+
+#### 3.3.2 Upload Certificate to VM
+
+```bash
+mkdir -p ~/certs
+nano ~/certs/origin.pem       # paste the certificate, Ctrl+O to save, Ctrl+X to exit
+nano ~/certs/origin-key.pem   # paste the private key
+chmod 600 ~/certs/origin-key.pem
+```
+
+#### 3.3.3 Configure and Run Caddy
 
 ```bash
 # Create Caddyfile
 cat > ~/Caddyfile << 'EOF'
 api.kalandra.tech {
     reverse_proxy localhost:8080
+    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
 }
 EOF
 
-# Run Caddy
-docker run -d \
+# Run Caddy (sudo required for binding ports 80/443 via podman)
+sudo docker run -d \
   --name caddy \
   --restart unless-stopped \
   --network host \
-  --cap-add NET_BIND_SERVICE \
   -v ~/Caddyfile:/etc/caddy/Caddyfile:Z \
+  -v ~/certs:/etc/caddy/certs:Z,ro \
   -v caddy_data:/data \
   -v caddy_config:/config \
   caddy:2-alpine
 ```
+
+> **Note:** The `:Z` flag sets SELinux context so the container can read the mounted files. The `ro` flag mounts certs as read-only.
+
+#### 3.3.4 Configure Cloudflare SSL Mode
+
+In Cloudflare dashboard → **SSL/TLS → Overview**, set the mode to **Full (strict)**. This ensures Cloudflare validates the origin certificate when connecting to your VM.
 
 ### 3.4 Enable IPv6 on the VCN
 
@@ -332,7 +362,7 @@ sudo firewall-cmd --reload
 
 ### 3.5 DNS
 
-Add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP.
+In Cloudflare DNS, add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP. Keep it **Proxied** (orange cloud) — Cloudflare handles public TLS, Caddy uses the origin certificate for the Cloudflare-to-origin connection.
 
 ---
 

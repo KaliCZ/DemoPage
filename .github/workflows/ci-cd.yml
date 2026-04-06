@@ -329,10 +329,11 @@ jobs:
             cat > ~/Caddyfile << EOF
             api.kalandra.tech {
                 reverse_proxy localhost:$NEW_PORT
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
             }
             EOF
             chcon -t container_file_t ~/Caddyfile
-            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
             # Stop the old container
             docker stop $OLD_NAME 2>/dev/null || true
