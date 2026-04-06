@@ -313,7 +313,7 @@ const t = translations[lang];
         if (selectedFiles.length > maxFiles) throw new Error('Too many files');
         if (totalSize > maxTotalBytes) throw new Error('Files too large');
 
-        // Get Turnstile token
+        // Get Turnstile token from the hidden input created by the widget
         var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
         if (!turnstileResponse) {
           window.__showSnackbar?.(captchaError, 'error');
