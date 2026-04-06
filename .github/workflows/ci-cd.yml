@@ -331,6 +331,7 @@ jobs:
                 reverse_proxy localhost:$NEW_PORT
             }
             EOF
+            chcon -t container_file_t ~/Caddyfile
             docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
             # Stop the old container

@@ -249,7 +249,8 @@ docker run -d \
   --name caddy \
   --restart unless-stopped \
   --network host \
-  -v ~/Caddyfile:/etc/caddy/Caddyfile \
+  --cap-add NET_BIND_SERVICE \
+  -v ~/Caddyfile:/etc/caddy/Caddyfile:Z \
   -v caddy_data:/data \
   -v caddy_config:/config \
   caddy:2-alpine
