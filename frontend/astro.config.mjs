@@ -58,14 +58,12 @@ export default defineConfig({
         defaultLocale: 'en',
         locales: { en: 'en', cs: 'cs' },
       },
-      changefreq: 'monthly',
       serialize(item) {
         const path = new URL(item.url).pathname.replace(/\/$/, '') || '/';
 
         // Homepage gets highest priority
         if (path === '/' || path === '/cs') {
           item.priority = 1.0;
-          item.changefreq = 'weekly';
         }
         // Main content pages
         else if (['/about', '/project', '/hire-me'].some(p => path.endsWith(p))) {
@@ -74,7 +72,6 @@ export default defineConfig({
         // Dynamic/list pages
         else if (path.includes('/job-offers')) {
           item.priority = 0.7;
-          item.changefreq = 'weekly';
         }
         // Legal pages
         else {
