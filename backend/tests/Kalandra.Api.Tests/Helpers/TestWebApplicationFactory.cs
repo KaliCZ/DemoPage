@@ -1,6 +1,7 @@
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Turnstile;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -30,6 +31,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         {
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();
+
+            services.RemoveAll<ITurnstileValidator>();
+            services.AddSingleton<ITurnstileValidator, AlwaysPassTurnstileValidator>();
 
             services.RemoveAll<ISupabaseAdminService>();
             services.AddSingleton<ISupabaseAdminService>(FakeAdminService);

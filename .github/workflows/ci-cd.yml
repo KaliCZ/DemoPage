@@ -112,6 +112,7 @@ jobs:
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
+          Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
@@ -305,6 +306,7 @@ jobs:
               -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
               -e "Storage__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
               -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -e "Turnstile__SecretKey=${{ secrets.TURNSTILE_SECRET_KEY }}" \
               $IMAGE
 
             # Wait for the new container to become healthy
@@ -379,6 +381,7 @@ jobs:
           PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_PROJECT_URL }}
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

@@ -55,6 +55,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var content = new MultipartFormDataContent
         {
+            { new StringContent("test-token"), "cf-turnstile-response" },
             { new StringContent(""), "CompanyName" },
             { new StringContent(""), "ContactName" },
             { new StringContent(""), "ContactEmail" },
@@ -543,6 +544,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     {
         return new MultipartFormDataContent
         {
+            { new StringContent("test-token"), "cf-turnstile-response" },
             { new StringContent("Acme Corp"), "CompanyName" },
             { new StringContent("John Doe"), "ContactName" },
             { new StringContent("john@acme.com"), "ContactEmail" },

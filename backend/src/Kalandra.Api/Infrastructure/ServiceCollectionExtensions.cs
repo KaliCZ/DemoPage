@@ -2,6 +2,7 @@ using JasperFx;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Turnstile;
 using Kalandra.JobOffers;
 using Marten;
 
@@ -74,6 +75,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddStorageServices(this IServiceCollection services)
     {
         services.AddHttpClient<IStorageService, SupabaseStorageService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddTurnstile(this IServiceCollection services)
+    {
+        services.AddHttpClient<ITurnstileValidator, TurnstileValidator>();
 
         return services;
     }
