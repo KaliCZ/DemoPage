@@ -24,7 +24,8 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
   - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
-  - [3.4 DNS](#34-dns)
+  - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
+  - [3.5 DNS](#35-dns)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -254,7 +255,101 @@ docker run -d \
   caddy:2-alpine
 ```
 
-### 3.4 DNS
+### 3.4 Enable IPv6 on the VCN
+
+Oracle Cloud VCNs are IPv4-only by default. IPv6 is required for the backend to reach Supabase PostgreSQL (which resolves to an IPv6 address). All steps are in the OCI Console.
+
+#### 3.4.1 Add IPv6 to VCN
+
+1. **Networking → Virtual Cloud Networks** → click your VCN
+2. Click **Add IPv6 CIDR Block/Prefix**
+3. Choose **Oracle-allocated IPv6 /56 prefix**
+4. Click **Add**
+
+#### 3.4.2 Add IPv6 to Subnet
+
+1. Inside the VCN, go to **Subnets** → click your subnet
+2. Click **Add IPv6 CIDR Block/Prefix**
+3. Choose a `/64` from the VCN's `/56` allocation
+4. Click **Add**
+
+#### 3.4.3 Add IPv6 Route
+
+1. Inside the VCN, go to **Route Tables** → click the subnet's route table
+2. **Add Route Rule**:
+   - Destination: `::/0`
+   - Target Type: Internet Gateway
+   - Target: your existing Internet Gateway
+3. Click **Add**
+
+#### 3.4.4 Add IPv6 Security Rules
+
+In **Security Lists** (or your Network Security Group), add:
+
+**Egress** (required — outbound to Supabase):
+- Stateful: Yes
+- Destination: `::/0`
+- Protocol: TCP
+- Destination Port Range: All (or 5432, 443 for minimal access)
+
+**Ingress** (optional — if you want the API reachable over IPv6):
+- Source: `::/0`
+- Protocol: TCP
+- Destination Port Range: 80, 443, 8080
+
+#### 3.4.5 Assign IPv6 Address to the VM
+
+1. **Compute → Instances** → click your instance
+2. Under **Resources → Attached VNICs** → click the VNIC
+3. Under **Resources → IPv6 Addresses** → click **Assign IPv6 Address**
+4. Choose **Automatically assign from subnet prefix**
+5. Click **Assign**
+
+#### 3.4.6 Configure Ubuntu for IPv6
+
+SSH into the VM and verify/enable DHCPv6:
+
+```bash
+# Verify IPv6 is not disabled (should return 0)
+sysctl net.ipv6.conf.all.disable_ipv6
+
+# Check netplan config
+cat /etc/netplan/*.yaml
+```
+
+Ensure the primary interface has `dhcp6: true`. If missing, add it:
+
+```yaml
+network:
+  version: 2
+  ethernets:
+    enp0s6:        # your interface name — check with 'ip link'
+      dhcp4: true
+      dhcp6: true   # add this line
+```
+
+Apply and verify:
+
+```bash
+sudo netplan apply
+
+# Confirm a GUA (2xxx:...) address is assigned
+ip -6 addr show
+
+# Test outbound IPv6
+ping6 -c 3 ipv6.google.com
+```
+
+If the OS firewall has restrictive rules (`sudo ip6tables -L -n`), allow outbound:
+
+```bash
+sudo ip6tables -A OUTPUT -p tcp --dport 5432 -j ACCEPT
+sudo ip6tables -A OUTPUT -p tcp --dport 443 -j ACCEPT
+```
+
+> **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
+
+### 3.5 DNS
 
 Add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP.
 
@@ -269,7 +364,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | Secret | Value |
 |--------|-------|
 | `OCI_HOST` | Your OCI VM public IP |
-| `OCI_USERNAME` | SSH username (e.g., `opc` for Oracle Linux) |
+| `OCI_USERNAME` | SSH username (`ubuntu` for Ubuntu images) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
