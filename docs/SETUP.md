@@ -24,7 +24,8 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
   - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
-  - [3.4 DNS](#34-dns)
+  - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
+  - [3.5 DNS](#35-dns)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -199,7 +200,7 @@ WHERE email = 'your@email.com';
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Canonical Ubuntu 24.04 Minimal aarch64 (ARM image for A1 shape)
+   - Image: Oracle Linux 8 aarch64 (ARM image for A1 shape)
    - Add your SSH public key
 3. Note the **public IP address**
 
@@ -208,8 +209,8 @@ WHERE email = 'your@email.com';
 SSH into the instance and install Docker:
 
 ```bash
-# Ubuntu 24.04
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin
+# Oracle Linux 8
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
 
@@ -254,7 +255,81 @@ docker run -d \
   caddy:2-alpine
 ```
 
-### 3.4 DNS
+### 3.4 Enable IPv6 on the VCN
+
+Oracle Cloud VCNs are IPv4-only by default. IPv6 is required for the backend to reach Supabase PostgreSQL (which resolves to an IPv6 address). All steps are in the OCI Console.
+
+#### 3.4.1 Add IPv6 to VCN
+
+1. **Networking → Virtual Cloud Networks** → click your VCN
+2. Click **Add IPv6 CIDR Block/Prefix**
+3. Choose **Oracle-allocated IPv6 /56 prefix**
+4. Click **Add**
+
+#### 3.4.2 Add IPv6 to Subnet
+
+1. Inside the VCN, go to **Subnets** → click your subnet
+2. Click **Add IPv6 CIDR Block/Prefix**
+3. Choose a `/64` from the VCN's `/56` allocation
+4. Click **Add**
+
+#### 3.4.3 Add IPv6 Route
+
+1. Inside the VCN, go to **Route Tables** → click the subnet's route table
+2. **Add Route Rule**:
+   - Destination: `::/0`
+   - Target Type: Internet Gateway
+   - Target: your existing Internet Gateway
+3. Click **Add**
+
+#### 3.4.4 Add IPv6 Security Rules
+
+In **Security Lists** (or your Network Security Group), add:
+
+**Egress** (required — outbound to Supabase):
+- Stateful: Yes
+- Destination: `::/0`
+- Protocol: TCP
+- Destination Port Range: All (or 5432, 443 for minimal access)
+
+**Ingress** (optional — if you want the API reachable over IPv6):
+- Source: `::/0`
+- Protocol: TCP
+- Destination Port Range: 80, 443, 8080
+
+#### 3.4.5 Assign IPv6 Address to the VM
+
+1. **Compute → Instances** → click your instance
+2. Under **Resources → Attached VNICs** → click the VNIC
+3. Under **Resources → IPv6 Addresses** → click **Assign IPv6 Address**
+4. Choose **Automatically assign from subnet prefix**
+5. Click **Assign**
+
+#### 3.4.6 Verify IPv6 on the VM
+
+SSH into the VM (`ssh opc@<public-ip>`) and verify:
+
+```bash
+# Verify IPv6 is not disabled (should return 0)
+sysctl net.ipv6.conf.all.disable_ipv6
+
+# Confirm a GUA (2603:...) address is assigned
+ip -6 addr show
+
+# Test outbound IPv6 (TCP — ICMP ping may be blocked by OCI)
+curl -6 -v --connect-timeout 5 https://ipv6.google.com 2>&1 | head -5
+```
+
+Oracle Linux uses `firewalld`. If ICMPv6 is needed for debugging:
+
+```bash
+sudo firewall-cmd --add-protocol=ipv6-icmp --permanent
+sudo firewall-cmd --reload
+```
+
+> **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
+
+### 3.5 DNS
 
 Add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP.
 
@@ -269,7 +344,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | Secret | Value |
 |--------|-------|
 | `OCI_HOST` | Your OCI VM public IP |
-| `OCI_USERNAME` | SSH username (e.g., `opc` for Oracle Linux) |
+| `OCI_USERNAME` | SSH username (`opc` for Oracle Linux) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
