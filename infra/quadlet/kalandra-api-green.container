@@ -1,6 +1,11 @@
 # Quadlet unit for the green slot of the API.
-# Install to: ~/.config/containers/systemd/kalandra-api-green.container
-# See kalandra-api-blue.container for usage notes.
+#
+# At most one slot (blue OR green) should be enabled+running at a time.
+# The CI/CD deploy script swaps slots on each deploy.
+#
+# Pull=missing means systemd uses whatever image is local at start time.
+# The deploy script runs `podman pull` before restarting the service so
+# the new image is always present when the unit starts.
 
 [Unit]
 Description=Kalandra API (green slot)
