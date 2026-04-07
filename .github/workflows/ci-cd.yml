@@ -20,6 +20,25 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci-cd.yml'
+              - 'infra/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci-cd.yml'
+
   e2e:
     runs-on: ubuntu-latest
     # Local Supabase always generates the same deterministic keys from its JWT secret.
@@ -225,8 +244,8 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [e2e, backend-test, frontend-test]
-    if: github.event_name == 'push'
+    needs: [changes, e2e, backend-test, frontend-test]
+    if: github.event_name == 'push' && needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -411,7 +430,15 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: backend-deploy
+    needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      needs.e2e.result == 'success' &&
+      needs.backend-test.result == 'success' &&
+      needs.frontend-test.result == 'success' &&
+      (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped') &&
+      needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     environment: production
     permissions:
