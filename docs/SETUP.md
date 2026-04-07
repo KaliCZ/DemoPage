@@ -222,19 +222,22 @@ WHERE email = 'your@email.com';
    - Add your SSH public key
 3. Note the **public IP address**
 
-#### Install podman and enable linger
+#### Install podman
 
 Oracle Linux ships with rootless `podman`. The `podman-docker` shim makes
 the `docker` CLI an alias for `podman` so existing scripts work unchanged.
 
 ```bash
-# Oracle Linux 8
 sudo dnf install -y podman podman-docker
+```
 
-# Enable linger so the opc user's systemd instance keeps running after
-# logout. Without this, rootless containers die the moment the SSH session
-# ends — which means a deploy that disconnects can leave the API down.
-sudo loginctl enable-linger opc
+#### Authenticate to GHCR
+
+The API image is pulled from GitHub Container Registry. Create a GitHub
+Personal Access Token with `read:packages` scope and log in once:
+
+```bash
+echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
 ```
 
 #### Configure firewall
@@ -251,7 +254,7 @@ Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
 - Add ingress rules for ports 80, 443, 8080
 
-#### Install the API Quadlet units
+#### API containers (Quadlet + systemd)
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
 `kalandra-api-green` (port 8081) — managed as systemd user services via
@@ -259,43 +262,14 @@ Quadlet. At most one slot is enabled and running at a time; the CI/CD
 deploy script swaps slots on each release. Caddy (set up in §3.3) proxies
 to whichever port the active slot is on.
 
-The Quadlet unit files live in [`infra/quadlet/`](../infra/quadlet) and
-are installed manually on the VM (one-time setup).
+**Nothing to do here manually.** The Quadlet unit files live in
+[`infra/quadlet/`](../infra/quadlet) and are pushed to the VM by the CI/CD
+deploy job, which also writes `~/kalandra-api.env` from GitHub secrets,
+runs `systemctl --user daemon-reload`, removes any leftover ad-hoc
+containers, and starts the chosen slot. The first deploy after this VM
+is provisioned will fully bootstrap the setup.
 
-```bash
-# Authenticate to GHCR so podman can pull the API image. Create a GitHub
-# Personal Access Token with read:packages scope first.
-echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
-
-# Copy the Quadlet files from a checkout of the repo
-mkdir -p ~/.config/containers/systemd
-cp infra/quadlet/kalandra-api-blue.container  ~/.config/containers/systemd/
-cp infra/quadlet/kalandra-api-green.container ~/.config/containers/systemd/
-
-# Seed the secrets env file. The CI/CD deploy script rewrites this on
-# every run, but it has to exist before the unit can start the first time.
-umask 077
-cat > ~/kalandra-api.env << 'EOF'
-ConnectionStrings__DefaultConnection=Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432
-Auth__SupabaseProjectUrl=https://<project-ref>.supabase.co
-Storage__SupabaseProjectUrl=https://<project-ref>.supabase.co
-Storage__ServiceKey=<service-role-key>
-Turnstile__SecretKey=<turnstile-secret-key>
-EOF
-
-# Tell systemd about the new units and enable+start ONE slot. We pick
-# blue arbitrarily — the deploy pipeline will swap to green on the next
-# release. Do NOT enable both: only one slot should run at a time so
-# background jobs are not double-processed.
-systemctl --user daemon-reload
-systemctl --user enable --now kalandra-api-blue.service
-
-# Verify
-systemctl --user status kalandra-api-blue.service
-curl http://localhost:8080/health
-```
-
-##### Useful commands
+##### Useful commands (for ops)
 
 ```bash
 # Watch logs in real time

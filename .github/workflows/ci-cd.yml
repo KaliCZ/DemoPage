@@ -266,6 +266,16 @@ jobs:
           build-args: |
             COMMIT_SHA=${{ github.sha }}
 
+      - name: Sync Quadlet unit files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          source: "infra/quadlet/*.container"
+          target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          strip_components: 2
+
       - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@v1
         env:
@@ -283,9 +293,22 @@ jobs:
             set -euo pipefail
             MAX_ATTEMPTS=40
 
-            # ----- 1. Refresh secrets file used by both Quadlet units -----
-            # Rewritten on every deploy so rotated secrets are picked up the
-            # next time the unit starts. Mode 600 — readable only by opc.
+            # ----- 0. Idempotent host bootstrap -----
+            # Everything in this block is safe to run on every deploy. It
+            # handles the cold-start case (first deploy on a fresh VM, or
+            # first deploy after migrating from ad-hoc `podman run`) without
+            # any manual prep beyond the one-time steps in docs/SETUP.md.
+
+            # Linger keeps the user systemd instance alive across logouts.
+            # No-op if already enabled.
+            sudo loginctl enable-linger "$USER"
+
+            # Pick up any new/updated Quadlet files synced in the previous
+            # workflow step.
+            systemctl --user daemon-reload
+
+            # Refresh the secrets env file. Rewritten on every deploy so
+            # rotated secrets propagate the next time a slot starts.
             umask 077
             cat > "$HOME/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
@@ -295,10 +318,23 @@ jobs:
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             EOF
 
-            # ----- 2. Pull the new image -----
+            # Remove any leftover ad-hoc container that isn't currently
+            # owned by an active systemd unit. This handles the migration
+            # from the old `docker run` setup: a container named
+            # kalandra-api-blue exists in podman but no systemd service is
+            # managing it, so the upcoming `enable --now` would fail with
+            # a name/port conflict. Safe in steady state because if a slot
+            # IS active, we skip cleanup for it.
+            for slot in blue green; do
+              if ! systemctl --user is-active --quiet "kalandra-api-${slot}.service"; then
+                podman rm -f "kalandra-api-${slot}" 2>/dev/null || true
+              fi
+            done
+
+            # ----- 1. Pull the new image -----
             podman pull "$IMAGE"
 
-            # ----- 3. Determine which slot is currently active -----
+            # ----- 2. Determine which slot is currently active -----
             # The active slot is whichever systemd unit is currently running.
             # If neither is running (cold start) we default to blue.
             if systemctl --user is-active --quiet kalandra-api-blue.service; then
@@ -310,13 +346,13 @@ jobs:
             fi
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
-            # ----- 4. Start the new slot -----
+            # ----- 3. Start the new slot -----
             # `enable --now` makes it autostart on boot AND starts it now.
             # The Quadlet-generated service does `podman run --rm`, so each
             # start creates a fresh container from the (just-pulled) image.
             systemctl --user enable --now "kalandra-api-${NEW}.service"
 
-            # ----- 5. Health check the new slot directly (bypassing Caddy) -----
+            # ----- 4. Health check the new slot directly (bypassing Caddy) -----
             echo "Waiting for new slot on port $NEW_PORT..."
             ATTEMPTS=0
             until curl -sf "http://localhost:${NEW_PORT}/health" > /dev/null 2>&1; do
@@ -335,7 +371,7 @@ jobs:
             done
             echo "New slot is healthy on port $NEW_PORT."
 
-            # ----- 6. Swap Caddy upstream to the new port -----
+            # ----- 5. Swap Caddy upstream to the new port -----
             # Caddy runs rootful (sudo docker) because it binds 80/443 and
             # mounts the Cloudflare Origin Certificate. The Caddyfile is
             # owned by opc but read by the rootful container, so we relabel
@@ -349,7 +385,7 @@ jobs:
             chcon -t container_file_t "$HOME/Caddyfile"
             sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # ----- 7. Stop and disable the old slot -----
+            # ----- 6. Stop and disable the old slot -----
             # Disable so it does not autostart on the next boot — only the
             # currently-active slot should come up. This prevents the old
             # container from running background jobs alongside the new one.
