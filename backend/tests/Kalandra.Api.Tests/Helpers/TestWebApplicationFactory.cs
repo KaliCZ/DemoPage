@@ -1,5 +1,7 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -17,6 +19,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
+    public FakeSupabaseAdminService FakeAdminService { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
@@ -28,6 +32,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         {
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();
+
+            services.RemoveAll<ITurnstileValidator>();
+            services.AddSingleton<ITurnstileValidator, AlwaysPassTurnstileValidator>();
+
+            services.RemoveAll<ISupabaseAdminService>();
+            services.AddSingleton<ISupabaseAdminService>(FakeAdminService);
 
             services.RemoveAll<SupabaseUserService>();
             services.AddSingleton<SupabaseUserService>(sp =>

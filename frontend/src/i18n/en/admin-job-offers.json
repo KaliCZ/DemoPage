@@ -1,21 +1,20 @@
 {
   "meta": {
-    "title": "My Submissions — kalandra.tech",
-    "description": "View your submitted job offers."
+    "title": "Admin — All Submissions — kalandra.tech",
+    "description": "Review and manage all submitted job offers."
   },
   "hero": {
-    "title": "My Submissions",
-    "subtitle": "Track the status of your submitted job offers."
+    "title": "All Submissions",
+    "subtitle": "Review all submitted job offers."
   },
-  "loginPrompt": {
-    "title": "Authentication Required",
-    "description": "Please sign in to view your submissions.",
-    "signInButton": "Sign In to Continue"
+  "accessDenied": {
+    "title": "Access Denied",
+    "description": "You need admin privileges to view this page.",
+    "backToHome": "Back to Home"
   },
   "empty": {
     "title": "No submissions yet",
-    "description": "You haven't submitted any job offers yet.",
-    "cta": "Submit a Job Offer"
+    "description": "No job offers have been submitted yet."
   },
   "list": {
     "filterAll": "All",
@@ -29,14 +28,10 @@
     "remote": "Remote",
     "viewDetail": "View Details",
     "back": "Back to list",
+    "submittedBy": "Submitted by",
     "adminNotes": "Admin Notes",
-    "edit": "Edit Submission",
-    "editSave": "Save Changes",
-    "editCancel": "Discard Changes",
-    "cancel": "Cancel Submission",
-    "cancelConfirm": "Are you sure you want to cancel this submission?",
-    "cancelReason": "Reason for cancellation (optional)",
-    "cancelButton": "Yes, Cancel",
+    "updateStatus": "Update Status",
+    "save": "Save",
     "history": "Activity Log",
     "historyEmpty": "No activity recorded yet.",
     "comments": "Comments",

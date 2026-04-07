@@ -100,14 +100,6 @@ public static class SupabaseJwtSetup
                 }
             }
         }
-        else if (doc.RootElement.TryGetProperty("role", out var roleProp))
-        {
-            var role = roleProp.GetString();
-            if (!string.IsNullOrEmpty(role))
-            {
-                identity.AddClaim(new Claim(ClaimTypes.Role, role));
-            }
-        }
     }
 
     private static void ExtractUserMetadataClaims(ClaimsPrincipal principal, ClaimsIdentity identity)

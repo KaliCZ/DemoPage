@@ -3,6 +3,7 @@ using JasperFx.Events;
 using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
@@ -31,7 +32,8 @@ public class JobOffersController(
     GetJobOfferHistoryHandler historyHandler,
     ListCommentsHandler listCommentsHandler,
     GetAttachmentInfoHandler attachmentHandler,
-    SupabaseUserService userService) : ControllerBase
+    SupabaseUserService userService,
+    ITurnstileValidator turnstileValidator) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.CurrentUser;
 
@@ -46,8 +48,17 @@ public class JobOffersController(
     public async Task<IActionResult> Create(
         [FromForm] CreateJobOfferRequest request,
         [FromForm] List<IFormFile>? attachments,
+        [FromForm(Name = "cf-turnstile-response")] string? turnstileToken,
         CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(turnstileToken))
+            return BadRequest(new { error = "CAPTCHA verification is required." });
+
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var turnstileValid = await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct);
+        if (!turnstileValid)
+            return BadRequest(new { error = "CAPTCHA verification failed. Please try again." });
+
         var files = (attachments ?? [])
             .Select(f => new CreateJobOfferFile(
                 FileName: f.FileName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -304,7 +315,7 @@ public class JobOffersController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(status, page, pageSize, ct));
+        return Ok(await ListOffersAsync(showAll: false, status, page, pageSize, ct));
     }
 
     [HttpGet]
@@ -318,7 +329,7 @@ public class JobOffersController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(status, page, pageSize, ct));
+        return Ok(await ListOffersAsync(showAll: true, status, page, pageSize, ct));
     }
 
     // ───── Get Detail ─────
@@ -437,6 +448,7 @@ public class JobOffersController(
     }
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
+        bool showAll,
         JobOfferStatus[]? status,
         int page,
         int pageSize,
@@ -444,7 +456,7 @@ public class JobOffersController(
     {
         var query = new ListJobOffersQuery(
             UserId: AppUser.Id,
-            IsAdmin: AppUser.IsAdmin,
+            IsAdmin: showAll,
             Statuses: status,
             Page: page,
             PageSize: pageSize);

@@ -76,7 +76,8 @@
           { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" },
           { "author": "pavel", "text": "Optimizing CI/CD pipeline" },
           { "author": "pavel", "text": "Improving run configs for DevX" },
-          { "author": "pavel", "text": "Restructuring code a few times" }
+          { "author": "pavel", "text": "Restructuring code a few times" },
+          { "author": "claude", "text": "Cloudflare Turnstile CAPTCHA on job offer submission" }
         ]
       },
       {
