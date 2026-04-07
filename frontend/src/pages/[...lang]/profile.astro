@@ -46,6 +46,33 @@ const t = translations[lang];
   <!-- Profile settings (shown when authenticated) -->
   <section id="profile-section" class="hidden max-w-3xl mx-auto px-8 mb-16 space-y-8">
 
+    <!-- Avatar -->
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
+      <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.avatar.title}</h2>
+      <div class="flex items-center gap-6">
+        <div class="relative">
+          <img id="avatar-preview-img" class="w-16 h-16 rounded-full object-cover hidden" src="" alt="" />
+          <div id="avatar-preview-initial" class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
+            <span class="text-xl font-bold text-on-primary-container"></span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex gap-3">
+            <button type="button" id="avatar-change-btn"
+              class="px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+              {t.avatar.change}
+            </button>
+            <button type="button" id="avatar-remove-btn"
+              class="hidden px-5 py-2.5 rounded-xl text-sm font-semibold font-label text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors cursor-pointer">
+              {t.avatar.remove}
+            </button>
+          </div>
+          <p class="text-xs font-body text-on-surface-variant">{t.avatar.maxSize}</p>
+        </div>
+      </div>
+      <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" class="hidden" />
+    </div>
+
     <!-- Provider info -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.provider.title}</h2>
@@ -77,7 +104,7 @@ const t = translations[lang];
     <IconGoogle class="w-5 h-5 flex-shrink-0" />
   </template>
 
-  <script define:vars={{ strings: { displayName: t.displayName, email: t.email, password: t.password, provider: t.provider } }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', strings: { avatar: t.avatar, displayName: t.displayName, email: t.email, password: t.password, provider: t.provider } }}>
     var googleSvg = document.getElementById('google-icon-template').innerHTML.trim();
 
     function esc(str) {
@@ -102,10 +129,33 @@ const t = translations[lang];
       }
     });
 
+    function updateAvatarPreview(avatarUrl, name) {
+      var img = document.getElementById('avatar-preview-img');
+      var initial = document.getElementById('avatar-preview-initial');
+      var removeBtn = document.getElementById('avatar-remove-btn');
+      if (avatarUrl) {
+        if (img) { img.src = avatarUrl; img.alt = name; img.classList.remove('hidden'); }
+        if (initial) initial.classList.add('hidden');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+      } else {
+        if (img) img.classList.add('hidden');
+        if (initial) {
+          initial.classList.remove('hidden');
+          var span = initial.querySelector('span');
+          if (span) span.textContent = (name.charAt(0) || '?').toUpperCase();
+        }
+        if (removeBtn) removeBtn.classList.add('hidden');
+      }
+    }
+
     function populateProfile(user) {
       var nameInput = document.getElementById('display-name');
       var emailInput = document.getElementById('profile-email');
       var providerList = document.getElementById('provider-list');
+
+      var avatarUrl = user.user_metadata?.avatar_url || '';
+      var displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+      updateAvatarPreview(avatarUrl, displayName);
 
       if (nameInput) nameInput.value = user.user_metadata?.full_name || '';
       if (emailInput) emailInput.value = user.email || '';
@@ -375,6 +425,111 @@ const t = translations[lang];
         if (btn) { btn.textContent = strings.password.save; btn.disabled = false; }
       }
     }
+
+    // --- Avatar upload ---
+    document.getElementById('avatar-change-btn')?.addEventListener('click', function() {
+      document.getElementById('avatar-file-input')?.click();
+    });
+
+    document.getElementById('avatar-file-input')?.addEventListener('change', async function(e) {
+      var file = e.target.files?.[0];
+      if (!file) return;
+
+      var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        window.__showSnackbar?.(strings.avatar.invalidType, 'error');
+        e.target.value = '';
+        return;
+      }
+
+      if (file.size > 1 * 1024 * 1024) {
+        window.__showSnackbar?.(strings.avatar.tooLarge, 'error');
+        e.target.value = '';
+        return;
+      }
+
+      var btn = document.getElementById('avatar-change-btn');
+      var originalText = btn?.textContent;
+      if (btn) { btn.textContent = strings.avatar.uploading; btn.disabled = true; }
+
+      try {
+        var token = await window.__getAccessToken?.();
+        if (!token) throw new Error('Not authenticated');
+
+        var backendUrl = apiUrl;
+        var formData = new FormData();
+        formData.append('file', file);
+
+        var res = await fetch(apiUrl + '/api/profile/avatar', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: formData
+        });
+
+        if (!res.ok) {
+          var err = await res.json().catch(function() { return {}; });
+          throw new Error(err.error || strings.avatar.error);
+        }
+
+        var data = await res.json();
+
+        // Refresh user data and update UI
+        var supabase = window.__supabase;
+        if (supabase) {
+          var { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            updateAvatarPreview(data.avatarUrl, userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
+            window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
+          }
+        }
+
+        window.__showSnackbar?.(strings.avatar.success, 'success');
+      } catch (err) {
+        window.__showSnackbar?.(err.message || strings.avatar.error, 'error');
+      } finally {
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
+        e.target.value = '';
+      }
+    });
+
+    // --- Avatar remove ---
+    document.getElementById('avatar-remove-btn')?.addEventListener('click', async function() {
+      var btn = this;
+      var originalText = btn.textContent;
+      btn.disabled = true;
+
+      try {
+        var token = await window.__getAccessToken?.();
+        if (!token) throw new Error('Not authenticated');
+
+        var res = await fetch(apiUrl + '/api/profile/avatar', {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) {
+          var err = await res.json().catch(function() { return {}; });
+          throw new Error(err.error || strings.avatar.error);
+        }
+
+        // Refresh user data and update UI
+        var supabase = window.__supabase;
+        if (supabase) {
+          var { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            updateAvatarPreview('', userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
+            window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
+          }
+        }
+
+        window.__showSnackbar?.(strings.avatar.removeSuccess, 'success');
+      } catch (err) {
+        window.__showSnackbar?.(err.message || strings.avatar.error, 'error');
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    });
   </script>
 
 </Layout>

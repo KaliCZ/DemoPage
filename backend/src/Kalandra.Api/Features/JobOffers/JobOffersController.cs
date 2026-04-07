@@ -3,6 +3,7 @@ using JasperFx.Events;
 using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;
@@ -29,7 +30,8 @@ public class JobOffersController(
     ListJobOffersHandler listHandler,
     GetJobOfferHistoryHandler historyHandler,
     ListCommentsHandler listCommentsHandler,
-    GetAttachmentInfoHandler attachmentHandler) : ControllerBase
+    GetAttachmentInfoHandler attachmentHandler,
+    SupabaseUserService userService) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.CurrentUser;
 
@@ -286,7 +288,8 @@ public class JobOffersController(
             UserEmail: commentEvent.UserEmail,
             UserName: commentEvent.UserName,
             Content: commentEvent.Content,
-            CreatedAt: commentEvent.Timestamp));
+            CreatedAt: commentEvent.Timestamp,
+            AvatarUrl: AppUser.AvatarUrl));
     }
 
     // ───── List ─────
@@ -392,13 +395,17 @@ public class JobOffersController(
         if (comments == null)
             return NotFound();
 
+        var userIds = comments.Select(c => c.UserId).Distinct();
+        var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
+
         return Ok(new ListCommentsResponse(comments.Select(c => new CommentResponse(
             Id: c.CommentId,
             UserId: c.UserId,
             UserEmail: c.UserEmail,
             UserName: c.UserName,
             Content: c.Content,
-            CreatedAt: c.Timestamp)).ToList()));
+            CreatedAt: c.Timestamp,
+            AvatarUrl: avatars.GetValueOrDefault(c.UserId))).ToList()));
     }
 
     // ───── Private helpers ─────

@@ -551,10 +551,13 @@ const c = commonTranslations[lang];
       data.comments.forEach(function(c) {
         var el = document.createElement('div');
         el.className = 'flex gap-3';
+        var avatarHtml = c.avatarUrl
+          ? '<img src="' + esc(c.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+          : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
+              '<span class="text-xs font-bold text-on-primary-container">' + esc(c.userName.charAt(0).toUpperCase()) + '</span>' +
+            '</div>';
         el.innerHTML =
-          '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
-            '<span class="text-xs font-bold text-on-primary-container">' + esc(c.userName.charAt(0).toUpperCase()) + '</span>' +
-          '</div>' +
+          avatarHtml +
           '<div class="flex-1 min-w-0">' +
             '<div class="flex items-baseline gap-2">' +
               '<span class="text-sm font-label font-semibold text-on-surface">' + esc(c.userName) + '</span>' +
@@ -718,7 +721,7 @@ const c = commonTranslations[lang];
     });
 
     // Admin status save
-    document.getElementById('save-status')?.addEventListener('click', async function() {
+    async function saveStatus() {
       if (!currentOfferId) return;
       var status = document.getElementById('status-select')?.value;
       var notes = document.getElementById('admin-notes-input')?.value;
@@ -733,6 +736,13 @@ const c = commonTranslations[lang];
       }
       if (!res.ok) { await showApiError(res); return; }
       await showDetail(currentOfferId);
+    }
+    document.getElementById('save-status')?.addEventListener('click', saveStatus);
+    document.getElementById('status-select')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); saveStatus(); }
+    });
+    document.getElementById('admin-notes-input')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveStatus(); }
     });
 
     // Send comment

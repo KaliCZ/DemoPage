@@ -1,5 +1,6 @@
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -20,12 +21,21 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
+        builder.UseSetting("Auth:ServiceKey", "test-service-key");
         builder.UseSetting("Storage:BucketName", "test-bucket");
         builder.UseSetting("Storage:ServiceKey", "test-service-key");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();
+
+            services.RemoveAll<SupabaseUserService>();
+            services.AddSingleton<SupabaseUserService>(sp =>
+                new SupabaseUserService(
+                    new HttpClient(new NoOpAvatarHandler()),
+                    sp.GetRequiredService<SupabaseAuthConfig>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SupabaseUserService>>()));
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,

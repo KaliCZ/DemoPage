@@ -34,6 +34,7 @@ SupabaseStorageConfig.AddSingleton(builder.Services, builder.Configuration);
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddSupabaseAuth(authConfig);
 builder.Services.AddAppCors(builder.Configuration, builder.Environment);
+builder.Services.AddMemoryCache();
 builder.Services.AddStorageServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();

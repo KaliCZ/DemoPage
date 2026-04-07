@@ -6,6 +6,7 @@ public record CommentResponse(
     string UserEmail,
     string UserName,
     string Content,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? AvatarUrl = null);
 
 public record ListCommentsResponse(List<CommentResponse> Comments);

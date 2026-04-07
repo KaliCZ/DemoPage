@@ -67,7 +67,7 @@ public static class SupabaseJwtSetup
                             return Task.CompletedTask;
 
                         ExtractRolesFromAppMetadata(context.Principal!, identity);
-                        ExtractDisplayNameFromUserMetadata(context.Principal!, identity);
+                        ExtractUserMetadataClaims(context.Principal!, identity);
 
                         return Task.CompletedTask;
                     }
@@ -110,7 +110,7 @@ public static class SupabaseJwtSetup
         }
     }
 
-    private static void ExtractDisplayNameFromUserMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
+    private static void ExtractUserMetadataClaims(ClaimsPrincipal principal, ClaimsIdentity identity)
     {
         var userMetadata = principal.FindFirstValue("user_metadata");
         if (userMetadata == null)
@@ -124,6 +124,15 @@ public static class SupabaseJwtSetup
             if (!string.IsNullOrEmpty(name))
             {
                 identity.AddClaim(new Claim("display_name", name));
+            }
+        }
+
+        if (doc.RootElement.TryGetProperty("avatar_url", out var avatarUrl))
+        {
+            var url = avatarUrl.GetString();
+            if (!string.IsNullOrEmpty(url))
+            {
+                identity.AddClaim(new Claim("avatar_url", url));
             }
         }
     }

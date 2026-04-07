@@ -19,7 +19,8 @@ public class HttpContextCurrentUserAccessor(
             Id: principal.GetUserId() ?? throw new InvalidOperationException("Authenticated user ID is not available."),
             Email: email,
             DisplayName: principal.FindFirstValue("display_name") ?? email.Split('@')[0],
-            Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
+            Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray(),
+            AvatarUrl: principal.FindFirstValue("avatar_url")
         );
     }
 }
