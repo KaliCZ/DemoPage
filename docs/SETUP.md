@@ -313,17 +313,28 @@ nano ~/certs/origin-key.pem   # paste the private key
 chmod 600 ~/certs/origin-key.pem
 ```
 
-#### 3.3.3 Caddy container
+#### 3.3.3 Seed the Caddyfile
 
-**Nothing to do here manually.** The deploy job:
+The Caddy Quadlet bind-mounts `~/Caddyfile` into the container, so the
+file must exist before `caddy.service` starts the first time. The deploy
+will rewrite it on every slot swap, but the initial content has to be
+created manually:
 
-- Sets `net.ipv4.ip_unprivileged_port_start=80` (via `/etc/sysctl.d/`) so the rootless container can bind ports 80/443
-- Removes any leftover rootful caddy container from the legacy setup
-- Seeds an initial `~/Caddyfile` if none exists
-- Starts `caddy.service` via `systemctl --user enable --now`
-- Rewrites `~/Caddyfile` and triggers a graceful `podman exec caddy caddy reload` on every slot swap
+```bash
+cat > ~/Caddyfile << 'EOF'
+api.kalandra.tech {
+    reverse_proxy localhost:8080
+    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+}
+EOF
+```
 
-The container's `/data` and `/config` directories are persisted across restarts via two podman-managed volumes (`caddy-data` and `caddy-config`).
+The deploy job sets `net.ipv4.ip_unprivileged_port_start=80` (via
+`/etc/sysctl.d/`) so the rootless container can bind 80/443, runs
+`systemctl --user enable --now caddy.service`, and reloads the config
+on every slot swap with `podman exec caddy caddy reload`. Caddy's
+`/data` and `/config` directories are persisted via two podman-managed
+volumes (`caddy-data` and `caddy-config`).
 
 #### 3.3.4 Configure Cloudflare SSL Mode
 
