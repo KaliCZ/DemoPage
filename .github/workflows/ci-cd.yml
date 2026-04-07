@@ -457,7 +457,6 @@ jobs:
     needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
     if: |
       always() &&
-      (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped') &&
       (
         github.event_name == 'workflow_dispatch' ||
         (
@@ -465,7 +464,8 @@ jobs:
           needs.changes.outputs.frontend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
-          needs.frontend-test.result == 'success'
+          needs.frontend-test.result == 'success' &&
+          (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped')
         )
       )
     runs-on: ubuntu-latest
