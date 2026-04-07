@@ -277,27 +277,6 @@ is provisioned will fully bootstrap the setup.
 > `--user` service would die on logout. The setting is idempotent and
 > safe to re-apply on every deploy.
 
-##### Useful commands (for ops)
-
-```bash
-# Which slot is currently active?
-systemctl --user is-active kalandra-api-blue.service kalandra-api-green.service
-
-# Watch logs in real time
-journalctl --user -u kalandra-api-blue.service -f
-journalctl --user -u caddy.service -f
-
-# Reload Caddy after editing ~/Caddyfile by hand (no container restart)
-podman exec caddy caddy reload --config /etc/caddy/Caddyfile
-```
-
-Slot swaps and image rollouts are owned by the CI/CD deploy job — see
-[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml). Doing
-them by hand requires also rewriting `~/Caddyfile` and reloading Caddy
-in the same step, otherwise the proxy will keep pointing at the old
-port. If you need to roll back to a previous image, push a revert
-commit and let the pipeline handle the swap.
-
 ### 3.3 Reverse Proxy (Caddy)
 
 Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `opc` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
