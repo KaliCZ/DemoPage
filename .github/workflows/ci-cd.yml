@@ -327,13 +327,29 @@ jobs:
             done
             echo "New container is healthy on port $NEW_PORT."
 
-            # Switch Caddy upstream to the new port (zero-downtime swap)
+            # Write the Caddyfile pointing at the new slot
             cat > ~/Caddyfile << EOF
             api.kalandra.tech {
                 reverse_proxy localhost:$NEW_PORT
             }
             EOF
-            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+            # Ensure Caddy is running. Start it if missing, otherwise reload.
+            if ! docker ps --format '{{.Names}}' | grep -q '^caddy$'; then
+              echo "Caddy container not running — starting it."
+              docker rm caddy 2>/dev/null || true
+              mkdir -p ~/caddy_data ~/caddy_config
+              docker run -d \
+                --name caddy \
+                --restart unless-stopped \
+                --network host \
+                -v ~/Caddyfile:/etc/caddy/Caddyfile \
+                -v ~/caddy_data:/data \
+                -v ~/caddy_config:/config \
+                caddy:2-alpine
+            else
+              docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            fi
 
             # Stop the old container
             docker stop $OLD_NAME 2>/dev/null || true
