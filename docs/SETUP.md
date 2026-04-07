@@ -269,6 +269,14 @@ runs `systemctl --user daemon-reload`, removes any leftover ad-hoc
 containers, and starts the chosen slot. The first deploy after this VM
 is provisioned will fully bootstrap the setup.
 
+> **About linger:** the deploy job runs `sudo loginctl enable-linger opc`
+> as part of its bootstrap. Linger keeps the `opc` user's systemd instance
+> running across SSH logouts and across reboots, which is what makes the
+> enabled slot come back automatically when the VM restarts. Without it,
+> the user manager would only exist while someone is logged in, and any
+> `--user` service would die on logout. The setting is idempotent and
+> safe to re-apply on every deploy.
+
 ##### Useful commands (for ops)
 
 ```bash
