@@ -27,6 +27,7 @@ env:
 
 jobs:
   changes:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -46,6 +47,7 @@ jobs:
               - '.github/workflows/**'
 
   e2e:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     # Local Supabase always generates the same deterministic keys from its JWT secret.
     # Hardcoding them avoids waiting for 'supabase status' before building.
@@ -181,6 +183,7 @@ jobs:
           retention-days: 7
 
   backend-test:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -207,6 +210,7 @@ jobs:
         run: dotnet test --no-build -c Release
 
   frontend-test:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -252,8 +256,20 @@ jobs:
   backend-deploy:
     needs: [changes, e2e, backend-test, frontend-test]
     if: |
-      (github.event_name == 'push' && needs.changes.outputs.backend == 'true') ||
-      (github.event_name == 'workflow_dispatch' && inputs.skip_backend_deploy != true)
+      always() &&
+      (
+        (
+          github.event_name == 'push' &&
+          needs.changes.outputs.backend == 'true' &&
+          needs.e2e.result == 'success' &&
+          needs.backend-test.result == 'success' &&
+          needs.frontend-test.result == 'success'
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.skip_backend_deploy != true
+        )
+      )
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -441,13 +457,16 @@ jobs:
     needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
     if: |
       always() &&
-      needs.e2e.result == 'success' &&
-      needs.backend-test.result == 'success' &&
-      needs.frontend-test.result == 'success' &&
       (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped') &&
       (
         github.event_name == 'workflow_dispatch' ||
-        (github.event_name == 'push' && needs.changes.outputs.frontend == 'true')
+        (
+          github.event_name == 'push' &&
+          needs.changes.outputs.frontend == 'true' &&
+          needs.e2e.result == 'success' &&
+          needs.backend-test.result == 'success' &&
+          needs.frontend-test.result == 'success'
+        )
       )
     runs-on: ubuntu-latest
     environment: production
