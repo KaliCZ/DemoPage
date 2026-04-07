@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_backend_deploy:
+        description: 'Skip the backend deploy (use to ship frontend when backend is broken)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,7 +26,28 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  changes:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4.0.1
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+              - 'infra/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+
   e2e:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     # Local Supabase always generates the same deterministic keys from its JWT secret.
     # Hardcoding them avoids waiting for 'supabase status' before building.
@@ -156,6 +183,7 @@ jobs:
           retention-days: 7
 
   backend-test:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -182,6 +210,7 @@ jobs:
         run: dotnet test --no-build -c Release
 
   frontend-test:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -225,8 +254,22 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [e2e, backend-test, frontend-test]
-    if: github.event_name == 'push'
+    needs: [changes, e2e, backend-test, frontend-test]
+    if: |
+      always() &&
+      (
+        (
+          github.event_name == 'push' &&
+          needs.changes.outputs.backend == 'true' &&
+          needs.e2e.result == 'success' &&
+          needs.backend-test.result == 'success' &&
+          needs.frontend-test.result == 'success'
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.skip_backend_deploy != true
+        )
+      )
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -265,6 +308,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Sync Quadlet unit files to VM
         uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634  # v0.1.7
@@ -409,7 +454,20 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: backend-deploy
+    needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
+    if: |
+      always() &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'push' &&
+          needs.changes.outputs.frontend == 'true' &&
+          needs.e2e.result == 'success' &&
+          needs.backend-test.result == 'success' &&
+          needs.frontend-test.result == 'success' &&
+          (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped')
+        )
+      )
     runs-on: ubuntu-latest
     environment: production
     permissions:
