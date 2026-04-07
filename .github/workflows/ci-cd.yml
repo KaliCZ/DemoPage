@@ -39,11 +39,11 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
-              - '.github/workflows/ci-cd.yml'
+              - '.github/workflows/**'
               - 'infra/**'
             frontend:
               - 'frontend/**'
-              - '.github/workflows/ci-cd.yml'
+              - '.github/workflows/**'
 
   e2e:
     runs-on: ubuntu-latest
