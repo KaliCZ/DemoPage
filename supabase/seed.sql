@@ -39,7 +39,7 @@ BEGIN
     v_email,
     v_password,
     NOW(),
-    '{"provider":"email","providers":["email"],"role":"admin"}',
+    '{"provider":"email","providers":["email"],"roles":["admin"]}',
     '{"full_name":"Dev User"}',
     '',
     '',

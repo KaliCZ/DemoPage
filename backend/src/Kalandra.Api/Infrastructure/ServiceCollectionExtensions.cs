@@ -1,6 +1,8 @@
 using JasperFx;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Turnstile;
 using Kalandra.JobOffers;
 using Marten;
 
@@ -41,21 +43,26 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddAppCors(
         this IServiceCollection services,
-        IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
         services.AddCors(options =>
         {
             options.AddPolicy("DefaultPolicy", policy =>
             {
-                var origins = environment.IsDevelopment()
-                    ? [.. allowedOrigins, "http://localhost:4321", "http://127.0.0.1:4321"]
-                    : allowedOrigins;
+                if (environment.IsDevelopment())
+                {
+                    policy.SetIsOriginAllowed(origin =>
+                    {
+                        var host = new Uri(origin).Host;
+                        return host is "localhost" or "127.0.0.1";
+                    });
+                }
+                else
+                {
+                    policy.WithOrigins("https://www.kalandra.tech");
+                }
 
                 policy
-                    .WithOrigins(origins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
@@ -68,6 +75,20 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddStorageServices(this IServiceCollection services)
     {
         services.AddHttpClient<IStorageService, SupabaseStorageService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddTurnstile(this IServiceCollection services)
+    {
+        services.AddHttpClient<ITurnstileValidator, TurnstileValidator>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddAuthAdminServices(this IServiceCollection services)
+    {
+        services.AddHttpClient<ISupabaseAdminService, SupabaseAdminService>();
 
         return services;
     }

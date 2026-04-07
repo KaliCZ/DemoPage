@@ -1,5 +1,7 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Turnstile;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -16,16 +18,25 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
+    public FakeSupabaseAdminService FakeAdminService { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
+        builder.UseSetting("Auth:ServiceKey", "test-service-key");
         builder.UseSetting("Storage:BucketName", "test-bucket");
         builder.UseSetting("Storage:ServiceKey", "test-service-key");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();
+
+            services.RemoveAll<ITurnstileValidator>();
+            services.AddSingleton<ITurnstileValidator, AlwaysPassTurnstileValidator>();
+
+            services.RemoveAll<ISupabaseAdminService>();
+            services.AddSingleton<ISupabaseAdminService>(FakeAdminService);
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,
