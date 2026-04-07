@@ -59,25 +59,6 @@ export default defineConfig({
         locales: { en: 'en', cs: 'cs' },
       },
       serialize(item) {
-        const path = new URL(item.url).pathname.replace(/\/$/, '') || '/';
-
-        // Homepage gets highest priority
-        if (path === '/' || path === '/cs') {
-          item.priority = 1.0;
-        }
-        // Main content pages
-        else if (['/about', '/project', '/hire-me'].some(p => path.endsWith(p))) {
-          item.priority = 0.8;
-        }
-        // Dynamic/list pages
-        else if (path.includes('/job-offers')) {
-          item.priority = 0.7;
-        }
-        // Legal pages
-        else {
-          item.priority = 0.3;
-        }
-
         item.lastmod = getPageLastmod(item.url);
         return item;
       },
