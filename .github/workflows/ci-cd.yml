@@ -380,8 +380,11 @@ jobs:
             EOF
             fi
 
-            # Ensure Caddy is running. No-op if already enabled+started.
-            systemctl --user enable --now caddy.service
+            # Ensure Caddy is running. No-op if already started.
+            # Quadlet-generated units cannot be `enable`d (systemd refuses
+            # generated units), so we use `start`. Boot autostart is handled
+            # by [Install] WantedBy=default.target inside the .container file.
+            systemctl --user start caddy.service
 
             # ----- 1. Pull the new image -----
             podman pull "$IMAGE"
@@ -399,10 +402,11 @@ jobs:
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
             # ----- 3. Start the new slot -----
-            # `enable --now` makes it autostart on boot AND starts it now.
             # The Quadlet-generated service does `podman run --rm`, so each
             # start creates a fresh container from the (just-pulled) image.
-            systemctl --user enable --now "kalandra-api-${NEW}.service"
+            # Quadlet units cannot be `enable`d — boot autostart comes from
+            # [Install] WantedBy=default.target in the .container file.
+            systemctl --user start "kalandra-api-${NEW}.service"
 
             # ----- 4. Health check the new slot directly (bypassing Caddy) -----
             echo "Waiting for new slot on port $NEW_PORT..."
@@ -415,7 +419,7 @@ jobs:
                 echo "systemd status:"
                 systemctl --user status "kalandra-api-${NEW}.service" --no-pager || true
                 echo "Rolling back..."
-                systemctl --user disable --now "kalandra-api-${NEW}.service" || true
+                systemctl --user stop "kalandra-api-${NEW}.service" || true
                 exit 1
               fi
               echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
@@ -435,12 +439,13 @@ jobs:
             EOF
             podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # ----- 6. Stop and disable the old slot -----
-            # Disable so it does not autostart on the next boot — only the
-            # currently-active slot should come up. This prevents the old
-            # container from running background jobs alongside the new one.
+            # ----- 6. Stop the old slot -----
+            # Quadlet units can't be `disable`d, so we just stop. Both slot
+            # .container files have WantedBy=default.target, which means a
+            # cold reboot will start whichever one Quadlet enumerates first;
+            # the next deploy re-establishes the intended slot.
             if [ -n "$OLD" ]; then
-              systemctl --user disable --now "kalandra-api-${OLD}.service" || true
+              systemctl --user stop "kalandra-api-${OLD}.service" || true
             fi
 
             echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."

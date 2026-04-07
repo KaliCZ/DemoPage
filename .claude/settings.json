@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git rev-parse --abbrev-ref HEAD 2>/dev/null | grep -qx main && git pull --ff-only origin main || true"
+          }
+        ]
+      }
+    ]
+  }
+}
