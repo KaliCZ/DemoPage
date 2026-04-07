@@ -280,17 +280,23 @@ is provisioned will fully bootstrap the setup.
 ##### Useful commands (for ops)
 
 ```bash
+# Which slot is currently active?
+systemctl --user is-active kalandra-api-blue.service kalandra-api-green.service
+
 # Watch logs in real time
 journalctl --user -u kalandra-api-blue.service -f
+journalctl --user -u caddy.service -f
 
-# Manually swap slots (the deploy pipeline does this automatically)
-systemctl --user enable --now  kalandra-api-green.service
-systemctl --user disable --now kalandra-api-blue.service
-
-# Force a fresh image pull and restart (also done automatically on deploy)
-podman pull ghcr.io/<owner>/<repo>/api:latest
-systemctl --user restart kalandra-api-blue.service
+# Reload Caddy after editing ~/Caddyfile by hand (no container restart)
+podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
+
+Slot swaps and image rollouts are owned by the CI/CD deploy job — see
+[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml). Doing
+them by hand requires also rewriting `~/Caddyfile` and reloading Caddy
+in the same step, otherwise the proxy will keep pointing at the old
+port. If you need to roll back to a previous image, push a revert
+commit and let the pipeline handle the swap.
 
 ### 3.3 Reverse Proxy (Caddy)
 
