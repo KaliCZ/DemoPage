@@ -1,12 +1,32 @@
 version: 2
 updates:
-  # Keep GitHub Actions pinned to commit SHAs but auto-bump them via PRs
-  # so we get security fixes without losing supply-chain protection.
+  # GitHub Actions — SHA-pinned third-party actions get auto-bumped here
+  # so we keep supply-chain protection without manual upkeep.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     groups:
       actions:
+        patterns:
+          - "*"
+
+  # Backend — NuGet packages across all csproj files in the solution.
+  - package-ecosystem: nuget
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      nuget:
+        patterns:
+          - "*"
+
+  # Frontend — npm packages from frontend/package.json.
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      npm:
         patterns:
           - "*"
