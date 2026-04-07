@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned to commit SHAs but auto-bump them via PRs
+  # so we get security fixes without losing supply-chain protection.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
