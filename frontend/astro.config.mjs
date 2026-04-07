@@ -53,7 +53,8 @@ export default defineConfig({
   site,
   integrations: [
     sitemap({
-      filter: (page) => !page.includes('/profile'),
+      xslURL: '/sitemap.xsl',
+      filter: (page) => !page.includes('/profile') && !page.includes('/admin'),
       i18n: {
         defaultLocale: 'en',
         locales: { en: 'en', cs: 'cs' },
