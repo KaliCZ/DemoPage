@@ -482,6 +482,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # Full history required for git-based sitemap lastmod in astro.config.mjs
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
