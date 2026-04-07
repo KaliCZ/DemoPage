@@ -23,8 +23,13 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
-  - [3.3 Container Setup (Quadlet + systemd)](#33-container-setup-quadlet--systemd)
-  - [3.4 DNS](#34-dns)
+  - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
+    - [3.3.1 Create Cloudflare Origin Certificate](#331-create-cloudflare-origin-certificate)
+    - [3.3.2 Upload Certificate to VM](#332-upload-certificate-to-vm)
+    - [3.3.3 Configure and Run Caddy](#333-configure-and-run-caddy)
+    - [3.3.4 Configure Cloudflare SSL Mode](#334-configure-cloudflare-ssl-mode)
+  - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
+  - [3.5 DNS](#35-dns)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -95,6 +100,20 @@ To point at a different Supabase instance, create `frontend/.env.local` (gitigno
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_API_URL=http://localhost:5000
+PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
+```
+
+#### Cloudflare Turnstile (CAPTCHA)
+
+The committed `.env` uses Cloudflare's [always-pass test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) so the form works locally without a real Turnstile widget. The backend `appsettings.json` uses the matching always-pass test secret (`1x0000000000000000000000000000000AA`).
+
+To test with a real widget locally, override in `.env.local` (frontend) and `appsettings.Development.json` or user-secrets (backend):
+```
+# frontend/.env.local
+PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
+
+# backend — via environment variable or appsettings override
+Turnstile__SecretKey=your-real-secret-key
 ```
 
 ### 1.7 Stopping Services
@@ -199,129 +218,88 @@ WHERE email = 'your@email.com';
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Oracle Linux 9 aarch64 (ships with rootless `podman`)
+   - Image: Oracle Linux 8 aarch64 (ARM image for A1 shape)
    - Add your SSH public key
 3. Note the **public IP address**
 
-> The instructions below assume Oracle Linux 9 + rootless podman running under
-> the default `opc` user. If you use Ubuntu, install `podman` from apt and
-> adjust the username accordingly.
-
 #### Install podman and enable linger
 
+Oracle Linux ships with rootless `podman`. The `podman-docker` shim makes
+the `docker` CLI an alias for `podman` so existing scripts work unchanged.
+
 ```bash
-ssh opc@<your-vm-ip>
+# Oracle Linux 8
+sudo dnf install -y podman podman-docker
 
-sudo dnf install -y podman
-podman --version    # should be 4.4+ for Quadlet support
-
-# Enable linger so the user systemd instance keeps running after logout.
-# Without this, every container dies the moment the SSH session ends.
+# Enable linger so the opc user's systemd instance keeps running after
+# logout. Without this, rootless containers die the moment the SSH session
+# ends — which means a deploy that disconnects can leave the API down.
 sudo loginctl enable-linger opc
 ```
 
 #### Configure firewall
 
 ```bash
-# Open ports 80 (HTTP), 443 (HTTPS) for Caddy
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --reload
+# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
+sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+sudo netfilter-persistent save
 ```
 
 Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
-- Add ingress rules for ports 80 and 443
+- Add ingress rules for ports 80, 443, 8080
 
-### 3.3 Container Setup (Quadlet + systemd)
+#### Install the API Quadlet units
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
-`kalandra-api-green` (port 8081). At any time at most one slot is enabled
-and running; the deploy pipeline swaps slots on each release. Caddy fronts
-whichever port is currently active.
+`kalandra-api-green` (port 8081) — managed as systemd user services via
+Quadlet. At most one slot is enabled and running at a time; the CI/CD
+deploy script swaps slots on each release. Caddy (set up in §3.3) proxies
+to whichever port the active slot is on.
 
-All three containers (blue, green, caddy) are managed by systemd via Quadlet
-unit files. The unit files live in [`infra/quadlet/`](../infra/quadlet) in
-the repo and are installed manually on the VM (one-time setup).
-
-#### Authenticate to GHCR
-
-The blue/green images are pulled from GitHub Container Registry. Create a
-GitHub Personal Access Token with `read:packages` scope and log in:
+The Quadlet unit files live in [`infra/quadlet/`](../infra/quadlet) and
+are installed manually on the VM (one-time setup).
 
 ```bash
+# Authenticate to GHCR so podman can pull the API image. Create a GitHub
+# Personal Access Token with read:packages scope first.
 echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
-```
 
-#### Install the Quadlet unit files
-
-Copy the four Quadlet files from the repo to the user's systemd directory:
-
-```bash
+# Copy the Quadlet files from a checkout of the repo
 mkdir -p ~/.config/containers/systemd
-
-# Copy from a local checkout (or scp/curl the raw files from GitHub)
 cp infra/quadlet/kalandra-api-blue.container  ~/.config/containers/systemd/
 cp infra/quadlet/kalandra-api-green.container ~/.config/containers/systemd/
-cp infra/quadlet/caddy.container              ~/.config/containers/systemd/
-cp infra/quadlet/caddy_data.volume            ~/.config/containers/systemd/
-cp infra/quadlet/caddy_config.volume          ~/.config/containers/systemd/
-```
 
-#### Create the secrets env file
-
-The API units load environment variables (DB connection, Supabase URL, etc.)
-from `~/kalandra-api.env`. The CI/CD deploy script rewrites this file on
-every run, but it must exist before the unit can start the first time:
-
-```bash
+# Seed the secrets env file. The CI/CD deploy script rewrites this on
+# every run, but it has to exist before the unit can start the first time.
 umask 077
 cat > ~/kalandra-api.env << 'EOF'
 ConnectionStrings__DefaultConnection=Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432
 Auth__SupabaseProjectUrl=https://<project-ref>.supabase.co
 Storage__SupabaseProjectUrl=https://<project-ref>.supabase.co
 Storage__ServiceKey=<service-role-key>
+Turnstile__SecretKey=<turnstile-secret-key>
 EOF
-```
 
-#### Create the initial Caddyfile
-
-Caddy reads `~/Caddyfile`, which the deploy script rewrites on each slot
-swap. Seed it with the blue port (8080) for first boot:
-
-```bash
-cat > ~/Caddyfile << 'EOF'
-api.kalandra.tech {
-    reverse_proxy localhost:8080
-}
-EOF
-```
-
-#### Enable and start the services
-
-```bash
+# Tell systemd about the new units and enable+start ONE slot. We pick
+# blue arbitrarily — the deploy pipeline will swap to green on the next
+# release. Do NOT enable both: only one slot should run at a time so
+# background jobs are not double-processed.
 systemctl --user daemon-reload
-
-# Start Caddy (TLS/proxy)
-systemctl --user enable --now caddy.service
-
-# Start ONE API slot. We pick blue arbitrarily — the deploy pipeline
-# will swap to green on the next release. Do not enable both: only one
-# slot should run at a time so background jobs are not double-processed.
 systemctl --user enable --now kalandra-api-blue.service
 
 # Verify
-systemctl --user status kalandra-api-blue.service caddy.service
+systemctl --user status kalandra-api-blue.service
 curl http://localhost:8080/health
-curl https://api.kalandra.tech/health
 ```
 
-#### Useful commands
+##### Useful commands
 
 ```bash
 # Watch logs in real time
 journalctl --user -u kalandra-api-blue.service -f
-journalctl --user -u caddy.service -f
 
 # Manually swap slots (the deploy pipeline does this automatically)
 systemctl --user enable --now  kalandra-api-green.service
@@ -332,9 +310,132 @@ podman pull ghcr.io/<owner>/<repo>/api:latest
 systemctl --user restart kalandra-api-blue.service
 ```
 
-### 3.4 DNS
+### 3.3 Reverse Proxy (Caddy)
 
-Add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP.
+Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Caddy runs **rootful** (under `sudo docker`/`sudo podman`) because it needs to bind ports 80/443 and read the certificate files.
+
+#### 3.3.1 Create Cloudflare Origin Certificate
+
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**
+2. Hostnames: `api.kalandra.tech`
+3. Validity: 15 years (default)
+4. Format: PEM
+5. Copy both the **certificate** and **private key**
+
+#### 3.3.2 Upload Certificate to VM
+
+```bash
+mkdir -p ~/certs
+nano ~/certs/origin.pem       # paste the certificate, Ctrl+O to save, Ctrl+X to exit
+nano ~/certs/origin-key.pem   # paste the private key
+chmod 600 ~/certs/origin-key.pem
+```
+
+#### 3.3.3 Configure and Run Caddy
+
+```bash
+cat > ~/Caddyfile << 'EOF'
+api.kalandra.tech {
+    reverse_proxy localhost:8080
+    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+}
+EOF
+
+# Run Caddy (sudo required for binding ports 80/443 via podman)
+sudo docker run -d \
+  --name caddy \
+  --restart unless-stopped \
+  --network host \
+  -v ~/Caddyfile:/etc/caddy/Caddyfile:Z \
+  -v ~/certs:/etc/caddy/certs:Z,ro \
+  -v caddy_data:/data \
+  -v caddy_config:/config \
+  caddy:2-alpine
+```
+
+> **Note:** The `:Z` flag sets SELinux context so the container can read the mounted files. The `ro` flag mounts certs as read-only.
+
+#### 3.3.4 Configure Cloudflare SSL Mode
+
+In Cloudflare dashboard → **SSL/TLS → Overview**, set the mode to **Full (strict)**. This ensures Cloudflare validates the origin certificate when connecting to your VM.
+
+### 3.4 Enable IPv6 on the VCN
+
+Oracle Cloud VCNs are IPv4-only by default. IPv6 is required for the backend to reach Supabase PostgreSQL (which resolves to an IPv6 address). All steps are in the OCI Console.
+
+#### 3.4.1 Add IPv6 to VCN
+
+1. **Networking → Virtual Cloud Networks** → click your VCN
+2. Click **Add IPv6 CIDR Block/Prefix**
+3. Choose **Oracle-allocated IPv6 /56 prefix**
+4. Click **Add**
+
+#### 3.4.2 Add IPv6 to Subnet
+
+1. Inside the VCN, go to **Subnets** → click your subnet
+2. Click **Add IPv6 CIDR Block/Prefix**
+3. Choose a `/64` from the VCN's `/56` allocation
+4. Click **Add**
+
+#### 3.4.3 Add IPv6 Route
+
+1. Inside the VCN, go to **Route Tables** → click the subnet's route table
+2. **Add Route Rule**:
+   - Destination: `::/0`
+   - Target Type: Internet Gateway
+   - Target: your existing Internet Gateway
+3. Click **Add**
+
+#### 3.4.4 Add IPv6 Security Rules
+
+In **Security Lists** (or your Network Security Group), add:
+
+**Egress** (required — outbound to Supabase):
+- Stateful: Yes
+- Destination: `::/0`
+- Protocol: TCP
+- Destination Port Range: All (or 5432, 443 for minimal access)
+
+**Ingress** (optional — if you want the API reachable over IPv6):
+- Source: `::/0`
+- Protocol: TCP
+- Destination Port Range: 80, 443, 8080
+
+#### 3.4.5 Assign IPv6 Address to the VM
+
+1. **Compute → Instances** → click your instance
+2. Under **Resources → Attached VNICs** → click the VNIC
+3. Under **Resources → IPv6 Addresses** → click **Assign IPv6 Address**
+4. Choose **Automatically assign from subnet prefix**
+5. Click **Assign**
+
+#### 3.4.6 Verify IPv6 on the VM
+
+SSH into the VM (`ssh opc@<public-ip>`) and verify:
+
+```bash
+# Verify IPv6 is not disabled (should return 0)
+sysctl net.ipv6.conf.all.disable_ipv6
+
+# Confirm a GUA (2603:...) address is assigned
+ip -6 addr show
+
+# Test outbound IPv6 (TCP — ICMP ping may be blocked by OCI)
+curl -6 -v --connect-timeout 5 https://ipv6.google.com 2>&1 | head -5
+```
+
+Oracle Linux uses `firewalld`. If ICMPv6 is needed for debugging:
+
+```bash
+sudo firewall-cmd --add-protocol=ipv6-icmp --permanent
+sudo firewall-cmd --reload
+```
+
+> **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
+
+### 3.5 DNS
+
+In Cloudflare DNS, add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP. Keep it **Proxied** (orange cloud) — Cloudflare handles public TLS, Caddy uses the origin certificate for the Cloudflare-to-origin connection.
 
 ---
 
@@ -347,12 +448,14 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | Secret | Value |
 |--------|-------|
 | `OCI_HOST` | Your OCI VM public IP |
-| `OCI_USERNAME` | SSH username (e.g., `opc` for Oracle Linux) |
+| `OCI_USERNAME` | SSH username (`opc` for Oracle Linux) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key from Supabase dashboard (**Settings → API**) — used by the backend for storage uploads |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key (from [Turnstile dashboard](https://dash.cloudflare.com/?to=/:account/turnstile)) — used by backend to verify CAPTCHA tokens |
+| `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 
 ### 4.2 GitHub Actions Environment
 

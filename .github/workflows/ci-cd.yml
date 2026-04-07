@@ -112,6 +112,7 @@ jobs:
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
+          Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
@@ -271,12 +272,13 @@ jobs:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
           SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,IMAGE
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,IMAGE
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -290,6 +292,7 @@ jobs:
             Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
             Storage__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
             Storage__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
+            Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             EOF
 
             # ----- 2. Pull the new image -----
@@ -333,12 +336,18 @@ jobs:
             echo "New slot is healthy on port $NEW_PORT."
 
             # ----- 6. Swap Caddy upstream to the new port -----
+            # Caddy runs rootful (sudo docker) because it binds 80/443 and
+            # mounts the Cloudflare Origin Certificate. The Caddyfile is
+            # owned by opc but read by the rootful container, so we relabel
+            # it for SELinux on each rewrite.
             cat > "$HOME/Caddyfile" << EOF
             api.kalandra.tech {
                 reverse_proxy localhost:${NEW_PORT}
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
             }
             EOF
-            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
+            chcon -t container_file_t "$HOME/Caddyfile"
+            sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
             # ----- 7. Stop and disable the old slot -----
             # Disable so it does not autostart on the next boot — only the
@@ -388,6 +397,7 @@ jobs:
           PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_PROJECT_URL }}
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

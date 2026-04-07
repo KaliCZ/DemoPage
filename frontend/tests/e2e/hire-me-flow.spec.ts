@@ -80,7 +80,19 @@ test.describe('Hire Me Flow', () => {
     await page.fill('#location', 'Remote');
     await page.check('#isRemote');
 
-    // 5. Submit the form — redirects to /job-offers#<offerId> on success
+    // 5. Inject Turnstile token (widget doesn't auto-complete in headless CI)
+    await page.evaluate(() => {
+      let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
+      if (!input) {
+        input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'cf-turnstile-response';
+        document.getElementById('job-offer-form')?.appendChild(input);
+      }
+      input.value = 'test-token';
+    });
+
+    // 6. Submit the form — redirects to /job-offers#<offerId> on success
     await page.click('#submit-btn');
 
     // 6. Verify redirect to job-offers page (allow extra time for API call)
@@ -126,7 +138,19 @@ test.describe('Hire Me Flow', () => {
       await fileInput.setInputFiles(filePath);
       await expect(page.locator('#file-list')).toContainText('test-attachment.txt');
 
-      // 4. Submit — redirects to /job-offers#<offerId> on success
+      // 4. Inject Turnstile token (widget doesn't auto-complete in headless CI)
+      await page.evaluate(() => {
+        let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'cf-turnstile-response';
+          document.getElementById('job-offer-form')?.appendChild(input);
+        }
+        input.value = 'test-token';
+      });
+
+      // Submit — redirects to /job-offers#<offerId> on success
       await page.click('#submit-btn');
       await expect(page).toHaveURL(/\/job-offers/, { timeout: 15000 });
 
