@@ -222,21 +222,25 @@ WHERE email = 'your@email.com';
    - Add your SSH public key
 3. Note the **public IP address**
 
-#### Configure VM
+#### Install podman
 
-SSH into the instance and install Docker:
+Oracle Linux ships with rootless `podman`. The `podman-docker` shim makes
+the `docker` CLI an alias for `podman` so existing scripts work unchanged.
 
 ```bash
-# Oracle Linux 8
-sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-sudo systemctl enable --now docker
-sudo usermod -aG docker $USER
-
-# Log out and back in for group changes
-exit
+sudo dnf install -y podman podman-docker
 ```
 
-#### Configure Firewall
+#### Authenticate to GHCR
+
+The API image is pulled from GitHub Container Registry. Create a GitHub
+Personal Access Token with `read:packages` scope and log in once:
+
+```bash
+echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
+```
+
+#### Configure firewall
 
 ```bash
 # Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
@@ -250,9 +254,32 @@ Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
 - Add ingress rules for ports 80, 443, 8080
 
+#### API containers (Quadlet + systemd)
+
+The API runs in two slots — `kalandra-api-blue` (port 8080) and
+`kalandra-api-green` (port 8081) — managed as systemd user services via
+Quadlet. At most one slot is enabled and running at a time; the CI/CD
+deploy script swaps slots on each release. Caddy (set up in §3.3) proxies
+to whichever port the active slot is on.
+
+**Nothing to do here manually.** The Quadlet unit files live in
+[`infra/quadlet/`](../infra/quadlet) and are pushed to the VM by the CI/CD
+deploy job, which also writes `~/kalandra-api.env` from GitHub secrets,
+runs `systemctl --user daemon-reload`, removes any leftover ad-hoc
+containers, and starts the chosen slot. The first deploy after this VM
+is provisioned will fully bootstrap the setup.
+
+> **About linger:** the deploy job runs `sudo loginctl enable-linger opc`
+> as part of its bootstrap. Linger keeps the `opc` user's systemd instance
+> running across SSH logouts and across reboots, which is what makes the
+> enabled slot come back automatically when the VM restarts. Without it,
+> the user manager would only exist while someone is logged in, and any
+> `--user` service would die on logout. The setting is idempotent and
+> safe to re-apply on every deploy.
+
 ### 3.3 Reverse Proxy (Caddy)
 
-Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare.
+Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `opc` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
 
 #### 3.3.1 Create Cloudflare Origin Certificate
 
@@ -271,30 +298,16 @@ nano ~/certs/origin-key.pem   # paste the private key
 chmod 600 ~/certs/origin-key.pem
 ```
 
-#### 3.3.3 Configure and Run Caddy
+#### 3.3.3 Caddy container
 
-```bash
-# Create Caddyfile
-cat > ~/Caddyfile << 'EOF'
-api.kalandra.tech {
-    reverse_proxy localhost:8080
-    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
-}
-EOF
+**Nothing to do here manually.** The deploy job:
 
-# Run Caddy (sudo required for binding ports 80/443 via podman)
-sudo docker run -d \
-  --name caddy \
-  --restart unless-stopped \
-  --network host \
-  -v ~/Caddyfile:/etc/caddy/Caddyfile:Z \
-  -v ~/certs:/etc/caddy/certs:Z,ro \
-  -v caddy_data:/data \
-  -v caddy_config:/config \
-  caddy:2-alpine
-```
+- Sets `net.ipv4.ip_unprivileged_port_start=80` (via `/etc/sysctl.d/`) so the rootless container can bind ports 80/443
+- Seeds an initial `~/Caddyfile` if none exists
+- Starts `caddy.service` via `systemctl --user enable --now`
+- Rewrites `~/Caddyfile` and reloads Caddy gracefully (`podman exec caddy caddy reload`) on every slot swap
 
-> **Note:** The `:Z` flag sets SELinux context so the container can read the mounted files. The `ro` flag mounts certs as read-only.
+Caddy's `/data` and `/config` directories are persisted across restarts via two podman-managed volumes (`caddy-data` and `caddy-config`).
 
 #### 3.3.4 Configure Cloudflare SSL Mode
 
@@ -405,11 +418,7 @@ Create a `production` environment in **Settings → Environments**:
 
 ### 4.3 Container Registry Auth
 
-The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is automatic.
-
-On the OCI VM, authenticate to GHCR:
-```bash
-echo <GITHUB_PAT> | docker login ghcr.io -u <GITHUB_USERNAME> --password-stdin
-```
-
-Create a GitHub Personal Access Token with `read:packages` scope.
+The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
+automatic for the build/push step. The OCI VM also pulls from GHCR — see
+[3.3 Container Setup](#33-container-setup-quadlet--systemd) for the manual
+`podman login` step.

@@ -116,7 +116,7 @@ jobs:
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
-        uses: KaliCZ/verify-deployment@v1
+        uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
         with:
           health-url: http://localhost:5000/health
           max-attempts: 30
@@ -266,85 +266,142 @@ jobs:
           build-args: |
             COMMIT_SHA=${{ github.sha }}
 
-      - name: Deploy to Oracle Cloud (blue-green)
-        uses: appleboy/ssh-action@v1
+      - name: Sync Quadlet unit files to VM
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634  # v0.1.7
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
+          source: "infra/quadlet/*.container,infra/quadlet/*.volume"
+          target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          strip_components: 2
+
+      - name: Deploy to Oracle Cloud (blue-green)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,IMAGE
           script: |
-            IMAGE="${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest"
+            set -euo pipefail
             MAX_ATTEMPTS=40
 
-            # Pull the new image
-            docker pull $IMAGE
+            # ----- 0. Idempotent host bootstrap -----
 
-            # Determine which slot is active (blue=8080, green=8081)
-            if docker ps --format '{{.Names}}' | grep -q kalandra-api-blue; then
-              OLD_NAME="kalandra-api-blue"
-              NEW_NAME="kalandra-api-green"
-              NEW_PORT=8081
-            else
-              OLD_NAME="kalandra-api-green"
-              NEW_NAME="kalandra-api-blue"
-              NEW_PORT=8080
+            # Linger keeps the user systemd instance alive across logouts
+            # and reboots. No-op if already enabled.
+            sudo loginctl enable-linger "$USER"
+
+            # Allow rootless containers to bind ports 80/443 (needed for
+            # Caddy). Idempotent — only writes the sysctl file if missing.
+            if [ ! -f /etc/sysctl.d/99-unprivileged-ports.conf ]; then
+              echo 'net.ipv4.ip_unprivileged_port_start=80' \
+                | sudo tee /etc/sysctl.d/99-unprivileged-ports.conf > /dev/null
+              sudo sysctl --system > /dev/null
             fi
-            echo "Active: $OLD_NAME → Deploying: $NEW_NAME on port $NEW_PORT"
 
-            # Clean up any leftover container with the new name
-            docker stop $NEW_NAME 2>/dev/null || true
-            docker rm $NEW_NAME 2>/dev/null || true
+            # Pick up any new/updated Quadlet files synced in the previous
+            # workflow step.
+            systemctl --user daemon-reload
 
-            # Start new container on its slot port
-            docker run -d \
-              --name $NEW_NAME \
-              --restart unless-stopped \
-              --network host \
-              -e ASPNETCORE_URLS=http://+:$NEW_PORT \
-              -e ASPNETCORE_ENVIRONMENT=Production \
-              -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
-              -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
-              -e "Storage__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
-              -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-              -e "Turnstile__SecretKey=${{ secrets.TURNSTILE_SECRET_KEY }}" \
-              $IMAGE
+            # Refresh the secrets env file. Rewritten on every deploy so
+            # rotated secrets propagate the next time a slot starts.
+            umask 077
+            cat > "$HOME/kalandra-api.env" << EOF
+            ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+            Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Storage__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Storage__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
+            Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
+            EOF
 
-            # Wait for the new container to become healthy
-            echo "Waiting for new container on port $NEW_PORT..."
+            # Seed an initial Caddyfile if none exists, so the rootless
+            # caddy.service has something to bind-mount on its first start.
+            # The slot-swap step below overwrites this with the actual
+            # active port and reloads Caddy.
+            if [ ! -f "$HOME/Caddyfile" ]; then
+              cat > "$HOME/Caddyfile" << 'EOF'
+            api.kalandra.tech {
+                reverse_proxy localhost:8080
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+            }
+            EOF
+            fi
+
+            # Ensure Caddy is running. No-op if already enabled+started.
+            systemctl --user enable --now caddy.service
+
+            # ----- 1. Pull the new image -----
+            podman pull "$IMAGE"
+
+            # ----- 2. Determine which slot is currently active -----
+            # The active slot is whichever systemd unit is currently running.
+            # If neither is running (cold start) we default to blue.
+            if systemctl --user is-active --quiet kalandra-api-blue.service; then
+              OLD=blue; NEW=green; NEW_PORT=8081
+            elif systemctl --user is-active --quiet kalandra-api-green.service; then
+              OLD=green; NEW=blue; NEW_PORT=8080
+            else
+              OLD=""; NEW=blue; NEW_PORT=8080
+            fi
+            echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
+
+            # ----- 3. Start the new slot -----
+            # `enable --now` makes it autostart on boot AND starts it now.
+            # The Quadlet-generated service does `podman run --rm`, so each
+            # start creates a fresh container from the (just-pulled) image.
+            systemctl --user enable --now "kalandra-api-${NEW}.service"
+
+            # ----- 4. Health check the new slot directly (bypassing Caddy) -----
+            echo "Waiting for new slot on port $NEW_PORT..."
             ATTEMPTS=0
-            until curl -sf http://localhost:$NEW_PORT/health > /dev/null 2>&1; do
+            until curl -sf "http://localhost:${NEW_PORT}/health" > /dev/null 2>&1; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
-                echo "New container failed to start. Container logs:"
-                docker logs $NEW_NAME 2>&1 || true
+                echo "New slot failed to start. Container logs:"
+                podman logs "kalandra-api-${NEW}" 2>&1 || true
+                echo "systemd status:"
+                systemctl --user status "kalandra-api-${NEW}.service" --no-pager || true
                 echo "Rolling back..."
-                docker stop $NEW_NAME || true
-                docker rm $NEW_NAME || true
+                systemctl --user disable --now "kalandra-api-${NEW}.service" || true
                 exit 1
               fi
               echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
               sleep 3
             done
-            echo "New container is healthy on port $NEW_PORT."
+            echo "New slot is healthy on port $NEW_PORT."
 
-            # Switch Caddy upstream to the new port (zero-downtime swap)
-            cat > ~/Caddyfile << EOF
+            # ----- 5. Swap Caddy upstream to the new port -----
+            # Caddy runs as a rootless Quadlet container under the opc
+            # user, so the bind-mounted Caddyfile is read with the same
+            # SELinux label opc owns it with — no chcon needed.
+            cat > "$HOME/Caddyfile" << EOF
             api.kalandra.tech {
-                reverse_proxy localhost:$NEW_PORT
+                reverse_proxy localhost:${NEW_PORT}
                 tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
             }
             EOF
-            chcon -t container_file_t ~/Caddyfile
-            sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # Stop the old container
-            docker stop $OLD_NAME 2>/dev/null || true
-            docker rm $OLD_NAME 2>/dev/null || true
+            # ----- 6. Stop and disable the old slot -----
+            # Disable so it does not autostart on the next boot — only the
+            # currently-active slot should come up. This prevents the old
+            # container from running background jobs alongside the new one.
+            if [ -n "$OLD" ]; then
+              systemctl --user disable --now "kalandra-api-${OLD}.service" || true
+            fi
 
-            echo "Deployment complete — $NEW_NAME serving on port $NEW_PORT."
+            echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
 
       - name: Verify public endpoint
-        uses: KaliCZ/verify-deployment@v1
+        uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
         with:
           health-url: https://api.kalandra.tech/health
           max-attempts: 20
