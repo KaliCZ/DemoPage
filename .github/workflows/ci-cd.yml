@@ -322,6 +322,19 @@ jobs:
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             EOF
 
+            # Seed an initial Caddyfile if none exists, so the rootless
+            # caddy.service has something to bind-mount on its first start.
+            # The slot-swap step below overwrites this with the actual
+            # active port and reloads Caddy.
+            if [ ! -f "$HOME/Caddyfile" ]; then
+              cat > "$HOME/Caddyfile" << 'EOF'
+            api.kalandra.tech {
+                reverse_proxy localhost:8080
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+            }
+            EOF
+            fi
+
             # Ensure Caddy is running. No-op if already enabled+started.
             systemctl --user enable --now caddy.service
 
