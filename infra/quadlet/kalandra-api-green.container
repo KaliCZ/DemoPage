@@ -1,0 +1,24 @@
+# Quadlet unit for the green slot of the API.
+# Install to: ~/.config/containers/systemd/kalandra-api-green.container
+# See kalandra-api-blue.container for usage notes.
+
+[Unit]
+Description=Kalandra API (green slot)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/kalicz/demopage/api:latest
+ContainerName=kalandra-api-green
+Network=host
+EnvironmentFile=%h/kalandra-api.env
+Environment=ASPNETCORE_URLS=http://+:8081
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

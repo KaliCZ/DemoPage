@@ -23,7 +23,7 @@ For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
-  - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
+  - [3.3 Container Setup (Quadlet + systemd)](#33-container-setup-quadlet--systemd)
   - [3.4 DNS](#34-dns)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
@@ -199,59 +199,137 @@ WHERE email = 'your@email.com';
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Canonical Ubuntu 24.04 Minimal aarch64 (ARM image for A1 shape)
+   - Image: Oracle Linux 9 aarch64 (ships with rootless `podman`)
    - Add your SSH public key
 3. Note the **public IP address**
 
-#### Configure VM
+> The instructions below assume Oracle Linux 9 + rootless podman running under
+> the default `opc` user. If you use Ubuntu, install `podman` from apt and
+> adjust the username accordingly.
 
-SSH into the instance and install Docker:
+#### Install podman and enable linger
 
 ```bash
-# Ubuntu 24.04
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-sudo systemctl enable --now docker
-sudo usermod -aG docker $USER
+ssh opc@<your-vm-ip>
 
-# Log out and back in for group changes
-exit
+sudo dnf install -y podman
+podman --version    # should be 4.4+ for Quadlet support
+
+# Enable linger so the user systemd instance keeps running after logout.
+# Without this, every container dies the moment the SSH session ends.
+sudo loginctl enable-linger opc
 ```
 
-#### Configure Firewall
+#### Configure firewall
 
 ```bash
-# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
-sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
-sudo netfilter-persistent save
+# Open ports 80 (HTTP), 443 (HTTPS) for Caddy
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
 ```
 
 Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
-- Add ingress rules for ports 80, 443, 8080
+- Add ingress rules for ports 80 and 443
 
-### 3.3 Reverse Proxy (Caddy)
+### 3.3 Container Setup (Quadlet + systemd)
 
-Caddy provides automatic HTTPS:
+The API runs in two slots — `kalandra-api-blue` (port 8080) and
+`kalandra-api-green` (port 8081). At any time at most one slot is enabled
+and running; the deploy pipeline swaps slots on each release. Caddy fronts
+whichever port is currently active.
+
+All three containers (blue, green, caddy) are managed by systemd via Quadlet
+unit files. The unit files live in [`infra/quadlet/`](../infra/quadlet) in
+the repo and are installed manually on the VM (one-time setup).
+
+#### Authenticate to GHCR
+
+The blue/green images are pulled from GitHub Container Registry. Create a
+GitHub Personal Access Token with `read:packages` scope and log in:
 
 ```bash
-# Create Caddyfile
+echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
+```
+
+#### Install the Quadlet unit files
+
+Copy the four Quadlet files from the repo to the user's systemd directory:
+
+```bash
+mkdir -p ~/.config/containers/systemd
+
+# Copy from a local checkout (or scp/curl the raw files from GitHub)
+cp infra/quadlet/kalandra-api-blue.container  ~/.config/containers/systemd/
+cp infra/quadlet/kalandra-api-green.container ~/.config/containers/systemd/
+cp infra/quadlet/caddy.container              ~/.config/containers/systemd/
+cp infra/quadlet/caddy_data.volume            ~/.config/containers/systemd/
+cp infra/quadlet/caddy_config.volume          ~/.config/containers/systemd/
+```
+
+#### Create the secrets env file
+
+The API units load environment variables (DB connection, Supabase URL, etc.)
+from `~/kalandra-api.env`. The CI/CD deploy script rewrites this file on
+every run, but it must exist before the unit can start the first time:
+
+```bash
+umask 077
+cat > ~/kalandra-api.env << 'EOF'
+ConnectionStrings__DefaultConnection=Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432
+Auth__SupabaseProjectUrl=https://<project-ref>.supabase.co
+Storage__SupabaseProjectUrl=https://<project-ref>.supabase.co
+Storage__ServiceKey=<service-role-key>
+EOF
+```
+
+#### Create the initial Caddyfile
+
+Caddy reads `~/Caddyfile`, which the deploy script rewrites on each slot
+swap. Seed it with the blue port (8080) for first boot:
+
+```bash
 cat > ~/Caddyfile << 'EOF'
 api.kalandra.tech {
     reverse_proxy localhost:8080
 }
 EOF
+```
 
-# Run Caddy
-docker run -d \
-  --name caddy \
-  --restart unless-stopped \
-  --network host \
-  -v ~/Caddyfile:/etc/caddy/Caddyfile \
-  -v caddy_data:/data \
-  -v caddy_config:/config \
-  caddy:2-alpine
+#### Enable and start the services
+
+```bash
+systemctl --user daemon-reload
+
+# Start Caddy (TLS/proxy)
+systemctl --user enable --now caddy.service
+
+# Start ONE API slot. We pick blue arbitrarily — the deploy pipeline
+# will swap to green on the next release. Do not enable both: only one
+# slot should run at a time so background jobs are not double-processed.
+systemctl --user enable --now kalandra-api-blue.service
+
+# Verify
+systemctl --user status kalandra-api-blue.service caddy.service
+curl http://localhost:8080/health
+curl https://api.kalandra.tech/health
+```
+
+#### Useful commands
+
+```bash
+# Watch logs in real time
+journalctl --user -u kalandra-api-blue.service -f
+journalctl --user -u caddy.service -f
+
+# Manually swap slots (the deploy pipeline does this automatically)
+systemctl --user enable --now  kalandra-api-green.service
+systemctl --user disable --now kalandra-api-blue.service
+
+# Force a fresh image pull and restart (also done automatically on deploy)
+podman pull ghcr.io/<owner>/<repo>/api:latest
+systemctl --user restart kalandra-api-blue.service
 ```
 
 ### 3.4 DNS
@@ -283,11 +361,7 @@ Create a `production` environment in **Settings → Environments**:
 
 ### 4.3 Container Registry Auth
 
-The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is automatic.
-
-On the OCI VM, authenticate to GHCR:
-```bash
-echo <GITHUB_PAT> | docker login ghcr.io -u <GITHUB_USERNAME> --password-stdin
-```
-
-Create a GitHub Personal Access Token with `read:packages` scope.
+The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
+automatic for the build/push step. The OCI VM also pulls from GHCR — see
+[3.3 Container Setup](#33-container-setup-quadlet--systemd) for the manual
+`podman login` step.

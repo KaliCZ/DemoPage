@@ -1,0 +1,31 @@
+# Quadlet unit for the blue slot of the API.
+# Install to: ~/.config/containers/systemd/kalandra-api-blue.container
+# Reload with: systemctl --user daemon-reload
+# Start with:  systemctl --user start kalandra-api-blue.service
+#
+# At most one slot (blue OR green) should be enabled+running at a time.
+# The CI/CD deploy script swaps slots on each deploy.
+
+[Unit]
+Description=Kalandra API (blue slot)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/kalicz/demopage/api:latest
+ContainerName=kalandra-api-blue
+Network=host
+EnvironmentFile=%h/kalandra-api.env
+Environment=ASPNETCORE_URLS=http://+:8080
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# Pull=missing means systemd will use whatever image is local at start time.
+# The deploy script runs `podman pull` explicitly before restarting the service,
+# so the new image is always present when the unit starts.
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

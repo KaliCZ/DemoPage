@@ -267,77 +267,88 @@ jobs:
 
       - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@v1
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,IMAGE
           script: |
-            IMAGE="${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest"
+            set -euo pipefail
             MAX_ATTEMPTS=40
 
-            # Pull the new image
-            docker pull $IMAGE
+            # ----- 1. Refresh secrets file used by both Quadlet units -----
+            # Rewritten on every deploy so rotated secrets are picked up the
+            # next time the unit starts. Mode 600 — readable only by opc.
+            umask 077
+            cat > "$HOME/kalandra-api.env" << EOF
+            ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+            Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Storage__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Storage__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
+            EOF
 
-            # Determine which slot is active (blue=8080, green=8081)
-            if docker ps --format '{{.Names}}' | grep -q kalandra-api-blue; then
-              OLD_NAME="kalandra-api-blue"
-              NEW_NAME="kalandra-api-green"
-              NEW_PORT=8081
+            # ----- 2. Pull the new image -----
+            podman pull "$IMAGE"
+
+            # ----- 3. Determine which slot is currently active -----
+            # The active slot is whichever systemd unit is currently running.
+            # If neither is running (cold start) we default to blue.
+            if systemctl --user is-active --quiet kalandra-api-blue.service; then
+              OLD=blue; NEW=green; NEW_PORT=8081
+            elif systemctl --user is-active --quiet kalandra-api-green.service; then
+              OLD=green; NEW=blue; NEW_PORT=8080
             else
-              OLD_NAME="kalandra-api-green"
-              NEW_NAME="kalandra-api-blue"
-              NEW_PORT=8080
+              OLD=""; NEW=blue; NEW_PORT=8080
             fi
-            echo "Active: $OLD_NAME → Deploying: $NEW_NAME on port $NEW_PORT"
+            echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
-            # Clean up any leftover container with the new name
-            docker stop $NEW_NAME 2>/dev/null || true
-            docker rm $NEW_NAME 2>/dev/null || true
+            # ----- 4. Start the new slot -----
+            # `enable --now` makes it autostart on boot AND starts it now.
+            # The Quadlet-generated service does `podman run --rm`, so each
+            # start creates a fresh container from the (just-pulled) image.
+            systemctl --user enable --now "kalandra-api-${NEW}.service"
 
-            # Start new container on its slot port
-            docker run -d \
-              --name $NEW_NAME \
-              --restart unless-stopped \
-              --network host \
-              -e ASPNETCORE_URLS=http://+:$NEW_PORT \
-              -e ASPNETCORE_ENVIRONMENT=Production \
-              -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
-              -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
-              -e "Storage__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
-              -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-              $IMAGE
-
-            # Wait for the new container to become healthy
-            echo "Waiting for new container on port $NEW_PORT..."
+            # ----- 5. Health check the new slot directly (bypassing Caddy) -----
+            echo "Waiting for new slot on port $NEW_PORT..."
             ATTEMPTS=0
-            until curl -sf http://localhost:$NEW_PORT/health > /dev/null 2>&1; do
+            until curl -sf "http://localhost:${NEW_PORT}/health" > /dev/null 2>&1; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
-                echo "New container failed to start. Container logs:"
-                docker logs $NEW_NAME 2>&1 || true
+                echo "New slot failed to start. Container logs:"
+                podman logs "kalandra-api-${NEW}" 2>&1 || true
+                echo "systemd status:"
+                systemctl --user status "kalandra-api-${NEW}.service" --no-pager || true
                 echo "Rolling back..."
-                docker stop $NEW_NAME || true
-                docker rm $NEW_NAME || true
+                systemctl --user disable --now "kalandra-api-${NEW}.service" || true
                 exit 1
               fi
               echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
               sleep 3
             done
-            echo "New container is healthy on port $NEW_PORT."
+            echo "New slot is healthy on port $NEW_PORT."
 
-            # Switch Caddy upstream to the new port (zero-downtime swap)
-            cat > ~/Caddyfile << EOF
+            # ----- 6. Swap Caddy upstream to the new port -----
+            cat > "$HOME/Caddyfile" << EOF
             api.kalandra.tech {
-                reverse_proxy localhost:$NEW_PORT
+                reverse_proxy localhost:${NEW_PORT}
             }
             EOF
-            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # Stop the old container
-            docker stop $OLD_NAME 2>/dev/null || true
-            docker rm $OLD_NAME 2>/dev/null || true
+            # ----- 7. Stop and disable the old slot -----
+            # Disable so it does not autostart on the next boot — only the
+            # currently-active slot should come up. This prevents the old
+            # container from running background jobs alongside the new one.
+            if [ -n "$OLD" ]; then
+              systemctl --user disable --now "kalandra-api-${OLD}.service" || true
+            fi
 
-            echo "Deployment complete — $NEW_NAME serving on port $NEW_PORT."
+            echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
 
       - name: Verify public endpoint
         uses: KaliCZ/verify-deployment@v1
