@@ -272,7 +272,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: "infra/quadlet/*.container"
+          source: "infra/quadlet/*.container,infra/quadlet/*.volume"
           target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
           strip_components: 2
 
@@ -296,12 +296,21 @@ jobs:
             # ----- 0. Idempotent host bootstrap -----
             # Everything in this block is safe to run on every deploy. It
             # handles the cold-start case (first deploy on a fresh VM, or
-            # first deploy after migrating from ad-hoc `podman run`) without
-            # any manual prep beyond the one-time steps in docs/SETUP.md.
+            # first deploy after migrating from the old ad-hoc setup)
+            # without any manual prep beyond the one-time steps in
+            # docs/SETUP.md.
 
-            # Linger keeps the user systemd instance alive across logouts.
-            # No-op if already enabled.
+            # Linger keeps the user systemd instance alive across logouts
+            # and reboots. No-op if already enabled.
             sudo loginctl enable-linger "$USER"
+
+            # Allow rootless containers to bind ports 80/443 (needed for
+            # Caddy). Idempotent — only writes the sysctl file if missing.
+            if [ ! -f /etc/sysctl.d/99-unprivileged-ports.conf ]; then
+              echo 'net.ipv4.ip_unprivileged_port_start=80' \
+                | sudo tee /etc/sysctl.d/99-unprivileged-ports.conf > /dev/null
+              sudo sysctl --system > /dev/null
+            fi
 
             # Pick up any new/updated Quadlet files synced in the previous
             # workflow step.
@@ -330,6 +339,31 @@ jobs:
                 podman rm -f "kalandra-api-${slot}" 2>/dev/null || true
               fi
             done
+
+            # Caddy migration: if a rootful caddy container exists from
+            # the old setup, stop and remove it so the new rootless Quadlet
+            # caddy can take over the same ports. Idempotent — once the
+            # rootful container is gone, this is a no-op forever.
+            if sudo podman ps -a --format '{{.Names}}' 2>/dev/null | grep -q '^caddy$'; then
+              sudo podman stop caddy || true
+              sudo podman rm caddy || true
+            fi
+
+            # Seed an initial Caddyfile if none exists, so the rootless
+            # caddy.service has something to mount on its very first start.
+            # The slot-swap step below will overwrite this with the actual
+            # active port and reload Caddy.
+            if [ ! -f "$HOME/Caddyfile" ]; then
+              cat > "$HOME/Caddyfile" << 'EOF'
+            api.kalandra.tech {
+                reverse_proxy localhost:8080
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+            }
+            EOF
+            fi
+
+            # Enable+start Caddy. Idempotent — no-op if already running.
+            systemctl --user enable --now caddy.service
 
             # ----- 1. Pull the new image -----
             podman pull "$IMAGE"
@@ -372,18 +406,16 @@ jobs:
             echo "New slot is healthy on port $NEW_PORT."
 
             # ----- 5. Swap Caddy upstream to the new port -----
-            # Caddy runs rootful (sudo docker) because it binds 80/443 and
-            # mounts the Cloudflare Origin Certificate. The Caddyfile is
-            # owned by opc but read by the rootful container, so we relabel
-            # it for SELinux on each rewrite.
+            # Caddy runs as a rootless Quadlet container under the opc
+            # user, so the bind-mounted Caddyfile is read with the same
+            # SELinux label opc owns it with — no chcon needed.
             cat > "$HOME/Caddyfile" << EOF
             api.kalandra.tech {
                 reverse_proxy localhost:${NEW_PORT}
                 tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
             }
             EOF
-            chcon -t container_file_t "$HOME/Caddyfile"
-            sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
             # ----- 6. Stop and disable the old slot -----
             # Disable so it does not autostart on the next boot — only the

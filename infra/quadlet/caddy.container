@@ -1,0 +1,34 @@
+# Quadlet unit for the Caddy reverse proxy.
+#
+# Synced to ~/.config/containers/systemd/caddy.container by the CI/CD
+# deploy job and managed by `systemd --user` (rootless under the opc user).
+#
+# Caddy reads ~/Caddyfile (rewritten by the deploy script on each slot
+# swap) and the Cloudflare Origin Certificate from ~/certs/. Both are
+# bind-mounted from the opc user's home directory.
+#
+# Binding to ports 80/443 from a rootless container requires the host
+# sysctl `net.ipv4.ip_unprivileged_port_start=80`. The deploy job sets
+# this on every run via /etc/sysctl.d/99-unprivileged-ports.conf.
+
+[Unit]
+Description=Caddy reverse proxy
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/caddy:2-alpine
+ContainerName=caddy
+Network=host
+Volume=%h/Caddyfile:/etc/caddy/Caddyfile:Z
+Volume=%h/certs:/etc/caddy/certs:Z,ro
+Volume=caddy-data.volume:/data
+Volume=caddy-config.volume:/config
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target

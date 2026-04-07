@@ -1,0 +1,2 @@
+# Persistent volume for Caddy's /data directory.
+[Volume]

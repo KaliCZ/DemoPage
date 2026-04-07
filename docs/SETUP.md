@@ -294,7 +294,7 @@ systemctl --user restart kalandra-api-blue.service
 
 ### 3.3 Reverse Proxy (Caddy)
 
-Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Caddy runs **rootful** (under `sudo docker`/`sudo podman`) because it needs to bind ports 80/443 and read the certificate files.
+Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `opc` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
 
 #### 3.3.1 Create Cloudflare Origin Certificate
 
@@ -313,29 +313,17 @@ nano ~/certs/origin-key.pem   # paste the private key
 chmod 600 ~/certs/origin-key.pem
 ```
 
-#### 3.3.3 Configure and Run Caddy
+#### 3.3.3 Caddy container
 
-```bash
-cat > ~/Caddyfile << 'EOF'
-api.kalandra.tech {
-    reverse_proxy localhost:8080
-    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
-}
-EOF
+**Nothing to do here manually.** The deploy job:
 
-# Run Caddy (sudo required for binding ports 80/443 via podman)
-sudo docker run -d \
-  --name caddy \
-  --restart unless-stopped \
-  --network host \
-  -v ~/Caddyfile:/etc/caddy/Caddyfile:Z \
-  -v ~/certs:/etc/caddy/certs:Z,ro \
-  -v caddy_data:/data \
-  -v caddy_config:/config \
-  caddy:2-alpine
-```
+- Sets `net.ipv4.ip_unprivileged_port_start=80` (via `/etc/sysctl.d/`) so the rootless container can bind ports 80/443
+- Removes any leftover rootful caddy container from the legacy setup
+- Seeds an initial `~/Caddyfile` if none exists
+- Starts `caddy.service` via `systemctl --user enable --now`
+- Rewrites `~/Caddyfile` and triggers a graceful `podman exec caddy caddy reload` on every slot swap
 
-> **Note:** The `:Z` flag sets SELinux context so the container can read the mounted files. The `ro` flag mounts certs as read-only.
+The container's `/data` and `/config` directories are persisted across restarts via two podman-managed volumes (`caddy-data` and `caddy-config`).
 
 #### 3.3.4 Configure Cloudflare SSL Mode
 
