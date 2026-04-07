@@ -1,21 +1,20 @@
 {
   "meta": {
-    "title": "Mé nabídky — kalandra.tech",
-    "description": "Zobrazení odeslaných pracovních nabídek."
+    "title": "Admin — Všechny nabídky — kalandra.tech",
+    "description": "Přehled a správa všech odeslaných pracovních nabídek."
   },
   "hero": {
-    "title": "Mé nabídky",
-    "subtitle": "Sledujte stav vašich odeslaných pracovních nabídek."
+    "title": "Všechny nabídky",
+    "subtitle": "Přehled všech odeslaných pracovních nabídek."
   },
-  "loginPrompt": {
-    "title": "Vyžadováno přihlášení",
-    "description": "Pro zobrazení vašich nabídek se prosím přihlaste.",
-    "signInButton": "Přihlásit se a pokračovat"
+  "accessDenied": {
+    "title": "Přístup odepřen",
+    "description": "Pro zobrazení této stránky potřebujete oprávnění správce.",
+    "backToHome": "Zpět na hlavní stránku"
   },
   "empty": {
     "title": "Zatím žádné nabídky",
-    "description": "Ještě jste neodeslali žádnou pracovní nabídku.",
-    "cta": "Odeslat pracovní nabídku"
+    "description": "Zatím nebyly odeslány žádné pracovní nabídky."
   },
   "list": {
     "filterAll": "Vše",
@@ -29,14 +28,10 @@
     "remote": "Vzdáleně",
     "viewDetail": "Zobrazit detail",
     "back": "Zpět na seznam",
+    "submittedBy": "Odesláno uživatelem",
     "adminNotes": "Poznámky správce",
-    "edit": "Upravit nabídku",
-    "editSave": "Uložit změny",
-    "editCancel": "Zahodit změny",
-    "cancel": "Zrušit nabídku",
-    "cancelConfirm": "Opravdu chcete zrušit tuto nabídku?",
-    "cancelReason": "Důvod zrušení (volitelné)",
-    "cancelButton": "Ano, zrušit",
+    "updateStatus": "Aktualizovat stav",
+    "save": "Uložit",
     "history": "Historie aktivit",
     "historyEmpty": "Zatím žádná aktivita.",
     "comments": "Komentáře",

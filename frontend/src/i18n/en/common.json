@@ -4,7 +4,8 @@
     "about": "About Me",
     "project": "Project",
     "hireMe": "Hire Me",
-    "mySubmissions": "My Submissions"
+    "mySubmissions": "My Submissions",
+    "admin": "Admin"
   },
   "auth": {
     "signIn": "Sign In",

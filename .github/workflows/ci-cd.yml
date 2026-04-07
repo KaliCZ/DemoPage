@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_backend_deploy:
+        description: 'Skip the backend deploy (use to ship frontend when backend is broken)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,7 +26,28 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  changes:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4.0.1
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+              - 'infra/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+
   e2e:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     # Local Supabase always generates the same deterministic keys from its JWT secret.
     # Hardcoding them avoids waiting for 'supabase status' before building.
@@ -43,7 +70,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Start Supabase first in background — it pulls Docker images (~50s)
       # which overlaps with .NET/Node setup, backend build, and npm ci below.
@@ -61,14 +88,14 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
@@ -112,10 +139,11 @@ jobs:
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
+          Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend
-        uses: KaliCZ/verify-deployment@v1
+        uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
         with:
           health-url: http://localhost:5000/health
           max-attempts: 30
@@ -128,7 +156,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
@@ -148,16 +176,17 @@ jobs:
 
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: frontend/test-results/
           retention-days: 7
 
   backend-test:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -165,7 +194,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
@@ -181,13 +210,14 @@ jobs:
         run: dotnet test --no-build -c Release
 
   frontend-test:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -208,7 +238,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
@@ -224,29 +254,43 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [e2e, backend-test, frontend-test]
-    if: github.event_name == 'push'
+    needs: [changes, e2e, backend-test, frontend-test]
+    if: |
+      always() &&
+      (
+        (
+          github.event_name == 'push' &&
+          needs.changes.outputs.backend == 'true' &&
+          needs.e2e.result == 'success' &&
+          needs.backend-test.result == 'success' &&
+          needs.frontend-test.result == 'success'
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.skip_backend_deploy != true
+        )
+      )
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}
           tags: |
@@ -254,7 +298,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: backend
           file: backend/src/Kalandra.Api/Dockerfile
@@ -264,83 +308,150 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Deploy to Oracle Cloud (blue-green)
-        uses: appleboy/ssh-action@v1
+      - name: Sync Quadlet unit files to VM
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
+          source: "infra/quadlet/*.container,infra/quadlet/*.volume"
+          target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          strip_components: 2
+
+      - name: Deploy to Oracle Cloud (blue-green)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,IMAGE
           script: |
-            IMAGE="${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest"
+            set -euo pipefail
             MAX_ATTEMPTS=40
 
-            # Pull the new image
-            docker pull $IMAGE
+            # ----- 0. Idempotent host bootstrap -----
 
-            # Determine which slot is active (blue=8080, green=8081)
-            if docker ps --format '{{.Names}}' | grep -q kalandra-api-blue; then
-              OLD_NAME="kalandra-api-blue"
-              NEW_NAME="kalandra-api-green"
-              NEW_PORT=8081
-            else
-              OLD_NAME="kalandra-api-green"
-              NEW_NAME="kalandra-api-blue"
-              NEW_PORT=8080
+            # Linger keeps the user systemd instance alive across logouts
+            # and reboots. No-op if already enabled.
+            sudo loginctl enable-linger "$USER"
+
+            # Allow rootless containers to bind ports 80/443 (needed for
+            # Caddy). Idempotent — only writes the sysctl file if missing.
+            if [ ! -f /etc/sysctl.d/99-unprivileged-ports.conf ]; then
+              echo 'net.ipv4.ip_unprivileged_port_start=80' \
+                | sudo tee /etc/sysctl.d/99-unprivileged-ports.conf > /dev/null
+              sudo sysctl --system > /dev/null
             fi
-            echo "Active: $OLD_NAME → Deploying: $NEW_NAME on port $NEW_PORT"
 
-            # Clean up any leftover container with the new name
-            docker stop $NEW_NAME 2>/dev/null || true
-            docker rm $NEW_NAME 2>/dev/null || true
+            # Pick up any new/updated Quadlet files synced in the previous
+            # workflow step.
+            systemctl --user daemon-reload
 
-            # Start new container on its slot port
-            docker run -d \
-              --name $NEW_NAME \
-              --restart unless-stopped \
-              --network host \
-              -e ASPNETCORE_URLS=http://+:$NEW_PORT \
-              -e ASPNETCORE_ENVIRONMENT=Production \
-              -e "ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTION_STRING }}" \
-              -e "Auth__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
-              -e "Storage__SupabaseProjectUrl=${{ vars.SUPABASE_PROJECT_URL }}" \
-              -e "Storage__ServiceKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-              $IMAGE
+            # Refresh the secrets env file. Rewritten on every deploy so
+            # rotated secrets propagate the next time a slot starts.
+            umask 077
+            cat > "$HOME/kalandra-api.env" << EOF
+            ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+            Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Storage__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Storage__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
+            Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
+            EOF
 
-            # Wait for the new container to become healthy
-            echo "Waiting for new container on port $NEW_PORT..."
+            # Seed an initial Caddyfile if none exists, so the rootless
+            # caddy.service has something to bind-mount on its first start.
+            # The slot-swap step below overwrites this with the actual
+            # active port and reloads Caddy.
+            if [ ! -f "$HOME/Caddyfile" ]; then
+              cat > "$HOME/Caddyfile" << 'EOF'
+            api.kalandra.tech {
+                reverse_proxy localhost:8080
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+            }
+            EOF
+            fi
+
+            # Ensure Caddy is running. No-op if already started.
+            # Quadlet-generated units cannot be `enable`d (systemd refuses
+            # generated units), so we use `start`. Boot autostart is handled
+            # by [Install] WantedBy=default.target inside the .container file.
+            systemctl --user start caddy.service
+
+            # ----- 1. Pull the new image -----
+            podman pull "$IMAGE"
+
+            # ----- 2. Determine which slot is currently active -----
+            # The active slot is whichever systemd unit is currently running.
+            # If neither is running (cold start) we default to blue.
+            if systemctl --user is-active --quiet kalandra-api-blue.service; then
+              OLD=blue; NEW=green; NEW_PORT=8081
+            elif systemctl --user is-active --quiet kalandra-api-green.service; then
+              OLD=green; NEW=blue; NEW_PORT=8080
+            else
+              OLD=""; NEW=blue; NEW_PORT=8080
+            fi
+            echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
+
+            # ----- 3. Start the new slot -----
+            # The Quadlet-generated service does `podman run --rm`, so each
+            # start creates a fresh container from the (just-pulled) image.
+            # Quadlet units cannot be `enable`d — boot autostart comes from
+            # [Install] WantedBy=default.target in the .container file.
+            systemctl --user start "kalandra-api-${NEW}.service"
+
+            # ----- 4. Health check the new slot directly (bypassing Caddy) -----
+            echo "Waiting for new slot on port $NEW_PORT..."
             ATTEMPTS=0
-            until curl -sf http://localhost:$NEW_PORT/health > /dev/null 2>&1; do
+            until curl -sf "http://localhost:${NEW_PORT}/health" > /dev/null 2>&1; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
-                echo "New container failed to start. Container logs:"
-                docker logs $NEW_NAME 2>&1 || true
+                echo "New slot failed to start. Container logs:"
+                podman logs "kalandra-api-${NEW}" 2>&1 || true
+                echo "systemd status:"
+                systemctl --user status "kalandra-api-${NEW}.service" --no-pager || true
                 echo "Rolling back..."
-                docker stop $NEW_NAME || true
-                docker rm $NEW_NAME || true
+                systemctl --user stop "kalandra-api-${NEW}.service" || true
                 exit 1
               fi
               echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
               sleep 3
             done
-            echo "New container is healthy on port $NEW_PORT."
+            echo "New slot is healthy on port $NEW_PORT."
 
-            # Switch Caddy upstream to the new port (zero-downtime swap)
-            cat > ~/Caddyfile << EOF
+            # ----- 5. Swap Caddy upstream to the new port -----
+            # Caddy runs as a rootless Quadlet container under the opc
+            # user, so the bind-mounted Caddyfile is read with the same
+            # SELinux label opc owns it with — no chcon needed.
+            cat > "$HOME/Caddyfile" << EOF
             api.kalandra.tech {
-                reverse_proxy localhost:$NEW_PORT
+                reverse_proxy localhost:${NEW_PORT}
+                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
             }
             EOF
-            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # Stop the old container
-            docker stop $OLD_NAME 2>/dev/null || true
-            docker rm $OLD_NAME 2>/dev/null || true
+            # ----- 6. Stop the old slot -----
+            # Quadlet units can't be `disable`d, so we just stop. Both slot
+            # .container files have WantedBy=default.target, which means a
+            # cold reboot will start whichever one Quadlet enumerates first;
+            # the next deploy re-establishes the intended slot.
+            if [ -n "$OLD" ]; then
+              systemctl --user stop "kalandra-api-${OLD}.service" || true
+            fi
 
-            echo "Deployment complete — $NEW_NAME serving on port $NEW_PORT."
+            echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
 
       - name: Verify public endpoint
-        uses: KaliCZ/verify-deployment@v1
+        uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
         with:
           health-url: https://api.kalandra.tech/health
           max-attempts: 20
@@ -348,7 +459,20 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: backend-deploy
+    needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
+    if: |
+      always() &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'push' &&
+          needs.changes.outputs.frontend == 'true' &&
+          needs.e2e.result == 'success' &&
+          needs.backend-test.result == 'success' &&
+          needs.frontend-test.result == 'success' &&
+          (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped')
+        )
+      )
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -357,10 +481,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -377,6 +501,7 @@ jobs:
           PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_PROJECT_URL }}
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
