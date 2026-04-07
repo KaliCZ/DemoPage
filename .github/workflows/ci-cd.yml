@@ -264,6 +264,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@v1
