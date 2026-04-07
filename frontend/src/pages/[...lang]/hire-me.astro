@@ -27,7 +27,7 @@ const t = translations[lang];
   </section>
 
   <!-- Login prompt (shown when not authenticated) -->
-  <section id="login-prompt" class="max-w-3xl mx-auto px-8 mb-16">
+  <section id="login-prompt" class="signed-out-only max-w-3xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
@@ -43,7 +43,7 @@ const t = translations[lang];
   </section>
 
   <!-- Form (shown when authenticated, initially with disabled fields) -->
-  <section id="job-offer-form-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
+  <section id="job-offer-form-section" class="signed-in-only hidden max-w-3xl mx-auto px-8 mb-16">
     <form id="job-offer-form" novalidate class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
