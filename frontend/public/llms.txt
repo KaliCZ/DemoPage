@@ -27,6 +27,6 @@ Available in English (default) and Czech (/cs/ prefix).
 
 ## Contact
 
-- Email: pavel@kalandra.tech
-- LinkedIn: Pavel Kalandra
-- GitHub: KaliCZ
+- Email: [pavel@kalandra.tech](mailto:pavel@kalandra.tech)
+- LinkedIn: [Pavel Kalandra](https://www.linkedin.com/in/pavelkalandra/)
+- GitHub: [KaliCZ](https://github.com/kalicz)
