@@ -38,6 +38,7 @@
     "successTitle": "Nabídka odeslána!",
     "successMessage": "Děkuji za váš zájem. Vaši nabídku zkontroluji a ozvu se vám.",
     "captchaError": "Prosím dokončete ověření CAPTCHA.",
+    "captchaRequiredError": "V poslední době jste odeslali několik nabídek. Potvrďte prosím, že jste člověk, a zkuste to znovu.",
     "errorMessage": "Něco se pokazilo. Zkuste to prosím znovu.",
     "viewSubmissions": "Zobrazit mé nabídky",
     "validation": {

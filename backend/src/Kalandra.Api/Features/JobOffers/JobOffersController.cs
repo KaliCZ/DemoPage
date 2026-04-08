@@ -10,6 +10,7 @@ using Kalandra.JobOffers.Queries;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Kalandra.Api.Features.JobOffers;
 
@@ -39,6 +40,7 @@ public class JobOffersController(
 
     [HttpPost]
     [Authorize]
+    [EnableRateLimiting("hire-me-create")]
     [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -38,6 +38,7 @@
     "successTitle": "Offer Submitted!",
     "successMessage": "Thank you for your interest. I'll review your offer and get back to you.",
     "captchaError": "Please complete the CAPTCHA verification.",
+    "captchaRequiredError": "You've submitted several offers recently. Please verify you're human and try again.",
     "errorMessage": "Something went wrong. Please try again.",
     "viewSubmissions": "View My Submissions",
     "validation": {
