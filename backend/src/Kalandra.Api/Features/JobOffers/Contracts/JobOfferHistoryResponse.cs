@@ -1,5 +1,11 @@
-using Kalandra.JobOffers.Queries;
-
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
-public record JobOfferHistoryResponse(List<JobOfferHistoryEntry> Entries);
+public record HistoryEntryResponse(
+    string EventType,
+    string Description,
+    string ActorUserId,
+    string ActorEmail,
+    DateTimeOffset Timestamp,
+    string? AvatarUrl = null);
+
+public record JobOfferHistoryResponse(List<HistoryEntryResponse> Entries);

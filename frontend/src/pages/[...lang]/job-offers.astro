@@ -483,8 +483,11 @@ const c = commonTranslations[lang];
         var icon = eventIcons[entry.eventType] || 'info';
         var el = document.createElement('div');
         el.className = 'flex items-start gap-3 text-sm';
+        var actorHtml = entry.avatarUrl
+          ? '<img src="' + esc(entry.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+          : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
         el.innerHTML =
-          '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>' +
+          actorHtml +
           '<div class="flex-1 min-w-0">' +
             '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
             '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(entry.actorEmail) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +

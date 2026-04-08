@@ -5,8 +5,10 @@ using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
+using Kalandra.JobOffers;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
+using Kalandra.JobOffers.Events;
 using Kalandra.JobOffers.Queries;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
@@ -389,7 +391,35 @@ public class JobOffersController(
         if (entries == null)
             return NotFound();
 
-        return Ok(new JobOfferHistoryResponse(entries.ToList()));
+        // Read raw events to extract actor user IDs (the projection only carries email)
+        var offerEvents = await session.Events.FetchStreamAsync(id, token: ct);
+        var commentEvents = await session.Events.FetchStreamAsync(CommentStreamId.For(id), token: ct);
+        var userIdByTimestamp = offerEvents.Concat(commentEvents)
+            .Select(e => (e.Data switch
+            {
+                JobOfferSubmitted s => (Timestamp: s.Timestamp, UserId: s.UserId),
+                JobOfferEdited ed => (Timestamp: ed.Timestamp, UserId: ed.EditedByUserId),
+                JobOfferStatusChanged sc => (Timestamp: sc.Timestamp, UserId: sc.ChangedByUserId),
+                JobOfferCancelled c => (Timestamp: c.Timestamp, UserId: c.CancelledByUserId),
+                JobOfferCommentAdded cm => (Timestamp: cm.Timestamp, UserId: cm.UserId),
+                _ => (Timestamp: DateTimeOffset.MinValue, UserId: string.Empty)
+            }))
+            .Where(t => !string.IsNullOrEmpty(t.UserId))
+            .ToDictionary(t => t.Timestamp, t => t.UserId);
+
+        var avatars = await userService.GetAvatarUrlsAsync(userIdByTimestamp.Values.Distinct(), ct);
+
+        return Ok(new JobOfferHistoryResponse(entries.Select(e =>
+        {
+            var actorUserId = userIdByTimestamp.GetValueOrDefault(e.Timestamp, string.Empty);
+            return new HistoryEntryResponse(
+                EventType: e.EventType,
+                Description: e.Description,
+                ActorUserId: actorUserId,
+                ActorEmail: e.ActorEmail,
+                Timestamp: e.Timestamp,
+                AvatarUrl: avatars.GetValueOrDefault(actorUserId));
+        }).ToList()));
     }
 
     // ───── List Comments ─────
