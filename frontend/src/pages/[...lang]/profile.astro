@@ -473,9 +473,10 @@ const t = translations[lang];
 
         var data = await res.json();
 
-        // Refresh user data and update UI
+        // Refresh session so the cached JWT contains the new user_metadata.avatar_url
         var supabase = window.__supabase;
         if (supabase) {
+          await supabase.auth.refreshSession();
           var { data: userData } = await supabase.auth.getUser();
           if (userData?.user) {
             updateAvatarPreview(data.avatarUrl, userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
@@ -512,9 +513,10 @@ const t = translations[lang];
           throw new Error(err.error || strings.avatar.error);
         }
 
-        // Refresh user data and update UI
+        // Refresh session so the cached JWT no longer contains the avatar_url
         var supabase = window.__supabase;
         if (supabase) {
+          await supabase.auth.refreshSession();
           var { data: userData } = await supabase.auth.getUser();
           if (userData?.user) {
             updateAvatarPreview('', userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
