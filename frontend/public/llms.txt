@@ -1,0 +1,32 @@
+# kalandra.tech
+
+> Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public.
+
+This is a personal portfolio and technology showcase website for Pavel Kalandra, a CTO and software engineering leader based in the Czech Republic.
+
+## Pages
+
+- [Home](https://www.kalandra.tech/): Overview of the site, navigation to key sections
+- [About Me](https://www.kalandra.tech/about): Background, experience, and skills
+- [Project](https://www.kalandra.tech/project): Technical deep-dive into how this site is built — architecture, tech stack, and engineering decisions
+- [Hire Me](https://www.kalandra.tech/hire-me): Contact form for job offers and collaboration inquiries
+- [Job Offers](https://www.kalandra.tech/job-offers): Public listing of received job offers (with consent)
+- [Privacy Policy](https://www.kalandra.tech/privacy): Data handling and privacy information
+- [Terms of Service](https://www.kalandra.tech/terms): Usage terms
+
+## Tech Stack
+
+- Frontend: Astro (static site generation) with Tailwind CSS, deployed to Cloudflare Pages
+- Backend: ASP.NET Core (.NET 10) with Marten event sourcing, deployed to Oracle Cloud
+- Database: PostgreSQL via Supabase
+- Auth: Supabase Auth (email/password + Google OAuth)
+
+## Languages
+
+Available in English (default) and Czech (/cs/ prefix).
+
+## Contact
+
+- Email: [pavel@kalandra.tech](mailto:pavel@kalandra.tech)
+- LinkedIn: [Pavel Kalandra](https://www.linkedin.com/in/pavelkalandra/)
+- GitHub: [KaliCZ](https://github.com/kalicz)

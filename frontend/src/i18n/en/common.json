@@ -37,6 +37,12 @@
     "toggleDarkMode": "Toggle dark mode",
     "changeLanguage": "Change language"
   },
+  "notFound": {
+    "title": "Page Not Found",
+    "heading": "404",
+    "message": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go to homepage"
+  },
   "errors": {
     "generic": "Something went wrong. Please try again or email me at pavel@kalandra.tech.",
     "notFound": "The requested resource was not found. Please try again or email me at pavel@kalandra.tech.",

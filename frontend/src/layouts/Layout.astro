@@ -47,6 +47,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <link rel="alternate" hreflang="en" href={enUrl} />
   <link rel="alternate" hreflang="cs" href={csUrl} />
   <link rel="alternate" hreflang="x-default" href={enUrl} />
+  <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -68,8 +69,62 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
       }
+      // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
+      // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
+      // We also extract the user's display name + avatar so the profile chip's width is stable
+      // before the supabase JS module hydrates — otherwise the empty name span grows after first
+      // paint and shifts surrounding header elements.
+      try {
+        var session = null;
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') === k.length - 11) {
+            var v = localStorage.getItem(k);
+            if (v && v.length > 2) { try { session = JSON.parse(v); } catch (_) {} break; }
+          }
+        }
+        if (session && session.user) {
+          var u = session.user;
+          var meta = u.user_metadata || {};
+          window.__authPrefill = {
+            name: meta.full_name || (u.email ? u.email.split('@')[0] : 'User'),
+            avatar: meta.avatar_url || '',
+            isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf('admin') !== -1),
+          };
+          document.documentElement.classList.add('auth-known-in');
+        } else {
+          document.documentElement.classList.add('auth-known-out');
+        }
+      } catch (e) {
+        document.documentElement.classList.add('auth-known-out');
+      }
     })();
   </script>
+  <style is:global>
+    /* Pre-paint auth visibility to prevent header flash before supabase client hydrates.
+       These !important rules win over Tailwind's `hidden` class. The module script below
+       removes the `auth-known-*` class once getSession() resolves, returning control to JS. */
+    html.auth-known-in #auth-sign-in-desktop,
+    html.auth-known-in #auth-sign-in-mobile { display: none !important; }
+    html.auth-known-in #auth-profile-desktop { display: block !important; }
+    html.auth-known-in #auth-profile-mobile { display: block !important; }
+    html.auth-known-out #auth-profile-desktop,
+    html.auth-known-out #auth-profile-mobile { display: none !important; }
+
+    /* Generic helpers any page can use to gate content on auth state pre-paint.
+       Add `signed-in-only` to elements that should only be visible when signed in,
+       and `signed-out-only` to elements that should only be visible when signed out. */
+    html.auth-known-in .signed-out-only { display: none !important; }
+    html.auth-known-out .signed-in-only { display: none !important; }
+    html.auth-known-in .signed-in-only { display: block !important; }
+
+    /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
+       `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
+       happened while the end-of-body updateToggleIcons() script had not yet run. */
+    html:not(.dark) .dark-visible { display: none !important; }
+    html.dark .dark-hidden { display: none !important; }
+    html.dark .dark-visible { display: inline-block !important; }
+  </style>
 </head>
 <body>
 
@@ -184,7 +239,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
           <button
             id="auth-sign-in-desktop"
             type="button"
-            class="hidden px-4 py-1.5 rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+            class="px-4 py-1.5 rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
           >
             {t.auth.signIn}
           </button>
@@ -336,7 +391,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
         <button
           id="auth-sign-in-mobile"
           type="button"
-          class="hidden px-3 py-1 rounded-lg text-xs font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+          class="px-3 py-1 rounded-lg text-xs font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
         >
           {t.auth.signIn}
         </button>
@@ -347,6 +402,37 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       </div>
     </div>
   </nav>
+
+  <script is:inline>
+    // Prefill the profile chip from the session we parsed in the head pre-detect script,
+    // so the chip's width is finalized before first paint. Runs synchronously during parse.
+    (function() {
+      var p = window.__authPrefill;
+      if (!p) return;
+      var nameEl = document.getElementById('auth-name-desktop');
+      if (nameEl) nameEl.textContent = p.name;
+      var avatarDesktop = document.getElementById('auth-avatar-desktop');
+      var avatarMobile = document.getElementById('auth-avatar-mobile');
+      function applyAvatar(img) {
+        if (!img) return;
+        if (p.avatar) {
+          img.src = p.avatar;
+          img.alt = p.name;
+        } else {
+          img.style.display = 'none';
+          var placeholder = img.nextElementSibling;
+          if (placeholder) {
+            placeholder.classList.remove('hidden');
+            placeholder.textContent = (p.name.charAt(0) || '?').toUpperCase();
+          }
+        }
+      }
+      applyAvatar(avatarDesktop);
+      applyAvatar(avatarMobile);
+      var adminLink = document.getElementById('auth-admin-link-desktop');
+      if (adminLink && p.isAdmin) adminLink.classList.remove('hidden');
+    })();
+  </script>
 
   <!-- Main content -->
   <main id="main-content" class="pt-32 pb-24">
@@ -379,12 +465,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <script is:inline>
     function updateToggleIcons() {
       var isDark = document.documentElement.classList.contains('dark');
-      document.querySelectorAll('.dark-hidden').forEach(function(el) {
-        el.style.display = isDark ? 'none' : '';
-      });
-      document.querySelectorAll('.dark-visible').forEach(function(el) {
-        el.style.display = isDark ? '' : 'none';
-      });
+      // Icon visibility is handled purely by CSS (html.dark / html:not(.dark) selectors).
       // Update tooltips
       var lightTip = document.documentElement.lang === 'cs' ? 'Přepnout na světlý režim' : 'Switch to light mode';
       var darkTip = document.documentElement.lang === 'cs' ? 'Přepnout na tmavý režim' : 'Switch to dark mode';
@@ -628,6 +709,8 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         updateAuthUI(session?.user ?? null);
+        // Hand visibility control back to JS now that the real session is known.
+        document.documentElement.classList.remove('auth-known-in', 'auth-known-out');
       });
 
       supabase.auth.onAuthStateChange((_event, session) => {
