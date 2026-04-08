@@ -512,6 +512,8 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
         </div>
       </div>
 
+      <div id="auth-turnstile-container" class="flex justify-center empty:hidden"></div>
+
       <p id="auth-dialog-error" class="hidden text-error text-sm font-body"></p>
 
       <button type="button" id="auth-dialog-submit"
@@ -553,12 +555,40 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <script>
     import { createClient } from '@supabase/supabase-js';
     import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../lib/supabase';
+    import {
+      createTurnstile,
+      whenTurnstileReady,
+      turnstileEnabled,
+      shouldForceInteractive,
+      recordFailure,
+      recordSuccess,
+    } from '../lib/turnstile';
 
     const supabase = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
       ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
 
     let authDialogMode: 'signin' | 'signup' = 'signin';
+
+    // Shared Turnstile widget for the auth dialog. Exposed on window so future
+    // features (e.g. profile page password change) can reuse the same helper.
+    const authTurnstile = createTurnstile('#auth-turnstile-container');
+    (window as any).__createTurnstile = createTurnstile;
+
+    // Single device-wide counter for failed auth attempts (sign-in or sign-up).
+    // Changing the email on the same browser doesn't reset it — it's the same person.
+    const AUTH_FAIL_KEY = 'auth-fail';
+    // Separate counter for successful signups — more than 1 account in 4h is suspicious.
+    const AUTH_SIGNUP_KEY = 'auth-signup';
+    const SIGNUP_WINDOW_MS = 4 * 60 * 60 * 1000;
+
+    function renderAuthTurnstile() {
+      if (!turnstileEnabled()) return;
+      const force =
+        shouldForceInteractive(AUTH_FAIL_KEY) ||
+        shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
+      authTurnstile.render(force ? 'always' : 'interaction-only');
+    }
 
     function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
       if (!imgEl) return;
@@ -622,6 +652,9 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       authDialogMode = 'signin';
       updateAuthDialogMode();
       (document.getElementById('auth-dialog') as HTMLDialogElement)?.showModal();
+      if (turnstileEnabled()) {
+        whenTurnstileReady().then(() => renderAuthTurnstile());
+      }
     }
 
     function updateAuthDialogMode() {
@@ -654,23 +687,49 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       const errorEl = document.getElementById('auth-dialog-error');
       if (errorEl) errorEl.classList.add('hidden');
 
+      const captchaToken = turnstileEnabled() ? authTurnstile.getToken() : '';
+      const authOptions: any = captchaToken ? { captchaToken } : {};
+
+      const finishFailure = (message: string) => {
+        recordFailure(AUTH_FAIL_KEY);
+        if (errorEl) { errorEl.textContent = message; errorEl.className = 'text-error text-sm font-body'; }
+        if (turnstileEnabled()) {
+          authTurnstile.reset();
+          // Escalate appearance if threshold just crossed.
+          if (shouldForceInteractive(AUTH_FAIL_KEY)) renderAuthTurnstile();
+        }
+      };
+
       if (authDialogMode === 'signup') {
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: email.split('@')[0] } } });
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { ...authOptions, data: { full_name: email.split('@')[0] } },
+        });
         if (signUpError) {
-          if (errorEl) { errorEl.textContent = signUpError.message; errorEl.className = 'text-error text-sm font-body'; }
-        } else if (!data.session) {
-          // Email confirmation required — close dialog and show snackbar
-          (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
-          const labels = (window as any).__authDialogLabels;
-          (window as any).__showSnackbar?.(labels?.confirmationSent || 'Check your email to confirm your account.', 'info', 8000);
+          finishFailure(signUpError.message);
         } else {
-          (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
+          recordSuccess(AUTH_FAIL_KEY);
+          // Count the signup itself — more than 1 in 4h escalates next attempt.
+          recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
+          if (!data.session) {
+            (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
+            const labels = (window as any).__authDialogLabels;
+            (window as any).__showSnackbar?.(labels?.confirmationSent || 'Check your email to confirm your account.', 'info', 8000);
+          } else {
+            (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
+          }
         }
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+          options: authOptions,
+        });
         if (signInError) {
-          if (errorEl) { errorEl.textContent = signInError.message; errorEl.className = 'text-error text-sm font-body'; }
+          finishFailure(signInError.message);
         } else {
+          recordSuccess(AUTH_FAIL_KEY);
           (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
         }
       }
