@@ -33,7 +33,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        AssertValidationError(json, "PasswordTooShort");
+        AssertValidationError(json, "password", "PasswordTooShort");
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        AssertValidationError(json, "PasswordTooShort");
+        AssertValidationError(json, "password", "PasswordTooShort");
     }
 
     // ───── Success ─────
@@ -76,7 +76,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        AssertValidationError(json, "AlreadyLinked");
+        AssertValidationError(json, "email", "AlreadyLinked");
     }
 
     [Fact]
@@ -101,9 +101,9 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         return userId;
     }
 
-    private static void AssertValidationError(JsonElement json, string expectedError)
+    private static void AssertValidationError(JsonElement json, string field, string expectedError)
     {
-        var errors = json.GetProperty("errors").GetProperty("error");
+        var errors = json.GetProperty("errors").GetProperty(field);
         Assert.Equal(expectedError, errors[0].GetString());
     }
 

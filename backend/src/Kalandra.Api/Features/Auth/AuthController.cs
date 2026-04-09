@@ -30,17 +30,16 @@ public class AuthController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            return ValidationError(LinkEmailError.PasswordTooShort);
+            return ValidationError("password", LinkEmailError.PasswordTooShort);
 
         var error = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
-
         if (error == null)
-            return NoContent();
+            return NoContent(); // Success
 
         switch (error.Code)
         {
             case ChangePasswordErrorCode.AlreadyLinked:
-                return ValidationError(LinkEmailError.AlreadyLinked);
+                return ValidationError("email", LinkEmailError.AlreadyLinked);
             case ChangePasswordErrorCode.Unknown:
                 logger.LogError("LinkEmail failed for user {UserId}: {Message}", currentUser.RequiredUser.Id, error.Message);
                 return Problem();
@@ -49,9 +48,9 @@ public class AuthController(
         throw new UnreachableException();
     }
 
-    private IActionResult ValidationError(LinkEmailError error)
+    private IActionResult ValidationError(string field, LinkEmailError error)
     {
-        ModelState.AddModelError("error", error.ToString());
+        ModelState.AddModelError(field, error.ToString());
         return ValidationProblem();
     }
 }
