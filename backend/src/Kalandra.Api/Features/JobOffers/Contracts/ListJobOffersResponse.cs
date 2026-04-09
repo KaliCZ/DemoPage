@@ -10,6 +10,17 @@ public record JobOfferSummary(
     JobOfferStatus Status,
     bool IsRemote,
     string? Location,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt)
+{
+    public static JobOfferSummary Serialize(JobOffer offer) => new(
+        Id: offer.Id,
+        CompanyName: offer.CompanyName,
+        JobTitle: offer.JobTitle,
+        ContactEmail: offer.ContactEmail,
+        Status: offer.Status,
+        IsRemote: offer.IsRemote,
+        Location: offer.Location,
+        CreatedAt: offer.CreatedAt);
+}
 
 public record ListJobOffersResponse(IReadOnlyList<JobOfferSummary> Items, int TotalCount);

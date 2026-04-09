@@ -285,13 +285,7 @@ public class JobOffersController(
         await session.SaveChangesAsync(ct);
 
         var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
-        return Ok(new CommentResponse(
-            Id: commentEvent.CommentId,
-            UserId: commentEvent.UserId,
-            UserEmail: commentEvent.UserEmail,
-            UserName: commentEvent.UserName,
-            Content: commentEvent.Content,
-            CreatedAt: commentEvent.Timestamp));
+        return Ok(CommentResponse.Serialize(commentEvent));
     }
 
     // ───── List ─────
@@ -391,13 +385,7 @@ public class JobOffersController(
         if (comments == null)
             return NotFound();
 
-        return Ok(new ListCommentsResponse(comments.Select(c => new CommentResponse(
-            Id: c.CommentId,
-            UserId: c.UserId,
-            UserEmail: c.UserEmail,
-            UserName: c.UserName,
-            Content: c.Content,
-            CreatedAt: c.Timestamp)).ToList()));
+        return Ok(new ListCommentsResponse(comments.Select(CommentResponse.Serialize).ToList()));
     }
 
     // ───── Private helpers ─────
@@ -406,26 +394,7 @@ public class JobOffersController(
     {
         var query = new GetJobOfferDetailQuery(Id: id, User: AppUser);
         var offer = await getDetailHandler.HandleAsync(query, ct);
-        if (offer == null)
-            return null;
-
-        return new GetJobOfferDetailResponse(
-            Id: offer.Id,
-            CompanyName: offer.CompanyName,
-            ContactName: offer.ContactName,
-            ContactEmail: offer.ContactEmail,
-            JobTitle: offer.JobTitle,
-            Description: offer.Description,
-            SalaryRange: offer.SalaryRange,
-            Location: offer.Location,
-            IsRemote: offer.IsRemote,
-            AdditionalNotes: offer.AdditionalNotes,
-            Attachments: offer.Attachments,
-            Status: offer.Status,
-            AdminNotes: AppUser.IsAdmin ? offer.AdminNotes : null,
-            UserEmail: offer.UserEmail,
-            CreatedAt: offer.CreatedAt,
-            UpdatedAt: offer.UpdatedAt);
+        return offer == null ? null : GetJobOfferDetailResponse.Serialize(offer, AppUser);
     }
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
@@ -445,15 +414,7 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(j => new JobOfferSummary(
-                Id: j.Id,
-                CompanyName: j.CompanyName,
-                JobTitle: j.JobTitle,
-                ContactEmail: j.ContactEmail,
-                Status: j.Status,
-                IsRemote: j.IsRemote,
-                Location: j.Location,
-                CreatedAt: j.CreatedAt)).ToList(),
+            result.Items.Select(JobOfferSummary.Serialize).ToList(),
             result.TotalCount);
     }
 
