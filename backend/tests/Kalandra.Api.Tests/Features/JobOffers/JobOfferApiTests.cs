@@ -113,9 +113,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task GetDetail_AsOtherUser_Returns404()
     {
-        var id = await CreateOfferAs("view-owner", "viewowner@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "viewowner@test.com");
 
-        Authenticate("view-other", "viewother@test.com");
+        Authenticate(Guid.NewGuid(), "viewother@test.com");
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/job-offers/{id}", Ct)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/job-offers/{id}/history", Ct)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/job-offers/{id}/comments", Ct)).StatusCode);
@@ -124,9 +124,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task GetDetail_AsAdmin_ReturnsOffer()
     {
-        var id = await CreateOfferAs("detail-user", "detail@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "detail@test.com");
 
-        Authenticate("admin-user-id", "admin@test.com", isAdmin: true);
+        Authenticate(AdminUserId, "admin@test.com", isAdmin: true);
 
         var response = await client.GetAsync($"/api/job-offers/{id}", Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -141,7 +141,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task ListMine_ReturnsOwnOffersOnly()
     {
-        var ownerId = await CreateOfferAs("list-owner", "listowner@test.com");
+        var ownerId = await CreateOfferAs(Guid.NewGuid(), "listowner@test.com");
 
         // Owner's list contains their offer
         var ownerListRes = await client.GetAsync("/api/job-offers/mine", Ct);
@@ -153,7 +153,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             item => item.GetProperty("id").GetString() == ownerId);
 
         // Other user's list does not contain it
-        Authenticate("list-other", "listother@test.com");
+        Authenticate(Guid.NewGuid(), "listother@test.com");
         var otherListRes = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, otherListRes.StatusCode);
         var otherList = await ParseJsonAsync(otherListRes);
@@ -167,7 +167,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task ListAll_AsNonAdmin_Returns403()
     {
-        Authenticate("regular-user");
+        Authenticate(Guid.NewGuid());
         var response = await client.GetAsync("/api/job-offers", Ct);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -175,9 +175,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task ListAll_AsAdmin_ReturnsOffersWithStructure()
     {
-        await CreateOfferAs("admin-list-user", "adminlist@test.com");
+        await CreateOfferAs(Guid.NewGuid(), "adminlist@test.com");
 
-        Authenticate("admin-user-id", "admin@test.com", isAdmin: true);
+        Authenticate(AdminUserId, "admin@test.com", isAdmin: true);
         var response = await client.GetAsync("/api/job-offers", Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -199,7 +199,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Edit_AsOwner_WhenSubmitted_UpdatesOfferAndHistory()
     {
-        var id = await CreateOfferAs("edit-user", "edit@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "edit@test.com");
 
         var editRes = await client.PutAsJsonAsync(
             $"/api/job-offers/{id}",
@@ -247,9 +247,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Edit_AsOtherUser_Returns403()
     {
-        var id = await CreateOfferAs("edit-owner", "editowner@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "editowner@test.com");
 
-        Authenticate("edit-other", "editother@test.com");
+        Authenticate(Guid.NewGuid(), "editother@test.com");
         var editRes = await client.PutAsJsonAsync(
             $"/api/job-offers/{id}",
             CreateValidEditBody(),
@@ -260,7 +260,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Edit_WhenNotSubmitted_Returns400()
     {
-        var id = await CreateOfferAs("edit-fail-user", "editfail@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "editfail@test.com");
 
         await client.PostAsJsonAsync($"/api/job-offers/{id}/cancel", new { reason = "" }, Ct);
 
@@ -273,7 +273,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Cancel_AsOwner_SetsCancelledStatusAndHistory()
     {
-        var id = await CreateOfferAs("cancel-user", "cancel@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "cancel@test.com");
 
         var cancelRes = await client.PostAsJsonAsync(
             $"/api/job-offers/{id}/cancel",
@@ -298,9 +298,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Cancel_AsOtherUser_Returns403()
     {
-        var id = await CreateOfferAs("owner-user", "owner@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "owner@test.com");
 
-        Authenticate("other-user", "other@test.com");
+        Authenticate(Guid.NewGuid(), "other@test.com");
         var cancelRes = await client.PostAsJsonAsync(
             $"/api/job-offers/{id}/cancel",
             new { reason = "Trying to cancel someone else's offer" },
@@ -311,7 +311,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Cancel_WhenAlreadyCancelled_Returns400()
     {
-        var id = await CreateOfferAs("double-cancel-user", "doublecancel@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "doublecancel@test.com");
 
         var firstCancel = await client.PostAsJsonAsync(
             $"/api/job-offers/{id}/cancel",
@@ -331,9 +331,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task AdminChangeStatus_UpdatesStatusAndHistory()
     {
-        var id = await CreateOfferAs("status-user", "status@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "status@test.com");
 
-        Authenticate("admin-user-id", "admin@test.com", isAdmin: true);
+        Authenticate(AdminUserId, "admin@test.com", isAdmin: true);
 
         var statusRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}/status",
@@ -358,9 +358,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task AdminCannotSetCancelled_ThroughStatusEndpoint()
     {
-        var id = await CreateOfferAs("cancel-status-user", "cancelstatus@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "cancelstatus@test.com");
 
-        Authenticate("admin-user-id", "admin@test.com", isAdmin: true);
+        Authenticate(AdminUserId, "admin@test.com", isAdmin: true);
 
         var statusRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}/status",
@@ -372,9 +372,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task AdminCannotReopen_TerminalStatus()
     {
-        var id = await CreateOfferAs("terminal-user", "terminal@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "terminal@test.com");
 
-        Authenticate("admin-user-id", "admin@test.com", isAdmin: true);
+        Authenticate(AdminUserId, "admin@test.com", isAdmin: true);
 
         var declineRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}/status",
@@ -394,7 +394,8 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task Comments_OwnerCanAddAndList()
     {
-        var id = await CreateOfferAs("comment-user", "comment@test.com");
+        var commentUserId = Guid.NewGuid();
+        var id = await CreateOfferAs(commentUserId, "comment@test.com");
 
         var commentRes = await client.PostAsJsonAsync(
             $"/api/job-offers/{id}/comments",
@@ -404,7 +405,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var comment = await ParseJsonAsync(commentRes);
         AssertValidGuid(comment, "id");
-        Assert.Equal("comment-user", comment.GetProperty("userId").GetString());
+        Assert.Equal(commentUserId.ToString(), comment.GetProperty("userId").GetString());
         Assert.Equal("comment@test.com", comment.GetProperty("userEmail").GetString());
         Assert.Equal("Hello, any update?", comment.GetProperty("content").GetString());
         AssertValidTimestamp(comment, "createdAt");
@@ -416,15 +417,16 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var commentArray = comments.GetProperty("comments");
         Assert.Equal(1, commentArray.GetArrayLength());
         Assert.Equal("Hello, any update?", commentArray[0].GetProperty("content").GetString());
-        Assert.Equal("comment-user", commentArray[0].GetProperty("userId").GetString());
+        Assert.Equal(commentUserId.ToString(), commentArray[0].GetProperty("userId").GetString());
     }
 
     [Fact]
     public async Task Comments_AdminCanReply()
     {
-        var id = await CreateOfferAs("comment-owner", "owner@test.com");
+        var ownerId = Guid.NewGuid();
+        var id = await CreateOfferAs(ownerId, "owner@test.com");
 
-        Authenticate("admin-user-id", "admin@test.com", isAdmin: true);
+        Authenticate(AdminUserId, "admin@test.com", isAdmin: true);
 
         var commentRes = await client.PostAsJsonAsync(
             $"/api/job-offers/{id}/comments",
@@ -433,18 +435,18 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, commentRes.StatusCode);
 
         var comment = await ParseJsonAsync(commentRes);
-        Assert.Equal("admin-user-id", comment.GetProperty("userId").GetString());
+        Assert.Equal(AdminUserId.ToString(), comment.GetProperty("userId").GetString());
         Assert.Equal("admin@test.com", comment.GetProperty("userEmail").GetString());
         Assert.Equal("Thanks, reviewing now!", comment.GetProperty("content").GetString());
 
         // Verify visible to owner
-        Authenticate("comment-owner", "owner@test.com");
+        Authenticate(ownerId, "owner@test.com");
         var listRes = await client.GetAsync($"/api/job-offers/{id}/comments", Ct);
         var comments = await ParseJsonAsync(listRes);
         var commentArray = comments.GetProperty("comments");
         Assert.Equal(1, commentArray.GetArrayLength());
         Assert.Equal("Thanks, reviewing now!", commentArray[0].GetProperty("content").GetString());
-        Assert.Equal("admin-user-id", commentArray[0].GetProperty("userId").GetString());
+        Assert.Equal(AdminUserId.ToString(), commentArray[0].GetProperty("userId").GetString());
     }
 
     // ───── Attachments ─────
@@ -476,7 +478,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task DownloadAttachment_NonExistentFile_Returns404()
     {
-        var id = await CreateOfferAs("attach-user", "attach@test.com");
+        var id = await CreateOfferAs(Guid.NewGuid(), "attach@test.com");
 
         var downloadResponse = await client.GetAsync(
             $"/api/job-offers/{id}/attachments/{Uri.EscapeDataString("nonexistent.pdf")}", Ct);
@@ -494,8 +496,10 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
     // ───── Helpers ─────
 
+    private static readonly Guid AdminUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
     private void Authenticate(
-        string userId = "test-user-id",
+        Guid? userId = null,
         string email = "test@example.com",
         bool isAdmin = false)
     {
@@ -507,7 +511,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     /// Creates an offer as the given user and returns the validated id string.
     /// Leaves the client authenticated as that user.
     /// </summary>
-    private async Task<string> CreateOfferAs(string userId, string email)
+    private async Task<string> CreateOfferAs(Guid userId, string email)
     {
         Authenticate(userId, email);
         var response = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);

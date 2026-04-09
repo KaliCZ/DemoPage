@@ -42,8 +42,7 @@ public static class RateLimits
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.ContentType = "application/json";
-                await context.HttpContext.Response.WriteAsync(
-                    "{\"error\":\"captcha_required\"}", ct);
+                await context.HttpContext.Response.WriteAsync("{\"error\":\"captcha_required\"}", ct);
             };
         });
     }

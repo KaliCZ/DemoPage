@@ -71,7 +71,7 @@ public class JobOffersController(
         try
         {
             var command = new CreateJobOfferCommand(
-                UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
                 UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -132,7 +132,7 @@ public class JobOffersController(
         {
             var command = new EditJobOfferCommand(
                 Id: id,
-                UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
                 UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -182,7 +182,7 @@ public class JobOffersController(
         {
             var command = new CancelJobOfferCommand(
                 Id: id,
-                UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
                 UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 Reason: request.Reason,
                 Timestamp: timeProvider.GetUtcNow());
@@ -226,7 +226,7 @@ public class JobOffersController(
             var command = new UpdateJobOfferStatusCommand(
                 Id: id,
                 NewStatus: request.Status,
-                ChangedByUserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                ChangedByUserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
                 ChangedByEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 Notes: request.AdminNotes,
                 Timestamp: timeProvider.GetUtcNow());
@@ -269,7 +269,7 @@ public class JobOffersController(
 
         var command = new AddCommentCommand(
             JobOfferId: id,
-            UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+            UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
             UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
             UserName: AppUser.DisplayName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
             Content: request.Content.Trim().AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -351,7 +351,7 @@ public class JobOffersController(
         var query = new GetAttachmentInfoQuery(
             JobOfferId: id,
             FileName: fileName,
-            UserId: AppUser.Id,
+            UserId: AppUser.Id.ToString(),
             IsAdmin: AppUser.IsAdmin);
 
         var info = await attachmentHandler.HandleAsync(query, ct);
@@ -377,7 +377,7 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
     {
-        var query = new GetJobOfferHistoryQuery(Id: id, UserId: AppUser.Id, IsAdmin: AppUser.IsAdmin);
+        var query = new GetJobOfferHistoryQuery(Id: id, UserId: AppUser.Id.ToString(), IsAdmin: AppUser.IsAdmin);
         var entries = await historyHandler.HandleAsync(query, ct);
         if (entries == null)
             return NotFound();
@@ -393,7 +393,7 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
     {
-        var query = new ListCommentsQuery(JobOfferId: id, UserId: AppUser.Id, IsAdmin: AppUser.IsAdmin);
+        var query = new ListCommentsQuery(JobOfferId: id, UserId: AppUser.Id.ToString(), IsAdmin: AppUser.IsAdmin);
         var comments = await listCommentsHandler.HandleAsync(query, ct);
         if (comments == null)
             return NotFound();
@@ -411,7 +411,7 @@ public class JobOffersController(
 
     private async Task<GetJobOfferDetailResponse?> LoadDetailResponseAsync(Guid id, CancellationToken ct)
     {
-        var query = new GetJobOfferDetailQuery(Id: id, UserId: AppUser.Id, IsAdmin: AppUser.IsAdmin);
+        var query = new GetJobOfferDetailQuery(Id: id, UserId: AppUser.Id.ToString(), IsAdmin: AppUser.IsAdmin);
         var offer = await getDetailHandler.HandleAsync(query, ct);
         if (offer == null)
             return null;
@@ -443,7 +443,7 @@ public class JobOffersController(
         CancellationToken ct)
     {
         var query = new ListJobOffersQuery(
-            UserId: AppUser.Id,
+            UserId: AppUser.Id.ToString(),
             IsAdmin: showAll,
             Statuses: status,
             Page: page,

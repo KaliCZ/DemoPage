@@ -32,7 +32,7 @@ public class AuthController(
             return BadRequest(new { error = "Password must be at least 6 characters." });
 
         var result = await adminService.UpdateUserAsync(
-            userId: AppUser.Id,
+            userId: AppUser.Id.ToString(),
             updatePayload: new { email = AppUser.Email, password = request.Password, email_confirm = true },
             ct);
 

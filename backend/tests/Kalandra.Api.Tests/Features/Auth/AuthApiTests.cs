@@ -49,7 +49,8 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     [Fact]
     public async Task LinkEmail_WithValidPassword_Returns200()
     {
-        Authenticate("link-user", "link@test.com");
+        var linkUserId = Guid.NewGuid();
+        Authenticate(linkUserId, "link@test.com");
         adminService.NextCallSucceeds = true;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
@@ -59,7 +60,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Contains("successfully", json.GetProperty("message").GetString());
 
         Assert.NotNull(adminService.LastUpdateCall);
-        Assert.Equal("link-user", adminService.LastUpdateCall.Value.UserId);
+        Assert.Equal(linkUserId.ToString(), adminService.LastUpdateCall.Value.UserId);
     }
 
     // ───── Supabase Failure ─────
@@ -67,7 +68,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     [Fact]
     public async Task LinkEmail_WhenSupabaseFails_Returns400WithError()
     {
-        Authenticate("fail-user", "fail@test.com");
+        Authenticate(Guid.NewGuid(), "fail@test.com");
         adminService.NextCallSucceeds = false;
         adminService.NextCallError = "User already has email identity";
 
@@ -81,7 +82,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     // ───── Helpers ─────
 
     private void Authenticate(
-        string userId = "test-user-id",
+        Guid? userId = null,
         string email = "test@example.com",
         bool isAdmin = false)
     {

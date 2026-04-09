@@ -7,11 +7,8 @@ public class HttpContextCurrentUserAccessor(
     IHttpContextAccessor httpContextAccessor) : ICurrentUserAccessor
 {
     private static readonly AsyncLocal<CurrentUser?> CachedUser = new();
-
     public CurrentUser? User => CachedUser.Value ??= BuildCurrentUser();
-
-    public CurrentUser RequiredUser =>
-        User ?? throw new InvalidOperationException("No authenticated user on the current request.");
+    public CurrentUser RequiredUser => User ?? throw new InvalidOperationException("No authenticated user on the current request.");
 
     private CurrentUser? BuildCurrentUser()
     {
@@ -19,9 +16,12 @@ public class HttpContextCurrentUserAccessor(
         if (principal?.Identity?.IsAuthenticated != true)
             return null;
 
-        var userId = principal.GetUserId();
+        var userIdStr = principal.GetUserId();
         var email = principal.GetEmail();
-        if (userId is null || email is null)
+        if (userIdStr is null || email is null)
+            return null;
+
+        if (!Guid.TryParse(userIdStr, out var userId))
             return null;
 
         return new CurrentUser(

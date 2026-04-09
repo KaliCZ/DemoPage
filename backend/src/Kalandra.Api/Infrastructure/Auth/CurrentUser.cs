@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace Kalandra.Api.Infrastructure.Auth;
 
 public record CurrentUser(
-    string Id,
+    Guid Id,
     string Email,
     string DisplayName,
     ImmutableArray<string> Roles)
