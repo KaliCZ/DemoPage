@@ -31,10 +31,12 @@ public static class RateLimits
                 if (httpContext.Request.Headers.ContainsKey("X-Interactive-Captcha"))
                     return RateLimitPartition.GetNoLimiter("interactive-captcha");
 
-                var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().RequiredUser;
+                var user = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().User;
+                if (user == null)
+                    return RateLimitPartition.GetNoLimiter("anonymous");
 
                 return RateLimitPartition.GetSlidingWindowLimiter(
-                    partitionKey: "user:" + currentUser.Id,
+                    partitionKey: "user:" + user.Id,
                     factory: _ => HireMeLimiterOptions);
             });
 
