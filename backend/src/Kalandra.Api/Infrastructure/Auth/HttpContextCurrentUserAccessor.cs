@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mail;
 using System.Security.Claims;
 
 namespace Kalandra.Api.Infrastructure.Auth;
@@ -16,18 +18,26 @@ public class HttpContextCurrentUserAccessor(
         if (principal?.Identity?.IsAuthenticated != true)
             return null;
 
-        var userIdStr = principal.GetUserId();
-        var email = principal.GetEmail();
-        if (userIdStr is null || email is null)
+        var userIdStr =
+            principal.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var emailStr =
+            principal.FindFirstValue(ClaimTypes.Email)
+            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
+
+        if (userIdStr is null || emailStr is null)
             return null;
 
         if (!Guid.TryParse(userIdStr, out var userId))
             return null;
 
+        if (!MailAddress.TryCreate(emailStr, out var email))
+            return null;
+
         return new CurrentUser(
             Id: userId,
             Email: email,
-            DisplayName: principal.FindFirstValue("display_name") ?? email.Split('@')[0],
+            DisplayName: principal.FindFirstValue("display_name") ?? email.User,
             Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
         );
     }

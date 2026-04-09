@@ -49,8 +49,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     [Fact]
     public async Task LinkEmail_WithValidPassword_Returns200()
     {
-        var linkUserId = Guid.NewGuid();
-        Authenticate(linkUserId, "link@test.com");
+        var linkUserId = Authenticate("link@test.com");
         adminService.NextCallSucceeds = true;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
@@ -68,7 +67,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     [Fact]
     public async Task LinkEmail_WhenSupabaseFails_Returns400WithError()
     {
-        Authenticate(Guid.NewGuid(), "fail@test.com");
+        Authenticate("fail@test.com");
         adminService.NextCallSucceeds = false;
         adminService.NextCallError = "User already has email identity";
 
@@ -81,13 +80,14 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
     // ───── Helpers ─────
 
-    private void Authenticate(
-        Guid? userId = null,
+    private Guid Authenticate(
         string email = "test@example.com",
         bool isAdmin = false)
     {
+        var userId = Guid.NewGuid();
         var token = JwtTestHelper.GenerateToken(userId, email, isAdmin);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return userId;
     }
 
     private static async Task<JsonElement> ParseJsonAsync(HttpResponseMessage response)

@@ -72,7 +72,7 @@ public class JobOffersController(
         {
             var command = new CreateJobOfferCommand(
                 UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
                 CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -133,7 +133,7 @@ public class JobOffersController(
             var command = new EditJobOfferCommand(
                 Id: id,
                 UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
                 CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -183,7 +183,7 @@ public class JobOffersController(
             var command = new CancelJobOfferCommand(
                 Id: id,
                 UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
                 Reason: request.Reason,
                 Timestamp: timeProvider.GetUtcNow());
 
@@ -227,7 +227,7 @@ public class JobOffersController(
                 Id: id,
                 NewStatus: request.Status,
                 ChangedByUserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                ChangedByEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                ChangedByEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
                 Notes: request.AdminNotes,
                 Timestamp: timeProvider.GetUtcNow());
 
@@ -270,7 +270,7 @@ public class JobOffersController(
         var command = new AddCommentCommand(
             JobOfferId: id,
             UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-            UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+            UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
             UserName: AppUser.DisplayName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
             Content: request.Content.Trim().AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
             IsAdmin: AppUser.IsAdmin,

@@ -33,7 +33,7 @@ public class AuthController(
 
         var result = await adminService.UpdateUserAsync(
             userId: AppUser.Id.ToString(),
-            updatePayload: new { email = AppUser.Email, password = request.Password, email_confirm = true },
+            updatePayload: new { email = AppUser.Email.Address, password = request.Password, email_confirm = true },
             ct);
 
         if (!result.Success)

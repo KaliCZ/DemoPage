@@ -1,10 +1,11 @@
 using System.Collections.Immutable;
+using System.Net.Mail;
 
 namespace Kalandra.Api.Infrastructure.Auth;
 
 public record CurrentUser(
     Guid Id,
-    string Email,
+    MailAddress Email,
     string DisplayName,
     ImmutableArray<string> Roles)
 {
