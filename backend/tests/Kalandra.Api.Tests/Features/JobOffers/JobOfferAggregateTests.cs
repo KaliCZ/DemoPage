@@ -59,7 +59,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsSuccess);
-        var evt = result.Success.Get((Unit _) => new InvalidOperationException());
+        var evt = result.Success.Get();
         Assert.Equal("NewCo", evt.CompanyName);
     }
 
@@ -81,7 +81,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsError);
-        Assert.Equal(EditJobOfferError.NotAuthorized, result.Error.Get((Unit _) => new InvalidOperationException()));
+        Assert.Equal(EditJobOfferError.NotAuthorized, result.Error.Get());
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsError);
-        Assert.Equal(EditJobOfferError.NotSubmittedStatus, result.Error.Get((Unit _) => new InvalidOperationException()));
+        Assert.Equal(EditJobOfferError.NotSubmittedStatus, result.Error.Get());
     }
 
     // --- Cancel ---
@@ -148,7 +148,7 @@ public class JobOfferAggregateTests
         var result = offer.Cancel(user: Other, reason: null, timestamp: Now);
 
         Assert.True(result.IsError);
-        Assert.Equal(CancelJobOfferError.NotAuthorized, result.Error.Get((Unit _) => new InvalidOperationException()));
+        Assert.Equal(CancelJobOfferError.NotAuthorized, result.Error.Get());
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class JobOfferAggregateTests
 
         var result = offer.Cancel(user: Owner, reason: null, timestamp: Now);
         Assert.True(result.IsError);
-        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get((Unit _) => new InvalidOperationException()));
+        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get());
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class JobOfferAggregateTests
 
         var result = offer.Cancel(user: Owner, reason: null, timestamp: Now);
         Assert.True(result.IsError);
-        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get((Unit _) => new InvalidOperationException()));
+        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get());
     }
 
     // --- ChangeStatus ---
@@ -196,7 +196,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsSuccess);
-        var evt = result.Success.Get((Unit _) => new InvalidOperationException());
+        var evt = result.Success.Get();
         Assert.Equal(JobOfferStatus.Submitted, evt.OldStatus);
         Assert.Equal(JobOfferStatus.InReview, evt.NewStatus);
     }
@@ -238,7 +238,7 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(
             UpdateJobOfferStatusError.InvalidTransition,
-            result.Error.Get((Unit _) => new InvalidOperationException()));
+            result.Error.Get());
     }
 
     [Fact]
@@ -352,7 +352,7 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(
             UpdateJobOfferStatusError.AlreadyInStatus,
-            result.Error.Get((Unit _) => new InvalidOperationException()));
+            result.Error.Get());
     }
 
     // --- Apply ---

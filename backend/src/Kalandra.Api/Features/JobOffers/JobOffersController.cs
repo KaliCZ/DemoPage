@@ -88,7 +88,7 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     CreateJobOfferError.TooManyAttachments =>
@@ -100,7 +100,7 @@ public class JobOffersController(
                 };
             }
 
-            var streamId = result.Success.Get((Unit _) => new InvalidOperationException());
+            var streamId = result.Success.Get();
 
             var detail = await LoadDetailResponseAsync(streamId, ct);
             return CreatedAtAction(nameof(GetDetail), new { id = streamId }, detail);
@@ -146,7 +146,7 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     EditJobOfferError.NotFound => NotFound(),
@@ -156,7 +156,7 @@ public class JobOffersController(
                 };
             }
 
-            var offer = result.Success.Get((Unit _) => new InvalidOperationException());
+            var offer = result.Success.Get();
             return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
@@ -187,7 +187,7 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     CancelJobOfferError.NotFound => NotFound(),
@@ -197,7 +197,7 @@ public class JobOffersController(
                 };
             }
 
-            var offer = result.Success.Get((Unit _) => new InvalidOperationException());
+            var offer = result.Success.Get();
             return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
@@ -230,7 +230,7 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
@@ -241,7 +241,7 @@ public class JobOffersController(
                 };
             }
 
-            var offer = result.Success.Get((Unit _) => new InvalidOperationException());
+            var offer = result.Success.Get();
             return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
@@ -272,7 +272,7 @@ public class JobOffersController(
 
         if (result.IsError)
         {
-            var error = result.Error.Get((Unit _) => new InvalidOperationException());
+            var error = result.Error.Get();
             return error switch
             {
                 AddCommentError.NotFound => NotFound(),
@@ -280,7 +280,7 @@ public class JobOffersController(
             };
         }
 
-        var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
+        var commentEvent = result.Success.Get();
         return CommentResponse.Serialize(commentEvent);
     }
 
