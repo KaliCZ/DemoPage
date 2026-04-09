@@ -22,8 +22,7 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session)
 
         var result = offer.ChangeStatus(
             newStatus: command.NewStatus,
-            changedByUserId: command.User.Id,
-            changedByEmail: command.User.Email.Address,
+            user: command.User,
             notes: command.Notes,
             timestamp: command.Timestamp);
 

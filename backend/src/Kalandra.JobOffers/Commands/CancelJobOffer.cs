@@ -20,8 +20,7 @@ public class CancelJobOfferHandler(IDocumentSession session)
             return Try.Error<JobOffer, CancelJobOfferError>(CancelJobOfferError.NotFound);
 
         var result = offer.Cancel(
-            userId: command.User.Id,
-            userEmail: command.User.Email.Address,
+            user: command.User,
             reason: command.Reason,
             timestamp: command.Timestamp);
 

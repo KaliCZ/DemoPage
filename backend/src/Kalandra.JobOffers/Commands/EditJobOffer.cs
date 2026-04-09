@@ -28,8 +28,7 @@ public class EditJobOfferHandler(IDocumentSession session)
             return Try.Error<JobOffer, EditJobOfferError>(EditJobOfferError.NotFound);
 
         var result = offer.Edit(
-            userId: command.User.Id,
-            userEmail: command.User.Email.Address,
+            user: command.User,
             companyName: command.CompanyName.Value,
             contactName: command.ContactName.Value,
             contactEmail: command.ContactEmail.Value,
