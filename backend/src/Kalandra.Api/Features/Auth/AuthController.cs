@@ -14,8 +14,6 @@ public class AuthController(
     ICurrentUserAccessor currentUser,
     ISupabaseAdminService adminService) : ControllerBase
 {
-    private CurrentUser AppUser => currentUser.RequiredUser;
-
     /// <summary>
     /// Links an email/password identity to the current user's account.
     /// Used when a user signed up via OAuth (e.g. Google) and wants to add email/password login.
@@ -31,7 +29,7 @@ public class AuthController(
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { error = "Password must be at least 6 characters." });
 
-        var result = await adminService.ChangePasswordAsync(AppUser, request.Password, ct);
+        var result = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
 
         if (!result.Success)
             return BadRequest(new { error = result.Error ?? "Failed to link email identity." });
