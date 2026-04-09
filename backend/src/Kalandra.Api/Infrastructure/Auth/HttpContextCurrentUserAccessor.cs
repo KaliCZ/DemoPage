@@ -29,8 +29,26 @@ public class HttpContextCurrentUserAccessor(
             Id: userId,
             Email: email,
             FullName: ExtractFullName(principal.FindFirstValue("user_metadata"), email),
-            Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
+            Roles: ExtractRoles(principal)
         );
+    }
+
+    /// <summary>
+    /// Translates ASP.NET role claims (string-valued, added in
+    /// SupabaseJwtSetup) into the Role enum. Unknown role strings are
+    /// silently dropped — the role claim stays on the principal either way
+    /// for [Authorize(Policy="...")] to use, this is just the strongly-typed
+    /// projection we expose to application code.
+    /// </summary>
+    private static ImmutableArray<Role> ExtractRoles(ClaimsPrincipal principal)
+    {
+        var builder = ImmutableArray.CreateBuilder<Role>();
+        foreach (var claim in principal.FindAll(ClaimTypes.Role))
+        {
+            if (Enum.TryParse<Role>(claim.Value, ignoreCase: true, out var role))
+                builder.Add(role);
+        }
+        return builder.ToImmutable();
     }
 
     /// <summary>
