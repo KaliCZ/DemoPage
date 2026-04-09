@@ -47,7 +47,7 @@ public class JobOffersController(
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Create(
+    public async Task<ActionResult<GetJobOfferDetailResponse>> Create(
         [FromForm] CreateJobOfferRequest request,
         [FromForm] List<IFormFile>? attachments,
         [FromForm(Name = "cf-turnstile-response")] string? turnstileToken,
@@ -123,12 +123,12 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> Edit(
+    public Task<ActionResult<GetJobOfferDetailResponse>> Edit(
         Guid id,
         [FromBody] EditJobOfferRequest request,
         CancellationToken ct)
     {
-        return WithConcurrencyHandling(async () =>
+        return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
         {
             var command = new EditJobOfferCommand(
                 Id: id,
@@ -159,7 +159,7 @@ public class JobOffersController(
             }
 
             await session.SaveChangesAsync(ct);
-            return Ok(await LoadDetailResponseAsync(id, ct));
+            return (await LoadDetailResponseAsync(id, ct))!;
         });
     }
 
@@ -172,12 +172,12 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> Cancel(
+    public Task<ActionResult<GetJobOfferDetailResponse>> Cancel(
         Guid id,
         [FromBody] CancelJobOfferRequest request,
         CancellationToken ct)
     {
-        return WithConcurrencyHandling(async () =>
+        return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
         {
             var command = new CancelJobOfferCommand(
                 Id: id,
@@ -200,7 +200,7 @@ public class JobOffersController(
             }
 
             await session.SaveChangesAsync(ct);
-            return Ok(await LoadDetailResponseAsync(id, ct));
+            return (await LoadDetailResponseAsync(id, ct))!;
         });
     }
 
@@ -214,12 +214,12 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> UpdateStatus(
+    public Task<ActionResult<GetJobOfferDetailResponse>> UpdateStatus(
         Guid id,
         [FromBody] UpdateJobOfferStatusRequest request,
         CancellationToken ct)
     {
-        return WithConcurrencyHandling(async () =>
+        return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
         {
             var command = new UpdateJobOfferStatusCommand(
                 Id: id,
@@ -244,7 +244,7 @@ public class JobOffersController(
             }
 
             await session.SaveChangesAsync(ct);
-            return Ok(await LoadDetailResponseAsync(id, ct));
+            return (await LoadDetailResponseAsync(id, ct))!;
         });
     }
 
@@ -256,7 +256,7 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddComment(
+    public async Task<ActionResult<CommentResponse>> AddComment(
         Guid id,
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
@@ -285,7 +285,7 @@ public class JobOffersController(
         await session.SaveChangesAsync(ct);
 
         var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
-        return Ok(CommentResponse.Serialize(commentEvent));
+        return CommentResponse.Serialize(commentEvent);
     }
 
     // ───── List ─────
@@ -293,13 +293,13 @@ public class JobOffersController(
     [HttpGet("mine")]
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ListMine(
+    public async Task<ActionResult<ListJobOffersResponse>> ListMine(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(showAll: false, status, page, pageSize, ct));
+        return await ListOffersAsync(showAll: false, status, page, pageSize, ct);
     }
 
     [HttpGet]
@@ -307,13 +307,13 @@ public class JobOffersController(
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListAll(
+    public async Task<ActionResult<ListJobOffersResponse>> ListAll(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(showAll: true, status, page, pageSize, ct));
+        return await ListOffersAsync(showAll: true, status, page, pageSize, ct);
     }
 
     // ───── Get Detail ─────
@@ -322,10 +322,12 @@ public class JobOffersController(
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetDetail(Guid id, CancellationToken ct)
+    public async Task<ActionResult<GetJobOfferDetailResponse>> GetDetail(Guid id, CancellationToken ct)
     {
         var detail = await LoadDetailResponseAsync(id, ct);
-        return detail == null ? NotFound() : Ok(detail);
+        if (detail == null)
+            return NotFound();
+        return detail;
     }
 
     // ───── Download Attachment ─────
@@ -362,14 +364,14 @@ public class JobOffersController(
     [ProducesResponseType<JobOfferHistoryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
+    public async Task<ActionResult<JobOfferHistoryResponse>> GetHistory(Guid id, CancellationToken ct)
     {
         var query = new GetJobOfferHistoryQuery(Id: id, User: AppUser);
         var entries = await historyHandler.HandleAsync(query, ct);
         if (entries == null)
             return NotFound();
 
-        return Ok(new JobOfferHistoryResponse(entries.ToList()));
+        return new JobOfferHistoryResponse(entries.ToList());
     }
 
     // ───── List Comments ─────
@@ -378,14 +380,14 @@ public class JobOffersController(
     [ProducesResponseType<ListCommentsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
+    public async Task<ActionResult<ListCommentsResponse>> ListComments(Guid id, CancellationToken ct)
     {
         var query = new ListCommentsQuery(JobOfferId: id, User: AppUser);
         var comments = await listCommentsHandler.HandleAsync(query, ct);
         if (comments == null)
             return NotFound();
 
-        return Ok(new ListCommentsResponse(comments.Select(CommentResponse.Serialize).ToList()));
+        return new ListCommentsResponse(comments.Select(CommentResponse.Serialize).ToList());
     }
 
     // ───── Private helpers ─────
@@ -418,7 +420,7 @@ public class JobOffersController(
             result.TotalCount);
     }
 
-    private async Task<IActionResult> WithConcurrencyHandling(Func<Task<IActionResult>> action)
+    private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)
     {
         try
         {
