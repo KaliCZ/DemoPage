@@ -16,38 +16,49 @@ public class SupabaseAdminService(
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     };
 
-    public async Task<SupabaseAdminResult> UpdateUserAsync(
-        string userId,
-        object updatePayload,
+    public async Task<ChangePasswordError?> ChangePasswordAsync(
+        CurrentUser user,
+        string password,
         CancellationToken ct)
     {
+        var payload = new
+        {
+            email = user.Email.Address,
+            password,
+            email_confirm = true,
+        };
+
         var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = authConfig.ServiceKey.Value;
 
         using var request = new HttpRequestMessage(
             HttpMethod.Put,
-            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId)}");
+            $"{projectUrl}/auth/v1/admin/users/{user.Id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceKey);
         request.Headers.Add("apikey", serviceKey);
         request.Content = new StringContent(
-            JsonSerializer.Serialize(updatePayload, JsonOptions),
+            JsonSerializer.Serialize(payload, JsonOptions),
             Encoding.UTF8,
             "application/json");
 
         using var response = await httpClient.SendAsync(request, ct);
 
         if (response.IsSuccessStatusCode)
-            return new SupabaseAdminResult(Success: true);
+            return null;
 
         var body = await response.Content.ReadAsStringAsync(ct);
         logger.LogError(
             "Supabase Admin API PUT /admin/users/{UserId} failed. Status: {StatusCode}. Response: {Body}",
-            userId,
+            user.Id,
             (int)response.StatusCode,
             body);
 
         var errorMessage = TryExtractErrorMessage(body) ?? $"Supabase returned {(int)response.StatusCode}";
-        return new SupabaseAdminResult(Success: false, Error: errorMessage);
+        var code = errorMessage.Contains("already", StringComparison.OrdinalIgnoreCase)
+            ? ChangePasswordErrorCode.AlreadyLinked
+            : ChangePasswordErrorCode.Unknown;
+
+        return new ChangePasswordError(code, errorMessage);
     }
 
     private static string? TryExtractErrorMessage(string body)

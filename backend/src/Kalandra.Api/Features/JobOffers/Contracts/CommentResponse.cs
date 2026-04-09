@@ -1,12 +1,24 @@
+using Kalandra.JobOffers.Events;
+
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
 public record CommentResponse(
     Guid Id,
-    string UserId,
+    Guid UserId,
     string UserEmail,
     string UserName,
     string Content,
-    DateTimeOffset CreatedAt,
-    string? AvatarUrl = null);
+    DateTimeOffset CreatedAt)
+{
+    public static CommentResponse Serialize(JobOfferCommentAdded comment) => new(
+        Id: comment.CommentId,
+        UserId: comment.UserId,
+        UserEmail: comment.UserEmail,
+        UserName: comment.UserName,
+        Content: comment.Content,
+        CreatedAt: comment.Timestamp);
+}
 
-public record ListCommentsResponse(List<CommentResponse> Comments);
+public record ListCommentsResponse(
+    List<CommentResponse> Comments,
+    Dictionary<string, string> Avatars);

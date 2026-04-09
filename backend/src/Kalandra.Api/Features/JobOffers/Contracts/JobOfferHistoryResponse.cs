@@ -1,11 +1,22 @@
+using Kalandra.JobOffers.Queries;
+
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
 public record HistoryEntryResponse(
     string EventType,
     string Description,
-    string ActorUserId,
+    Guid ActorUserId,
     string ActorEmail,
-    DateTimeOffset Timestamp,
-    string? AvatarUrl = null);
+    DateTimeOffset Timestamp)
+{
+    public static HistoryEntryResponse Serialize(JobOfferHistoryEntry entry) => new(
+        EventType: entry.EventType,
+        Description: entry.Description,
+        ActorUserId: entry.ActorUserId,
+        ActorEmail: entry.ActorEmail,
+        Timestamp: entry.Timestamp);
+}
 
-public record JobOfferHistoryResponse(List<HistoryEntryResponse> Entries);
+public record JobOfferHistoryResponse(
+    List<HistoryEntryResponse> Entries,
+    Dictionary<string, string> Avatars);

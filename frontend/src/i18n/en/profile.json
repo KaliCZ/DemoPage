@@ -22,7 +22,14 @@
     "error": "Failed to update profile picture.",
     "maxSize": "Max 1 MB. JPEG, PNG, or WebP.",
     "tooLarge": "File exceeds the 1 MB limit.",
-    "invalidType": "Only JPEG, PNG, and WebP images are allowed."
+    "invalidType": "Only JPEG, PNG, and WebP images are allowed.",
+    "errors": {
+      "file": {
+        "EmptyFile": "File is empty.",
+        "TooLarge": "File exceeds the 1 MB limit.",
+        "InvalidContentType": "Only JPEG, PNG, and WebP images are allowed."
+      }
+    }
   },
   "displayName": {
     "label": "Display Name",
@@ -69,8 +76,14 @@
     "linkEmailSubmit": "Link",
     "linkEmailSubmitting": "Linking…",
     "linkEmailSuccess": "Email sign-in linked successfully.",
-    "linkEmailError": "Failed to link email sign-in.",
-    "linkEmailTooShort": "Password must be at least 6 characters.",
+    "linkEmailErrors": {
+      "password": {
+        "PasswordTooShort": "Password must be at least 6 characters."
+      },
+      "email": {
+        "AlreadyLinked": "Your account already has email/password sign-in."
+      }
+    },
     "linkGoogle": "Link Google Account",
     "linkGoogleSuccess": "Google account linked successfully.",
     "linkGoogleError": "Failed to link Google account.",

@@ -1,9 +1,10 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
 
 namespace Kalandra.JobOffers.Queries;
 
-public record GetAttachmentInfoQuery(Guid JobOfferId, string FileName, string UserId, bool IsAdmin);
+public record GetAttachmentInfoQuery(Guid JobOfferId, string FileName, CurrentUser User);
 
 public record AttachmentInfoResult(AttachmentInfo Attachment, string StoragePath);
 
@@ -16,7 +17,7 @@ public class GetAttachmentInfoHandler(IQuerySession session)
         if (offer == null)
             return null;
 
-        if (!query.IsAdmin && offer.UserId != query.UserId)
+        if (!query.User.IsAdmin && offer.UserId != query.User.Id)
             return null;
 
         var attachment = offer.Attachments.FirstOrDefault(

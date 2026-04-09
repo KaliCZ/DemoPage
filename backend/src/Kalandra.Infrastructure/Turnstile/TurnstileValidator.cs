@@ -8,8 +8,11 @@ public sealed class TurnstileValidator(HttpClient httpClient, TurnstileConfig co
 {
     private const string VerifyUrl = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-    public async Task<bool> ValidateAsync(string token, string? remoteIp, CancellationToken ct = default)
+    public async Task<bool> ValidateAsync(string? token, string? remoteIp, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
+
         var payload = new Dictionary<string, string>
         {
             ["secret"] = config.SecretKey,

@@ -1,10 +1,11 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Events;
 
 namespace Kalandra.JobOffers.Entities;
 
 public enum EditJobOfferError { NotFound, NotAuthorized, NotSubmittedStatus }
 public enum CancelJobOfferError { NotFound, NotAuthorized, InvalidStatus }
-public enum UpdateJobOfferStatusError { NotFound, AlreadyInStatus, InvalidTransition }
+public enum UpdateJobOfferStatusError { NotFound, InvalidTransition }
 public enum AddCommentError { NotFound, NotAuthorized }
 
 /// <summary>
@@ -14,7 +15,7 @@ public enum AddCommentError { NotFound, NotAuthorized }
 public class JobOffer
 {
     public Guid Id { get; set; }
-    public string UserId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
     public string UserEmail { get; set; } = string.Empty;
 
     public string CompanyName { get; set; } = string.Empty;
@@ -34,8 +35,7 @@ public class JobOffer
     public DateTimeOffset UpdatedAt { get; set; }
 
     public Try<JobOfferEdited, EditJobOfferError> Edit(
-        string userId,
-        string userEmail,
+        CurrentUser user,
         string companyName,
         string contactName,
         string contactEmail,
@@ -47,15 +47,15 @@ public class JobOffer
         string? additionalNotes,
         DateTimeOffset timestamp)
     {
-        if (UserId != userId)
+        if (UserId != user.Id)
             return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotAuthorized);
 
         if (Status != JobOfferStatus.Submitted)
             return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotSubmittedStatus);
 
         return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
-            EditedByUserId: userId,
-            EditedByEmail: userEmail,
+            EditedByUserId: user.Id,
+            EditedByEmail: user.Email.Address,
             CompanyName: companyName,
             ContactName: contactName,
             ContactEmail: contactEmail,
@@ -69,40 +69,35 @@ public class JobOffer
     }
 
     public Try<JobOfferCancelled, CancelJobOfferError> Cancel(
-        string userId,
-        string userEmail,
+        CurrentUser user,
         string? reason,
         DateTimeOffset timestamp)
     {
-        if (UserId != userId)
+        if (UserId != user.Id)
             return Try.Error<JobOfferCancelled, CancelJobOfferError>(CancelJobOfferError.NotAuthorized);
 
         if (Status is not (JobOfferStatus.Submitted or JobOfferStatus.InReview))
             return Try.Error<JobOfferCancelled, CancelJobOfferError>(CancelJobOfferError.InvalidStatus);
 
         return Try.Success<JobOfferCancelled, CancelJobOfferError>(new JobOfferCancelled(
-            CancelledByUserId: userId,
-            CancelledByEmail: userEmail,
+            CancelledByUserId: user.Id,
+            CancelledByEmail: user.Email.Address,
             Reason: reason,
             Timestamp: timestamp));
     }
 
     public Try<JobOfferStatusChanged, UpdateJobOfferStatusError> ChangeStatus(
         JobOfferStatus newStatus,
-        string changedByUserId,
-        string changedByEmail,
+        CurrentUser user,
         string? notes,
         DateTimeOffset timestamp)
     {
-        if (newStatus == Status)
-            return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.AlreadyInStatus);
-
-        if (!CanTransitionTo(newStatus))
+        if (newStatus == Status || !CanTransitionTo(newStatus))
             return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.InvalidTransition);
 
         return Try.Success<JobOfferStatusChanged, UpdateJobOfferStatusError>(new JobOfferStatusChanged(
-            ChangedByUserId: changedByUserId,
-            ChangedByEmail: changedByEmail,
+            ChangedByUserId: user.Id,
+            ChangedByEmail: user.Email.Address,
             OldStatus: Status,
             NewStatus: newStatus,
             Notes: notes,

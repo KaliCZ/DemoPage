@@ -22,7 +22,14 @@
     "error": "Nepodařilo se aktualizovat profilový obrázek.",
     "maxSize": "Max 1 MB. JPEG, PNG nebo WebP.",
     "tooLarge": "Soubor překračuje limit 1 MB.",
-    "invalidType": "Povoleny jsou pouze obrázky JPEG, PNG a WebP."
+    "invalidType": "Povoleny jsou pouze obrázky JPEG, PNG a WebP.",
+    "errors": {
+      "file": {
+        "EmptyFile": "Soubor je prázdný.",
+        "TooLarge": "Soubor překračuje limit 1 MB.",
+        "InvalidContentType": "Povoleny jsou pouze obrázky JPEG, PNG a WebP."
+      }
+    }
   },
   "displayName": {
     "label": "Zobrazované jméno",
@@ -69,8 +76,14 @@
     "linkEmailSubmit": "Propojit",
     "linkEmailSubmitting": "Propojuji…",
     "linkEmailSuccess": "Přihlášení e-mailem úspěšně propojeno.",
-    "linkEmailError": "Nepodařilo se propojit přihlášení e-mailem.",
-    "linkEmailTooShort": "Heslo musí mít alespoň 6 znaků.",
+    "linkEmailErrors": {
+      "password": {
+        "PasswordTooShort": "Heslo musí mít alespoň 6 znaků."
+      },
+      "email": {
+        "AlreadyLinked": "Váš účet již má přihlášení e-mailem a heslem."
+      }
+    },
     "linkGoogle": "Propojit účet Google",
     "linkGoogleSuccess": "Účet Google byl úspěšně propojen.",
     "linkGoogleError": "Nepodařilo se propojit účet Google.",

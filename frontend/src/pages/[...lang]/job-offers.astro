@@ -241,7 +241,8 @@ const c = commonTranslations[lang];
     errorNetwork: c.errors.networkError,
     attachmentsLabel: t.list.attachments,
     downloadLabel: t.list.download,
-    validationStrings: f.validation
+    validationStrings: f.validation,
+    apiErrorMap: t.errors
   }}>
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
@@ -253,14 +254,10 @@ const c = commonTranslations[lang];
     }
 
     async function showApiError(res) {
-      if (res.status >= 400 && res.status < 500) {
-        try {
-          var body = await res.json();
-          if (body && body.error) {
-            window.__showSnackbar?.(body.error, 'error');
-            return body.error;
-          }
-        } catch (e) {}
+      var msg = await window.__getApiError?.(res, apiErrorMap);
+      if (msg) {
+        window.__showSnackbar?.(msg, 'error');
+        return msg;
       }
       showError(res.status);
     }
@@ -479,12 +476,14 @@ const c = commonTranslations[lang];
         return;
       }
       historyList.innerHTML = '';
+      var avatars = history.avatars || {};
       entries.forEach(function(entry) {
         var icon = eventIcons[entry.eventType] || 'info';
         var el = document.createElement('div');
         el.className = 'flex items-start gap-3 text-sm';
-        var actorHtml = entry.avatarUrl
-          ? '<img src="' + esc(entry.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+        var avatarUrl = avatars[entry.actorUserId];
+        var actorHtml = avatarUrl
+          ? '<img src="' + esc(avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
           : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
         el.innerHTML =
           actorHtml +
@@ -504,11 +503,13 @@ const c = commonTranslations[lang];
         return;
       }
       list.innerHTML = '';
+      var avatars = data.avatars || {};
       data.comments.forEach(function(c) {
         var el = document.createElement('div');
         el.className = 'flex gap-3';
-        var avatarHtml = c.avatarUrl
-          ? '<img src="' + esc(c.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+        var avatarUrl = avatars[c.userId];
+        var avatarHtml = avatarUrl
+          ? '<img src="' + esc(avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
           : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
               '<span class="text-xs font-bold text-on-primary-container">' + esc(c.userName.charAt(0).toUpperCase()) + '</span>' +
             '</div>';

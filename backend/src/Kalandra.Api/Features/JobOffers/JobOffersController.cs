@@ -1,7 +1,9 @@
 using JasperFx;
 using JasperFx.Events;
 using Kalandra.Api.Features.JobOffers.Contracts;
+using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
@@ -13,15 +15,16 @@ using Kalandra.JobOffers.Queries;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Kalandra.Api.Features.JobOffers;
 
 [ApiController]
 [Route("api/job-offers")]
 [Produces("application/json")]
+[Authorize]
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
-    IDocumentSession session,
     IStorageService storageService,
     TimeProvider timeProvider,
     CreateJobOfferHandler createHandler,
@@ -37,110 +40,97 @@ public class JobOffersController(
     SupabaseUserService userService,
     ITurnstileValidator turnstileValidator) : ControllerBase
 {
-    private CurrentUser AppUser => currentUser.CurrentUser;
+    private CurrentUser AppUser => currentUser.RequiredUser;
 
     // ───── Create ─────
 
     [HttpPost]
-    [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.HireMeCreateUser)]
     [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Create(
+    public async Task<ActionResult<GetJobOfferDetailResponse>> Create(
         [FromForm] CreateJobOfferRequest request,
         [FromForm] List<IFormFile>? attachments,
         [FromForm(Name = "cf-turnstile-response")] string? turnstileToken,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(turnstileToken))
-            return BadRequest(new { error = "CAPTCHA verification is required." });
-
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var turnstileValid = await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct);
-        if (!turnstileValid)
-            return BadRequest(new { error = "CAPTCHA verification failed. Please try again." });
+        if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
+            return ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
+        // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
         var files = (attachments ?? [])
             .Select(f => new CreateJobOfferFile(
-                FileName: f.FileName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                FileName: f.FileName.AsNonEmpty().Get(),
                 FileSize: f.Length,
-                ContentType: f.ContentType.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                ContentType: f.ContentType.AsNonEmpty().Get(),
                 Content: f.OpenReadStream()))
             .ToList();
 
-        try
+        var command = new CreateJobOfferCommand(
+            User: AppUser,
+            CompanyName: request.CompanyName.AsNonEmpty().Get(),
+            ContactName: request.ContactName.AsNonEmpty().Get(),
+            ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
+            JobTitle: request.JobTitle.AsNonEmpty().Get(),
+            Description: request.Description.AsNonEmpty().Get(),
+            SalaryRange: request.SalaryRange,
+            Location: request.Location,
+            IsRemote: request.IsRemote,
+            AdditionalNotes: request.AdditionalNotes,
+            Files: files,
+            Timestamp: timeProvider.GetUtcNow());
+
+        var result = await createHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
         {
-            var command = new CreateJobOfferCommand(
-                UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                JobTitle: request.JobTitle.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                Description: request.Description.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                SalaryRange: request.SalaryRange,
-                Location: request.Location,
-                IsRemote: request.IsRemote,
-                AdditionalNotes: request.AdditionalNotes,
-                Files: files,
-                Timestamp: timeProvider.GetUtcNow());
-
-            var result = await createHandler.HandleAsync(command, ct);
-
-            if (result.IsError)
+            var error = result.Error.Get();
+            return error switch
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
-                return error switch
-                {
-                    CreateJobOfferError.TooManyAttachments =>
-                        BadRequest(new { error = "Maximum 5 attachments allowed." }),
-                    CreateJobOfferError.TotalSizeTooLarge =>
-                        BadRequest(new { error = "Total attachment size must not exceed 15 MB." }),
-                    CreateJobOfferError.DisallowedContentType =>
-                        BadRequest(new { error = "One or more file types are not allowed." }),
-                };
-            }
-
-            var streamId = result.Success.Get((Unit _) => new InvalidOperationException());
-            await session.SaveChangesAsync(ct);
-
-            var detail = await LoadDetailResponseAsync(streamId, ct);
-            return CreatedAtAction(nameof(GetDetail), new { id = streamId }, detail);
+                CreateJobOfferError.TooManyAttachments =>
+                    ValidationError("attachments", CreateOfferError.TooManyAttachments),
+                CreateJobOfferError.TotalSizeTooLarge =>
+                    ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
+                CreateJobOfferError.DisallowedContentType =>
+                    ValidationError("attachments", CreateOfferError.DisallowedContentType),
+            };
         }
-        finally
-        {
-            foreach (var file in files)
-                file.Content.Dispose();
-        }
+
+        var streamId = result.Success.Get();
+
+        var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
+        var offer = await getDetailHandler.HandleAsync(query, ct);
+        return CreatedAtAction(nameof(GetDetail), new { id = streamId },
+            GetJobOfferDetailResponse.Serialize(offer!, AppUser));
     }
 
     // ───── Edit ─────
 
     [HttpPut("{id:guid}")]
-    [Authorize]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> Edit(
+    public Task<ActionResult<GetJobOfferDetailResponse>> Edit(
         Guid id,
         [FromBody] EditJobOfferRequest request,
         CancellationToken ct)
     {
-        return WithConcurrencyHandling(async () =>
+        return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
         {
             var command = new EditJobOfferCommand(
                 Id: id,
-                UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                JobTitle: request.JobTitle.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                Description: request.Description.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                User: AppUser,
+                CompanyName: request.CompanyName.AsNonEmpty().Get(),
+                ContactName: request.ContactName.AsNonEmpty().Get(),
+                ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
+                JobTitle: request.JobTitle.AsNonEmpty().Get(),
+                Description: request.Description.AsNonEmpty().Get(),
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
@@ -151,42 +141,40 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
                     EditJobOfferError.NotSubmittedStatus =>
-                        BadRequest(new { error = "Can only edit offers with status Submitted." }),
+                        ValidationError("status", EditOfferError.NotSubmittedStatus),
                 };
             }
 
-            await session.SaveChangesAsync(ct);
-            return Ok(await LoadDetailResponseAsync(id, ct));
+            var offer = result.Success.Get();
+            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
 
     // ───── Cancel ─────
 
     [HttpPost("{id:guid}/cancel")]
-    [Authorize]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> Cancel(
+    public Task<ActionResult<GetJobOfferDetailResponse>> Cancel(
         Guid id,
         [FromBody] CancelJobOfferRequest request,
         CancellationToken ct)
     {
-        return WithConcurrencyHandling(async () =>
+        return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
         {
             var command = new CancelJobOfferCommand(
                 Id: id,
-                UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                User: AppUser,
                 Reason: request.Reason,
                 Timestamp: timeProvider.GetUtcNow());
 
@@ -194,43 +182,42 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     CancelJobOfferError.NotFound => NotFound(),
                     CancelJobOfferError.NotAuthorized => Forbid(),
                     CancelJobOfferError.InvalidStatus =>
-                        BadRequest(new { error = "Cannot cancel an offer that has already been accepted, declined, or cancelled." }),
+                        ValidationError("status", CancelOfferError.InvalidStatus),
                 };
             }
 
-            await session.SaveChangesAsync(ct);
-            return Ok(await LoadDetailResponseAsync(id, ct));
+            var offer = result.Success.Get();
+            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
 
     // ───── Update Status (Admin) ─────
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Policy = "Admin")]
+    [Authorize(Policy = AuthPolicies.Admin)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> UpdateStatus(
+    public Task<ActionResult<GetJobOfferDetailResponse>> UpdateStatus(
         Guid id,
         [FromBody] UpdateJobOfferStatusRequest request,
         CancellationToken ct)
     {
-        return WithConcurrencyHandling(async () =>
+        return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
         {
             var command = new UpdateJobOfferStatusCommand(
                 Id: id,
                 NewStatus: request.Status,
-                ChangedByUserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ChangedByEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                User: AppUser,
                 Notes: request.AdminNotes,
                 Timestamp: timeProvider.GetUtcNow());
 
@@ -238,53 +225,44 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get((Unit _) => new InvalidOperationException());
+                var error = result.Error.Get();
                 return error switch
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
-                    UpdateJobOfferStatusError.AlreadyInStatus =>
-                        BadRequest(new { error = "Job offer is already in the requested status." }),
                     UpdateJobOfferStatusError.InvalidTransition =>
-                        BadRequest(new { error = "The requested status transition is not allowed." }),
+                        ValidationError("status", UpdateOfferStatusError.InvalidTransition),
                 };
             }
 
-            await session.SaveChangesAsync(ct);
-            return Ok(await LoadDetailResponseAsync(id, ct));
+            var offer = result.Success.Get();
+            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
 
     // ───── Add Comment ─────
 
     [HttpPost("{id:guid}/comments")]
-    [Authorize]
     [ProducesResponseType<CommentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddComment(
+    public async Task<ActionResult<CommentResponse>> AddComment(
         Guid id,
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Content))
-            return BadRequest(new { error = "Comment content is required." });
-
         var command = new AddCommentCommand(
             JobOfferId: id,
-            UserId: AppUser.Id.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-            UserEmail: AppUser.Email.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-            UserName: AppUser.DisplayName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-            Content: request.Content.Trim().AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-            IsAdmin: AppUser.IsAdmin,
+            User: AppUser,
+            Content: request.Content.Trim().AsNonEmpty().Get(),
             Timestamp: timeProvider.GetUtcNow());
 
         var result = await addCommentHandler.HandleAsync(command, ct);
 
         if (result.IsError)
         {
-            var error = result.Error.Get((Unit _) => new InvalidOperationException());
+            var error = result.Error.Get();
             return error switch
             {
                 AddCommentError.NotFound => NotFound(),
@@ -292,65 +270,56 @@ public class JobOffersController(
             };
         }
 
-        await session.SaveChangesAsync(ct);
-
-        var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
-        return Ok(new CommentResponse(
-            Id: commentEvent.CommentId,
-            UserId: commentEvent.UserId,
-            UserEmail: commentEvent.UserEmail,
-            UserName: commentEvent.UserName,
-            Content: commentEvent.Content,
-            CreatedAt: commentEvent.Timestamp,
-            AvatarUrl: AppUser.AvatarUrl));
+        var commentEvent = result.Success.Get();
+        return CommentResponse.Serialize(commentEvent);
     }
 
     // ───── List ─────
 
     [HttpGet("mine")]
-    [Authorize]
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ListMine(
+    public async Task<ActionResult<ListJobOffersResponse>> ListMine(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(showAll: false, status, page, pageSize, ct));
+        return await ListOffersAsync(showAll: false, status, page, pageSize, ct);
     }
 
     [HttpGet]
-    [Authorize(Policy = "Admin")]
+    [Authorize(Policy = AuthPolicies.Admin)]
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListAll(
+    public async Task<ActionResult<ListJobOffersResponse>> ListAll(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return Ok(await ListOffersAsync(showAll: true, status, page, pageSize, ct));
+        return await ListOffersAsync(showAll: true, status, page, pageSize, ct);
     }
 
     // ───── Get Detail ─────
 
     [HttpGet("{id:guid}")]
-    [Authorize]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetDetail(Guid id, CancellationToken ct)
+    public async Task<ActionResult<GetJobOfferDetailResponse>> GetDetail(Guid id, CancellationToken ct)
     {
-        var detail = await LoadDetailResponseAsync(id, ct);
-        return detail == null ? NotFound() : Ok(detail);
+        var query = new GetJobOfferDetailQuery(Id: id, User: AppUser);
+        var offer = await getDetailHandler.HandleAsync(query, ct);
+        if (offer == null)
+            return NotFound();
+        return GetJobOfferDetailResponse.Serialize(offer, AppUser);
     }
 
     // ───── Download Attachment ─────
 
     [HttpGet("{id:guid}/attachments/{fileName}")]
-    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -359,8 +328,7 @@ public class JobOffersController(
         var query = new GetAttachmentInfoQuery(
             JobOfferId: id,
             FileName: fileName,
-            UserId: AppUser.Id,
-            IsAdmin: AppUser.IsAdmin);
+            User: AppUser);
 
         var info = await attachmentHandler.HandleAsync(query, ct);
         if (info == null)
@@ -380,102 +348,49 @@ public class JobOffersController(
     // ───── History ─────
 
     [HttpGet("{id:guid}/history")]
-    [Authorize]
     [ProducesResponseType<JobOfferHistoryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
+    public async Task<ActionResult<JobOfferHistoryResponse>> GetHistory(Guid id, CancellationToken ct)
     {
-        var query = new GetJobOfferHistoryQuery(Id: id, UserId: AppUser.Id, IsAdmin: AppUser.IsAdmin);
+        var query = new GetJobOfferHistoryQuery(Id: id, User: AppUser);
         var entries = await historyHandler.HandleAsync(query, ct);
         if (entries == null)
             return NotFound();
 
-        // Read raw events to extract actor user IDs (the projection only carries email)
-        var offerEvents = await session.Events.FetchStreamAsync(id, token: ct);
-        var commentEvents = await session.Events.FetchStreamAsync(CommentStreamId.For(id), token: ct);
-        var userIdByTimestamp = offerEvents.Concat(commentEvents)
-            .Select(e => (e.Data switch
-            {
-                JobOfferSubmitted s => (Timestamp: s.Timestamp, UserId: s.UserId),
-                JobOfferEdited ed => (Timestamp: ed.Timestamp, UserId: ed.EditedByUserId),
-                JobOfferStatusChanged sc => (Timestamp: sc.Timestamp, UserId: sc.ChangedByUserId),
-                JobOfferCancelled c => (Timestamp: c.Timestamp, UserId: c.CancelledByUserId),
-                JobOfferCommentAdded cm => (Timestamp: cm.Timestamp, UserId: cm.UserId),
-                _ => (Timestamp: DateTimeOffset.MinValue, UserId: string.Empty)
-            }))
-            .Where(t => !string.IsNullOrEmpty(t.UserId))
-            .ToDictionary(t => t.Timestamp, t => t.UserId);
+        var userIds = entries
+            .Where(e => e.ActorUserId != Guid.Empty)
+            .Select(e => e.ActorUserId.ToString())
+            .Distinct();
+        var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
 
-        var avatars = await userService.GetAvatarUrlsAsync(userIdByTimestamp.Values.Distinct(), ct);
-
-        return Ok(new JobOfferHistoryResponse(entries.Select(e =>
-        {
-            var actorUserId = userIdByTimestamp.GetValueOrDefault(e.Timestamp, string.Empty);
-            return new HistoryEntryResponse(
-                EventType: e.EventType,
-                Description: e.Description,
-                ActorUserId: actorUserId,
-                ActorEmail: e.ActorEmail,
-                Timestamp: e.Timestamp,
-                AvatarUrl: avatars.GetValueOrDefault(actorUserId));
-        }).ToList()));
+        return new JobOfferHistoryResponse(
+            entries.Select(HistoryEntryResponse.Serialize).ToList(),
+            ToNonNullDictionary(avatars));
     }
 
     // ───── List Comments ─────
 
     [HttpGet("{id:guid}/comments")]
-    [Authorize]
     [ProducesResponseType<ListCommentsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
+    public async Task<ActionResult<ListCommentsResponse>> ListComments(Guid id, CancellationToken ct)
     {
-        var query = new ListCommentsQuery(JobOfferId: id, UserId: AppUser.Id, IsAdmin: AppUser.IsAdmin);
+        var query = new ListCommentsQuery(JobOfferId: id, User: AppUser);
         var comments = await listCommentsHandler.HandleAsync(query, ct);
         if (comments == null)
             return NotFound();
 
-        var userIds = comments.Select(c => c.UserId).Distinct();
+        var userIds = comments.Select(c => c.UserId.ToString()).Distinct();
         var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
 
-        return Ok(new ListCommentsResponse(comments.Select(c => new CommentResponse(
-            Id: c.CommentId,
-            UserId: c.UserId,
-            UserEmail: c.UserEmail,
-            UserName: c.UserName,
-            Content: c.Content,
-            CreatedAt: c.Timestamp,
-            AvatarUrl: avatars.GetValueOrDefault(c.UserId))).ToList()));
+        return new ListCommentsResponse(
+            comments.Select(CommentResponse.Serialize).ToList(),
+            ToNonNullDictionary(avatars));
     }
 
     // ───── Private helpers ─────
-
-    private async Task<GetJobOfferDetailResponse?> LoadDetailResponseAsync(Guid id, CancellationToken ct)
-    {
-        var query = new GetJobOfferDetailQuery(Id: id, UserId: AppUser.Id, IsAdmin: AppUser.IsAdmin);
-        var offer = await getDetailHandler.HandleAsync(query, ct);
-        if (offer == null)
-            return null;
-
-        return new GetJobOfferDetailResponse(
-            Id: offer.Id,
-            CompanyName: offer.CompanyName,
-            ContactName: offer.ContactName,
-            ContactEmail: offer.ContactEmail,
-            JobTitle: offer.JobTitle,
-            Description: offer.Description,
-            SalaryRange: offer.SalaryRange,
-            Location: offer.Location,
-            IsRemote: offer.IsRemote,
-            AdditionalNotes: offer.AdditionalNotes,
-            Attachments: offer.Attachments,
-            Status: offer.Status,
-            AdminNotes: AppUser.IsAdmin ? offer.AdminNotes : null,
-            UserEmail: offer.UserEmail,
-            CreatedAt: offer.CreatedAt,
-            UpdatedAt: offer.UpdatedAt);
-    }
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
         bool showAll,
@@ -485,8 +400,8 @@ public class JobOffersController(
         CancellationToken ct)
     {
         var query = new ListJobOffersQuery(
-            UserId: AppUser.Id,
-            IsAdmin: showAll,
+            User: AppUser,
+            ShowAll: showAll,
             Statuses: status,
             Page: page,
             PageSize: pageSize);
@@ -494,19 +409,17 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(j => new JobOfferSummary(
-                Id: j.Id,
-                CompanyName: j.CompanyName,
-                JobTitle: j.JobTitle,
-                ContactEmail: j.ContactEmail,
-                Status: j.Status,
-                IsRemote: j.IsRemote,
-                Location: j.Location,
-                CreatedAt: j.CreatedAt)).ToList(),
+            result.Items.Select(j => GetJobOfferDetailResponse.Serialize(j, AppUser)).ToList(),
             result.TotalCount);
     }
 
-    private async Task<IActionResult> WithConcurrencyHandling(Func<Task<IActionResult>> action)
+    private ActionResult ValidationError<TError>(string field, TError error) where TError : struct, Enum
+    {
+        ModelState.AddModelError(field, error.ToString());
+        return ValidationProblem();
+    }
+
+    private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)
     {
         try
         {
@@ -514,7 +427,13 @@ public class JobOffersController(
         }
         catch (Exception ex) when (ex is ConcurrencyException or EventStreamUnexpectedMaxEventIdException)
         {
-            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
+            return Conflict(ProblemDetailsFactory.CreateProblemDetails(
+                HttpContext,
+                statusCode: StatusCodes.Status409Conflict,
+                detail: "Job offer was modified by another request."));
         }
     }
+
+    private static Dictionary<string, string> ToNonNullDictionary(Dictionary<string, string?> source) =>
+        source.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!);
 }

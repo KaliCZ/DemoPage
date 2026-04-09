@@ -104,7 +104,7 @@ const t = translations[lang];
     <IconGoogle class="w-5 h-5 flex-shrink-0" />
   </template>
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', strings: { avatar: t.avatar, displayName: t.displayName, email: t.email, password: t.password, provider: t.provider } }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', strings: { avatar: t.avatar, displayName: t.displayName, email: t.email, password: t.password, provider: t.provider }, avatarErrorMap: t.avatar.errors }}>
     var googleSvg = document.getElementById('google-icon-template').innerHTML.trim();
 
     function esc(str) {
@@ -467,8 +467,8 @@ const t = translations[lang];
         });
 
         if (!res.ok) {
-          var err = await res.json().catch(function() { return {}; });
-          throw new Error(err.error || strings.avatar.error);
+          var msg = await window.__getApiError?.(res, avatarErrorMap);
+          throw new Error(msg || strings.avatar.error);
         }
 
         var data = await res.json();
@@ -509,8 +509,8 @@ const t = translations[lang];
         });
 
         if (!res.ok) {
-          var err = await res.json().catch(function() { return {}; });
-          throw new Error(err.error || strings.avatar.error);
+          var msg = await window.__getApiError?.(res, avatarErrorMap);
+          throw new Error(msg || strings.avatar.error);
         }
 
         // Refresh session so the cached JWT no longer contains the avatar_url

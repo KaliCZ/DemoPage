@@ -1,4 +1,5 @@
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,39 +19,46 @@ public class ProfileController(
 
     private const long MaxFileSize = 1 * 1024 * 1024; // 1 MB
 
-    private CurrentUser AppUser => currentUser.CurrentUser;
+    private CurrentUser AppUser => currentUser.RequiredUser;
 
     [HttpPost("avatar")]
     [RequestSizeLimit(2 * 1024 * 1024)] // Allow slight overhead for multipart framing
     [ProducesResponseType<AvatarResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken ct)
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AvatarResponse>> UploadAvatar(IFormFile file, CancellationToken ct)
     {
         if (file.Length == 0)
-            return BadRequest(new { error = "File is empty." });
+            return ValidationError("file", UploadAvatarError.EmptyFile);
 
         if (file.Length > MaxFileSize)
-            return BadRequest(new { error = "File size exceeds the 1 MB limit." });
+            return ValidationError("file", UploadAvatarError.TooLarge);
 
         if (!AllowedContentTypes.Contains(file.ContentType))
-            return BadRequest(new { error = "Only JPEG, PNG, and WebP images are allowed." });
+            return ValidationError("file", UploadAvatarError.InvalidContentType);
 
         await using var stream = file.OpenReadStream();
-        var publicUrl = await userService.UploadAvatarAsync(AppUser.Id, stream, file.ContentType, ct);
+        var publicUrl = await userService.UploadAvatarAsync(
+            AppUser.Id.ToString(), stream, file.ContentType, ct);
 
-        await userService.UpdateAvatarUrlAsync(AppUser.Id, publicUrl, ct);
+        await userService.UpdateAvatarUrlAsync(AppUser.Id.ToString(), publicUrl, ct);
 
-        return Ok(new AvatarResponse(AvatarUrl: publicUrl));
+        return new AvatarResponse(AvatarUrl: publicUrl);
     }
 
     [HttpDelete("avatar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAvatar(CancellationToken ct)
     {
-        await userService.DeleteAvatarFilesAsync(AppUser.Id, ct);
-        await userService.UpdateAvatarUrlAsync(AppUser.Id, avatarUrl: null, ct);
+        await userService.DeleteAvatarFilesAsync(AppUser.Id.ToString(), ct);
+        await userService.UpdateAvatarUrlAsync(AppUser.Id.ToString(), avatarUrl: null, ct);
 
         return NoContent();
+    }
+
+    private ActionResult ValidationError<TError>(string field, TError error) where TError : struct, Enum
+    {
+        ModelState.AddModelError(field, error.ToString());
+        return ValidationProblem();
     }
 }
 

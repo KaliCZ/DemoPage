@@ -94,10 +94,9 @@ public class ProfileApiTests(TestWebApplicationFactory factory) : IClassFixture<
     }
 
     private void Authenticate(
-        string userId = "test-user-id",
         string email = "test@example.com")
     {
-        var token = JwtTestHelper.GenerateToken(userId, email);
+        var token = JwtTestHelper.GenerateToken(email: email);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 

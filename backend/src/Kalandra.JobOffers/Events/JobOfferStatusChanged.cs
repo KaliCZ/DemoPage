@@ -3,7 +3,7 @@ using Kalandra.JobOffers.Entities;
 namespace Kalandra.JobOffers.Events;
 
 public record JobOfferStatusChanged(
-    string ChangedByUserId,
+    Guid ChangedByUserId,
     string ChangedByEmail,
     JobOfferStatus OldStatus,
     JobOfferStatus NewStatus,

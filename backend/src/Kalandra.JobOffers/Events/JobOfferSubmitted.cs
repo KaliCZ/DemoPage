@@ -3,7 +3,7 @@ using Kalandra.JobOffers.Entities;
 namespace Kalandra.JobOffers.Events;
 
 public record JobOfferSubmitted(
-    string UserId,
+    Guid UserId,
     string UserEmail,
     string CompanyName,
     string ContactName,

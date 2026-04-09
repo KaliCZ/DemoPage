@@ -16,6 +16,11 @@
     "title": "Zatím žádné nabídky",
     "description": "Zatím nebyly odeslány žádné pracovní nabídky."
   },
+  "errors": {
+    "status": {
+      "InvalidTransition": "Požadovaná změna stavu není povolena."
+    }
+  },
   "list": {
     "filterAll": "Vše",
     "filterByStatus": "Filtrovat podle stavu",
