@@ -14,7 +14,7 @@ public class AuthController(
     ICurrentUserAccessor currentUser,
     ISupabaseAdminService adminService) : ControllerBase
 {
-    private CurrentUser AppUser => currentUser.CurrentUser;
+    private CurrentUser AppUser => currentUser.RequiredUser;
 
     /// <summary>
     /// Links an email/password identity to the current user's account.

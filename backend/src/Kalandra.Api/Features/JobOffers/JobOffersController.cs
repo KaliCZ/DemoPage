@@ -36,7 +36,7 @@ public class JobOffersController(
     GetAttachmentInfoHandler attachmentHandler,
     ITurnstileValidator turnstileValidator) : ControllerBase
 {
-    private CurrentUser AppUser => currentUser.CurrentUser;
+    private CurrentUser AppUser => currentUser.RequiredUser;
 
     // ───── Create ─────
 

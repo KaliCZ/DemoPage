@@ -8,15 +8,24 @@ public class HttpContextCurrentUserAccessor(
 {
     private static readonly AsyncLocal<CurrentUser?> CachedUser = new();
 
-    public CurrentUser CurrentUser => CachedUser.Value ??= BuildCurrentUser();
+    public CurrentUser? User => CachedUser.Value ??= BuildCurrentUser();
 
-    private CurrentUser BuildCurrentUser()
+    public CurrentUser RequiredUser =>
+        User ?? throw new InvalidOperationException("No authenticated user on the current request.");
+
+    private CurrentUser? BuildCurrentUser()
     {
-        var principal = httpContextAccessor.HttpContext?.User ?? throw new InvalidOperationException("HTTP context is not available.");
-        var email = principal.GetEmail() ?? throw new InvalidOperationException("Authenticated user email is not available.");
+        var principal = httpContextAccessor.HttpContext?.User;
+        if (principal?.Identity?.IsAuthenticated != true)
+            return null;
+
+        var userId = principal.GetUserId();
+        var email = principal.GetEmail();
+        if (userId is null || email is null)
+            return null;
 
         return new CurrentUser(
-            Id: principal.GetUserId() ?? throw new InvalidOperationException("Authenticated user ID is not available."),
+            Id: userId,
             Email: email,
             DisplayName: principal.FindFirstValue("display_name") ?? email.Split('@')[0],
             Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
