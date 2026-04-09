@@ -52,12 +52,8 @@ public class JobOffersController(
         [FromForm(Name = "cf-turnstile-response")] string? turnstileToken,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(turnstileToken))
-            return BadRequest(new { error = "CAPTCHA verification is required." });
-
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var turnstileValid = await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct);
-        if (!turnstileValid)
+        if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
             return BadRequest(new { error = "CAPTCHA verification failed. Please try again." });
 
         // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
