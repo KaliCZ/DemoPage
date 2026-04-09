@@ -24,6 +24,15 @@
     "costRecurringLabel": "Recurring Cost",
     "costRecurringValue": "€0/month"
   },
+  "toc": {
+    "title": "On this page",
+    "techStack": "Tech Stack",
+    "goals": "Goals & Requirements",
+    "architecture": "Architecture",
+    "decisions": "Architecture Decisions",
+    "roadmap": "Roadmap",
+    "openQuestions": "Open Questions"
+  },
   "techStack": {
     "title": "Engineered With",
     "frontendLabel": "Frontend",
@@ -37,6 +46,167 @@
       { "text": "GitHub Actions", "subItems": ["Build + Test + Deploy", "E2E Tests (Playwright)"] }
     ]
   },
+  "goals": {
+    "title": "Goals & Requirements",
+    "items": [
+      { "icon": "person", "title": "Personal Showcase", "description": "Present myself to potential employers and recruiters at www.kalandra.tech." },
+      { "icon": "construction", "title": "Skills Demonstration", "description": "Document the building process as part of the showcase — architecture, decisions, and progress." },
+      { "icon": "science", "title": "Technology Playground", "description": "Experiment with new technologies in a real, deployed project." }
+    ],
+    "nfrTitle": "Non-Functional Requirements",
+    "nfrItems": [
+      { "label": "Automation", "description": "Minimal manual overhead. Infrastructure as code or GitHub Actions for everything." },
+      { "label": "Reliability", "description": "The site must be up reliably." },
+      { "label": "Cost", "description": "As cheap as possible — preferably free. Backend hosting: Oracle Cloud Always Free (fallback: Hetzner VPS ~€4/month)." }
+    ]
+  },
+  "architectureDiagram": {
+    "title": "Architecture Overview",
+    "cloudflare": "Cloudflare",
+    "cloudflareDetails": ["Static Site (CDN)", "Domain DNS"],
+    "oracleCloud": "Oracle Cloud",
+    "oracleCloudDetails": ["ASP.NET Core API", "Temporal"],
+    "supabase": "Supabase",
+    "supabaseDetails": ["PostgreSQL DB", "Auth (JWT)"],
+    "slack": "Slack Webhook",
+    "email": "Email (SMTP)"
+  },
+  "decisions": {
+    "title": "Architecture Decisions",
+    "subtitle": "Key technical decisions documented as Architecture Decision Records.",
+    "adrs": [
+      {
+        "id": "backend-hosting",
+        "title": "Backend Hosting → Oracle Cloud",
+        "summary": "Oracle Cloud Always Free ARM A1 instance, with Hetzner VPS as fallback.",
+        "context": "Need a host that supports long-running processes (ASP.NET Core + Temporal background workers). Most free tiers are serverless/scale-to-zero and shut down the process when idle.",
+        "decision": "Start with Oracle Cloud Always Free ARM A1 instance (4 OCPUs, 24 GB RAM, 200 GB storage). If Oracle proves unreliable, fall back to Hetzner VPS (~€4/month).",
+        "why": [
+          "Free tier with generous specs (4 OCPUs, 24 GB RAM, 200 GB storage)",
+          "Supports long-running processes and Docker",
+          "Upgrading to PAYG (still free) disables idle reclamation"
+        ],
+        "risks": [
+          { "risk": "Signup rejection", "details": "Oracle rejects many signups based on region demand and payment method", "mitigation": "Use real credit card, match billing address, pick less popular region" },
+          { "risk": "ARM capacity", "details": "Popular regions often have no A1 capacity available", "mitigation": "Choose EU or less popular region at signup" },
+          { "risk": "Idle reclamation", "details": "Instances with <20% CPU at P95 over 7 days are stopped after 1 week notice", "mitigation": "Real workloads stay above threshold; PAYG disables this entirely" },
+          { "risk": "Account suspension", "details": "Rare reports of accounts suspended without clear reason", "mitigation": "Keep PAYG enabled; maintain real usage" }
+        ],
+        "setupNotes": [
+          "Use Ubuntu 24.04 Minimal aarch64 (not Oracle Linux) for straightforward Docker support",
+          "Set a large boot volume (~150 GB) at creation to avoid iSCSI block volume complexity",
+          "Open ports in both OCI security list and OS firewall"
+        ],
+        "alternatives": [
+          { "option": "Hetzner VPS (~€4/month)", "reason": "Reliable fallback. Full control, predictable. Will switch here if Oracle causes trouble." },
+          { "option": "Azure App Service Free (F1)", "reason": "60 min CPU/day, no always-on — app sleeps after inactivity." },
+          { "option": "AWS Lambda / Google Cloud Run", "reason": "Serverless — no persistent background process for Temporal workers." },
+          { "option": "Render free tier", "reason": "Spins down after 15 min inactivity. Background workers are paid only." },
+          { "option": "Fly.io", "reason": "Free tier has gotten stingier; likely ends up costing a few dollars anyway." },
+          { "option": "Azure Container Apps", "reason": "Free tier is generous, but self-hosting Temporal would be awkward." }
+        ]
+      },
+      {
+        "id": "frontend-framework",
+        "title": "Frontend Framework → Astro SSG with Vue Islands",
+        "summary": "Astro in SSG mode with Vue components hydrated only where needed.",
+        "context": "Need a frontend framework for a mostly-static site hosted on Cloudflare Pages. Requirements: Tailwind CSS, i18n (Czech/English), progressive interactivity, minimal JS shipped to users.",
+        "decision": "Astro in static site generation (SSG) mode. Interactive components built as Vue islands, hydrated only where needed. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN.",
+        "why": [
+          "Ships zero JS by default — only interactive islands include client-side code",
+          "Built-in i18n routing and locale detection",
+          "Cloudflare acquired Astro (Jan 2026) — best-in-class Pages integration",
+          ".astro template syntax feels similar to HTML/Vue — low learning curve",
+          "Vue skills transfer directly to a future Vue/Nuxt project if heavier UI logic is needed"
+        ],
+        "alternatives": [
+          { "option": "Vanilla ES6 modules", "reason": "Still needs a Tailwind build step. Would have to manually build routing, i18n, and component system." },
+          { "option": "Vue/Nuxt (full app)", "reason": "Ships ~50-80 KB Vue runtime to every page even when content is static." },
+          { "option": "React/Next.js", "reason": "Ships ~80-120 KB React runtime. JS-first authoring. Next.js is Vercel-aligned, not Cloudflare-aligned." },
+          { "option": "SvelteKit", "reason": "Good framework, but i18n is not built-in. More geared toward interactive apps." },
+          { "option": "Vercel hosting", "reason": "SSR model runs server-side functions — effectively a second backend. Goal is a thin static client with a single ASP.NET Core backend." }
+        ]
+      },
+      {
+        "id": "marten-event-sourcing",
+        "title": "Event Sourcing → Marten",
+        "summary": "Marten event sourcing for job offer lifecycle tracking on PostgreSQL.",
+        "context": "Job offers have a lifecycle (Submitted → InReview → Accepted/Declined/Cancelled) where tracking the full history of changes is valuable for both the user and admin.",
+        "decision": "Use Marten with event sourcing for job offer state management.",
+        "why": [
+          "Events provide a natural audit trail — every status change is captured immutably",
+          "The activity log (event stream) is a first-class feature, not a bolted-on audit table",
+          "Inline snapshot projections maintain read models with zero extra code",
+          "Uses PostgreSQL directly — same database, no additional infrastructure",
+          "The Apply() method pattern makes state transitions explicit and testable"
+        ]
+      },
+      {
+        "id": "admin-role",
+        "title": "Admin Role → JWT Claims",
+        "summary": "Roles stored in Supabase app_metadata, extracted from JWT on each request.",
+        "context": "The app needs role-based authorization (regular users vs admin) without maintaining a separate roles table in the backend.",
+        "decision": "Roles are stored as an array in Supabase app_metadata (e.g., \"roles\": [\"admin\"]). The backend extracts roles from the JWT and maps each to a standard .NET role claim.",
+        "why": [
+          "No server-side user ID list or database roles table needed — roles travel with the token",
+          "Standard .NET authorization infrastructure (RequireRole) works out of the box",
+          "Adding new roles = updating app_metadata in Supabase, no backend changes"
+        ]
+      },
+      {
+        "id": "supabase-auth",
+        "title": "Auth → Supabase (Local + Production)",
+        "summary": "JWT validation via JWKS, with symmetric secret fallback for tests and local dev.",
+        "context": "The backend needs to validate Supabase JWTs, and local development needs to work without an internet connection or external Supabase project.",
+        "decision": "The backend validates JWT signatures via JWKS (fetching public keys from Supabase's OpenID Connect endpoint). It never calls the Supabase API directly. A symmetric secret fallback exists for tests and local Supabase.",
+        "why": [
+          "Local dev runs a full Supabase instance in Docker — no external dependencies",
+          "Production uses Supabase Cloud with Google OAuth + email/password",
+          "E2E tests use local Supabase with programmatic user creation",
+          "Backend integration tests generate JWTs with a known test secret via Testcontainers"
+        ]
+      },
+      {
+        "id": "vertical-slices",
+        "title": "Code Organization → Vertical Slices",
+        "summary": "Code organized by feature, not by technical layer.",
+        "context": "Need a backend code organization strategy that keeps related code together and avoids the \"change one feature, touch five layers\" problem.",
+        "decision": "Code is organized by feature (e.g., Features/JobOffers/) rather than by technical layer. Each feature folder contains its controller, events, DTOs, and handlers.",
+        "why": [
+          "Adding a new feature = adding a new folder with all its files, no changes to shared layers",
+          "Each feature is self-contained — easy to understand, review, and test in isolation",
+          "Avoids the typical layered architecture problem where a single change touches Controllers/, Services/, Models/, DTOs/, etc."
+        ]
+      },
+      {
+        "id": "testing-strategy",
+        "title": "Testing Strategy",
+        "summary": "Integration tests with real databases, Playwright for UI and E2E, no mocks.",
+        "context": "Need a testing approach that provides high confidence with minimal mocking, covering the full stack from API endpoints to database.",
+        "decision": "Multi-layer testing with real infrastructure at every level.",
+        "why": [
+          "Backend integration tests: xUnit + Testcontainers — real PostgreSQL, full API via WebApplicationFactory, generated JWTs, no mocks",
+          "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, and dark mode",
+          "E2E smoke tests: Playwright against full stack (frontend + backend + DB)",
+          "CI/CD: Backend and frontend tests run in separate pipelines, both block deployment on failure"
+        ]
+      }
+    ]
+  },
+  "openQuestions": {
+    "title": "Open Questions",
+    "items": [
+      {
+        "title": "Temporal + Supabase Database",
+        "description": "Temporal requires its own database. Pointing it at the Supabase PostgreSQL might eat into the free tier's connection, storage, and egress limits.",
+        "options": [
+          "Use Supabase PostgreSQL for Temporal — monitor quota usage",
+          "Run a separate SQLite or PostgreSQL instance on the VPS for Temporal",
+          "Fall back to Azure Queue Storage if Temporal overhead is too high"
+        ]
+      }
+    ]
+  },
   "roadmap": {
     "timelineLabel": "Timeline",
     "title": "Development Roadmap",
@@ -47,6 +217,7 @@
         "title": "Simple Site",
         "done": true,
         "time": "~7 hours",
+        "dates": "Mar 27, 2026",
         "description": "Simple site with domain, hosting and deployment pipeline.",
         "side": "left",
         "detailsLabel": "What was done",
@@ -63,6 +234,7 @@
         "title": "Backend Included",
         "done": true,
         "time": "~20 hours",
+        "dates": "Mar 28 – Apr 1, 2026",
         "nextTime": "Could do it in ~5 hours next time.",
         "description": "ASP.NET Core backend with Supabase Auth and Marten event sourcing. Used for managing job offers — users can submit and track offers, admins can review and update statuses.",
         "side": "right",

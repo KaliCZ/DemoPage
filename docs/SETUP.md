@@ -2,7 +2,7 @@
 
 Step-by-step guide for local development, testing, and deployment infrastructure.
 
-For architecture, tech stack, and decision log, see [PROJECT.md](PROJECT.md).
+For architecture, tech stack, and decision log, see the [Project page](https://www.kalandra.tech/project).
 
 ---
 

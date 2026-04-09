@@ -18,7 +18,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - **Database**: PostgreSQL (Supabase in production, Docker locally)
 - **CI/CD**: GitHub Actions
 
-Architecture decisions and full roadmap are documented in [docs/PROJECT.md](docs/PROJECT.md).
+Architecture decisions, technical roadmap, and the full decision log are documented on the [Project page](https://www.kalandra.tech/project). The page includes goals, an architecture overview diagram, collapsible Architecture Decision Records (ADRs), and a version-by-version roadmap with progress tracking.
 
 ## Development
 

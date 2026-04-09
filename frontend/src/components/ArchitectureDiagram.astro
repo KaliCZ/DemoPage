@@ -1,0 +1,127 @@
+---
+interface Props {
+  t: {
+    cloudflare: string;
+    cloudflareDetails: string[];
+    oracleCloud: string;
+    oracleCloudDetails: string[];
+    supabase: string;
+    supabaseDetails: string[];
+    slack: string;
+    email: string;
+  };
+  class?: string;
+}
+
+const { t, class: className, ...rest } = Astro.props;
+---
+
+<div class:list={["overflow-x-auto", className]} {...rest}>
+  <svg
+    viewBox="0 0 900 420"
+    xmlns="http://www.w3.org/2000/svg"
+    class="w-full min-w-[600px]"
+    role="img"
+    aria-label="Architecture diagram"
+  >
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline)" />
+      </marker>
+    </defs>
+
+    <!-- Cloudflare Node -->
+    <g>
+      <rect x="30" y="70" width="220" height="160" rx="12" ry="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1.5" />
+      <rect x="30" y="70" width="220" height="4" rx="2" ry="2"
+        fill="var(--color-primary)" />
+      <text x="140" y="115" text-anchor="middle"
+        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="16" font-weight="700">
+        {t.cloudflare}
+      </text>
+      <line x1="80" y1="130" x2="200" y2="130" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+      {t.cloudflareDetails.map((detail, i) => (
+        <text x="140" y={155 + i * 24} text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
+          {detail}
+        </text>
+      ))}
+    </g>
+
+    <!-- Oracle Cloud Node -->
+    <g>
+      <rect x="340" y="50" width="220" height="200" rx="12" ry="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1.5" />
+      <rect x="340" y="50" width="220" height="4" rx="2" ry="2"
+        fill="var(--color-tertiary)" />
+      <text x="450" y="95" text-anchor="middle"
+        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="16" font-weight="700">
+        {t.oracleCloud}
+      </text>
+      <line x1="390" y1="110" x2="510" y2="110" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+      {t.oracleCloudDetails.map((detail, i) => (
+        <text x="450" y={135 + i * 24} text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
+          {detail}
+        </text>
+      ))}
+    </g>
+
+    <!-- Supabase Node -->
+    <g>
+      <rect x="650" y="70" width="220" height="160" rx="12" ry="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1.5" />
+      <rect x="650" y="70" width="220" height="4" rx="2" ry="2"
+        fill="var(--color-on-surface-variant)" />
+      <text x="760" y="115" text-anchor="middle"
+        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="16" font-weight="700">
+        {t.supabase}
+      </text>
+      <line x1="700" y1="130" x2="820" y2="130" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+      {t.supabaseDetails.map((detail, i) => (
+        <text x="760" y={155 + i * 24} text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
+          {detail}
+        </text>
+      ))}
+    </g>
+
+    <!-- Slack Node -->
+    <g>
+      <rect x="340" y="330" width="130" height="55" rx="10" ry="10"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <text x="405" y="363" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="12">
+        {t.slack}
+      </text>
+    </g>
+
+    <!-- Email Node -->
+    <g>
+      <rect x="500" y="330" width="130" height="55" rx="10" ry="10"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <text x="565" y="363" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="12">
+        {t.email}
+      </text>
+    </g>
+
+    <!-- Arrows -->
+    <!-- Cloudflare → Oracle Cloud -->
+    <line x1="250" y1="150" x2="332" y2="150"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+    <!-- Oracle Cloud → Supabase -->
+    <line x1="560" y1="150" x2="642" y2="150"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+    <!-- Oracle Cloud → Slack -->
+    <path d="M 420 250 L 420 290 Q 420 300 415 305 L 405 322"
+      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+    <!-- Oracle Cloud → Email -->
+    <path d="M 480 250 L 480 290 Q 480 300 490 305 L 545 322"
+      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+  </svg>
+</div>
