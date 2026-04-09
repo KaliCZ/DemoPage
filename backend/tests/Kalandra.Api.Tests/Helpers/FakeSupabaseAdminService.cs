@@ -4,19 +4,18 @@ namespace Kalandra.Api.Tests.Helpers;
 
 public class FakeSupabaseAdminService : ISupabaseAdminService
 {
-    public bool NextCallSucceeds { get; set; } = true;
-    public string? NextCallError { get; set; }
-    public (string UserId, object Payload)? LastUpdateCall { get; private set; }
+    public ChangePasswordErrorCode? NextChangePasswordError { get; set; }
+    public (CurrentUser User, string Password)? LastChangePasswordCall { get; private set; }
 
-    public Task<SupabaseAdminResult> UpdateUserAsync(
-        string userId,
-        object updatePayload,
+    public Task<ChangePasswordError?> ChangePasswordAsync(
+        CurrentUser user,
+        string password,
         CancellationToken ct)
     {
-        LastUpdateCall = (userId, updatePayload);
-
-        return Task.FromResult(NextCallSucceeds
-            ? new SupabaseAdminResult(Success: true)
-            : new SupabaseAdminResult(Success: false, Error: NextCallError ?? "Simulated failure"));
+        LastChangePasswordCall = (user, password);
+        var result = NextChangePasswordError is { } code
+            ? new ChangePasswordError(code, "Fake error")
+            : (ChangePasswordError?)null;
+        return Task.FromResult(result);
     }
 }

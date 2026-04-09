@@ -1,10 +1,11 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
 
 namespace Kalandra.JobOffers.Queries;
 
-public record GetJobOfferHistoryQuery(Guid Id, string UserId, bool IsAdmin);
+public record GetJobOfferHistoryQuery(Guid Id, CurrentUser User);
 
 public record JobOfferHistoryEntry(
     string EventType,
@@ -21,7 +22,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         if (offer == null)
             return null;
 
-        if (!query.IsAdmin && offer.UserId != query.UserId)
+        if (!query.User.IsAdmin && offer.UserId != query.User.Id)
             return null;
 
         var offerEvents = await session.Events.FetchStreamAsync(query.Id, token: ct);

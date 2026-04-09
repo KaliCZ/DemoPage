@@ -16,6 +16,11 @@
     "title": "No submissions yet",
     "description": "No job offers have been submitted yet."
   },
+  "errors": {
+    "status": {
+      "InvalidTransition": "The requested status transition is not allowed."
+    }
+  },
   "list": {
     "filterAll": "All",
     "filterByStatus": "Filter by status",

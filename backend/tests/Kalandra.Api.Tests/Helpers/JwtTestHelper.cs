@@ -14,18 +14,21 @@ public static class JwtTestHelper
     public static readonly ECDsaSecurityKey SigningKey = new(Ecdsa);
     public static readonly JsonWebKey PublicJwk = CreatePublicJwk();
 
+    public static readonly Guid DefaultTestUserId = new("11111111-1111-1111-1111-111111111111");
+
     public static string GenerateToken(
-        string userId = "test-user-id",
+        Guid? userId = null,
         string email = "test@example.com",
         bool isAdmin = false)
     {
+        var sub = (userId ?? DefaultTestUserId).ToString();
         var appMetadata = isAdmin
             ? """{"provider":"email","providers":["email"],"roles":["admin"]}"""
             : """{"provider":"email","providers":["email"]}""";
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, userId),
+            new(JwtRegisteredClaimNames.Sub, sub),
             new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Aud, TestAudience),
             new("app_metadata", appMetadata, JsonClaimValueTypes.Json),

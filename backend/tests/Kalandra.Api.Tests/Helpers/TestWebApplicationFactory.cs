@@ -54,6 +54,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         });
     }
 
+    protected override void ConfigureClient(HttpClient client)
+    {
+        base.ConfigureClient(client);
+        // Bypass hire-me rate limiter in tests — same mechanism the frontend uses
+        // after the user solves the interactive Turnstile challenge.
+        client.DefaultRequestHeaders.Add("X-Interactive-Captcha", "1");
+    }
+
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();

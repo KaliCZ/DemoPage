@@ -17,6 +17,13 @@
     "description": "Ještě jste neodeslali žádnou pracovní nabídku.",
     "cta": "Odeslat pracovní nabídku"
   },
+  "errors": {
+    "status": {
+      "NotSubmittedStatus": "Upravovat lze pouze nabídky ve stavu Odesláno.",
+      "InvalidStatus": "Nelze zrušit nabídku, která již byla přijata, zamítnuta nebo zrušena.",
+      "InvalidTransition": "Požadovaná změna stavu není povolena."
+    }
+  },
   "list": {
     "filterAll": "Vše",
     "filterByStatus": "Filtrovat podle stavu",

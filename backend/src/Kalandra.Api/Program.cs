@@ -33,13 +33,15 @@ SupabaseStorageConfig.AddSingleton(builder.Services, builder.Configuration);
 TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
-builder.Services.AddSupabaseAuth(authConfig);
+Auth.Add(builder.Services, authConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
+RateLimits.Add(builder.Services);
+
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
     .AddCheck<CommitHashHealthCheck>("version");
@@ -54,8 +56,8 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseCors("DefaultPolicy");
-app.UseAuthentication();
-app.UseAuthorization();
+Auth.Use(app);
+RateLimits.Use(app);
 app.MapControllers();
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

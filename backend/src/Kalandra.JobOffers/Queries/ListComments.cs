@@ -1,10 +1,11 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
 
 namespace Kalandra.JobOffers.Queries;
 
-public record ListCommentsQuery(Guid JobOfferId, string UserId, bool IsAdmin);
+public record ListCommentsQuery(Guid JobOfferId, CurrentUser User);
 
 public class ListCommentsHandler(IQuerySession session)
 {
@@ -15,7 +16,7 @@ public class ListCommentsHandler(IQuerySession session)
         if (offer == null)
             return null;
 
-        if (!query.IsAdmin && offer.UserId != query.UserId)
+        if (!query.User.IsAdmin && offer.UserId != query.User.Id)
             return null;
 
         var events = await session.Events.FetchStreamAsync(CommentStreamId.For(query.JobOfferId), token: ct);
