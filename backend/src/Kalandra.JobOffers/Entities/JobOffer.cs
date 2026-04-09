@@ -5,7 +5,7 @@ namespace Kalandra.JobOffers.Entities;
 
 public enum EditJobOfferError { NotFound, NotAuthorized, NotSubmittedStatus }
 public enum CancelJobOfferError { NotFound, NotAuthorized, InvalidStatus }
-public enum UpdateJobOfferStatusError { NotFound, AlreadyInStatus, InvalidTransition }
+public enum UpdateJobOfferStatusError { NotFound, InvalidTransition }
 public enum AddCommentError { NotFound, NotAuthorized }
 
 /// <summary>
@@ -92,10 +92,7 @@ public class JobOffer
         string? notes,
         DateTimeOffset timestamp)
     {
-        if (newStatus == Status)
-            return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.AlreadyInStatus);
-
-        if (!CanTransitionTo(newStatus))
+        if (newStatus == Status || !CanTransitionTo(newStatus))
             return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.InvalidTransition);
 
         return Try.Success<JobOfferStatusChanged, UpdateJobOfferStatusError>(new JobOfferStatusChanged(

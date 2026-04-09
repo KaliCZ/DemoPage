@@ -41,6 +41,16 @@
     "captchaRequiredError": "You've submitted several offers recently. Please verify you're human and try again.",
     "errorMessage": "Something went wrong. Please try again.",
     "viewSubmissions": "View My Submissions",
+    "errors": {
+      "captcha": {
+        "CaptchaFailed": "CAPTCHA verification failed. Please try again."
+      },
+      "attachments": {
+        "TooManyAttachments": "Maximum 5 attachments allowed.",
+        "TotalSizeTooLarge": "Total attachment size must not exceed 15 MB.",
+        "DisallowedContentType": "One or more file types are not allowed."
+      }
+    },
     "validation": {
       "required": "This field is required.",
       "emailInvalid": "Please enter a valid email address.",

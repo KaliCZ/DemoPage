@@ -241,7 +241,8 @@ const c = commonTranslations[lang];
     errorNetwork: c.errors.networkError,
     attachmentsLabel: t.list.attachments,
     downloadLabel: t.list.download,
-    validationStrings: f.validation
+    validationStrings: f.validation,
+    apiErrorMap: t.errors
   }}>
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
@@ -253,14 +254,10 @@ const c = commonTranslations[lang];
     }
 
     async function showApiError(res) {
-      if (res.status >= 400 && res.status < 500) {
-        try {
-          var body = await res.json();
-          if (body && body.error) {
-            window.__showSnackbar?.(body.error, 'error');
-            return body.error;
-          }
-        } catch (e) {}
+      var msg = await window.__getApiError?.(res, apiErrorMap);
+      if (msg) {
+        window.__showSnackbar?.(msg, 'error');
+        return msg;
       }
       showError(res.status);
     }

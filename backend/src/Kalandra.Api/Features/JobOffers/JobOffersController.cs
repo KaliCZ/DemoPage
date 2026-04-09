@@ -44,7 +44,7 @@ public class JobOffersController(
     [EnableRateLimiting(RateLimitPolicies.HireMeCreateUser)]
     [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<GetJobOfferDetailResponse>> Create(
         [FromForm] CreateJobOfferRequest request,
@@ -54,7 +54,7 @@ public class JobOffersController(
     {
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
-            return BadRequest(new { error = "CAPTCHA verification failed. Please try again." });
+            return ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
         // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
         var files = (attachments ?? [])
@@ -87,11 +87,11 @@ public class JobOffersController(
             return error switch
             {
                 CreateJobOfferError.TooManyAttachments =>
-                    BadRequest(new { error = "Maximum 5 attachments allowed." }),
+                    ValidationError("attachments", CreateOfferError.TooManyAttachments),
                 CreateJobOfferError.TotalSizeTooLarge =>
-                    BadRequest(new { error = "Total attachment size must not exceed 15 MB." }),
+                    ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
                 CreateJobOfferError.DisallowedContentType =>
-                    BadRequest(new { error = "One or more file types are not allowed." }),
+                    ValidationError("attachments", CreateOfferError.DisallowedContentType),
             };
         }
 
@@ -107,7 +107,7 @@ public class JobOffersController(
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -143,7 +143,7 @@ public class JobOffersController(
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
                     EditJobOfferError.NotSubmittedStatus =>
-                        BadRequest(new { error = "Can only edit offers with status Submitted." }),
+                        ValidationError("status", EditOfferError.NotSubmittedStatus),
                 };
             }
 
@@ -156,7 +156,7 @@ public class JobOffersController(
 
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -184,7 +184,7 @@ public class JobOffersController(
                     CancelJobOfferError.NotFound => NotFound(),
                     CancelJobOfferError.NotAuthorized => Forbid(),
                     CancelJobOfferError.InvalidStatus =>
-                        BadRequest(new { error = "Cannot cancel an offer that has already been accepted, declined, or cancelled." }),
+                        ValidationError("status", CancelOfferError.InvalidStatus),
                 };
             }
 
@@ -198,7 +198,7 @@ public class JobOffersController(
     [HttpPatch("{id:guid}/status")]
     [Authorize(Policy = AuthPolicies.Admin)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -225,10 +225,8 @@ public class JobOffersController(
                 return error switch
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
-                    UpdateJobOfferStatusError.AlreadyInStatus =>
-                        BadRequest(new { error = "Job offer is already in the requested status." }),
                     UpdateJobOfferStatusError.InvalidTransition =>
-                        BadRequest(new { error = "The requested status transition is not allowed." }),
+                        ValidationError("status", UpdateOfferStatusError.InvalidTransition),
                 };
             }
 
@@ -250,9 +248,6 @@ public class JobOffersController(
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Content))
-            return BadRequest(new { error = "Comment content is required." });
-
         var command = new AddCommentCommand(
             JobOfferId: id,
             User: AppUser,
@@ -401,6 +396,12 @@ public class JobOffersController(
             result.TotalCount);
     }
 
+    private ActionResult ValidationError<TError>(string field, TError error) where TError : struct, Enum
+    {
+        ModelState.AddModelError(field, error.ToString());
+        return ValidationProblem();
+    }
+
     private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)
     {
         try
@@ -409,7 +410,10 @@ public class JobOffersController(
         }
         catch (Exception ex) when (ex is ConcurrencyException or EventStreamUnexpectedMaxEventIdException)
         {
-            return Conflict(new { error = "Job offer was modified by another request. Please refresh and try again." });
+            return Conflict(ProblemDetailsFactory.CreateProblemDetails(
+                HttpContext,
+                statusCode: StatusCodes.Status409Conflict,
+                detail: "Job offer was modified by another request."));
         }
     }
 }

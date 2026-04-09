@@ -351,7 +351,7 @@ public class JobOfferAggregateTests
 
         Assert.True(result.IsError);
         Assert.Equal(
-            UpdateJobOfferStatusError.AlreadyInStatus,
+            UpdateJobOfferStatusError.InvalidTransition,
             result.Error.Get());
     }
 

@@ -17,6 +17,13 @@
     "description": "You haven't submitted any job offers yet.",
     "cta": "Submit a Job Offer"
   },
+  "errors": {
+    "status": {
+      "NotSubmittedStatus": "Can only edit offers with status Submitted.",
+      "InvalidStatus": "Cannot cancel an offer that has already been accepted, declined, or cancelled.",
+      "InvalidTransition": "The requested status transition is not allowed."
+    }
+  },
   "list": {
     "filterAll": "All",
     "filterByStatus": "Filter by status",

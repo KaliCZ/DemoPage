@@ -495,6 +495,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <AuthDialog lang={lang} />
 
   <script>
+    import '../lib/api-errors';
     import { getSupabaseClient } from '../lib/supabase';
 
     const supabase = getSupabaseClient();
