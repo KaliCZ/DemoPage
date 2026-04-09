@@ -1,5 +1,5 @@
+using Kalandra.Api.Contracts;
 using Kalandra.Api.Features.Auth.Contracts;
-using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;

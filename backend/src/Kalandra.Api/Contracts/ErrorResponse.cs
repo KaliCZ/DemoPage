@@ -1,4 +1,4 @@
-namespace Kalandra.Api.Infrastructure;
+namespace Kalandra.Api.Contracts;
 
 /// <summary>
 /// Standard error response carrying a strongly-typed error code.
