@@ -3,6 +3,7 @@ using JasperFx.Events;
 using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.JobOffers.Commands;
@@ -71,8 +72,7 @@ public class JobOffersController(
         try
         {
             var command = new CreateJobOfferCommand(
-                UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
+                User: AppUser,
                 CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -132,8 +132,7 @@ public class JobOffersController(
         {
             var command = new EditJobOfferCommand(
                 Id: id,
-                UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
+                User: AppUser,
                 CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
                 ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
@@ -182,8 +181,7 @@ public class JobOffersController(
         {
             var command = new CancelJobOfferCommand(
                 Id: id,
-                UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
+                User: AppUser,
                 Reason: request.Reason,
                 Timestamp: timeProvider.GetUtcNow());
 
@@ -226,8 +224,7 @@ public class JobOffersController(
             var command = new UpdateJobOfferStatusCommand(
                 Id: id,
                 NewStatus: request.Status,
-                ChangedByUserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-                ChangedByEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
+                User: AppUser,
                 Notes: request.AdminNotes,
                 Timestamp: timeProvider.GetUtcNow());
 
@@ -269,11 +266,8 @@ public class JobOffersController(
 
         var command = new AddCommentCommand(
             JobOfferId: id,
-            UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
-            UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
-            UserName: NonEmptyString.CreateUnsafe(AppUser.FullName),
+            User: AppUser,
             Content: request.Content.Trim().AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-            IsAdmin: AppUser.IsAdmin,
             Timestamp: timeProvider.GetUtcNow());
 
         var result = await addCommentHandler.HandleAsync(command, ct);
@@ -293,7 +287,7 @@ public class JobOffersController(
         var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
         return Ok(new CommentResponse(
             Id: commentEvent.CommentId,
-            UserId: commentEvent.UserId,
+            UserId: commentEvent.UserId.ToString(),
             UserEmail: commentEvent.UserEmail,
             UserName: commentEvent.UserName,
             Content: commentEvent.Content,
@@ -351,8 +345,7 @@ public class JobOffersController(
         var query = new GetAttachmentInfoQuery(
             JobOfferId: id,
             FileName: fileName,
-            UserId: AppUser.Id.ToString(),
-            IsAdmin: AppUser.IsAdmin);
+            User: AppUser);
 
         var info = await attachmentHandler.HandleAsync(query, ct);
         if (info == null)
@@ -377,7 +370,7 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
     {
-        var query = new GetJobOfferHistoryQuery(Id: id, UserId: AppUser.Id.ToString(), IsAdmin: AppUser.IsAdmin);
+        var query = new GetJobOfferHistoryQuery(Id: id, User: AppUser);
         var entries = await historyHandler.HandleAsync(query, ct);
         if (entries == null)
             return NotFound();
@@ -393,14 +386,14 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListComments(Guid id, CancellationToken ct)
     {
-        var query = new ListCommentsQuery(JobOfferId: id, UserId: AppUser.Id.ToString(), IsAdmin: AppUser.IsAdmin);
+        var query = new ListCommentsQuery(JobOfferId: id, User: AppUser);
         var comments = await listCommentsHandler.HandleAsync(query, ct);
         if (comments == null)
             return NotFound();
 
         return Ok(new ListCommentsResponse(comments.Select(c => new CommentResponse(
             Id: c.CommentId,
-            UserId: c.UserId,
+            UserId: c.UserId.ToString(),
             UserEmail: c.UserEmail,
             UserName: c.UserName,
             Content: c.Content,
@@ -411,7 +404,7 @@ public class JobOffersController(
 
     private async Task<GetJobOfferDetailResponse?> LoadDetailResponseAsync(Guid id, CancellationToken ct)
     {
-        var query = new GetJobOfferDetailQuery(Id: id, UserId: AppUser.Id.ToString(), IsAdmin: AppUser.IsAdmin);
+        var query = new GetJobOfferDetailQuery(Id: id, User: AppUser);
         var offer = await getDetailHandler.HandleAsync(query, ct);
         if (offer == null)
             return null;
@@ -443,8 +436,8 @@ public class JobOffersController(
         CancellationToken ct)
     {
         var query = new ListJobOffersQuery(
-            UserId: AppUser.Id.ToString(),
-            IsAdmin: showAll,
+            User: AppUser,
+            ShowAll: showAll,
             Statuses: status,
             Page: page,
             PageSize: pageSize);

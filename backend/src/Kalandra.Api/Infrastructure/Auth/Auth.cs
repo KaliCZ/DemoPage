@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Protocols;
@@ -78,7 +79,7 @@ public static class Auth
             });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy(AuthPolicies.Admin, policy => policy.RequireRole(nameof(Role.Admin)));
+            .AddPolicy(AuthPolicies.Admin, policy => policy.RequireRole(nameof(UserRole.Admin)));
     }
 
     public static void Use(WebApplication app)
@@ -108,7 +109,7 @@ public static class Auth
             foreach (var item in rolesProp.EnumerateArray())
             {
                 var raw = item.GetString();
-                if (!string.IsNullOrEmpty(raw) && Enum.TryParse<Role>(raw, ignoreCase: true, out var role))
+                if (!string.IsNullOrEmpty(raw) && Enum.TryParse<UserRole>(raw, ignoreCase: true, out var role))
                     identity.AddClaim(new Claim(ClaimTypes.Role, role.ToString()));
             }
         }

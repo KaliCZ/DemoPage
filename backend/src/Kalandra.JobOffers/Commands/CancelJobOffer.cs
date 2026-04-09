@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
 
@@ -5,8 +6,7 @@ namespace Kalandra.JobOffers.Commands;
 
 public record CancelJobOfferCommand(
     Guid Id,
-    NonEmptyString UserId,
-    NonEmptyString UserEmail,
+    CurrentUser User,
     string? Reason,
     DateTimeOffset Timestamp);
 
@@ -23,8 +23,8 @@ public class CancelJobOfferHandler(IDocumentSession session)
             return Try.Error<Unit, CancelJobOfferError>(CancelJobOfferError.NotFound);
 
         var result = offer.Cancel(
-            userId: command.UserId.Value,
-            userEmail: command.UserEmail.Value,
+            userId: command.User.Id,
+            userEmail: command.User.Email.Address,
             reason: command.Reason,
             timestamp: command.Timestamp);
 

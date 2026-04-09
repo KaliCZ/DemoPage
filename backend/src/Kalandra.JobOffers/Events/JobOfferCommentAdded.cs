@@ -2,7 +2,7 @@ namespace Kalandra.JobOffers.Events;
 
 public record JobOfferCommentAdded(
     Guid CommentId,
-    string UserId,
+    Guid UserId,
     string UserEmail,
     string UserName,
     string Content,

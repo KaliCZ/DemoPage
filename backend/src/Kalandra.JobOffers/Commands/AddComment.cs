@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
@@ -6,11 +7,8 @@ namespace Kalandra.JobOffers.Commands;
 
 public record AddCommentCommand(
     Guid JobOfferId,
-    NonEmptyString UserId,
-    NonEmptyString UserEmail,
-    NonEmptyString UserName,
+    CurrentUser User,
     NonEmptyString Content,
-    bool IsAdmin,
     DateTimeOffset Timestamp);
 
 /// <summary>
@@ -25,14 +23,14 @@ public class AddCommentHandler(IDocumentSession session)
         if (offer == null)
             return Try.Error<JobOfferCommentAdded, AddCommentError>(AddCommentError.NotFound);
 
-        if (!command.IsAdmin && offer.UserId != command.UserId.Value)
+        if (!command.User.IsAdmin && offer.UserId != command.User.Id)
             return Try.Error<JobOfferCommentAdded, AddCommentError>(AddCommentError.NotAuthorized);
 
         var commentEvent = new JobOfferCommentAdded(
             CommentId: Guid.NewGuid(),
-            UserId: command.UserId.Value,
-            UserEmail: command.UserEmail.Value,
-            UserName: command.UserName.Value,
+            UserId: command.User.Id,
+            UserEmail: command.User.Email.Address,
+            UserName: command.User.FullName,
             Content: command.Content.Value,
             Timestamp: command.Timestamp);
 

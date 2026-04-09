@@ -14,7 +14,7 @@ public enum AddCommentError { NotFound, NotAuthorized }
 public class JobOffer
 {
     public Guid Id { get; set; }
-    public string UserId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
     public string UserEmail { get; set; } = string.Empty;
 
     public string CompanyName { get; set; } = string.Empty;
@@ -34,7 +34,7 @@ public class JobOffer
     public DateTimeOffset UpdatedAt { get; set; }
 
     public Try<JobOfferEdited, EditJobOfferError> Edit(
-        string userId,
+        Guid userId,
         string userEmail,
         string companyName,
         string contactName,
@@ -69,7 +69,7 @@ public class JobOffer
     }
 
     public Try<JobOfferCancelled, CancelJobOfferError> Cancel(
-        string userId,
+        Guid userId,
         string userEmail,
         string? reason,
         DateTimeOffset timestamp)
@@ -89,7 +89,7 @@ public class JobOffer
 
     public Try<JobOfferStatusChanged, UpdateJobOfferStatusError> ChangeStatus(
         JobOfferStatus newStatus,
-        string changedByUserId,
+        Guid changedByUserId,
         string changedByEmail,
         string? notes,
         DateTimeOffset timestamp)

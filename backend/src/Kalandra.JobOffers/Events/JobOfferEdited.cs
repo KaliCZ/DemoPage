@@ -1,7 +1,7 @@
 namespace Kalandra.JobOffers.Events;
 
 public record JobOfferEdited(
-    string EditedByUserId,
+    Guid EditedByUserId,
     string EditedByEmail,
     string CompanyName,
     string ContactName,

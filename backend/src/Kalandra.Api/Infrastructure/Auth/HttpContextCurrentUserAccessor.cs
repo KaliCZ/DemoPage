@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
+using Kalandra.Infrastructure.Auth;
 
 namespace Kalandra.Api.Infrastructure.Auth;
 
@@ -38,12 +39,12 @@ public class HttpContextCurrentUserAccessor(
     /// canonicalized to enum names by Auth.ExtractRolesFromAppMetadata, so a
     /// strict (case-sensitive) parse is enough here.
     /// </summary>
-    private static ImmutableArray<Role> ExtractRoles(ClaimsPrincipal principal)
+    private static ImmutableArray<UserRole> ExtractRoles(ClaimsPrincipal principal)
     {
-        var builder = ImmutableArray.CreateBuilder<Role>();
+        var builder = ImmutableArray.CreateBuilder<UserRole>();
         foreach (var claim in principal.FindAll(ClaimTypes.Role))
         {
-            if (Enum.TryParse<Role>(claim.Value, out var role))
+            if (Enum.TryParse<UserRole>(claim.Value, out var role))
                 builder.Add(role);
         }
         return builder.ToImmutable();

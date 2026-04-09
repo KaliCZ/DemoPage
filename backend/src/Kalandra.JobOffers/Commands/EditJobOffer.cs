@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
 
@@ -5,8 +6,7 @@ namespace Kalandra.JobOffers.Commands;
 
 public record EditJobOfferCommand(
     Guid Id,
-    NonEmptyString UserId,
-    NonEmptyString UserEmail,
+    CurrentUser User,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
     NonEmptyString ContactEmail,
@@ -31,8 +31,8 @@ public class EditJobOfferHandler(IDocumentSession session)
             return Try.Error<Unit, EditJobOfferError>(EditJobOfferError.NotFound);
 
         var result = offer.Edit(
-            userId: command.UserId.Value,
-            userEmail: command.UserEmail.Value,
+            userId: command.User.Id,
+            userEmail: command.User.Email.Address,
             companyName: command.CompanyName.Value,
             contactName: command.ContactName.Value,
             contactEmail: command.ContactEmail.Value,

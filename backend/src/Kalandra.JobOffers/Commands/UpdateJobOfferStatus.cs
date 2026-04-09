@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
 
@@ -6,8 +7,7 @@ namespace Kalandra.JobOffers.Commands;
 public record UpdateJobOfferStatusCommand(
     Guid Id,
     JobOfferStatus NewStatus,
-    NonEmptyString ChangedByUserId,
-    NonEmptyString ChangedByEmail,
+    CurrentUser User,
     string? Notes,
     DateTimeOffset Timestamp);
 
@@ -25,8 +25,8 @@ public class UpdateJobOfferStatusHandler(IDocumentSession session)
 
         var result = offer.ChangeStatus(
             newStatus: command.NewStatus,
-            changedByUserId: command.ChangedByUserId.Value,
-            changedByEmail: command.ChangedByEmail.Value,
+            changedByUserId: command.User.Id,
+            changedByEmail: command.User.Email.Address,
             notes: command.Notes,
             timestamp: command.Timestamp);
 

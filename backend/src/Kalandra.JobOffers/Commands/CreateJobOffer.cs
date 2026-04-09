@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
@@ -14,8 +15,7 @@ public record CreateJobOfferFile(
     Stream Content);
 
 public record CreateJobOfferCommand(
-    NonEmptyString UserId,
-    NonEmptyString UserEmail,
+    CurrentUser User,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
     NonEmptyString ContactEmail,
@@ -70,7 +70,7 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
 
         if (command.Files.Count > 0)
         {
-            var folderPrefix = $"{command.UserId.Value}/{streamId}/";
+            var folderPrefix = $"{command.User.Id}/{streamId}/";
             var items = command.Files
                 .Select(f => new FileUploadItem(f.FileName.Value, f.FileSize, f.ContentType.Value, f.Content))
                 .ToList();
@@ -83,8 +83,8 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
 
         // Create event
         var submitted = new JobOfferSubmitted(
-            UserId: command.UserId.Value,
-            UserEmail: command.UserEmail.Value,
+            UserId: command.User.Id,
+            UserEmail: command.User.Email.Address,
             CompanyName: command.CompanyName.Value,
             ContactName: command.ContactName.Value,
             ContactEmail: command.ContactEmail.Value,

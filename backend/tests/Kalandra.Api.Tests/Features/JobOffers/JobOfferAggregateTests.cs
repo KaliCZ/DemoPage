@@ -7,12 +7,17 @@ public class JobOfferAggregateTests
 {
     private static readonly DateTimeOffset Now = new(2026, 4, 1, 12, 0, 0, TimeSpan.Zero);
 
-    private static JobOffer CreateSubmittedOffer(string userId = "owner")
+    private static readonly Guid OwnerId = new("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid OtherId = new("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid AdminId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+    private static JobOffer CreateSubmittedOffer(Guid? userId = null)
     {
+        var id = userId ?? OwnerId;
         var offer = new JobOffer();
         offer.Apply(new JobOfferSubmitted(
-            UserId: userId,
-            UserEmail: $"{userId}@test.com",
+            UserId: id,
+            UserEmail: $"{id}@test.com",
             CompanyName: "Acme",
             ContactName: "John",
             ContactEmail: "john@acme.com",
@@ -34,7 +39,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
-            userId: "owner",
+            userId: OwnerId,
             userEmail: "owner@test.com",
             companyName: "NewCo",
             contactName: "Jane",
@@ -57,7 +62,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
-            userId: "other",
+            userId: OtherId,
             userEmail: "other@test.com",
             companyName: "Co",
             contactName: "J",
@@ -79,13 +84,13 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
-            CancelledByUserId: "owner",
+            CancelledByUserId: OwnerId,
             CancelledByEmail: "owner@test.com",
             Reason: null,
             Timestamp: Now));
 
         var result = offer.Edit(
-            userId: "owner",
+            userId: OwnerId,
             userEmail: "owner@test.com",
             companyName: "Co",
             contactName: "J",
@@ -109,7 +114,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         var result = offer.Cancel(
-            userId: "owner",
+            userId: OwnerId,
             userEmail: "owner@test.com",
             reason: "Changed mind",
             timestamp: Now);
@@ -122,7 +127,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
@@ -130,7 +135,7 @@ public class JobOfferAggregateTests
             Timestamp: Now));
 
         var result = offer.Cancel(
-            userId: "owner", userEmail: "owner@test.com", reason: null, timestamp: Now);
+            userId: OwnerId, userEmail: "owner@test.com", reason: null, timestamp: Now);
         Assert.True(result.IsSuccess);
     }
 
@@ -139,7 +144,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         var result = offer.Cancel(
-            userId: "other", userEmail: "other@test.com", reason: null, timestamp: Now);
+            userId: OtherId, userEmail: "other@test.com", reason: null, timestamp: Now);
 
         Assert.True(result.IsError);
         Assert.Equal(CancelJobOfferError.NotAuthorized, result.Error.Get((Unit _) => new InvalidOperationException()));
@@ -150,7 +155,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.LetsTalk,
@@ -158,7 +163,7 @@ public class JobOfferAggregateTests
             Timestamp: Now));
 
         var result = offer.Cancel(
-            userId: "owner", userEmail: "owner@test.com", reason: null, timestamp: Now);
+            userId: OwnerId, userEmail: "owner@test.com", reason: null, timestamp: Now);
         Assert.True(result.IsError);
         Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get((Unit _) => new InvalidOperationException()));
     }
@@ -168,13 +173,13 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
-            CancelledByUserId: "owner",
+            CancelledByUserId: OwnerId,
             CancelledByEmail: "owner@test.com",
             Reason: null,
             Timestamp: Now));
 
         var result = offer.Cancel(
-            userId: "owner", userEmail: "owner@test.com", reason: null, timestamp: Now);
+            userId: OwnerId, userEmail: "owner@test.com", reason: null, timestamp: Now);
         Assert.True(result.IsError);
         Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get((Unit _) => new InvalidOperationException()));
     }
@@ -187,7 +192,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.InReview,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -204,7 +209,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.LetsTalk,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -217,7 +222,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.Declined,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -230,7 +235,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.Cancelled,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -246,7 +251,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
@@ -255,7 +260,7 @@ public class JobOfferAggregateTests
 
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.LetsTalk,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -267,7 +272,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
@@ -276,7 +281,7 @@ public class JobOfferAggregateTests
 
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.Declined,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -288,7 +293,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.LetsTalk,
@@ -297,7 +302,7 @@ public class JobOfferAggregateTests
 
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.InReview,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -309,7 +314,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.Declined,
@@ -318,7 +323,7 @@ public class JobOfferAggregateTests
 
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.Submitted,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -330,14 +335,14 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
-            CancelledByUserId: "owner",
+            CancelledByUserId: OwnerId,
             CancelledByEmail: "owner@test.com",
             Reason: null,
             Timestamp: Now));
 
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.Submitted,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -350,7 +355,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.ChangeStatus(
             newStatus: JobOfferStatus.Submitted,
-            changedByUserId: "admin",
+            changedByUserId: AdminId,
             changedByEmail: "admin@test.com",
             notes: null,
             timestamp: Now);
@@ -366,9 +371,10 @@ public class JobOfferAggregateTests
     [Fact]
     public void Apply_Submitted_SetsInitialState()
     {
+        var u1 = new Guid("33333333-3333-3333-3333-333333333333");
         var offer = new JobOffer();
         offer.Apply(new JobOfferSubmitted(
-            UserId: "u1",
+            UserId: u1,
             UserEmail: "u1@test.com",
             CompanyName: "Co",
             ContactName: "Name",
@@ -382,7 +388,7 @@ public class JobOfferAggregateTests
             Attachments: [],
             Timestamp: Now));
 
-        Assert.Equal("u1", offer.UserId);
+        Assert.Equal(u1, offer.UserId);
         Assert.Equal("Co", offer.CompanyName);
         Assert.Equal(JobOfferStatus.Submitted, offer.Status);
         Assert.Equal(Now, offer.CreatedAt);
@@ -393,7 +399,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferEdited(
-            EditedByUserId: "owner",
+            EditedByUserId: OwnerId,
             EditedByEmail: "owner@test.com",
             CompanyName: "NewCo",
             ContactName: "Jane",
@@ -417,7 +423,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
-            ChangedByUserId: "admin",
+            ChangedByUserId: AdminId,
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
@@ -433,7 +439,7 @@ public class JobOfferAggregateTests
     {
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
-            CancelledByUserId: "owner",
+            CancelledByUserId: OwnerId,
             CancelledByEmail: "owner@test.com",
             Reason: "Reason",
             Timestamp: Now));

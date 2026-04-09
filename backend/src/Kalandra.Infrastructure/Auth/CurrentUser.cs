@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using System.Net.Mail;
 
-namespace Kalandra.Api.Infrastructure.Auth;
+namespace Kalandra.Infrastructure.Auth;
 
-public enum Role
+public enum UserRole
 {
     Admin,
 }
@@ -12,7 +12,7 @@ public record CurrentUser(
     Guid Id,
     MailAddress Email,
     string FullName,
-    ImmutableArray<Role> Roles)
+    ImmutableArray<UserRole> Roles)
 {
-    public bool IsAdmin => Roles.Contains(Role.Admin);
+    public bool IsAdmin => Roles.Contains(UserRole.Admin);
 }

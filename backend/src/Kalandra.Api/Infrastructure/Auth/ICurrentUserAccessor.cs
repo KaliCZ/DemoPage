@@ -1,3 +1,5 @@
+using Kalandra.Infrastructure.Auth;
+
 namespace Kalandra.Api.Infrastructure.Auth;
 
 public interface ICurrentUserAccessor
