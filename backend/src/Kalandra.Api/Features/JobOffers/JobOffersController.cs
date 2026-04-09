@@ -22,7 +22,6 @@ namespace Kalandra.Api.Features.JobOffers;
 [Authorize]
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
-    IDocumentSession session,
     IStorageService storageService,
     TimeProvider timeProvider,
     CreateJobOfferHandler createHandler,
@@ -102,7 +101,6 @@ public class JobOffersController(
             }
 
             var streamId = result.Success.Get((Unit _) => new InvalidOperationException());
-            await session.SaveChangesAsync(ct);
 
             var detail = await LoadDetailResponseAsync(streamId, ct);
             return CreatedAtAction(nameof(GetDetail), new { id = streamId }, detail);
@@ -158,8 +156,8 @@ public class JobOffersController(
                 };
             }
 
-            await session.SaveChangesAsync(ct);
-            return (await LoadDetailResponseAsync(id, ct))!;
+            var offer = result.Success.Get((Unit _) => new InvalidOperationException());
+            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
 
@@ -199,8 +197,8 @@ public class JobOffersController(
                 };
             }
 
-            await session.SaveChangesAsync(ct);
-            return (await LoadDetailResponseAsync(id, ct))!;
+            var offer = result.Success.Get((Unit _) => new InvalidOperationException());
+            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
 
@@ -243,8 +241,8 @@ public class JobOffersController(
                 };
             }
 
-            await session.SaveChangesAsync(ct);
-            return (await LoadDetailResponseAsync(id, ct))!;
+            var offer = result.Success.Get((Unit _) => new InvalidOperationException());
+            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
         });
     }
 
@@ -281,8 +279,6 @@ public class JobOffersController(
                 AddCommentError.NotAuthorized => Forbid(),
             };
         }
-
-        await session.SaveChangesAsync(ct);
 
         var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
         return CommentResponse.Serialize(commentEvent);

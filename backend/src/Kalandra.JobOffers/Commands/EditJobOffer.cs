@@ -18,17 +18,14 @@ public record EditJobOfferCommand(
     string? AdditionalNotes,
     DateTimeOffset Timestamp);
 
-/// <summary>
-/// Validates and appends an edit event. Does not save — the caller commits the session.
-/// </summary>
 public class EditJobOfferHandler(IDocumentSession session)
 {
-    public async Task<Try<Unit, EditJobOfferError>> HandleAsync(
+    public async Task<Try<JobOffer, EditJobOfferError>> HandleAsync(
         EditJobOfferCommand command, CancellationToken ct)
     {
         var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);
         if (stream.Aggregate is not { } offer)
-            return Try.Error<Unit, EditJobOfferError>(EditJobOfferError.NotFound);
+            return Try.Error<JobOffer, EditJobOfferError>(EditJobOfferError.NotFound);
 
         var result = offer.Edit(
             userId: command.User.Id,
@@ -44,12 +41,13 @@ public class EditJobOfferHandler(IDocumentSession session)
             additionalNotes: command.AdditionalNotes,
             timestamp: command.Timestamp);
 
-        return result.Match(
-            evt =>
-            {
-                stream.AppendOne(evt);
-                return Try.Success<Unit, EditJobOfferError>(Unit.Value);
-            },
-            err => Try.Error<Unit, EditJobOfferError>(err));
+        if (result.IsError)
+            return Try.Error<JobOffer, EditJobOfferError>(result.Error.Get());
+
+        var evt = result.Success.Get();
+        stream.AppendOne(evt);
+        offer.Apply(evt);
+        await session.SaveChangesAsync(ct);
+        return Try.Success<JobOffer, EditJobOfferError>(offer);
     }
 }

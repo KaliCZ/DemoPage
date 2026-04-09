@@ -22,7 +22,7 @@ public class ListJobOffersHandler(IQuerySession session)
 
         var q = session.Query<JobOffer>();
 
-        if (!query.ShowAll)
+        if (!query.ShowAll || !query.User.IsAdmin)
         {
             var userId = query.User.Id;
             q = (IMartenQueryable<JobOffer>)q.Where(j => j.UserId == userId);

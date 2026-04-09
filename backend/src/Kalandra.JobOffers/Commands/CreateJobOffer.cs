@@ -28,10 +28,6 @@ public record CreateJobOfferCommand(
     IReadOnlyList<CreateJobOfferFile> Files,
     DateTimeOffset Timestamp);
 
-/// <summary>
-/// Validates attachments, uploads them to storage, and creates the job offer event stream.
-/// Does not save — the caller commits the session.
-/// </summary>
 public class CreateJobOfferHandler(IDocumentSession session, IStorageService storageService)
 {
     private const int MaxAttachments = 5;
@@ -98,6 +94,7 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
             Timestamp: command.Timestamp);
 
         session.Events.StartStream<JobOffer>(streamId, submitted);
+        await session.SaveChangesAsync(ct);
         return Try.Success<Guid, CreateJobOfferError>(streamId);
     }
 }

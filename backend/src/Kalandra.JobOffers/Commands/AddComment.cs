@@ -11,9 +11,6 @@ public record AddCommentCommand(
     NonEmptyString Content,
     DateTimeOffset Timestamp);
 
-/// <summary>
-/// Validates authorization and appends a comment event. Does not save — the caller commits the session.
-/// </summary>
 public class AddCommentHandler(IDocumentSession session)
 {
     public async Task<Try<JobOfferCommentAdded, AddCommentError>> HandleAsync(
@@ -35,6 +32,7 @@ public class AddCommentHandler(IDocumentSession session)
             Timestamp: command.Timestamp);
 
         session.Events.Append(CommentStreamId.For(command.JobOfferId), commentEvent);
+        await session.SaveChangesAsync(ct);
         return Try.Success<JobOfferCommentAdded, AddCommentError>(commentEvent);
     }
 }
