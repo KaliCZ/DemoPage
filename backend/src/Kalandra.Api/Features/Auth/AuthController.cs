@@ -9,6 +9,7 @@ namespace Kalandra.Api.Features.Auth;
 [ApiController]
 [Route("api/auth")]
 [Produces("application/json")]
+[Authorize]
 public class AuthController(
     ICurrentUserAccessor currentUser,
     ISupabaseAdminService adminService) : ControllerBase
@@ -20,7 +21,6 @@ public class AuthController(
     /// Used when a user signed up via OAuth (e.g. Google) and wants to add email/password login.
     /// </summary>
     [HttpPost("link-email")]
-    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
