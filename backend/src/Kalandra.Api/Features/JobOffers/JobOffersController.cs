@@ -41,7 +41,7 @@ public class JobOffersController(
     // ───── Create ─────
 
     [HttpPost]
-    [EnableRateLimiting(RateLimitPolicies.HireMeCreate)]
+    [EnableRateLimiting(RateLimitPolicies.HireMeCreateUser)]
     [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
