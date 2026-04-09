@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Kalandra.Api.Infrastructure.Auth;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Kalandra.Api.Infrastructure;
@@ -23,14 +23,16 @@ public static class RateLimits
                 if (httpContext.Request.Headers.ContainsKey("X-Interactive-Captcha"))
                     return RateLimitPartition.GetNoLimiter("interactive-captcha");
 
-                var partitionKey =
-                    httpContext.User.FindFirst("sub")?.Value
-                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                    ?? httpContext.Connection.RemoteIpAddress?.ToString()
-                    ?? "anonymous";
+                // Endpoint is [Authorize], and UseAuthentication/UseAuthorization
+                // run before UseAppRateLimits, so the user is guaranteed to be
+                // signed in here. Reuse the already-built CurrentUser instead of
+                // re-parsing claims.
+                var currentUser = httpContext.RequestServices
+                    .GetRequiredService<ICurrentUserAccessor>()
+                    .CurrentUser;
 
                 return RateLimitPartition.GetSlidingWindowLimiter(
-                    partitionKey: partitionKey,
+                    partitionKey: currentUser.Id,
                     factory: _ => new SlidingWindowRateLimiterOptions
                     {
                         PermitLimit = 2,
