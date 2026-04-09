@@ -1,8 +1,8 @@
 ---
 import '../styles/global.css'
+import AuthDialog from '../components/AuthDialog.astro';
 import IconEmail from '../components/icons/IconEmail.astro';
 import IconGitHub from '../components/icons/IconGitHub.astro';
-import IconGoogle from '../components/icons/IconGoogle.astro';
 import IconLinkedIn from '../components/icons/IconLinkedIn.astro';
 import type { Locale } from '../i18n/utils';
 import { localePath, alternateLangUrl } from '../i18n/utils';
@@ -491,104 +491,13 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     updateToggleIcons();
   </script>
 
-  <!-- Auth dialog (email/password + Google OAuth) -->
-  <dialog id="auth-dialog" class="m-auto bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 max-w-sm w-full backdrop:bg-black/50">
-    <div class="space-y-5">
-      <div>
-        <h2 id="auth-dialog-title" class="font-headline text-xl font-bold text-on-surface">{t.auth.signIn}</h2>
-      </div>
-
-      <!-- Email / password form -->
-      <div class="space-y-3">
-        <div>
-          <label for="auth-email" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.email}</label>
-          <input type="email" id="auth-email" placeholder={t.auth.emailPlaceholder} required
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-        </div>
-        <div>
-          <label for="auth-password" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.password}</label>
-          <input type="password" id="auth-password" placeholder={t.auth.passwordPlaceholder} required minlength="6"
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-        </div>
-      </div>
-
-      <div id="auth-turnstile-container" class="flex justify-center empty:hidden"></div>
-
-      <p id="auth-dialog-error" class="hidden text-error text-sm font-body"></p>
-
-      <button type="button" id="auth-dialog-submit"
-        class="w-full px-4 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
-        {t.auth.signIn}
-      </button>
-
-      <p id="auth-dialog-toggle" class="text-center text-sm font-body text-on-surface-variant">
-        {t.auth.noAccount}
-        <button type="button" id="auth-dialog-switch" class="text-primary font-semibold hover:underline cursor-pointer">{t.auth.signUp}</button>
-      </p>
-
-      <!-- Divider -->
-      <div class="flex items-center gap-3">
-        <div class="flex-1 border-t border-outline-variant/20"></div>
-        <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
-        <div class="flex-1 border-t border-outline-variant/20"></div>
-      </div>
-
-      <!-- Google OAuth -->
-      <button type="button" id="auth-dialog-google"
-        class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer">
-        <IconGoogle class="w-5 h-5" />
-        {t.auth.continueWithGoogle}
-      </button>
-
-      <button type="button" id="auth-dialog-close"
-        class="w-full px-4 py-2 rounded-xl text-sm font-label text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer">
-        {t.auth.cancel}
-      </button>
-    </div>
-  </dialog>
-
-  <script define:vars={{ authSignInLabel: t.auth.signIn, authSignUpLabel: t.auth.signUp, authNoAccountLabel: t.auth.noAccount, authHaveAccountLabel: t.auth.haveAccount, authConfirmationSentLabel: t.auth.confirmationSent }}>
-    // Auth dialog mode management (sign-in vs sign-up)
-    window.__authDialogLabels = { signIn: authSignInLabel, signUp: authSignUpLabel, noAccount: authNoAccountLabel, haveAccount: authHaveAccountLabel, confirmationSent: authConfirmationSentLabel };
-  </script>
+  <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
+  <AuthDialog lang={lang} />
 
   <script>
-    import { createClient } from '@supabase/supabase-js';
-    import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../lib/supabase';
-    import {
-      createTurnstile,
-      whenTurnstileReady,
-      turnstileEnabled,
-      shouldForceInteractive,
-      recordFailure,
-      recordSuccess,
-    } from '../lib/turnstile';
+    import { getSupabaseClient } from '../lib/supabase';
 
-    const supabase = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
-      ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
-      : null;
-
-    let authDialogMode: 'signin' | 'signup' = 'signin';
-
-    // Shared Turnstile widget for the auth dialog. Exposed on window so future
-    // features (e.g. profile page password change) can reuse the same helper.
-    const authTurnstile = createTurnstile('#auth-turnstile-container');
-    (window as any).__createTurnstile = createTurnstile;
-
-    // Single device-wide counter for failed auth attempts (sign-in or sign-up).
-    // Changing the email on the same browser doesn't reset it — it's the same person.
-    const AUTH_FAIL_KEY = 'auth-fail';
-    // Separate counter for successful signups — more than 1 account in 4h is suspicious.
-    const AUTH_SIGNUP_KEY = 'auth-signup';
-    const SIGNUP_WINDOW_MS = 4 * 60 * 60 * 1000;
-
-    function renderAuthTurnstile() {
-      if (!turnstileEnabled()) return;
-      const force =
-        shouldForceInteractive(AUTH_FAIL_KEY) ||
-        shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
-      authTurnstile.render(force ? 'always' : 'interaction-only');
-    }
+    const supabase = getSupabaseClient();
 
     function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
       if (!imgEl) return;
@@ -647,122 +556,11 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       }
     }
 
-    function openAuthDialog() {
-      if (!supabase) return;
-      authDialogMode = 'signin';
-      updateAuthDialogMode();
-      (document.getElementById('auth-dialog') as HTMLDialogElement)?.showModal();
-      if (turnstileEnabled()) {
-        whenTurnstileReady().then(() => renderAuthTurnstile());
-      }
-    }
-
-    function updateAuthDialogMode() {
-      const labels = (window as any).__authDialogLabels;
-      const title = document.getElementById('auth-dialog-title');
-      const submit = document.getElementById('auth-dialog-submit');
-      const toggle = document.getElementById('auth-dialog-toggle');
-      const switchBtn = document.getElementById('auth-dialog-switch');
-      const errorEl = document.getElementById('auth-dialog-error');
-
-      if (errorEl) { errorEl.classList.add('hidden'); errorEl.className = 'hidden text-error text-sm font-body'; }
-
-      if (authDialogMode === 'signin') {
-        if (title) title.textContent = labels.signIn;
-        if (submit) submit.textContent = labels.signIn;
-        if (toggle) toggle.childNodes[0].textContent = labels.noAccount + ' ';
-        if (switchBtn) switchBtn.textContent = labels.signUp;
-      } else {
-        if (title) title.textContent = labels.signUp;
-        if (submit) submit.textContent = labels.signUp;
-        if (toggle) toggle.childNodes[0].textContent = labels.haveAccount + ' ';
-        if (switchBtn) switchBtn.textContent = labels.signIn;
-      }
-    }
-
-    async function authDialogSubmit() {
-      if (!supabase) return;
-      const email = (document.getElementById('auth-email') as HTMLInputElement)?.value;
-      const password = (document.getElementById('auth-password') as HTMLInputElement)?.value;
-      const errorEl = document.getElementById('auth-dialog-error');
-      if (errorEl) errorEl.classList.add('hidden');
-
-      const captchaToken = turnstileEnabled() ? authTurnstile.getToken() : '';
-      const authOptions: any = captchaToken ? { captchaToken } : {};
-
-      const finishFailure = (message: string) => {
-        recordFailure(AUTH_FAIL_KEY);
-        if (errorEl) { errorEl.textContent = message; errorEl.className = 'text-error text-sm font-body'; }
-        if (turnstileEnabled()) {
-          authTurnstile.reset();
-          // Escalate appearance if threshold just crossed.
-          if (shouldForceInteractive(AUTH_FAIL_KEY)) renderAuthTurnstile();
-        }
-      };
-
-      if (authDialogMode === 'signup') {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { ...authOptions, data: { full_name: email.split('@')[0] } },
-        });
-        if (signUpError) {
-          finishFailure(signUpError.message);
-        } else {
-          recordSuccess(AUTH_FAIL_KEY);
-          // Count the signup itself — more than 1 in 4h escalates next attempt.
-          recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
-          if (!data.session) {
-            (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
-            const labels = (window as any).__authDialogLabels;
-            (window as any).__showSnackbar?.(labels?.confirmationSent || 'Check your email to confirm your account.', 'info', 8000);
-          } else {
-            (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
-          }
-        }
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-          options: authOptions,
-        });
-        if (signInError) {
-          finishFailure(signInError.message);
-        } else {
-          recordSuccess(AUTH_FAIL_KEY);
-          (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
-        }
-      }
-    }
-
-    async function authDialogGoogle() {
-      if (!supabase) return;
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account' } }
-      });
-    }
-
     async function signOut() {
       if (!supabase) return;
       await supabase.auth.signOut();
       updateAuthUI(null);
     }
-
-    // Auth dialog event listeners
-    document.getElementById('auth-dialog-submit')?.addEventListener('click', authDialogSubmit);
-    document.getElementById('auth-dialog-google')?.addEventListener('click', authDialogGoogle);
-    document.getElementById('auth-dialog-switch')?.addEventListener('click', () => {
-      authDialogMode = authDialogMode === 'signin' ? 'signup' : 'signin';
-      updateAuthDialogMode();
-    });
-    document.getElementById('auth-dialog-close')?.addEventListener('click', () => {
-      (document.getElementById('auth-dialog') as HTMLDialogElement)?.close();
-    });
-    // Allow Enter key to submit
-    document.getElementById('auth-password')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') authDialogSubmit();
-    });
 
     // Initialize
     if (supabase) {
@@ -777,8 +575,9 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       });
     }
 
-    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', openAuthDialog);
-    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', openAuthDialog);
+    const openDialog = () => (window as any).__openAuthDialog?.();
+    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', openDialog);
+    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', openDialog);
     document.getElementById('auth-sign-out-desktop')?.addEventListener('click', signOut);
 
     // Expose globals for other pages and E2E tests
