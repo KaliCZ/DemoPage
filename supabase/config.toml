@@ -311,10 +311,16 @@ skip_nonce_check = true
 [auth.external.apple]
 enabled = false
 client_id = ""
+# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
 secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+# Overrides the default auth redirectUrl.
 redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
 url = ""
+# If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
 skip_nonce_check = false
+# If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
 email_optional = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
