@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kalandra.Api.Tests.Helpers;
+using Kalandra.Infrastructure.Auth;
 
 namespace Kalandra.Api.Tests.Features.Auth;
 
@@ -24,7 +25,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     // ───── Validation ─────
 
     [Fact]
-    public async Task LinkEmail_WithShortPassword_Returns400()
+    public async Task LinkEmail_WithShortPassword_Returns400_PasswordTooShort()
     {
         Authenticate();
 
@@ -32,61 +33,78 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Contains("6 characters", json.GetProperty("error").GetString());
+        AssertValidationError(json, "password", "PasswordTooShort");
     }
 
     [Fact]
-    public async Task LinkEmail_WithEmptyPassword_Returns400()
+    public async Task LinkEmail_WithEmptyPassword_Returns400_PasswordTooShort()
     {
         Authenticate();
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        AssertValidationError(json, "password", "PasswordTooShort");
     }
 
     // ───── Success ─────
 
     [Fact]
-    public async Task LinkEmail_WithValidPassword_Returns200()
+    public async Task LinkEmail_WithValidPassword_Returns204()
     {
-        Authenticate("link-user", "link@test.com");
-        adminService.NextCallSucceeds = true;
+        var linkUserId = Authenticate("link@test.com");
+        adminService.NextChangePasswordError = null;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        var json = await ParseJsonAsync(response);
-        Assert.Contains("successfully", json.GetProperty("message").GetString());
-
-        Assert.NotNull(adminService.LastUpdateCall);
-        Assert.Equal("link-user", adminService.LastUpdateCall.Value.UserId);
+        Assert.NotNull(adminService.LastChangePasswordCall);
+        Assert.Equal(linkUserId, adminService.LastChangePasswordCall.Value.User.Id);
+        Assert.Equal("securepassword123", adminService.LastChangePasswordCall.Value.Password);
     }
 
     // ───── Supabase Failure ─────
 
     [Fact]
-    public async Task LinkEmail_WhenSupabaseFails_Returns400WithError()
+    public async Task LinkEmail_WhenAlreadyLinked_Returns400_AlreadyLinked()
     {
-        Authenticate("fail-user", "fail@test.com");
-        adminService.NextCallSucceeds = false;
-        adminService.NextCallError = "User already has email identity";
+        Authenticate("already@test.com");
+        adminService.NextChangePasswordError = ChangePasswordErrorCode.AlreadyLinked;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal("User already has email identity", json.GetProperty("error").GetString());
+        AssertValidationError(json, "email", "AlreadyLinked");
+    }
+
+    [Fact]
+    public async Task LinkEmail_WhenSupabaseFails_Returns500()
+    {
+        Authenticate("fail@test.com");
+        adminService.NextChangePasswordError = ChangePasswordErrorCode.Unknown;
+
+        var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
     // ───── Helpers ─────
 
-    private void Authenticate(
-        string userId = "test-user-id",
+    private Guid Authenticate(
         string email = "test@example.com",
         bool isAdmin = false)
     {
+        var userId = Guid.NewGuid();
         var token = JwtTestHelper.GenerateToken(userId, email, isAdmin);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return userId;
+    }
+
+    private static void AssertValidationError(JsonElement json, string field, string expectedError)
+    {
+        var errors = json.GetProperty("errors").GetProperty(field);
+        Assert.Equal(expectedError, errors[0].GetString());
     }
 
     private static async Task<JsonElement> ParseJsonAsync(HttpResponseMessage response)

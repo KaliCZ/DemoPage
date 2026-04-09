@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
 using Marten.Linq;
@@ -5,7 +6,7 @@ using Marten.Pagination;
 
 namespace Kalandra.JobOffers.Queries;
 
-public record ListJobOffersQuery(string? UserId, bool IsAdmin, JobOfferStatus[]? Statuses, int Page, int PageSize);
+public record ListJobOffersQuery(CurrentUser User, bool ShowAll, JobOfferStatus[]? Statuses, int Page, int PageSize);
 
 public record ListJobOffersResult(IReadOnlyList<JobOffer> Items, int TotalCount);
 
@@ -21,9 +22,10 @@ public class ListJobOffersHandler(IQuerySession session)
 
         var q = session.Query<JobOffer>();
 
-        if (!query.IsAdmin)
+        if (!query.ShowAll || !query.User.IsAdmin)
         {
-            q = (IMartenQueryable<JobOffer>)q.Where(j => j.UserId == query.UserId);
+            var userId = query.User.Id;
+            q = (IMartenQueryable<JobOffer>)q.Where(j => j.UserId == userId);
         }
 
         if (query.Statuses is { Length: > 0 })

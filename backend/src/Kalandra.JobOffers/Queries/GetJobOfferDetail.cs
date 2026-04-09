@@ -1,9 +1,10 @@
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
 
 namespace Kalandra.JobOffers.Queries;
 
-public record GetJobOfferDetailQuery(Guid Id, string UserId, bool IsAdmin);
+public record GetJobOfferDetailQuery(Guid Id, CurrentUser User);
 
 public class GetJobOfferDetailHandler(IQuerySession session)
 {
@@ -13,7 +14,7 @@ public class GetJobOfferDetailHandler(IQuerySession session)
         if (offer == null)
             return null;
 
-        if (!query.IsAdmin && offer.UserId != query.UserId)
+        if (!query.User.IsAdmin && offer.UserId != query.User.Id)
             return null;
 
         return offer;

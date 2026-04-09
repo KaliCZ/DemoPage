@@ -57,8 +57,14 @@
     "linkEmailSubmit": "Link",
     "linkEmailSubmitting": "Linking…",
     "linkEmailSuccess": "Email sign-in linked successfully.",
-    "linkEmailError": "Failed to link email sign-in.",
-    "linkEmailTooShort": "Password must be at least 6 characters.",
+    "linkEmailErrors": {
+      "password": {
+        "PasswordTooShort": "Password must be at least 6 characters."
+      },
+      "email": {
+        "AlreadyLinked": "Your account already has email/password sign-in."
+      }
+    },
     "linkGoogle": "Link Google Account",
     "linkGoogleSuccess": "Google account linked successfully.",
     "linkGoogleError": "Failed to link Google account.",

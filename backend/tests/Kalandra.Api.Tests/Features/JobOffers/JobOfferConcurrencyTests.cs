@@ -24,7 +24,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
             seedSession.Events.StartStream<JobOffer>(
                 id: jobOfferId,
                 new JobOfferSubmitted(
-                    UserId: "owner-user",
+                    UserId: new Guid("11111111-1111-1111-1111-111111111111"),
                     UserEmail: "owner@test.com",
                     CompanyName: "Acme Corp",
                     ContactName: "John Doe",
@@ -48,7 +48,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         var secondWriter = await secondSession.Events.FetchForWriting<JobOffer>(jobOfferId, Ct);
 
         firstWriter.AppendOne(new JobOfferStatusChanged(
-            ChangedByUserId: "admin-1",
+            ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
@@ -58,7 +58,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         await firstSession.SaveChangesAsync(Ct);
 
         secondWriter.AppendOne(new JobOfferEdited(
-            EditedByUserId: "owner-user",
+            EditedByUserId: new Guid("11111111-1111-1111-1111-111111111111"),
             EditedByEmail: "owner@test.com",
             CompanyName: "Acme Corp",
             ContactName: "John Doe",
@@ -85,7 +85,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
             seedSession.Events.StartStream<JobOffer>(
                 id: jobOfferId,
                 new JobOfferSubmitted(
-                    UserId: "owner-user",
+                    UserId: new Guid("11111111-1111-1111-1111-111111111111"),
                     UserEmail: "owner@test.com",
                     CompanyName: "Acme Corp",
                     ContactName: "John Doe",
@@ -114,7 +114,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 commentStreamId,
                 new JobOfferCommentAdded(
                     CommentId: Guid.NewGuid(),
-                    UserId: "owner-user",
+                    UserId: new Guid("11111111-1111-1111-1111-111111111111"),
                     UserEmail: "owner@test.com",
                     UserName: "Owner",
                     Content: "Any updates?",
@@ -124,7 +124,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         // The writer's save should succeed — comment didn't touch the job offer stream
         writer.AppendOne(new JobOfferStatusChanged(
-            ChangedByUserId: "admin-1",
+            ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             ChangedByEmail: "admin@test.com",
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
