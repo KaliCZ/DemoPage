@@ -1,4 +1,5 @@
 using Kalandra.Api.Features.Auth.Contracts;
+using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -19,21 +20,26 @@ public class AuthController(
     /// Used when a user signed up via OAuth (e.g. Google) and wants to add email/password login.
     /// </summary>
     [HttpPost("link-email")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ErrorResponse<LinkEmailError>>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LinkEmail(
         [FromBody] LinkEmailRequest request,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            return BadRequest(new { error = "Password must be at least 6 characters." });
+            return BadRequest(new ErrorResponse<LinkEmailError>(LinkEmailError.PasswordTooShort));
 
         var result = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
 
         if (!result.Success)
-            return BadRequest(new { error = result.Error ?? "Failed to link email identity." });
+            return BadRequest(new ErrorResponse<LinkEmailError>(ClassifyChangePasswordError(result.Error)));
 
-        return Ok(new { message = "Email/password identity linked successfully." });
+        return NoContent();
     }
+
+    private static LinkEmailError ClassifyChangePasswordError(string? error) =>
+        error != null && error.Contains("already", StringComparison.OrdinalIgnoreCase)
+            ? LinkEmailError.AlreadyLinked
+            : LinkEmailError.Failed;
 }

@@ -57,8 +57,11 @@
     "linkEmailSubmit": "Propojit",
     "linkEmailSubmitting": "Propojuji…",
     "linkEmailSuccess": "Přihlášení e-mailem úspěšně propojeno.",
-    "linkEmailError": "Nepodařilo se propojit přihlášení e-mailem.",
-    "linkEmailTooShort": "Heslo musí mít alespoň 6 znaků.",
+    "linkEmailErrors": {
+      "PasswordTooShort": "Heslo musí mít alespoň 6 znaků.",
+      "AlreadyLinked": "Váš účet již má přihlášení e-mailem a heslem.",
+      "Failed": "Nepodařilo se propojit přihlášení e-mailem. Zkuste to prosím znovu."
+    },
     "linkGoogle": "Propojit účet Google",
     "linkGoogleSuccess": "Účet Google byl úspěšně propojen.",
     "linkGoogleError": "Nepodařilo se propojit účet Google.",

@@ -24,7 +24,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     // ───── Validation ─────
 
     [Fact]
-    public async Task LinkEmail_WithShortPassword_Returns400()
+    public async Task LinkEmail_WithShortPassword_Returns400_PasswordTooShort()
     {
         Authenticate();
 
@@ -32,31 +32,31 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Contains("6 characters", json.GetProperty("error").GetString());
+        Assert.Equal("PasswordTooShort", json.GetProperty("error").GetString());
     }
 
     [Fact]
-    public async Task LinkEmail_WithEmptyPassword_Returns400()
+    public async Task LinkEmail_WithEmptyPassword_Returns400_PasswordTooShort()
     {
         Authenticate();
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        Assert.Equal("PasswordTooShort", json.GetProperty("error").GetString());
     }
 
     // ───── Success ─────
 
     [Fact]
-    public async Task LinkEmail_WithValidPassword_Returns200()
+    public async Task LinkEmail_WithValidPassword_Returns204()
     {
         var linkUserId = Authenticate("link@test.com");
         adminService.NextCallSucceeds = true;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var json = await ParseJsonAsync(response);
-        Assert.Contains("successfully", json.GetProperty("message").GetString());
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         Assert.NotNull(adminService.LastChangePasswordCall);
         Assert.Equal(linkUserId, adminService.LastChangePasswordCall.Value.User.Id);
@@ -66,9 +66,9 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     // ───── Supabase Failure ─────
 
     [Fact]
-    public async Task LinkEmail_WhenSupabaseFails_Returns400WithError()
+    public async Task LinkEmail_WhenAlreadyLinked_Returns400_AlreadyLinked()
     {
-        Authenticate("fail@test.com");
+        Authenticate("already@test.com");
         adminService.NextCallSucceeds = false;
         adminService.NextCallError = "User already has email identity";
 
@@ -76,7 +76,21 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal("User already has email identity", json.GetProperty("error").GetString());
+        Assert.Equal("AlreadyLinked", json.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task LinkEmail_WhenSupabaseFails_Returns400_Failed()
+    {
+        Authenticate("fail@test.com");
+        adminService.NextCallSucceeds = false;
+        adminService.NextCallError = "Something unexpected happened";
+
+        var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        Assert.Equal("Failed", json.GetProperty("error").GetString());
     }
 
     // ───── Helpers ─────
