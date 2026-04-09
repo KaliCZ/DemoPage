@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
 
 namespace Kalandra.Api.Infrastructure.Auth;
@@ -45,45 +44,23 @@ public class HttpContextCurrentUserAccessor(
     }
 
     /// <summary>
-    /// Streams user_metadata looking only for a "full_name" string, falling
-    /// back to the email's local part. Utf8JsonReader avoids the JsonDocument
-    /// tree allocation. Called at most once per request (via Lazy) and only
-    /// when a caller actually reads DisplayName.
+    /// Parses user_metadata looking for "full_name", falling back to the
+    /// email's local part. Called at most once per request (via Lazy) and
+    /// only when a caller actually reads DisplayName.
     /// </summary>
     private static string ExtractDisplayName(string? userMetadata, MailAddress email)
     {
         if (string.IsNullOrEmpty(userMetadata))
             return email.User;
 
-        var bytes = Encoding.UTF8.GetBytes(userMetadata);
-        var reader = new Utf8JsonReader(bytes);
+        using var doc = JsonDocument.Parse(userMetadata);
 
-        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
-            return email.User;
-
-        while (reader.Read())
+        if (doc.RootElement.TryGetProperty("full_name", out var fullName) &&
+            fullName.ValueKind == JsonValueKind.String)
         {
-            if (reader.TokenType == JsonTokenType.EndObject)
-                break;
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-                continue;
-
-            if (!reader.ValueTextEquals("full_name"u8))
-            {
-                reader.Read();
-                reader.Skip();
-                continue;
-            }
-
-            if (reader.Read() && reader.TokenType == JsonTokenType.String)
-            {
-                var name = reader.GetString();
-                if (!string.IsNullOrEmpty(name))
-                    return name;
-            }
-
-            break;
+            var name = fullName.GetString();
+            if (!string.IsNullOrEmpty(name))
+                return name;
         }
 
         return email.User;

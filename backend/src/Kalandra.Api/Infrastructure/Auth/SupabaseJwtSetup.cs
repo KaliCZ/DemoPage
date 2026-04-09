@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
 using Kalandra.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -84,53 +83,23 @@ public static class SupabaseJwtSetup
         return services;
     }
 
-    /// <summary>
-    /// Streams app_metadata looking only for the "roles" array and emits each
-    /// entry as a role claim. Uses Utf8JsonReader over the claim's UTF-8 bytes
-    /// to skip the JsonDocument tree allocation — this runs on every
-    /// authenticated request, so the saved alloc/GC pressure adds up.
-    /// </summary>
     private static void ExtractRolesFromAppMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
     {
         var appMetadata = principal.FindFirstValue("app_metadata");
         if (string.IsNullOrEmpty(appMetadata))
             return;
 
-        var bytes = Encoding.UTF8.GetBytes(appMetadata);
-        var reader = new Utf8JsonReader(bytes);
+        using var doc = JsonDocument.Parse(appMetadata);
 
-        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
-            return;
-
-        while (reader.Read())
+        if (doc.RootElement.TryGetProperty("roles", out var rolesProp) &&
+            rolesProp.ValueKind == JsonValueKind.Array)
         {
-            if (reader.TokenType == JsonTokenType.EndObject)
-                return;
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-                continue;
-
-            if (!reader.ValueTextEquals("roles"u8))
+            foreach (var item in rolesProp.EnumerateArray())
             {
-                reader.Read();
-                reader.Skip();
-                continue;
-            }
-
-            if (!reader.Read() || reader.TokenType != JsonTokenType.StartArray)
-                return;
-
-            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
-            {
-                if (reader.TokenType != JsonTokenType.String)
-                    continue;
-
-                var role = reader.GetString();
+                var role = item.GetString();
                 if (!string.IsNullOrEmpty(role))
                     identity.AddClaim(new Claim(ClaimTypes.Role, role));
             }
-
-            return;
         }
     }
 
