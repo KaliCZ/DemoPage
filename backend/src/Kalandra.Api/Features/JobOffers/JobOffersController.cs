@@ -102,8 +102,10 @@ public class JobOffersController(
 
             var streamId = result.Success.Get();
 
-            var detail = await LoadDetailResponseAsync(streamId, ct);
-            return CreatedAtAction(nameof(GetDetail), new { id = streamId }, detail);
+            var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
+            var offer = await getDetailHandler.HandleAsync(query, ct);
+            return CreatedAtAction(nameof(GetDetail), new { id = streamId },
+                GetJobOfferDetailResponse.Serialize(offer!, AppUser));
         }
         finally
         {
@@ -320,10 +322,11 @@ public class JobOffersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GetJobOfferDetailResponse>> GetDetail(Guid id, CancellationToken ct)
     {
-        var detail = await LoadDetailResponseAsync(id, ct);
-        if (detail == null)
+        var query = new GetJobOfferDetailQuery(Id: id, User: AppUser);
+        var offer = await getDetailHandler.HandleAsync(query, ct);
+        if (offer == null)
             return NotFound();
-        return detail;
+        return GetJobOfferDetailResponse.Serialize(offer, AppUser);
     }
 
     // ───── Download Attachment ─────
@@ -387,13 +390,6 @@ public class JobOffersController(
     }
 
     // ───── Private helpers ─────
-
-    private async Task<GetJobOfferDetailResponse?> LoadDetailResponseAsync(Guid id, CancellationToken ct)
-    {
-        var query = new GetJobOfferDetailQuery(Id: id, User: AppUser);
-        var offer = await getDetailHandler.HandleAsync(query, ct);
-        return offer == null ? null : GetJobOfferDetailResponse.Serialize(offer, AppUser);
-    }
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
         bool showAll,
