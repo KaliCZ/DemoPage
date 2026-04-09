@@ -40,7 +40,7 @@ builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
-builder.Services.AddAppRateLimits();
+RateLimits.Add(builder.Services);
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
@@ -58,7 +58,7 @@ app.UseStatusCodePages();
 app.UseCors("DefaultPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAppRateLimits();
+RateLimits.Use(app);
 app.MapControllers();
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

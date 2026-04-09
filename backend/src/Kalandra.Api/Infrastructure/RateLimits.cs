@@ -11,7 +11,7 @@ public static class RateLimitPolicies
 
 public static class RateLimits
 {
-    public static IServiceCollection AddAppRateLimits(this IServiceCollection services)
+    public static void Add(IServiceCollection services)
     {
         services.AddRateLimiter(options =>
         {
@@ -50,13 +50,10 @@ public static class RateLimits
                     "{\"error\":\"captcha_required\"}", ct);
             };
         });
-
-        return services;
     }
 
-    public static IApplicationBuilder UseAppRateLimits(this WebApplication app)
+    public static void Use(WebApplication app)
     {
         app.UseRateLimiter();
-        return app;
     }
 }
