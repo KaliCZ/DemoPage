@@ -1,6 +1,7 @@
 using JasperFx;
 using JasperFx.Events;
 using Kalandra.Api.Features.JobOffers.Contracts;
+using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
@@ -17,6 +18,7 @@ namespace Kalandra.Api.Features.JobOffers;
 [ApiController]
 [Route("api/job-offers")]
 [Produces("application/json")]
+[Authorize]
 public class JobOffersController(
     ICurrentUserAccessor currentUser,
     IDocumentSession session,
@@ -39,8 +41,7 @@ public class JobOffersController(
     // ───── Create ─────
 
     [HttpPost]
-    [Authorize]
-    [EnableRateLimiting("hire-me-create")]
+    [EnableRateLimiting(RateLimitPolicies.HireMeCreate)]
     [RequestSizeLimit(20 * 1024 * 1024)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -116,7 +117,6 @@ public class JobOffersController(
     // ───── Edit ─────
 
     [HttpPut("{id:guid}")]
-    [Authorize]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -167,7 +167,6 @@ public class JobOffersController(
     // ───── Cancel ─────
 
     [HttpPost("{id:guid}/cancel")]
-    [Authorize]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -255,7 +254,6 @@ public class JobOffersController(
     // ───── Add Comment ─────
 
     [HttpPost("{id:guid}/comments")]
-    [Authorize]
     [ProducesResponseType<CommentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -305,7 +303,6 @@ public class JobOffersController(
     // ───── List ─────
 
     [HttpGet("mine")]
-    [Authorize]
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ListMine(
@@ -334,7 +331,6 @@ public class JobOffersController(
     // ───── Get Detail ─────
 
     [HttpGet("{id:guid}")]
-    [Authorize]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -347,7 +343,6 @@ public class JobOffersController(
     // ───── Download Attachment ─────
 
     [HttpGet("{id:guid}/attachments/{fileName}")]
-    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -377,7 +372,6 @@ public class JobOffersController(
     // ───── History ─────
 
     [HttpGet("{id:guid}/history")]
-    [Authorize]
     [ProducesResponseType<JobOfferHistoryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -394,7 +388,6 @@ public class JobOffersController(
     // ───── List Comments ─────
 
     [HttpGet("{id:guid}/comments")]
-    [Authorize]
     [ProducesResponseType<ListCommentsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -1,11 +1,8 @@
-using System.Security.Claims;
-using System.Threading.RateLimiting;
 using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,41 +40,7 @@ builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
-builder.Services.AddRateLimiter(options =>
-{
-    // Hire-me submissions: 2 per 30 minutes per authenticated user. When the
-    // limit is hit, the client must re-render Turnstile in interactive mode and
-    // resend the request with the X-Interactive-Captcha header to bypass.
-    options.AddPolicy("hire-me-create", httpContext =>
-    {
-        if (httpContext.Request.Headers.ContainsKey("X-Interactive-Captcha"))
-            return RateLimitPartition.GetNoLimiter("interactive-captcha");
-
-        var partitionKey =
-            httpContext.User.FindFirst("sub")?.Value
-            ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? httpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "anonymous";
-
-        return RateLimitPartition.GetSlidingWindowLimiter(
-            partitionKey: partitionKey,
-            factory: _ => new SlidingWindowRateLimiterOptions
-            {
-                PermitLimit = 2,
-                Window = TimeSpan.FromMinutes(30),
-                SegmentsPerWindow = 6,
-                QueueLimit = 0,
-            });
-    });
-
-    options.OnRejected = async (context, ct) =>
-    {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        context.HttpContext.Response.ContentType = "application/json";
-        await context.HttpContext.Response.WriteAsync(
-            "{\"error\":\"captcha_required\"}", ct);
-    };
-});
+builder.Services.AddAppRateLimits();
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
@@ -95,7 +58,7 @@ app.UseStatusCodePages();
 app.UseCors("DefaultPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter();
+app.UseAppRateLimits();
 app.MapControllers();
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
