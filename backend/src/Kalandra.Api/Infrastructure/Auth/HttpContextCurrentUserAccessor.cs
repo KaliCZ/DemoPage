@@ -19,34 +19,25 @@ public class HttpContextCurrentUserAccessor(
         if (principal?.Identity?.IsAuthenticated != true)
             return null;
 
-        var userIdStr =
-            principal.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        var emailStr =
-            principal.FindFirstValue(ClaimTypes.Email)
-            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
+        var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var emailStr = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
 
-        if (!Guid.TryParse(userIdStr, out var userId))
-            return null;
-
-        if (!MailAddress.TryCreate(emailStr, out var email))
+        if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var email))
             return null;
 
         var userMetadata = principal.FindFirstValue("user_metadata");
-        var lazyDisplayName = new Lazy<string>(() => ExtractDisplayName(userMetadata, email));
 
         return new CurrentUser(
             Id: userId,
             Email: email,
-            LazyDisplayName: lazyDisplayName,
+            DisplayName: ExtractDisplayName(userMetadata, email),
             Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
         );
     }
 
     /// <summary>
     /// Parses user_metadata looking for "full_name", falling back to the
-    /// email's local part. Called at most once per request (via Lazy) and
-    /// only when a caller actually reads DisplayName.
+    /// email's local part.
     /// </summary>
     private static string ExtractDisplayName(string? userMetadata, MailAddress email)
     {
