@@ -414,7 +414,7 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(JobOfferSummary.Serialize).ToList(),
+            result.Items.Select(j => GetJobOfferDetailResponse.Serialize(j, AppUser)).ToList(),
             result.TotalCount);
     }
 
