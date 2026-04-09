@@ -58,7 +58,7 @@ public class JobOffersController(
     {
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
-            return ValidationError("captcha", CreateOfferError.CaptchaFailed);
+            return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
         // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
         var files = (attachments ?? [])
@@ -91,11 +91,11 @@ public class JobOffersController(
             return error switch
             {
                 CreateJobOfferError.TooManyAttachments =>
-                    ValidationError("attachments", CreateOfferError.TooManyAttachments),
+                    this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
                 CreateJobOfferError.TotalSizeTooLarge =>
-                    ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
+                    this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
                 CreateJobOfferError.DisallowedContentType =>
-                    ValidationError("attachments", CreateOfferError.DisallowedContentType),
+                    this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
             };
         }
 
@@ -147,7 +147,7 @@ public class JobOffersController(
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
                     EditJobOfferError.NotSubmittedStatus =>
-                        ValidationError("status", EditOfferError.NotSubmittedStatus),
+                        this.ValidationError("status", EditOfferError.NotSubmittedStatus),
                 };
             }
 
@@ -188,7 +188,7 @@ public class JobOffersController(
                     CancelJobOfferError.NotFound => NotFound(),
                     CancelJobOfferError.NotAuthorized => Forbid(),
                     CancelJobOfferError.InvalidStatus =>
-                        ValidationError("status", CancelOfferError.InvalidStatus),
+                        this.ValidationError("status", CancelOfferError.InvalidStatus),
                 };
             }
 
@@ -230,7 +230,7 @@ public class JobOffersController(
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
                     UpdateJobOfferStatusError.InvalidTransition =>
-                        ValidationError("status", UpdateOfferStatusError.InvalidTransition),
+                        this.ValidationError("status", UpdateOfferStatusError.InvalidTransition),
                 };
             }
 
@@ -402,12 +402,6 @@ public class JobOffersController(
         return new ListJobOffersResponse(
             result.Items.Select(j => GetJobOfferDetailResponse.Serialize(j, AppUser)).ToList(),
             result.TotalCount);
-    }
-
-    private ActionResult ValidationError<TError>(string field, TError error) where TError : struct, Enum
-    {
-        ModelState.AddModelError(field, error.ToString());
-        return ValidationProblem();
     }
 
     private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)

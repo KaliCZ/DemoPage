@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Kalandra.Api.Features.Auth.Contracts;
+using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ public class AuthController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            return ValidationError("password", LinkEmailError.PasswordTooShort);
+            return this.ValidationError("password", LinkEmailError.PasswordTooShort);
 
         var error = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
         if (error == null)
@@ -39,18 +40,12 @@ public class AuthController(
         switch (error.Code)
         {
             case ChangePasswordErrorCode.AlreadyLinked:
-                return ValidationError("email", LinkEmailError.AlreadyLinked);
+                return this.ValidationError("email", LinkEmailError.AlreadyLinked);
             case ChangePasswordErrorCode.Unknown:
                 logger.LogError("LinkEmail failed for user {UserId}: {Message}", currentUser.RequiredUser.Id, error.Message);
                 return Problem();
         }
 
         throw new UnreachableException();
-    }
-
-    private IActionResult ValidationError(string field, LinkEmailError error)
-    {
-        ModelState.AddModelError(field, error.ToString());
-        return ValidationProblem();
     }
 }

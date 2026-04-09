@@ -1,3 +1,4 @@
+using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Users;
@@ -28,13 +29,13 @@ public class ProfileController(
     public async Task<ActionResult<AvatarResponse>> UploadAvatar(IFormFile file, CancellationToken ct)
     {
         if (file.Length == 0)
-            return ValidationError("file", UploadAvatarError.EmptyFile);
+            return this.ValidationError("file", UploadAvatarError.EmptyFile);
 
         if (file.Length > MaxFileSize)
-            return ValidationError("file", UploadAvatarError.TooLarge);
+            return this.ValidationError("file", UploadAvatarError.TooLarge);
 
         if (!AllowedContentTypes.Contains(file.ContentType))
-            return ValidationError("file", UploadAvatarError.InvalidContentType);
+            return this.ValidationError("file", UploadAvatarError.InvalidContentType);
 
         await using var stream = file.OpenReadStream();
         var publicUrl = await userService.UploadAvatarAsync(AppUser.Id, stream, file.ContentType, ct);
@@ -52,12 +53,6 @@ public class ProfileController(
         await userService.UpdateAvatarUrlAsync(AppUser.Id, avatarUrl: null, ct);
 
         return NoContent();
-    }
-
-    private ActionResult ValidationError<TError>(string field, TError error) where TError : struct, Enum
-    {
-        ModelState.AddModelError(field, error.ToString());
-        return ValidationProblem();
     }
 }
 
