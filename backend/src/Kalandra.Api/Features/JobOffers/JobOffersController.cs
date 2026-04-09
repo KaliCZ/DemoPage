@@ -287,7 +287,7 @@ public class JobOffersController(
         var commentEvent = result.Success.Get((Unit _) => new InvalidOperationException());
         return Ok(new CommentResponse(
             Id: commentEvent.CommentId,
-            UserId: commentEvent.UserId.ToString(),
+            UserId: commentEvent.UserId,
             UserEmail: commentEvent.UserEmail,
             UserName: commentEvent.UserName,
             Content: commentEvent.Content,
@@ -393,7 +393,7 @@ public class JobOffersController(
 
         return Ok(new ListCommentsResponse(comments.Select(c => new CommentResponse(
             Id: c.CommentId,
-            UserId: c.UserId.ToString(),
+            UserId: c.UserId,
             UserEmail: c.UserEmail,
             UserName: c.UserName,
             Content: c.Content,
