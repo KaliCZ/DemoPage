@@ -60,6 +60,7 @@ public class JobOffersController(
         if (!turnstileValid)
             return BadRequest(new { error = "CAPTCHA verification failed. Please try again." });
 
+        // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
         var files = (attachments ?? [])
             .Select(f => new CreateJobOfferFile(
                 FileName: f.FileName.AsNonEmpty().Get(),
@@ -68,50 +69,42 @@ public class JobOffersController(
                 Content: f.OpenReadStream()))
             .ToList();
 
-        try
+        var command = new CreateJobOfferCommand(
+            User: AppUser,
+            CompanyName: request.CompanyName.AsNonEmpty().Get(),
+            ContactName: request.ContactName.AsNonEmpty().Get(),
+            ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
+            JobTitle: request.JobTitle.AsNonEmpty().Get(),
+            Description: request.Description.AsNonEmpty().Get(),
+            SalaryRange: request.SalaryRange,
+            Location: request.Location,
+            IsRemote: request.IsRemote,
+            AdditionalNotes: request.AdditionalNotes,
+            Files: files,
+            Timestamp: timeProvider.GetUtcNow());
+
+        var result = await createHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
         {
-            var command = new CreateJobOfferCommand(
-                User: AppUser,
-                CompanyName: request.CompanyName.AsNonEmpty().Get(),
-                ContactName: request.ContactName.AsNonEmpty().Get(),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
-                JobTitle: request.JobTitle.AsNonEmpty().Get(),
-                Description: request.Description.AsNonEmpty().Get(),
-                SalaryRange: request.SalaryRange,
-                Location: request.Location,
-                IsRemote: request.IsRemote,
-                AdditionalNotes: request.AdditionalNotes,
-                Files: files,
-                Timestamp: timeProvider.GetUtcNow());
-
-            var result = await createHandler.HandleAsync(command, ct);
-
-            if (result.IsError)
+            var error = result.Error.Get();
+            return error switch
             {
-                var error = result.Error.Get();
-                return error switch
-                {
-                    CreateJobOfferError.TooManyAttachments =>
-                        BadRequest(new { error = "Maximum 5 attachments allowed." }),
-                    CreateJobOfferError.TotalSizeTooLarge =>
-                        BadRequest(new { error = "Total attachment size must not exceed 15 MB." }),
-                    CreateJobOfferError.DisallowedContentType =>
-                        BadRequest(new { error = "One or more file types are not allowed." }),
-                };
-            }
-
-            var streamId = result.Success.Get();
-
-            var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
-            var offer = await getDetailHandler.HandleAsync(query, ct);
-            return CreatedAtAction(nameof(GetDetail), new { id = streamId },
-                GetJobOfferDetailResponse.Serialize(offer!, AppUser));
+                CreateJobOfferError.TooManyAttachments =>
+                    BadRequest(new { error = "Maximum 5 attachments allowed." }),
+                CreateJobOfferError.TotalSizeTooLarge =>
+                    BadRequest(new { error = "Total attachment size must not exceed 15 MB." }),
+                CreateJobOfferError.DisallowedContentType =>
+                    BadRequest(new { error = "One or more file types are not allowed." }),
+            };
         }
-        finally
-        {
-            foreach (var file in files)
-                file.Content.Dispose();
-        }
+
+        var streamId = result.Success.Get();
+
+        var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
+        var offer = await getDetailHandler.HandleAsync(query, ct);
+        return CreatedAtAction(nameof(GetDetail), new { id = streamId },
+            GetJobOfferDetailResponse.Serialize(offer!, AppUser));
     }
 
     // ───── Edit ─────
