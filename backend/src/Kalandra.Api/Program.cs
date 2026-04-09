@@ -33,7 +33,7 @@ SupabaseStorageConfig.AddSingleton(builder.Services, builder.Configuration);
 TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
-builder.Services.AddSupabaseAuth(authConfig);
+Auth.Add(builder.Services, authConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile();
@@ -56,8 +56,7 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseCors("DefaultPolicy");
-app.UseAuthentication();
-app.UseAuthorization();
+Auth.Use(app);
 RateLimits.Use(app);
 app.MapControllers();
 

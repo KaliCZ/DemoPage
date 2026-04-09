@@ -34,18 +34,16 @@ public class HttpContextCurrentUserAccessor(
     }
 
     /// <summary>
-    /// Translates ASP.NET role claims (string-valued, added in
-    /// SupabaseJwtSetup) into the Role enum. Unknown role strings are
-    /// silently dropped — the role claim stays on the principal either way
-    /// for [Authorize(Policy="...")] to use, this is just the strongly-typed
-    /// projection we expose to application code.
+    /// Translates ASP.NET role claims into the Role enum. Claim values are
+    /// canonicalized to enum names by Auth.ExtractRolesFromAppMetadata, so a
+    /// strict (case-sensitive) parse is enough here.
     /// </summary>
     private static ImmutableArray<Role> ExtractRoles(ClaimsPrincipal principal)
     {
         var builder = ImmutableArray.CreateBuilder<Role>();
         foreach (var claim in principal.FindAll(ClaimTypes.Role))
         {
-            if (Enum.TryParse<Role>(claim.Value, ignoreCase: true, out var role))
+            if (Enum.TryParse<Role>(claim.Value, out var role))
                 builder.Add(role);
         }
         return builder.ToImmutable();

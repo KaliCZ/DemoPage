@@ -8,11 +8,14 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Kalandra.Api.Infrastructure.Auth;
 
-public static class SupabaseJwtSetup
+public static class AuthPolicies
 {
-    public static IServiceCollection AddSupabaseAuth(
-        this IServiceCollection services,
-        SupabaseAuthConfig authConfig)
+    public const string Admin = "admin";
+}
+
+public static class Auth
+{
+    public static void Add(IServiceCollection services, SupabaseAuthConfig authConfig)
     {
         var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var issuer = $"{projectUrl}/auth/v1";
@@ -45,7 +48,7 @@ public static class SupabaseJwtSetup
                 {
                     OnAuthenticationFailed = context =>
                     {
-                        if (IsMissingSigningKeyFailure(context.Exception))
+                        if (context.Exception is SecurityTokenSignatureKeyNotFoundException)
                         {
                             var logger = context.HttpContext.RequestServices
                                 .GetRequiredService<ILoggerFactory>()
@@ -62,11 +65,8 @@ public static class SupabaseJwtSetup
                     },
                     OnTokenValidated = context =>
                     {
-                        // Project app_metadata.roles into ASP.NET role claims so
-                        // [Authorize(Policy = "Admin")] works during UseAuthorization.
-                        // user_metadata (display_name etc.) is handled lazily in
-                        // HttpContextCurrentUserAccessor — nothing in the auth
-                        // pipeline needs it, so we don't pay to parse it here.
+                        // Project app_metadata.roles into ASP.NET role claims so authorization works.
+                        // user_metadata (full_name etc.) is handled in HttpContextCurrentUserAccessor.
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity == null)
                             return Task.CompletedTask;
@@ -78,11 +78,22 @@ public static class SupabaseJwtSetup
             });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy("Admin", policy => policy.RequireRole("admin"));
-
-        return services;
+            .AddPolicy(AuthPolicies.Admin, policy => policy.RequireRole(nameof(Role.Admin)));
     }
 
+    public static void Use(WebApplication app)
+    {
+        app.UseAuthentication();
+        app.UseAuthorization();
+    }
+
+    /// <summary>
+    /// Parses role names from Supabase's app_metadata.roles array, matches
+    /// them against the Role enum, and adds a ClaimTypes.Role claim using
+    /// the canonical enum name. Unknown strings are dropped. Canonicalizing
+    /// here means both RequireRole and CurrentUser's role projection can
+    /// compare against nameof(Role.X) without caring about wire casing.
+    /// </summary>
     private static void ExtractRolesFromAppMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
     {
         var appMetadata = principal.FindFirstValue("app_metadata");
@@ -96,15 +107,10 @@ public static class SupabaseJwtSetup
         {
             foreach (var item in rolesProp.EnumerateArray())
             {
-                var role = item.GetString();
-                if (!string.IsNullOrEmpty(role))
-                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                var raw = item.GetString();
+                if (!string.IsNullOrEmpty(raw) && Enum.TryParse<Role>(raw, ignoreCase: true, out var role))
+                    identity.AddClaim(new Claim(ClaimTypes.Role, role.ToString()));
             }
         }
-    }
-
-    private static bool IsMissingSigningKeyFailure(Exception exception)
-    {
-        return exception is SecurityTokenSignatureKeyNotFoundException;
     }
 }

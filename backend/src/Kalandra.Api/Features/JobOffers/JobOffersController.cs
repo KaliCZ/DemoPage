@@ -209,7 +209,7 @@ public class JobOffersController(
     // ───── Update Status (Admin) ─────
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Policy = "Admin")]
+    [Authorize(Policy = AuthPolicies.Admin)]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -315,7 +315,7 @@ public class JobOffersController(
     }
 
     [HttpGet]
-    [Authorize(Policy = "Admin")]
+    [Authorize(Policy = AuthPolicies.Admin)]
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
