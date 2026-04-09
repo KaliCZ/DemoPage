@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kalandra.Api.Tests.Helpers;
+using Kalandra.Infrastructure.Auth;
 
 namespace Kalandra.Api.Tests.Features.Auth;
 
@@ -32,7 +33,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal("PasswordTooShort", json.GetProperty("error").GetString());
+        AssertValidationError(json, "PasswordTooShort");
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal("PasswordTooShort", json.GetProperty("error").GetString());
+        AssertValidationError(json, "PasswordTooShort");
     }
 
     // ───── Success ─────
@@ -53,7 +54,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     public async Task LinkEmail_WithValidPassword_Returns204()
     {
         var linkUserId = Authenticate("link@test.com");
-        adminService.NextCallSucceeds = true;
+        adminService.NextChangePasswordResult = null;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -69,28 +70,23 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     public async Task LinkEmail_WhenAlreadyLinked_Returns400_AlreadyLinked()
     {
         Authenticate("already@test.com");
-        adminService.NextCallSucceeds = false;
-        adminService.NextCallError = "User already has email identity";
+        adminService.NextChangePasswordResult = ChangePasswordError.AlreadyLinked;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal("AlreadyLinked", json.GetProperty("error").GetString());
+        AssertValidationError(json, "AlreadyLinked");
     }
 
     [Fact]
-    public async Task LinkEmail_WhenSupabaseFails_Returns400_Failed()
+    public async Task LinkEmail_WhenSupabaseFails_Returns500()
     {
         Authenticate("fail@test.com");
-        adminService.NextCallSucceeds = false;
-        adminService.NextCallError = "Something unexpected happened";
+        adminService.NextChangePasswordResult = ChangePasswordError.Unknown;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        var json = await ParseJsonAsync(response);
-        Assert.Equal("Failed", json.GetProperty("error").GetString());
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
     // ───── Helpers ─────
@@ -103,6 +99,12 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var token = JwtTestHelper.GenerateToken(userId, email, isAdmin);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return userId;
+    }
+
+    private static void AssertValidationError(JsonElement json, string expectedError)
+    {
+        var errors = json.GetProperty("errors").GetProperty("error");
+        Assert.Equal(expectedError, errors[0].GetString());
     }
 
     private static async Task<JsonElement> ParseJsonAsync(HttpResponseMessage response)

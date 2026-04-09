@@ -4,5 +4,4 @@ public enum LinkEmailError
 {
     PasswordTooShort,
     AlreadyLinked,
-    Failed,
 }

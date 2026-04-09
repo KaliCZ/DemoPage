@@ -20,25 +20,31 @@ public class AuthController(
     /// </summary>
     [HttpPost("link-email")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ErrorResponse<LinkEmailError>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> LinkEmail(
         [FromBody] LinkEmailRequest request,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            return BadRequest(new ErrorResponse<LinkEmailError>(LinkEmailError.PasswordTooShort));
+            return ValidationError(LinkEmailError.PasswordTooShort);
 
-        var result = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
+        var error = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
 
-        if (!result.Success)
-            return BadRequest(new ErrorResponse<LinkEmailError>(ClassifyChangePasswordError(result.Error)));
+        if (error == null)
+            return NoContent();
 
-        return NoContent();
+        return error.Value switch
+        {
+            ChangePasswordError.AlreadyLinked => ValidationError(LinkEmailError.AlreadyLinked),
+            ChangePasswordError.Unknown => Problem(),
+        };
     }
 
-    private static LinkEmailError ClassifyChangePasswordError(string? error) =>
-        error != null && error.Contains("already", StringComparison.OrdinalIgnoreCase)
-            ? LinkEmailError.AlreadyLinked
-            : LinkEmailError.Failed;
+    private IActionResult ValidationError(LinkEmailError error)
+    {
+        ModelState.AddModelError("error", error.ToString());
+        return ValidationProblem();
+    }
 }
