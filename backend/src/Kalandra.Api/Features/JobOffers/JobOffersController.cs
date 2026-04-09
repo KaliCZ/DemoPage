@@ -362,7 +362,7 @@ public class JobOffersController(
         var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
 
         return new JobOfferHistoryResponse(
-            entries.Select(HistoryEntryResponse.Serialize).ToList(),
+            entries.Select(HistoryEntryResponse.Serialize),
             avatars);
     }
 
@@ -383,7 +383,7 @@ public class JobOffersController(
         var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
 
         return new ListCommentsResponse(
-            comments.Select(CommentResponse.Serialize).ToList(),
+            comments.Select(CommentResponse.Serialize),
             avatars);
     }
 
