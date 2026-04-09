@@ -1,10 +1,16 @@
 namespace Kalandra.Infrastructure.Auth;
 
-public enum ChangePasswordError
+public enum ChangePasswordErrorCode
 {
     AlreadyLinked,
     Unknown,
 }
+
+/// <summary>
+/// Carries the classified error code and the original message from
+/// Supabase so the caller can log it before returning a generic 500.
+/// </summary>
+public record ChangePasswordError(ChangePasswordErrorCode Code, string Message);
 
 public interface ISupabaseAdminService
 {

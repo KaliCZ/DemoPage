@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Kalandra.Api.Features.Auth.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
@@ -12,7 +13,8 @@ namespace Kalandra.Api.Features.Auth;
 [Authorize]
 public class AuthController(
     ICurrentUserAccessor currentUser,
-    ISupabaseAdminService adminService) : ControllerBase
+    ISupabaseAdminService adminService,
+    ILogger<AuthController> logger) : ControllerBase
 {
     /// <summary>
     /// Links an email/password identity to the current user's account.
@@ -35,11 +37,16 @@ public class AuthController(
         if (error == null)
             return NoContent();
 
-        return error.Value switch
+        switch (error.Code)
         {
-            ChangePasswordError.AlreadyLinked => ValidationError(LinkEmailError.AlreadyLinked),
-            ChangePasswordError.Unknown => Problem(),
-        };
+            case ChangePasswordErrorCode.AlreadyLinked:
+                return ValidationError(LinkEmailError.AlreadyLinked);
+            case ChangePasswordErrorCode.Unknown:
+                logger.LogError("LinkEmail failed for user {UserId}: {Message}", currentUser.RequiredUser.Id, error.Message);
+                return Problem();
+        }
+
+        throw new UnreachableException();
     }
 
     private IActionResult ValidationError(LinkEmailError error)

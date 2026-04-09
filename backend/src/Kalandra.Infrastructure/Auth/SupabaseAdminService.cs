@@ -53,14 +53,13 @@ public class SupabaseAdminService(
             (int)response.StatusCode,
             body);
 
-        var errorMessage = TryExtractErrorMessage(body);
-        return ClassifyError(errorMessage);
-    }
+        var errorMessage = TryExtractErrorMessage(body) ?? $"Supabase returned {(int)response.StatusCode}";
+        var code = errorMessage.Contains("already", StringComparison.OrdinalIgnoreCase)
+            ? ChangePasswordErrorCode.AlreadyLinked
+            : ChangePasswordErrorCode.Unknown;
 
-    private static ChangePasswordError ClassifyError(string? errorMessage) =>
-        errorMessage != null && errorMessage.Contains("already", StringComparison.OrdinalIgnoreCase)
-            ? ChangePasswordError.AlreadyLinked
-            : ChangePasswordError.Unknown;
+        return new ChangePasswordError(code, errorMessage);
+    }
 
     private static string? TryExtractErrorMessage(string body)
     {

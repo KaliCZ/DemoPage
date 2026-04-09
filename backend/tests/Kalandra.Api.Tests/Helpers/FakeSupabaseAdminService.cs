@@ -4,7 +4,7 @@ namespace Kalandra.Api.Tests.Helpers;
 
 public class FakeSupabaseAdminService : ISupabaseAdminService
 {
-    public ChangePasswordError? NextChangePasswordResult { get; set; }
+    public ChangePasswordErrorCode? NextChangePasswordError { get; set; }
     public (CurrentUser User, string Password)? LastChangePasswordCall { get; private set; }
 
     public Task<ChangePasswordError?> ChangePasswordAsync(
@@ -13,6 +13,9 @@ public class FakeSupabaseAdminService : ISupabaseAdminService
         CancellationToken ct)
     {
         LastChangePasswordCall = (user, password);
-        return Task.FromResult(NextChangePasswordResult);
+        var result = NextChangePasswordError is { } code
+            ? new ChangePasswordError(code, "Fake error")
+            : (ChangePasswordError?)null;
+        return Task.FromResult(result);
     }
 }

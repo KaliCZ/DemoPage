@@ -54,7 +54,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     public async Task LinkEmail_WithValidPassword_Returns204()
     {
         var linkUserId = Authenticate("link@test.com");
-        adminService.NextChangePasswordResult = null;
+        adminService.NextChangePasswordError = null;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -70,7 +70,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     public async Task LinkEmail_WhenAlreadyLinked_Returns400_AlreadyLinked()
     {
         Authenticate("already@test.com");
-        adminService.NextChangePasswordResult = ChangePasswordError.AlreadyLinked;
+        adminService.NextChangePasswordError = ChangePasswordErrorCode.AlreadyLinked;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -83,7 +83,7 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     public async Task LinkEmail_WhenSupabaseFails_Returns500()
     {
         Authenticate("fail@test.com");
-        adminService.NextChangePasswordResult = ChangePasswordError.Unknown;
+        adminService.NextChangePasswordError = ChangePasswordErrorCode.Unknown;
 
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
