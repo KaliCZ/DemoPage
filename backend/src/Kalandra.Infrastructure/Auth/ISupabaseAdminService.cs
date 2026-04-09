@@ -3,12 +3,15 @@ namespace Kalandra.Infrastructure.Auth;
 public interface ISupabaseAdminService
 {
     /// <summary>
-    /// Updates a Supabase user via the Admin API.
-    /// Used to link email/password identity to an existing OAuth user.
+    /// Sets the password for the given user via the Supabase Admin API.
+    /// Also links an email/password identity if the account was created via
+    /// OAuth and does not yet have one — the admin update carries the user's
+    /// email and email_confirm alongside the password, which Supabase treats
+    /// as identity linking when no password identity exists.
     /// </summary>
-    Task<SupabaseAdminResult> UpdateUserAsync(
-        string userId,
-        object updatePayload,
+    Task<SupabaseAdminResult> ChangePasswordAsync(
+        CurrentUser user,
+        string password,
         CancellationToken ct);
 }
 

@@ -6,14 +6,14 @@ public class FakeSupabaseAdminService : ISupabaseAdminService
 {
     public bool NextCallSucceeds { get; set; } = true;
     public string? NextCallError { get; set; }
-    public (string UserId, object Payload)? LastUpdateCall { get; private set; }
+    public (CurrentUser User, string Password)? LastChangePasswordCall { get; private set; }
 
-    public Task<SupabaseAdminResult> UpdateUserAsync(
-        string userId,
-        object updatePayload,
+    public Task<SupabaseAdminResult> ChangePasswordAsync(
+        CurrentUser user,
+        string password,
         CancellationToken ct)
     {
-        LastUpdateCall = (userId, updatePayload);
+        LastChangePasswordCall = (user, password);
 
         return Task.FromResult(NextCallSucceeds
             ? new SupabaseAdminResult(Success: true)

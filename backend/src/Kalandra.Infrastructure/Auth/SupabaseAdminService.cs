@@ -16,21 +16,33 @@ public class SupabaseAdminService(
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     };
 
-    public async Task<SupabaseAdminResult> UpdateUserAsync(
-        string userId,
-        object updatePayload,
+    public async Task<SupabaseAdminResult> ChangePasswordAsync(
+        CurrentUser user,
+        string password,
         CancellationToken ct)
+    {
+        var payload = new
+        {
+            email = user.Email.Address,
+            password,
+            email_confirm = true,
+        };
+
+        return await UpdateUserAsync(user.Id, payload, ct);
+    }
+
+    private async Task<SupabaseAdminResult> UpdateUserAsync(Guid userId, object payload, CancellationToken ct)
     {
         var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = authConfig.ServiceKey.Value;
 
         using var request = new HttpRequestMessage(
             HttpMethod.Put,
-            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId)}");
+            $"{projectUrl}/auth/v1/admin/users/{userId}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceKey);
         request.Headers.Add("apikey", serviceKey);
         request.Content = new StringContent(
-            JsonSerializer.Serialize(updatePayload, JsonOptions),
+            JsonSerializer.Serialize(payload, JsonOptions),
             Encoding.UTF8,
             "application/json");
 

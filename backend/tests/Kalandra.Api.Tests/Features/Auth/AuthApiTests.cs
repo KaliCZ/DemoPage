@@ -58,8 +58,9 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var json = await ParseJsonAsync(response);
         Assert.Contains("successfully", json.GetProperty("message").GetString());
 
-        Assert.NotNull(adminService.LastUpdateCall);
-        Assert.Equal(linkUserId.ToString(), adminService.LastUpdateCall.Value.UserId);
+        Assert.NotNull(adminService.LastChangePasswordCall);
+        Assert.Equal(linkUserId, adminService.LastChangePasswordCall.Value.User.Id);
+        Assert.Equal("securepassword123", adminService.LastChangePasswordCall.Value.Password);
     }
 
     // ───── Supabase Failure ─────

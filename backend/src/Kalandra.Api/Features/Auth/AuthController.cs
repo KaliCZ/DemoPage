@@ -31,10 +31,7 @@ public class AuthController(
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { error = "Password must be at least 6 characters." });
 
-        var result = await adminService.UpdateUserAsync(
-            userId: AppUser.Id.ToString(),
-            updatePayload: new { email = AppUser.Email.Address, password = request.Password, email_confirm = true },
-            ct);
+        var result = await adminService.ChangePasswordAsync(AppUser, request.Password, ct);
 
         if (!result.Success)
             return BadRequest(new { error = result.Error ?? "Failed to link email identity." });
