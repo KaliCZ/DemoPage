@@ -62,9 +62,9 @@ public class JobOffersController(
 
         var files = (attachments ?? [])
             .Select(f => new CreateJobOfferFile(
-                FileName: f.FileName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                FileName: f.FileName.AsNonEmpty().Get(),
                 FileSize: f.Length,
-                ContentType: f.ContentType.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                ContentType: f.ContentType.AsNonEmpty().Get(),
                 Content: f.OpenReadStream()))
             .ToList();
 
@@ -72,11 +72,11 @@ public class JobOffersController(
         {
             var command = new CreateJobOfferCommand(
                 User: AppUser,
-                CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                JobTitle: request.JobTitle.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                Description: request.Description.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                CompanyName: request.CompanyName.AsNonEmpty().Get(),
+                ContactName: request.ContactName.AsNonEmpty().Get(),
+                ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
+                JobTitle: request.JobTitle.AsNonEmpty().Get(),
+                Description: request.Description.AsNonEmpty().Get(),
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
@@ -133,11 +133,11 @@ public class JobOffersController(
             var command = new EditJobOfferCommand(
                 Id: id,
                 User: AppUser,
-                CompanyName: request.CompanyName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactName: request.ContactName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                JobTitle: request.JobTitle.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
-                Description: request.Description.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+                CompanyName: request.CompanyName.AsNonEmpty().Get(),
+                ContactName: request.ContactName.AsNonEmpty().Get(),
+                ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
+                JobTitle: request.JobTitle.AsNonEmpty().Get(),
+                Description: request.Description.AsNonEmpty().Get(),
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
@@ -267,7 +267,7 @@ public class JobOffersController(
         var command = new AddCommentCommand(
             JobOfferId: id,
             User: AppUser,
-            Content: request.Content.Trim().AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+            Content: request.Content.Trim().AsNonEmpty().Get(),
             Timestamp: timeProvider.GetUtcNow());
 
         var result = await addCommentHandler.HandleAsync(command, ct);
