@@ -2,6 +2,8 @@ using System.Collections.Immutable;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 namespace Kalandra.Api.Infrastructure.Auth;
 
@@ -25,20 +27,65 @@ public class HttpContextCurrentUserAccessor(
             principal.FindFirstValue(ClaimTypes.Email)
             ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
 
-        if (userIdStr is null || emailStr is null)
-            return null;
-
         if (!Guid.TryParse(userIdStr, out var userId))
             return null;
 
         if (!MailAddress.TryCreate(emailStr, out var email))
             return null;
 
+        var userMetadata = principal.FindFirstValue("user_metadata");
+        var lazyDisplayName = new Lazy<string>(() => ExtractDisplayName(userMetadata, email));
+
         return new CurrentUser(
             Id: userId,
             Email: email,
-            DisplayName: principal.FindFirstValue("display_name") ?? email.User,
+            LazyDisplayName: lazyDisplayName,
             Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
         );
+    }
+
+    /// <summary>
+    /// Streams user_metadata looking only for a "full_name" string, falling
+    /// back to the email's local part. Utf8JsonReader avoids the JsonDocument
+    /// tree allocation. Called at most once per request (via Lazy) and only
+    /// when a caller actually reads DisplayName.
+    /// </summary>
+    private static string ExtractDisplayName(string? userMetadata, MailAddress email)
+    {
+        if (string.IsNullOrEmpty(userMetadata))
+            return email.User;
+
+        var bytes = Encoding.UTF8.GetBytes(userMetadata);
+        var reader = new Utf8JsonReader(bytes);
+
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
+            return email.User;
+
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+                break;
+
+            if (reader.TokenType != JsonTokenType.PropertyName)
+                continue;
+
+            if (!reader.ValueTextEquals("full_name"u8))
+            {
+                reader.Read();
+                reader.Skip();
+                continue;
+            }
+
+            if (reader.Read() && reader.TokenType == JsonTokenType.String)
+            {
+                var name = reader.GetString();
+                if (!string.IsNullOrEmpty(name))
+                    return name;
+            }
+
+            break;
+        }
+
+        return email.User;
     }
 }

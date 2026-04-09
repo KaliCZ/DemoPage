@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using Kalandra.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -62,13 +63,16 @@ public static class SupabaseJwtSetup
                     },
                     OnTokenValidated = context =>
                     {
+                        // Project app_metadata.roles into ASP.NET role claims so
+                        // [Authorize(Policy = "Admin")] works during UseAuthorization.
+                        // user_metadata (display_name etc.) is handled lazily in
+                        // HttpContextCurrentUserAccessor — nothing in the auth
+                        // pipeline needs it, so we don't pay to parse it here.
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity == null)
                             return Task.CompletedTask;
 
                         ExtractRolesFromAppMetadata(context.Principal!, identity);
-                        ExtractDisplayNameFromUserMetadata(context.Principal!, identity);
-
                         return Task.CompletedTask;
                     }
                 };
@@ -80,43 +84,53 @@ public static class SupabaseJwtSetup
         return services;
     }
 
+    /// <summary>
+    /// Streams app_metadata looking only for the "roles" array and emits each
+    /// entry as a role claim. Uses Utf8JsonReader over the claim's UTF-8 bytes
+    /// to skip the JsonDocument tree allocation — this runs on every
+    /// authenticated request, so the saved alloc/GC pressure adds up.
+    /// </summary>
     private static void ExtractRolesFromAppMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
     {
         var appMetadata = principal.FindFirstValue("app_metadata");
-        if (appMetadata == null)
+        if (string.IsNullOrEmpty(appMetadata))
             return;
 
-        using var doc = JsonDocument.Parse(appMetadata);
+        var bytes = Encoding.UTF8.GetBytes(appMetadata);
+        var reader = new Utf8JsonReader(bytes);
 
-        if (doc.RootElement.TryGetProperty("roles", out var rolesProp) &&
-            rolesProp.ValueKind == JsonValueKind.Array)
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
+            return;
+
+        while (reader.Read())
         {
-            foreach (var item in rolesProp.EnumerateArray())
+            if (reader.TokenType == JsonTokenType.EndObject)
+                return;
+
+            if (reader.TokenType != JsonTokenType.PropertyName)
+                continue;
+
+            if (!reader.ValueTextEquals("roles"u8))
             {
-                var role = item.GetString();
+                reader.Read();
+                reader.Skip();
+                continue;
+            }
+
+            if (!reader.Read() || reader.TokenType != JsonTokenType.StartArray)
+                return;
+
+            while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+            {
+                if (reader.TokenType != JsonTokenType.String)
+                    continue;
+
+                var role = reader.GetString();
                 if (!string.IsNullOrEmpty(role))
-                {
                     identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                }
             }
-        }
-    }
 
-    private static void ExtractDisplayNameFromUserMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
-    {
-        var userMetadata = principal.FindFirstValue("user_metadata");
-        if (userMetadata == null)
             return;
-
-        using var doc = JsonDocument.Parse(userMetadata);
-
-        if (doc.RootElement.TryGetProperty("full_name", out var fullName))
-        {
-            var name = fullName.GetString();
-            if (!string.IsNullOrEmpty(name))
-            {
-                identity.AddClaim(new Claim("display_name", name));
-            }
         }
     }
 
