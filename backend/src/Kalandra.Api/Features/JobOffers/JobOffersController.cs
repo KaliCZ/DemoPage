@@ -271,7 +271,7 @@ public class JobOffersController(
             JobOfferId: id,
             UserId: NonEmptyString.CreateUnsafe(AppUser.Id.ToString()),
             UserEmail: NonEmptyString.CreateUnsafe(AppUser.Email.Address),
-            UserName: AppUser.DisplayName.AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
+            UserName: NonEmptyString.CreateUnsafe(AppUser.FullName),
             Content: request.Content.Trim().AsNonEmpty().Get((Unit _) => new InvalidOperationException()),
             IsAdmin: AppUser.IsAdmin,
             Timestamp: timeProvider.GetUtcNow());

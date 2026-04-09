@@ -25,12 +25,10 @@ public class HttpContextCurrentUserAccessor(
         if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var email))
             return null;
 
-        var userMetadata = principal.FindFirstValue("user_metadata");
-
         return new CurrentUser(
             Id: userId,
             Email: email,
-            DisplayName: ExtractDisplayName(userMetadata, email),
+            FullName: ExtractFullName(principal.FindFirstValue("user_metadata"), email),
             Roles: principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToImmutableArray()
         );
     }
@@ -39,7 +37,7 @@ public class HttpContextCurrentUserAccessor(
     /// Parses user_metadata looking for "full_name", falling back to the
     /// email's local part.
     /// </summary>
-    private static string ExtractDisplayName(string? userMetadata, MailAddress email)
+    private static string ExtractFullName(string? userMetadata, MailAddress email)
     {
         if (string.IsNullOrEmpty(userMetadata))
             return email.User;
