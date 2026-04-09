@@ -19,4 +19,4 @@ public record HistoryEntryResponse(
 
 public record JobOfferHistoryResponse(
     List<HistoryEntryResponse> Entries,
-    Dictionary<string, string> Avatars);
+    Dictionary<Guid, Uri> Avatars);

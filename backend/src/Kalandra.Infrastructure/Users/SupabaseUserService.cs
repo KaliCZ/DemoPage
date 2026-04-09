@@ -14,41 +14,51 @@ public class SupabaseUserService(
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
-    public async Task<Dictionary<string, string?>> GetAvatarUrlsAsync(
-        IEnumerable<string> userIds, CancellationToken ct)
+    /// <summary>
+    /// Resolves avatar URLs for the given user IDs. Returns only users that
+    /// actually have an avatar — callers never need to filter nulls.
+    /// </summary>
+    public async Task<Dictionary<Guid, Uri>> GetAvatarUrlsAsync(
+        IEnumerable<Guid> userIds, CancellationToken ct)
     {
-        var result = new Dictionary<string, string?>();
-        var uncached = new List<string>();
+        var result = new Dictionary<Guid, Uri>();
+        var uncached = new List<Guid>();
 
         foreach (var userId in userIds.Distinct())
         {
-            if (cache.TryGetValue(AvatarCacheKey(userId), out string? cached))
-                result[userId] = cached;
+            if (cache.TryGetValue(AvatarCacheKey(userId), out Uri? cached))
+            {
+                if (cached != null)
+                    result[userId] = cached;
+            }
             else
+            {
                 uncached.Add(userId);
+            }
         }
 
         foreach (var userId in uncached)
         {
             var avatarUrl = await FetchAvatarUrlAsync(userId, ct);
             cache.Set(AvatarCacheKey(userId), avatarUrl, CacheDuration);
-            result[userId] = avatarUrl;
+            if (avatarUrl != null)
+                result[userId] = avatarUrl;
         }
 
         return result;
     }
 
-    public void InvalidateCache(string userId) =>
+    public void InvalidateCache(Guid userId) =>
         cache.Remove(AvatarCacheKey(userId));
 
-    private async Task<string?> FetchAvatarUrlAsync(string userId, CancellationToken ct)
+    private async Task<Uri?> FetchAvatarUrlAsync(Guid userId, CancellationToken ct)
     {
         var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = authConfig.ServiceKey.Value;
 
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
-            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId)}");
+            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId.ToString())}");
         request.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
         request.Headers.Add("apikey", serviceKey);
@@ -71,46 +81,15 @@ public class SupabaseUserService(
             metadata.TryGetProperty("avatar_url", out var avatarUrl))
         {
             var url = avatarUrl.GetString();
-            return string.IsNullOrEmpty(url) ? null : url;
+            if (!string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                return uri;
         }
 
         return null;
     }
 
-    public async Task UpdateAvatarUrlAsync(string userId, string? avatarUrl, CancellationToken ct)
-    {
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
-        var serviceKey = authConfig.ServiceKey.Value;
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Put,
-            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId)}");
-        request.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
-        request.Headers.Add("apikey", serviceKey);
-        request.Content = JsonContent.Create(new
-        {
-            user_metadata = new { avatar_url = avatarUrl ?? "" }
-        });
-
-        using var response = await httpClient.SendAsync(request, ct);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var body = await response.Content.ReadAsStringAsync(ct);
-            logger.LogError(
-                "Failed to update avatar_url for user {UserId}. Status: {StatusCode}. Response: {Body}",
-                userId,
-                (int)response.StatusCode,
-                body);
-            throw new InvalidOperationException($"Failed to update user avatar. Status: {(int)response.StatusCode}");
-        }
-
-        InvalidateCache(userId);
-    }
-
-    public async Task<string> UploadAvatarAsync(
-        string userId, Stream content, string contentType, CancellationToken ct)
+    public async Task<Uri> UploadAvatarAsync(
+        Guid userId, Stream content, string contentType, CancellationToken ct)
     {
         var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = authConfig.ServiceKey.Value;
@@ -130,7 +109,7 @@ public class SupabaseUserService(
 
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"{projectUrl}/storage/v1/object/avatars/{Uri.EscapeDataString(userId)}/avatar{extension}");
+            $"{projectUrl}/storage/v1/object/avatars/{Uri.EscapeDataString(userId.ToString())}/avatar{extension}");
         request.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
         request.Headers.Add("apikey", serviceKey);
@@ -150,10 +129,42 @@ public class SupabaseUserService(
         }
 
         // Return public URL
-        return $"{projectUrl}/storage/v1/object/public/avatars/{Uri.EscapeDataString(userId)}/avatar{extension}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+        return new Uri($"{projectUrl}/storage/v1/object/public/avatars/{Uri.EscapeDataString(userId.ToString())}/avatar{extension}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
     }
 
-    public async Task DeleteAvatarFilesAsync(string userId, CancellationToken ct)
+    public async Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl, CancellationToken ct)
+    {
+        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
+        var serviceKey = authConfig.ServiceKey.Value;
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"{projectUrl}/auth/v1/admin/users/{Uri.EscapeDataString(userId.ToString())}");
+        request.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
+        request.Headers.Add("apikey", serviceKey);
+        request.Content = JsonContent.Create(new
+        {
+            user_metadata = new { avatar_url = avatarUrl?.ToString() ?? "" }
+        });
+
+        using var response = await httpClient.SendAsync(request, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            logger.LogError(
+                "Failed to update avatar_url for user {UserId}. Status: {StatusCode}. Response: {Body}",
+                userId,
+                (int)response.StatusCode,
+                body);
+            throw new InvalidOperationException($"Failed to update user avatar. Status: {(int)response.StatusCode}");
+        }
+
+        InvalidateCache(userId);
+    }
+
+    public async Task DeleteAvatarFilesAsync(Guid userId, CancellationToken ct)
     {
         var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
         var serviceKey = authConfig.ServiceKey.Value;
@@ -204,5 +215,5 @@ public class SupabaseUserService(
         }
     }
 
-    private static string AvatarCacheKey(string userId) => $"avatar:{userId}";
+    private static string AvatarCacheKey(Guid userId) => $"avatar:{userId}";
 }

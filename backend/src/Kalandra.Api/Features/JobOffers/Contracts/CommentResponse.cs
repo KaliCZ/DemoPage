@@ -21,4 +21,4 @@ public record CommentResponse(
 
 public record ListCommentsResponse(
     List<CommentResponse> Comments,
-    Dictionary<string, string> Avatars);
+    Dictionary<Guid, Uri> Avatars);

@@ -13,7 +13,7 @@ public record CurrentUser(
     MailAddress Email,
     string FullName,
     ImmutableArray<UserRole> Roles,
-    string? AvatarUrl = null)
+    Uri? AvatarUrl = null)
 {
     public bool IsAdmin => Roles.Contains(UserRole.Admin);
 }

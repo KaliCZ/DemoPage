@@ -358,15 +358,12 @@ public class JobOffersController(
         if (entries == null)
             return NotFound();
 
-        var userIds = entries
-            .Where(e => e.ActorUserId != Guid.Empty)
-            .Select(e => e.ActorUserId.ToString())
-            .Distinct();
+        var userIds = entries.Select(e => e.ActorUserId).Distinct();
         var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
 
         return new JobOfferHistoryResponse(
             entries.Select(HistoryEntryResponse.Serialize).ToList(),
-            ToNonNullDictionary(avatars));
+            avatars);
     }
 
     // ───── List Comments ─────
@@ -382,12 +379,12 @@ public class JobOffersController(
         if (comments == null)
             return NotFound();
 
-        var userIds = comments.Select(c => c.UserId.ToString()).Distinct();
+        var userIds = comments.Select(c => c.UserId).Distinct();
         var avatars = await userService.GetAvatarUrlsAsync(userIds, ct);
 
         return new ListCommentsResponse(
             comments.Select(CommentResponse.Serialize).ToList(),
-            ToNonNullDictionary(avatars));
+            avatars);
     }
 
     // ───── Private helpers ─────
@@ -434,6 +431,4 @@ public class JobOffersController(
         }
     }
 
-    private static Dictionary<string, string> ToNonNullDictionary(Dictionary<string, string?> source) =>
-        source.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!);
 }

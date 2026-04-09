@@ -58,7 +58,7 @@ public class HttpContextCurrentUserAccessor(
     /// Parses user_metadata looking for "full_name" and "avatar_url",
     /// falling back to the email's local part for the name.
     /// </summary>
-    private static (string FullName, string? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
+    private static (string FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
     {
         if (string.IsNullOrEmpty(userMetadata))
             return (email.User, null);
@@ -74,13 +74,13 @@ public class HttpContextCurrentUserAccessor(
                 fullName = name;
         }
 
-        string? avatarUrl = null;
+        Uri? avatarUrl = null;
         if (doc.RootElement.TryGetProperty("avatar_url", out var avatarProp) &&
             avatarProp.ValueKind == JsonValueKind.String)
         {
             var url = avatarProp.GetString();
             if (!string.IsNullOrEmpty(url))
-                avatarUrl = url;
+                Uri.TryCreate(url, UriKind.Absolute, out avatarUrl);
         }
 
         return (fullName ?? email.User, avatarUrl);

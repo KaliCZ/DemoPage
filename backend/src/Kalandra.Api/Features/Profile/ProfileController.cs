@@ -37,10 +37,9 @@ public class ProfileController(
             return ValidationError("file", UploadAvatarError.InvalidContentType);
 
         await using var stream = file.OpenReadStream();
-        var publicUrl = await userService.UploadAvatarAsync(
-            AppUser.Id.ToString(), stream, file.ContentType, ct);
+        var publicUrl = await userService.UploadAvatarAsync(AppUser.Id, stream, file.ContentType, ct);
 
-        await userService.UpdateAvatarUrlAsync(AppUser.Id.ToString(), publicUrl, ct);
+        await userService.UpdateAvatarUrlAsync(AppUser.Id, publicUrl, ct);
 
         return new AvatarResponse(AvatarUrl: publicUrl);
     }
@@ -49,8 +48,8 @@ public class ProfileController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAvatar(CancellationToken ct)
     {
-        await userService.DeleteAvatarFilesAsync(AppUser.Id.ToString(), ct);
-        await userService.UpdateAvatarUrlAsync(AppUser.Id.ToString(), avatarUrl: null, ct);
+        await userService.DeleteAvatarFilesAsync(AppUser.Id, ct);
+        await userService.UpdateAvatarUrlAsync(AppUser.Id, avatarUrl: null, ct);
 
         return NoContent();
     }
@@ -62,4 +61,4 @@ public class ProfileController(
     }
 }
 
-public record AvatarResponse(string AvatarUrl);
+public record AvatarResponse(Uri AvatarUrl);
