@@ -35,7 +35,7 @@ public static class RateLimits
                     {
                         PermitLimit = 2,
                         Window = TimeSpan.FromHours(4),
-                        SegmentsPerWindow = 8,
+                        SegmentsPerWindow = 24,
                         QueueLimit = 0,
                     });
             });
