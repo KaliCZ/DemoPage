@@ -12,8 +12,7 @@ namespace Kalandra.Api.Features.Profile;
 [Authorize]
 public class ProfileController(
     ICurrentUserAccessor currentUser,
-    UploadAvatarHandler uploadAvatarHandler,
-    DeleteAvatarHandler deleteAvatarHandler) : ControllerBase
+    UploadAvatarHandler uploadAvatarHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
@@ -38,15 +37,6 @@ public class ProfileController(
         }
 
         return new AvatarResponse(AvatarUrl: result.Success.Get());
-    }
-
-    [HttpDelete("avatar")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> DeleteAvatar(CancellationToken ct)
-    {
-        await deleteAvatarHandler.HandleAsync(AppUser.Id, ct);
-
-        return NoContent();
     }
 }
 

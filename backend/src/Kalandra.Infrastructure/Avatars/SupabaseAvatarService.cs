@@ -66,12 +66,6 @@ public class SupabaseAvatarService(
         return avatarUri;
     }
 
-    public async Task RemoveAvatarAsync(Guid userId, CancellationToken ct)
-    {
-        await supabase.Storage.From(avatarBucket).Remove([$"{userId}/avatar"]);
-        await UpdateAvatarUrlAsync(userId, avatarUrl: null);
-    }
-
     private async Task<Uri?> FetchAvatarUrlAsync(Guid userId)
     {
         try
@@ -95,13 +89,13 @@ public class SupabaseAvatarService(
         return null;
     }
 
-    private async Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl)
+    private async Task UpdateAvatarUrlAsync(Guid userId, Uri avatarUrl)
     {
         await adminAuthClient.UpdateUserById(userId.ToString(), new Supabase.Gotrue.AdminUserAttributes
         {
             UserMetadata = new Dictionary<string, object>
             {
-                ["avatar_url"] = avatarUrl?.ToString() ?? ""
+                ["avatar_url"] = avatarUrl.ToString()
             }
         });
 

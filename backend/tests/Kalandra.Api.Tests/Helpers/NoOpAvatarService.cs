@@ -10,8 +10,5 @@ public class NoOpAvatarService : IAvatarService
 
     public Task<Uri> ReplaceAvatarAsync(
         Guid userId, Stream content, string contentType, CancellationToken ct) =>
-        Task.FromResult(new Uri($"https://test-project.supabase.co/storage/v1/object/public/avatars/{userId}/avatar.jpg"));
-
-    public Task RemoveAvatarAsync(Guid userId, CancellationToken ct) =>
-        Task.CompletedTask;
+        Task.FromResult(new Uri($"https://test-project.supabase.co/storage/v1/object/public/avatars/{userId}/avatar"));
 }

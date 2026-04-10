@@ -62,10 +62,6 @@ const t = translations[lang];
               class="px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
               {t.avatar.change}
             </button>
-            <button type="button" id="avatar-remove-btn"
-              class="hidden px-5 py-2.5 rounded-xl text-sm font-semibold font-label text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors cursor-pointer">
-              {t.avatar.remove}
-            </button>
           </div>
           <p class="text-xs font-body text-on-surface-variant">{t.avatar.maxSize}</p>
         </div>
@@ -132,11 +128,9 @@ const t = translations[lang];
     function updateAvatarPreview(avatarUrl, name) {
       var img = document.getElementById('avatar-preview-img');
       var initial = document.getElementById('avatar-preview-initial');
-      var removeBtn = document.getElementById('avatar-remove-btn');
       if (avatarUrl) {
         if (img) { img.src = avatarUrl; img.alt = name; img.classList.remove('hidden'); }
         if (initial) initial.classList.add('hidden');
-        if (removeBtn) removeBtn.classList.remove('hidden');
       } else {
         if (img) img.classList.add('hidden');
         if (initial) {
@@ -144,7 +138,6 @@ const t = translations[lang];
           var span = initial.querySelector('span');
           if (span) span.textContent = (name.charAt(0) || '?').toUpperCase();
         }
-        if (removeBtn) removeBtn.classList.add('hidden');
       }
     }
 
@@ -493,45 +486,6 @@ const t = translations[lang];
       }
     });
 
-    // --- Avatar remove ---
-    document.getElementById('avatar-remove-btn')?.addEventListener('click', async function() {
-      var btn = this;
-      var originalText = btn.textContent;
-      btn.disabled = true;
-
-      try {
-        var token = await window.__getAccessToken?.();
-        if (!token) throw new Error('Not authenticated');
-
-        var res = await fetch(apiUrl + '/api/profile/avatar', {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-
-        if (!res.ok) {
-          var msg = await window.__getApiError?.(res, avatarErrorMap);
-          throw new Error(msg || strings.avatar.error);
-        }
-
-        // Refresh session so the cached JWT no longer contains the avatar_url
-        var supabase = window.__supabase;
-        if (supabase) {
-          await supabase.auth.refreshSession();
-          var { data: userData } = await supabase.auth.getUser();
-          if (userData?.user) {
-            updateAvatarPreview('', userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
-            window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
-          }
-        }
-
-        window.__showSnackbar?.(strings.avatar.removeSuccess, 'success');
-      } catch (err) {
-        window.__showSnackbar?.(err.message || strings.avatar.error, 'error');
-      } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }
-    });
   </script>
 
 </Layout>

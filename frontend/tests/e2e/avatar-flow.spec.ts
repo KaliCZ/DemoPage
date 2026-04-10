@@ -8,10 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * E2E test for the avatar feature:
  *   1. Sign in
  *   2. Upload an avatar via the profile page
- *   3. Verify the preview, nav header, and Remove button update
+ *   3. Verify the preview and nav header update
  *   4. Submit a job offer + add a comment
  *   5. Verify the avatar appears next to the comment in the job offer detail
- *   6. Remove the avatar and verify it falls back to initials
  *
  * Requires:
  *   - Local Supabase running (npm run dev:supabase)
@@ -48,7 +47,7 @@ test.describe('Avatar Flow', () => {
     expect(response.ok(), `Failed to create test user: ${await response.text()}`).toBeTruthy();
   });
 
-  test('upload avatar → verify in profile, nav, and comments → remove', async ({ page }) => {
+  test('upload avatar → verify in profile, nav, and comments', async ({ page }) => {
     // 1. Sign in via the profile page
     await page.goto('/profile');
     await page.evaluate(async ({ email, password }) => {
@@ -62,18 +61,16 @@ test.describe('Avatar Flow', () => {
     await expect(page.locator('#profile-section')).toBeVisible();
     await expect(page.locator('#avatar-change-btn')).toBeVisible();
 
-    // Initially, no avatar — initial circle visible, image hidden, Remove hidden
+    // Initially, no avatar — initial circle visible, image hidden
     await expect(page.locator('#avatar-preview-initial')).toBeVisible();
     await expect(page.locator('#avatar-preview-img')).toBeHidden();
-    await expect(page.locator('#avatar-remove-btn')).toBeHidden();
 
     // 2. Upload an avatar (use the existing portrait in public/)
     const avatarPath = path.join(__dirname, '..', '..', 'public', 'images', 'pavel-portrait-200.webp');
     await page.locator('#avatar-file-input').setInputFiles(avatarPath);
 
-    // Wait for the upload + session refresh to complete (Remove button appears)
-    await expect(page.locator('#avatar-remove-btn')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('#avatar-preview-img')).toBeVisible();
+    // Wait for the upload + session refresh to complete
+    await expect(page.locator('#avatar-preview-img')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#avatar-preview-initial')).toBeHidden();
 
     // The img src should point to the avatars storage path
@@ -121,12 +118,5 @@ test.describe('Avatar Flow', () => {
     const commentAvatarSrc = await commentAvatar.getAttribute('src');
     expect(commentAvatarSrc).toContain('/storage/v1/object/public/avatars/');
 
-    // 6. Remove the avatar and verify it falls back to the initial
-    await page.goto('/profile');
-    await expect(page.locator('#avatar-remove-btn')).toBeVisible();
-    await page.click('#avatar-remove-btn');
-    await expect(page.locator('#avatar-preview-initial')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('#avatar-preview-img')).toBeHidden();
-    await expect(page.locator('#avatar-remove-btn')).toBeHidden();
   });
 });

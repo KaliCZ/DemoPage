@@ -77,21 +77,6 @@ public class ProfileApiTests(TestWebApplicationFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
-    public async Task DeleteAvatar_WithoutAuth_Returns401()
-    {
-        var response = await client.DeleteAsync("/api/profile/avatar", Ct);
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task DeleteAvatar_WithAuth_Returns204()
-    {
-        Authenticate();
-        var response = await client.DeleteAsync("/api/profile/avatar", Ct);
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-    }
-
     private void Authenticate(
         string email = "test@example.com")
     {
