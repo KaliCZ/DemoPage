@@ -11,9 +11,9 @@ public class SupabaseAvatarService(
     IMemoryCache cache,
     ILogger<SupabaseAvatarService> logger) : IAvatarService
 {
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
-    private const string AvatarBucket = "avatars";
-    private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> admin =
+    private static readonly TimeSpan cacheDuration = TimeSpan.FromMinutes(5);
+    private const string avatarBucket = "avatars";
+    private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient =
         supabase.AdminAuth(authConfig.ServiceKey.Value);
 
     /// <summary>
@@ -36,7 +36,7 @@ public class SupabaseAvatarService(
             else
             {
                 var avatarUrl = await FetchAvatarUrlAsync(userId);
-                cache.Set(AvatarCacheKey(userId), avatarUrl, CacheDuration);
+                cache.Set(AvatarCacheKey(userId), avatarUrl, cacheDuration);
                 if (avatarUrl != null)
                     result[userId] = avatarUrl;
             }
@@ -49,8 +49,7 @@ public class SupabaseAvatarService(
     {
         try
         {
-            var user = await admin
-                .GetUserById(userId.ToString());
+            var user = await adminAuthClient.GetUserById(userId.ToString());
 
             if (user?.UserMetadata is { } metadata &&
                 metadata.TryGetValue("avatar_url", out var avatarUrlObj) &&
@@ -74,9 +73,10 @@ public class SupabaseAvatarService(
     {
         var extension = contentType switch
         {
+            "image/jpeg" => ".jpg",
             "image/png" => ".png",
             "image/webp" => ".webp",
-            _ => ".jpg"
+            _ => throw new ArgumentException($"Unsupported content type: {contentType}", nameof(contentType))
         };
         var storagePath = $"{userId}/avatar{extension}";
 
@@ -86,35 +86,32 @@ public class SupabaseAvatarService(
         using var ms = new MemoryStream();
         await content.CopyToAsync(ms, ct);
 
-        await supabase.Storage.From(AvatarBucket)
+        await supabase.Storage.From(avatarBucket)
             .Upload(
                 ms.ToArray(),
                 storagePath,
                 new Supabase.Storage.FileOptions { ContentType = contentType });
 
-        var publicUrl = supabase.Storage.From(AvatarBucket).GetPublicUrl(storagePath);
+        var publicUrl = supabase.Storage.From(avatarBucket).GetPublicUrl(storagePath);
         return new Uri($"{publicUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
     }
 
     public async Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl, CancellationToken ct)
     {
-        await admin
-            .UpdateUserById(
-                userId.ToString(),
-                new Supabase.Gotrue.AdminUserAttributes
-                {
-                    UserMetadata = new Dictionary<string, object>
-                    {
-                        ["avatar_url"] = avatarUrl?.ToString() ?? ""
-                    }
-                });
+        await adminAuthClient.UpdateUserById(userId.ToString(), new Supabase.Gotrue.AdminUserAttributes
+        {
+            UserMetadata = new Dictionary<string, object>
+            {
+                ["avatar_url"] = avatarUrl?.ToString() ?? ""
+            }
+        });
 
         InvalidateCache(userId);
     }
 
     public async Task DeleteAvatarFilesAsync(Guid userId, CancellationToken ct)
     {
-        var storage = supabase.Storage.From(AvatarBucket);
+        var storage = supabase.Storage.From(avatarBucket);
         var files = await storage.List(userId.ToString());
 
         if (files is not { Count: > 0 })
