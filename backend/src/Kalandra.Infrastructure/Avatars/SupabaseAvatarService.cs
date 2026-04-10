@@ -117,7 +117,7 @@ public class SupabaseAvatarService(
             }
         });
 
-        InvalidateCache(userId);
+        cache.Remove(AvatarCacheKey(userId));
     }
 
     private async Task DeleteAvatarFilesAsync(Guid userId, string? excludePath, CancellationToken ct)
@@ -136,8 +136,6 @@ public class SupabaseAvatarService(
         if (paths.Count > 0)
             await storage.Remove(paths);
     }
-
-    private void InvalidateCache(Guid userId) => cache.Remove(AvatarCacheKey(userId));
 
     private static string AvatarCacheKey(Guid userId) => $"avatar:{userId}";
 }
