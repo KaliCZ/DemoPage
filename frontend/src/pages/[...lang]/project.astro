@@ -293,7 +293,8 @@ const t = translations[lang];
                   {hasDates && <span class="text-on-surface-variant/60"> · {version.dates}</span>}
                 </p>
               )}
-              {'nextTime' in version && version.nextTime && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.nextTime}</p>}
+              {'nextTime' in version && version.nextTime && <p class:list={["font-label text-xs text-on-surface-variant/60 italic", 'timeNote' in version && version.timeNote ? "mb-1" : "mb-4"]}>{version.nextTime}</p>}
+              {'timeNote' in version && version.timeNote && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.timeNote}</p>}
               <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>{version.description}</p>
               {hasDetails && (
                 <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
