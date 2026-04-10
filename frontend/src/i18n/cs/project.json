@@ -62,14 +62,17 @@
   },
   "architectureDiagram": {
     "title": "Přehled architektury",
-    "cloudflare": "Cloudflare",
-    "cloudflareDetails": ["Statický web (CDN)", "Doména DNS"],
-    "oracleCloud": "Oracle Cloud",
-    "oracleCloudDetails": ["ASP.NET Core API", "Temporal"],
-    "supabase": "Supabase",
-    "supabaseDetails": ["PostgreSQL DB", "Auth (JWT)"],
-    "slack": "Slack Webhook",
-    "email": "Email (SMTP)"
+    "browser": "Prohlížeč",
+    "staticSite": "Statický web (CDN)",
+    "dns": "DNS / Doména",
+    "reverseProxy": "Reverzní proxy",
+    "active": "Aktivní",
+    "standby": "Záložní",
+    "backgroundJobs": "Úlohy na pozadí",
+    "database": "Databáze",
+    "authentication": "Autentizace",
+    "cicd": "CI/CD",
+    "pipeline": "Build + Test → GHCR → Deploy"
   },
   "decisions": {
     "title": "Architektonická rozhodnutí",

@@ -62,14 +62,17 @@
   },
   "architectureDiagram": {
     "title": "Architecture Overview",
-    "cloudflare": "Cloudflare",
-    "cloudflareDetails": ["Static Site (CDN)", "Domain DNS"],
-    "oracleCloud": "Oracle Cloud",
-    "oracleCloudDetails": ["ASP.NET Core API", "Temporal"],
-    "supabase": "Supabase",
-    "supabaseDetails": ["PostgreSQL DB", "Auth (JWT)"],
-    "slack": "Slack Webhook",
-    "email": "Email (SMTP)"
+    "browser": "Browser",
+    "staticSite": "Static Site (CDN)",
+    "dns": "DNS / Domain",
+    "reverseProxy": "Reverse Proxy",
+    "active": "Active",
+    "standby": "Standby",
+    "backgroundJobs": "Background Jobs",
+    "database": "Database",
+    "authentication": "Authentication",
+    "cicd": "CI/CD",
+    "pipeline": "Build + Test → GHCR → Deploy"
   },
   "decisions": {
     "title": "Architecture Decisions",

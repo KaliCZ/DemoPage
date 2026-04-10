@@ -1,14 +1,17 @@
 ---
 interface Props {
   t: {
-    cloudflare: string;
-    cloudflareDetails: string[];
-    oracleCloud: string;
-    oracleCloudDetails: string[];
-    supabase: string;
-    supabaseDetails: string[];
-    slack: string;
-    email: string;
+    browser: string;
+    staticSite: string;
+    dns: string;
+    reverseProxy: string;
+    active: string;
+    standby: string;
+    backgroundJobs: string;
+    database: string;
+    authentication: string;
+    cicd: string;
+    pipeline: string;
   };
   class?: string;
 }
@@ -18,110 +21,303 @@ const { t, class: className, ...rest } = Astro.props;
 
 <div class:list={["overflow-x-auto", className]} {...rest}>
   <svg
-    viewBox="0 0 900 420"
+    viewBox="0 0 1080 560"
     xmlns="http://www.w3.org/2000/svg"
-    class="w-full min-w-[600px]"
+    class="w-full min-w-[700px]"
     role="img"
     aria-label="Architecture diagram"
   >
     <defs>
-      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
         <path d="M0,0 L8,3 L0,6" fill="var(--color-outline)" />
+      </marker>
+      <marker id="arrow-muted" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline-variant)" />
       </marker>
     </defs>
 
-    <!-- Cloudflare Node -->
+    <!-- ===== BROWSER ===== -->
     <g>
-      <rect x="30" y="70" width="220" height="160" rx="12" ry="12"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1.5" />
-      <rect x="30" y="70" width="220" height="4" rx="2" ry="2"
+      <rect x="75" y="8" width="170" height="44" rx="8"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <text x="160" y="35" text-anchor="middle"
+        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="14" font-weight="600">
+        {t.browser}
+      </text>
+    </g>
+
+    <!-- Arrow: Browser → Cloudflare -->
+    <line x1="160" y1="52" x2="160" y2="80"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+
+    <!-- ===== CLOUDFLARE CONTAINER ===== -->
+    <g>
+      <rect x="20" y="88" width="270" height="252" rx="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <rect x="20" y="88" width="270" height="5" rx="2.5"
         fill="var(--color-primary)" />
-      <text x="140" y="115" text-anchor="middle"
-        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="16" font-weight="700">
-        {t.cloudflare}
+      <text x="155" y="118" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="11" font-weight="700" letter-spacing="1.5" text-transform="uppercase">
+        CLOUDFLARE
       </text>
-      <line x1="80" y1="130" x2="200" y2="130" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-      {t.cloudflareDetails.map((detail, i) => (
-        <text x="140" y={155 + i * 24} text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
-          {detail}
+
+      <!-- Static Site -->
+      <g>
+        <rect x="40" y="135" width="230" height="50" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="40" y="135" width="4" height="50" rx="2"
+          fill="var(--color-primary)" />
+        <circle cx="58" cy="155" r="3.5" fill="var(--color-primary)" opacity="0.6" />
+        <text x="68" y="159"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          Astro
         </text>
-      ))}
+        <text x="56" y="176"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.staticSite}
+        </text>
+      </g>
+
+      <!-- DNS -->
+      <g>
+        <rect x="40" y="200" width="230" height="50" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="40" y="200" width="4" height="50" rx="2"
+          fill="var(--color-primary)" />
+        <circle cx="58" cy="220" r="3.5" fill="var(--color-primary)" opacity="0.6" />
+        <text x="68" y="224"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          Cloudflare DNS
+        </text>
+        <text x="56" y="241"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.dns}
+        </text>
+      </g>
     </g>
 
-    <!-- Oracle Cloud Node -->
+    <!-- ===== ORACLE CLOUD CONTAINER ===== -->
     <g>
-      <rect x="340" y="50" width="220" height="200" rx="12" ry="12"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1.5" />
-      <rect x="340" y="50" width="220" height="4" rx="2" ry="2"
+      <rect x="340" y="88" width="385" height="252" rx="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <rect x="340" y="88" width="385" height="5" rx="2.5"
         fill="var(--color-tertiary)" />
-      <text x="450" y="95" text-anchor="middle"
-        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="16" font-weight="700">
-        {t.oracleCloud}
+      <text x="532" y="118" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="11" font-weight="700" letter-spacing="1.5">
+        ORACLE CLOUD VPS
       </text>
-      <line x1="390" y1="110" x2="510" y2="110" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-      {t.oracleCloudDetails.map((detail, i) => (
-        <text x="450" y={135 + i * 24} text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
-          {detail}
+
+      <!-- Caddy -->
+      <g>
+        <rect x="360" y="130" width="345" height="48" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="360" y="130" width="4" height="48" rx="2"
+          fill="var(--color-outline)" />
+        <circle cx="378" cy="149" r="3.5" fill="var(--color-outline)" opacity="0.6" />
+        <text x="388" y="153"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          Caddy
         </text>
-      ))}
+        <text x="376" y="169"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.reverseProxy}
+        </text>
+      </g>
+
+      <!-- Internal arrow: Caddy → API Active -->
+      <line x1="443" y1="178" x2="443" y2="193"
+        stroke="var(--color-outline)" stroke-width="1" marker-end="url(#arrow)" />
+
+      <!-- Internal arrow: Caddy → API Standby (dashed) -->
+      <line x1="622" y1="178" x2="622" y2="193"
+        stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow-muted)" />
+
+      <!-- API Active -->
+      <g>
+        <rect x="360" y="198" width="165" height="64" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="360" y="198" width="4" height="64" rx="2"
+          fill="var(--color-tertiary)" />
+        <circle cx="378" cy="218" r="3.5" fill="var(--color-tertiary)" opacity="0.6" />
+        <text x="388" y="222"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          ASP.NET Core
+        </text>
+        <text x="376" y="238"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          Backend API
+        </text>
+        <!-- Active badge -->
+        <rect x="376" y="244" width="52" height="14" rx="7"
+          fill="var(--color-primary)" opacity="0.15" />
+        <text x="402" y="254" text-anchor="middle"
+          fill="var(--color-primary)" font-family="var(--font-label)" font-size="9" font-weight="700">
+          {t.active}
+        </text>
+      </g>
+
+      <!-- API Standby (faded, dashed) -->
+      <g opacity="0.5">
+        <rect x="540" y="198" width="165" height="64" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
+        <rect x="540" y="198" width="4" height="64" rx="2"
+          fill="var(--color-tertiary)" />
+        <circle cx="558" cy="218" r="3.5" fill="var(--color-tertiary)" opacity="0.6" />
+        <text x="568" y="222"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          ASP.NET Core
+        </text>
+        <text x="556" y="238"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          Backend API
+        </text>
+        <!-- Standby badge -->
+        <rect x="556" y="244" width="58" height="14" rx="7"
+          fill="var(--color-outline-variant)" opacity="0.3" />
+        <text x="585" y="254" text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="9" font-weight="700">
+          {t.standby}
+        </text>
+      </g>
+
+      <!-- Temporal (planned, faded) -->
+      <g opacity="0.4">
+        <rect x="360" y="278" width="345" height="48" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
+        <rect x="360" y="278" width="4" height="48" rx="2"
+          fill="var(--color-tertiary)" />
+        <circle cx="378" cy="297" r="3.5" fill="var(--color-tertiary)" opacity="0.6" />
+        <text x="388" y="301"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          Temporal
+        </text>
+        <text x="376" y="317"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.backgroundJobs}
+        </text>
+        <!-- v4 badge -->
+        <rect x="672" y="291" width="22" height="14" rx="7"
+          fill="var(--color-outline-variant)" opacity="0.3" />
+        <text x="683" y="301" text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="9" font-weight="700">
+          v4
+        </text>
+      </g>
     </g>
 
-    <!-- Supabase Node -->
+    <!-- ===== SUPABASE CONTAINER ===== -->
     <g>
-      <rect x="650" y="70" width="220" height="160" rx="12" ry="12"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1.5" />
-      <rect x="650" y="70" width="220" height="4" rx="2" ry="2"
+      <rect x="775" y="88" width="270" height="252" rx="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <rect x="775" y="88" width="270" height="5" rx="2.5"
         fill="var(--color-on-surface-variant)" />
-      <text x="760" y="115" text-anchor="middle"
-        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="16" font-weight="700">
-        {t.supabase}
+      <text x="910" y="118" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="11" font-weight="700" letter-spacing="1.5">
+        SUPABASE
       </text>
-      <line x1="700" y1="130" x2="820" y2="130" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-      {t.supabaseDetails.map((detail, i) => (
-        <text x="760" y={155 + i * 24} text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
-          {detail}
+
+      <!-- PostgreSQL -->
+      <g>
+        <rect x="795" y="135" width="230" height="50" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="795" y="135" width="4" height="50" rx="2"
+          fill="var(--color-on-surface-variant)" />
+        <circle cx="813" cy="155" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6" />
+        <text x="823" y="159"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          PostgreSQL
         </text>
-      ))}
+        <text x="811" y="176"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.database}
+        </text>
+      </g>
+
+      <!-- Auth -->
+      <g>
+        <rect x="795" y="200" width="230" height="50" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="795" y="200" width="4" height="50" rx="2"
+          fill="var(--color-on-surface-variant)" />
+        <circle cx="813" cy="220" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6" />
+        <text x="823" y="224"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          Supabase Auth
+        </text>
+        <text x="811" y="241"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.authentication} (JWT)
+        </text>
+      </g>
     </g>
 
-    <!-- Slack Node -->
-    <g>
-      <rect x="340" y="330" width="130" height="55" rx="10" ry="10"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-      <text x="405" y="363" text-anchor="middle"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="12">
-        {t.slack}
-      </text>
-    </g>
+    <!-- ===== MAIN ARROWS ===== -->
 
-    <!-- Email Node -->
-    <g>
-      <rect x="500" y="330" width="130" height="55" rx="10" ry="10"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-      <text x="565" y="363" text-anchor="middle"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="12">
-        {t.email}
-      </text>
-    </g>
-
-    <!-- Arrows -->
     <!-- Cloudflare → Oracle Cloud -->
-    <line x1="250" y1="150" x2="332" y2="150"
-      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+    <line x1="293" y1="195" x2="333" y2="195"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
 
     <!-- Oracle Cloud → Supabase -->
-    <line x1="560" y1="150" x2="642" y2="150"
-      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+    <line x1="728" y1="195" x2="768" y2="195"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
 
-    <!-- Oracle Cloud → Slack -->
-    <path d="M 420 250 L 420 290 Q 420 300 415 305 L 405 322"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+    <!-- ===== EXTERNAL SERVICES ===== -->
 
-    <!-- Oracle Cloud → Email -->
-    <path d="M 480 250 L 480 290 Q 480 300 490 305 L 545 322"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+    <!-- Arrow: Oracle Cloud → Slack -->
+    <line x1="467" y1="343" x2="467" y2="393"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+
+    <!-- Arrow: Oracle Cloud → Email -->
+    <line x1="627" y1="343" x2="627" y2="393"
+      stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+
+    <!-- Slack -->
+    <g>
+      <rect x="395" y="400" width="145" height="48" rx="8"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <text x="467" y="421" text-anchor="middle"
+        fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+        Slack
+      </text>
+      <text x="467" y="438" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
+        Webhook
+      </text>
+    </g>
+
+    <!-- Email -->
+    <g>
+      <rect x="555" y="400" width="145" height="48" rx="8"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <text x="627" y="421" text-anchor="middle"
+        fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+        Brevo
+      </text>
+      <text x="627" y="438" text-anchor="middle"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
+        Email (SMTP)
+      </text>
+    </g>
+
+    <!-- ===== GITHUB ACTIONS CI/CD ===== -->
+    <g>
+      <rect x="20" y="490" width="1025" height="50" rx="12"
+        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+      <rect x="20" y="490" width="1025" height="5" rx="2.5"
+        fill="var(--color-outline)" />
+      <circle cx="48" cy="521" r="3.5" fill="var(--color-outline)" opacity="0.6" />
+      <text x="58" y="525"
+        fill="var(--color-on-surface)" font-family="var(--font-headline)" font-size="14" font-weight="700">
+        GitHub Actions
+      </text>
+      <text x="195" y="525"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="12">
+        {t.cicd}
+      </text>
+      <text x="1015" y="525" text-anchor="end"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        {t.pipeline}
+      </text>
+    </g>
   </svg>
 </div>
