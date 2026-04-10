@@ -15,11 +15,6 @@ public class ProfileController(
     ICurrentUserAccessor currentUser,
     IAvatarService avatarService) : ControllerBase
 {
-    private static readonly HashSet<string> AllowedContentTypes =
-        ["image/jpeg", "image/png", "image/webp"];
-
-    private const long MaxFileSize = 1 * 1024 * 1024; // 1 MB
-
     private CurrentUser AppUser => currentUser.RequiredUser;
 
     [HttpPost("avatar")]
@@ -31,10 +26,10 @@ public class ProfileController(
         if (file.Length == 0)
             return this.ValidationError("file", UploadAvatarError.EmptyFile);
 
-        if (file.Length > MaxFileSize)
+        if (file.Length > IAvatarService.MaxFileSize)
             return this.ValidationError("file", UploadAvatarError.TooLarge);
 
-        if (!AllowedContentTypes.Contains(file.ContentType))
+        if (!IAvatarService.AllowedContentTypes.Contains(file.ContentType))
             return this.ValidationError("file", UploadAvatarError.InvalidContentType);
 
         await using var stream = file.OpenReadStream();
