@@ -4,65 +4,41 @@
     "description": "Zásady ochrany osobních údajů pro kalandra.tech — jak shromažďujeme, používáme a chráníme vaše údaje."
   },
   "heading": "Zásady ochrany osobních údajů",
-  "lastUpdated": "Poslední aktualizace: 4. dubna 2026",
-  "intro": "Tyto zásady ochrany osobních údajů vysvětlují, jak kalandra.tech (\"my\", \"nás\", \"naše\") shromažďuje, používá a chrání vaše osobní údaje při používání našich webových stránek.",
+  "lastUpdated": "Poslední aktualizace: 10. dubna 2026",
+  "intro": "Tyto zásady ochrany osobních údajů vysvětlují, jak kalandra.tech (\"my\", \"nás\", \"naše\") zachází s vašimi osobními údaji.",
   "sections": [
     {
-      "title": "Jaké údaje shromažďujeme",
-      "content": "Při vytvoření účtu nebo používání našich služeb můžeme shromažďovat následující údaje:",
+      "title": "Co shromažďujeme a proč",
+      "content": "Shromažďujeme pouze to, co zadáte prostřednictvím formulářů (registrace účtu, úpravy profilu, pracovní nabídky, komentáře), a používáme to k provozu platformy. Kromě toho mohou služby třetích stran automaticky shromažďovat technická data:",
       "items": [
-        "E-mailová adresa (při registraci nebo přihlášení)",
-        "Jméno a profilové informace (při přihlášení přes Google OAuth)",
-        "Informace, které dobrovolně zadáte prostřednictvím formulářů (např. pracovní nabídky)",
-        "Autentizační tokeny a data relace"
+        "Autentizace — náš poskytovatel autentizace ukládá váš e-mail, hash hesla a OAuth tokeny. Hesla nejsou nikdy ukládána v čitelné podobě.",
+        "Monitoring — nástroje pro sledování chyb, analytiku a monitoring mohou shromažďovat vaši IP adresu, typ prohlížeče a data o interakci.",
+        "Cookies a místní úložiště — používáme pro vaši autentizační relaci a preference (tmavý režim, jazyk). Reklamní cookies nepoužíváme."
       ]
-    },
-    {
-      "title": "Jak vaše údaje používáme",
-      "content": "Shromážděné údaje používáme k následujícím účelům:",
-      "items": [
-        "Poskytování a údržba našich služeb",
-        "Ověření vaší identity a správa vašeho účtu",
-        "Zpracování a zobrazení vámi zadaných pracovních nabídek",
-        "Komunikace s vámi ohledně vašeho účtu nebo příspěvků",
-        "Zlepšování našich webových stránek a služeb"
-      ]
-    },
-    {
-      "title": "Autentizace a ukládání dat",
-      "content": "Pro autentizaci a ukládání dat používáme službu Supabase. Vaše autentizační údaje (e-mail, hash hesla, OAuth tokeny) jsou spravovány infrastrukturou Supabase. Hesla nejsou nikdy ukládána v čitelné podobě. Více informací naleznete v zásadách ochrany osobních údajů Supabase."
-    },
-    {
-      "title": "Analytika a monitoring",
-      "content": "K monitorování výkonu a spolehlivosti našich webových stránek používáme nástroje třetích stran. Data jako zobrazení stránek, chyby, logy a vzorce používání mohou být odesílána do služeb včetně, ale nejen, Sentry, PostHog, BetterStack nebo dalších nástrojů pro monitoring a analytiku. Tyto služby mohou shromažďovat technické informace jako vaši IP adresu, typ prohlížeče, operační systém a data o interakci. Tato data slouží výhradně ke zlepšování kvality, výkonu a bezpečnosti našich služeb."
-    },
-    {
-      "title": "Cookies a místní úložiště",
-      "content": "K správě vaší autentizační relace a zapamatování vašich preferencí (jako tmavý režim a nastavení jazyka) používáme místní úložiště prohlížeče a cookies. Nepoužíváme reklamní cookies třetích stran."
     },
     {
       "title": "Sdílení dat",
-      "content": "Vaše osobní údaje neprodáváme, nevyměňujeme ani nepronajímáme třetím stranám. Data můžeme sdílet s poskytovateli služeb (Supabase, výše uvedené analytické a monitorovací nástroje) výhradně za účelem provozu a zlepšování našich služeb."
+      "content": "Vaše data neprodáváme. Poskytovatelé služeb třetích stran přijímají data výhradně za účelem provozu a zlepšování platformy."
     },
     {
       "title": "Uchovávání dat",
-      "content": "Vaše osobní údaje uchováváme po dobu, kdy je váš účet aktivní, nebo po dobu potřebnou k poskytování našich služeb. Můžete požádat o smazání svého účtu a souvisejících osobních údajů tím, že nás kontaktujete. Upozorňujeme, že vámi zadané pracovní nabídky, včetně všech souvisejících dat a komentářů, jsou uchovávány trvale jako součást našich záznamů a nebudou smazány při zrušení účtu."
+      "content": "Tato platforma slouží k zadávání a diskusi o pracovních nabídkách. Vámi zadané pracovní nabídky — včetně kontaktních údajů k nim připojených — a veškeré komentáře jsou uchovávány trvale jako obchodní záznamy a nelze je smazat. Můžete požádat o smazání svého účtu a profilového obrázku na pavel@kalandra.tech."
     },
     {
       "title": "Vaše práva",
       "content": "Máte právo na:",
       "items": [
         "Přístup k osobním údajům, které o vás uchováváme, prostřednictvím stránky Profil",
-        "Smazání vašeho účtu"
+        "Požádání o smazání vašeho účtu a profilového obrázku na pavel@kalandra.tech"
       ]
     },
     {
       "title": "Kontakt",
-      "content": "Pokud máte jakékoli dotazy ohledně těchto zásad ochrany osobních údajů nebo vašich osobních údajů, kontaktujte nás na pavel@kalandra.tech."
+      "content": "Pokud máte jakékoli dotazy ohledně těchto zásad, kontaktujte nás na pavel@kalandra.tech."
     },
     {
       "title": "Změny těchto zásad",
-      "content": "Tyto zásady ochrany osobních údajů můžeme čas od času aktualizovat. Veškeré změny budou zveřejněny na této stránce s aktualizovaným datem revize."
+      "content": "Tyto zásady můžeme čas od času aktualizovat. Změny budou zveřejněny na této stránce s aktualizovaným datem."
     }
   ]
 }

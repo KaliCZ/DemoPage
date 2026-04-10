@@ -9,7 +9,6 @@ using Kalandra.Infrastructure.Turnstile;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;
-using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -54,7 +53,7 @@ public class JobOffersController(
     {
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
-            return ValidationError("captcha", CreateOfferError.CaptchaFailed);
+            return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
         // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
         var files = (attachments ?? [])
@@ -83,15 +82,11 @@ public class JobOffersController(
 
         if (result.IsError)
         {
-            var error = result.Error.Get();
-            return error switch
+            return result.Error.Get() switch
             {
-                CreateJobOfferError.TooManyAttachments =>
-                    ValidationError("attachments", CreateOfferError.TooManyAttachments),
-                CreateJobOfferError.TotalSizeTooLarge =>
-                    ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
-                CreateJobOfferError.DisallowedContentType =>
-                    ValidationError("attachments", CreateOfferError.DisallowedContentType),
+                CreateJobOfferError.TooManyAttachments => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
+                CreateJobOfferError.TotalSizeTooLarge => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
+                CreateJobOfferError.DisallowedContentType => this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
             };
         }
 
@@ -137,13 +132,11 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get();
-                return error switch
+                return result.Error.Get() switch
                 {
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
-                    EditJobOfferError.NotSubmittedStatus =>
-                        ValidationError("status", EditOfferError.NotSubmittedStatus),
+                    EditJobOfferError.NotSubmittedStatus => this.ValidationError("status", EditOfferError.NotSubmittedStatus),
                 };
             }
 
@@ -178,13 +171,11 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get();
-                return error switch
+                return result.Error.Get() switch
                 {
                     CancelJobOfferError.NotFound => NotFound(),
                     CancelJobOfferError.NotAuthorized => Forbid(),
-                    CancelJobOfferError.InvalidStatus =>
-                        ValidationError("status", CancelOfferError.InvalidStatus),
+                    CancelJobOfferError.InvalidStatus => this.ValidationError("status", CancelOfferError.InvalidStatus),
                 };
             }
 
@@ -221,12 +212,11 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get();
-                return error switch
+                return result.Error.Get() switch
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
                     UpdateJobOfferStatusError.InvalidTransition =>
-                        ValidationError("status", UpdateOfferStatusError.InvalidTransition),
+                        this.ValidationError("status", UpdateOfferStatusError.InvalidTransition),
                 };
             }
 
@@ -258,8 +248,7 @@ public class JobOffersController(
 
         if (result.IsError)
         {
-            var error = result.Error.Get();
-            return error switch
+            return result.Error.Get() switch
             {
                 AddCommentError.NotFound => NotFound(),
                 AddCommentError.NotAuthorized => Forbid(),
@@ -354,7 +343,7 @@ public class JobOffersController(
         if (entries == null)
             return NotFound();
 
-        return new JobOfferHistoryResponse(entries.ToList());
+        return new JobOfferHistoryResponse(entries.Select(HistoryEntryResponse.Serialize));
     }
 
     // ───── List Comments ─────
@@ -370,7 +359,7 @@ public class JobOffersController(
         if (comments == null)
             return NotFound();
 
-        return new ListCommentsResponse(comments.Select(CommentResponse.Serialize).ToList());
+        return new ListCommentsResponse(comments.Select(CommentResponse.Serialize));
     }
 
     // ───── Private helpers ─────
@@ -396,12 +385,6 @@ public class JobOffersController(
             result.TotalCount);
     }
 
-    private ActionResult ValidationError<TError>(string field, TError error) where TError : struct, Enum
-    {
-        ModelState.AddModelError(field, error.ToString());
-        return ValidationProblem();
-    }
-
     private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)
     {
         try
@@ -416,4 +399,5 @@ public class JobOffersController(
                 detail: "Job offer was modified by another request."));
         }
     }
+
 }

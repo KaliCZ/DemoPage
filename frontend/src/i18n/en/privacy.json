@@ -4,65 +4,41 @@
     "description": "Privacy policy for kalandra.tech — how we collect, use, and protect your data."
   },
   "heading": "Privacy Policy",
-  "lastUpdated": "Last updated: April 4, 2026",
-  "intro": "This privacy policy explains how kalandra.tech (\"we\", \"us\", \"our\") collects, uses, and protects your personal information when you use our website.",
+  "lastUpdated": "Last updated: April 10, 2026",
+  "intro": "This privacy policy explains how kalandra.tech (\"we\", \"us\", \"our\") handles your personal information.",
   "sections": [
     {
-      "title": "Information We Collect",
-      "content": "When you create an account or use our services, we may collect the following information:",
+      "title": "What We Collect and Why",
+      "content": "We collect only what you provide through forms (account registration, profile updates, job offers, comments) and use it to operate the platform. Additionally, third-party services we rely on may collect technical data automatically:",
       "items": [
-        "Email address (when you sign up or sign in)",
-        "Name and profile information (when you sign in via Google OAuth)",
-        "Information you voluntarily submit through forms (e.g., job offers)",
-        "Authentication tokens and session data"
+        "Authentication — our auth provider stores your email, password hash, and OAuth tokens. Passwords are never stored in plain text.",
+        "Observability — error tracking, analytics, and monitoring tools may collect your IP address, browser type, and interaction data.",
+        "Cookies and local storage — used for your authentication session and preferences (dark mode, language). We do not use advertising cookies."
       ]
-    },
-    {
-      "title": "How We Use Your Information",
-      "content": "We use the collected information for the following purposes:",
-      "items": [
-        "To provide and maintain our services",
-        "To authenticate your identity and manage your account",
-        "To process and display job offers you submit",
-        "To communicate with you about your account or submissions",
-        "To improve our website and services"
-      ]
-    },
-    {
-      "title": "Authentication & Data Storage",
-      "content": "We use Supabase for authentication and data storage. Your authentication data (email, password hash, OAuth tokens) is managed by Supabase's infrastructure. Passwords are never stored in plain text. For more information, refer to Supabase's privacy policy."
-    },
-    {
-      "title": "Analytics & Observability",
-      "content": "We use third-party tools to monitor the performance and reliability of our website. Data such as page views, errors, logs, and usage patterns may be sent to services including, but not limited to, Sentry, PostHog, BetterStack, or other observability and analytics tools. These services may collect technical information such as your IP address, browser type, operating system, and interaction data. This data is used solely for improving the quality, performance, and security of our services."
-    },
-    {
-      "title": "Cookies & Local Storage",
-      "content": "We use browser local storage and cookies to manage your authentication session and remember your preferences (such as dark mode and language settings). We do not use third-party advertising cookies."
     },
     {
       "title": "Data Sharing",
-      "content": "We do not sell, trade, or rent your personal information to third parties. We may share data with service providers (Supabase, analytics and observability tools listed above) solely for the purpose of operating and improving our services."
+      "content": "We do not sell your data. Third-party service providers receive data solely for operating and improving the platform."
     },
     {
       "title": "Data Retention",
-      "content": "We retain your personal information for as long as your account is active or as needed to provide you with our services. You may request deletion of your account and associated personal data by contacting us. Please note that job offers you have submitted, including all related data and comments, are retained indefinitely as part of our permanent records and will not be deleted upon account deletion."
+      "content": "This platform exists for submitting and discussing job offers. Job offers you submit — including the contact information attached to them — and any comments are retained permanently as essential business records and cannot be deleted. You can request deletion of your account and profile picture by contacting us at pavel@kalandra.tech."
     },
     {
       "title": "Your Rights",
       "content": "You have the right to:",
       "items": [
         "Access the personal data we hold about you via your Profile page",
-        "Request deletion of your account"
+        "Request deletion of your account and profile picture by emailing pavel@kalandra.tech"
       ]
     },
     {
       "title": "Contact",
-      "content": "If you have any questions about this privacy policy or your personal data, please contact us at pavel@kalandra.tech."
+      "content": "If you have any questions about this privacy policy, please contact us at pavel@kalandra.tech."
     },
     {
       "title": "Changes to This Policy",
-      "content": "We may update this privacy policy from time to time. Any changes will be posted on this page with an updated revision date."
+      "content": "We may update this privacy policy from time to time. Changes will be posted on this page with an updated date."
     }
   ]
 }

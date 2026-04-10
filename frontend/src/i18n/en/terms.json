@@ -4,7 +4,7 @@
     "description": "Terms of service for kalandra.tech — rules and conditions for using our website."
   },
   "heading": "Terms of Service",
-  "lastUpdated": "Last updated: April 4, 2026",
+  "lastUpdated": "Last updated: April 10, 2026",
   "intro": "By accessing and using kalandra.tech (\"the website\"), you agree to be bound by these terms of service. If you do not agree with any part of these terms, please do not use the website.",
   "sections": [
     {
@@ -21,6 +21,10 @@
     {
       "title": "Account Termination",
       "content": "We reserve the right to suspend or terminate your account at our discretion if you violate these terms or engage in behavior that is harmful to the website or other users."
+    },
+    {
+      "title": "Data Permanence",
+      "content": "This platform is designed for submitting and discussing job offers. Job offers — including the contact information attached to them — and comments are retained permanently as business records and cannot be deleted. You may request deletion of your account and profile picture by contacting us. Please review our Privacy Policy for full details."
     },
     {
       "title": "Contact",

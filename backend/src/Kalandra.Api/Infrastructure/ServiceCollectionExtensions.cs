@@ -3,6 +3,7 @@ using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
+using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
 
@@ -75,6 +76,17 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddStorageServices(this IServiceCollection services)
     {
         services.AddHttpClient<IStorageService, SupabaseStorageService>();
+        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
+
+        services.AddSingleton(sp =>
+        {
+            var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseAuthConfig>();
+            var client = new Supabase.Client(
+                config.ProjectUrl.Value,
+                config.ServiceKey.Value);
+            client.InitializeAsync().Wait();
+            return client;
+        });
 
         return services;
     }

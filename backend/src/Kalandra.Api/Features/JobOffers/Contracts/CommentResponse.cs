@@ -19,4 +19,5 @@ public record CommentResponse(
         CreatedAt: comment.Timestamp);
 }
 
-public record ListCommentsResponse(List<CommentResponse> Comments);
+public record ListCommentsResponse(
+    IEnumerable<CommentResponse> Comments);

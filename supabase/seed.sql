@@ -40,7 +40,7 @@ BEGIN
     v_password,
     NOW(),
     '{"provider":"email","providers":["email"],"roles":["admin"]}',
-    '{"full_name":"Dev User"}',
+    '{"full_name":"Admin User"}',
     '',
     '',
     '',
@@ -108,6 +108,64 @@ BEGIN
       TO authenticated
       USING (
         bucket_id = 'job-offer-attachments'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+END $$;
+
+-- Storage RLS policies for avatars bucket.
+-- Files are stored at: {user_id}/avatar.{ext}
+-- Authenticated users can upload/update/delete their own avatar.
+-- Public URL serves files without RLS, but authenticated operations (upsert)
+-- need SELECT to check file existence. The SELECT policy is scoped to the
+-- user's own folder so they cannot list other users' files.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own avatar'
+  ) THEN
+    CREATE POLICY "Users can read own avatar"
+      ON storage.objects FOR SELECT
+      TO authenticated
+      USING (
+        bucket_id = 'avatars'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can upload own avatar'
+  ) THEN
+    CREATE POLICY "Users can upload own avatar"
+      ON storage.objects FOR INSERT
+      TO authenticated
+      WITH CHECK (
+        bucket_id = 'avatars'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own avatar'
+  ) THEN
+    CREATE POLICY "Users can update own avatar"
+      ON storage.objects FOR UPDATE
+      TO authenticated
+      USING (
+        bucket_id = 'avatars'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete own avatar'
+  ) THEN
+    CREATE POLICY "Users can delete own avatar"
+      ON storage.objects FOR DELETE
+      TO authenticated
+      USING (
+        bucket_id = 'avatars'
         AND (storage.foldername(name))[1] = auth.uid()::text
       );
   END IF;

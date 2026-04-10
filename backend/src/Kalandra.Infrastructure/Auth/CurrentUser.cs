@@ -12,7 +12,8 @@ public record CurrentUser(
     Guid Id,
     MailAddress Email,
     string FullName,
-    ImmutableArray<UserRole> Roles)
+    ImmutableArray<UserRole> Roles,
+    Uri? AvatarUrl = null)
 {
     public bool IsAdmin => Roles.Contains(UserRole.Admin);
 }

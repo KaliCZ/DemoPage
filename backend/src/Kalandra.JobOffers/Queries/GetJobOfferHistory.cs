@@ -10,6 +10,7 @@ public record GetJobOfferHistoryQuery(Guid Id, CurrentUser User);
 public record JobOfferHistoryEntry(
     string EventType,
     string Description,
+    Guid ActorUserId,
     string ActorEmail,
     DateTimeOffset Timestamp);
 
@@ -34,32 +35,38 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                 JobOfferSubmitted s => new JobOfferHistoryEntry(
                     EventType: "Submitted",
                     Description: "Job offer submitted",
+                    ActorUserId: s.UserId,
                     ActorEmail: s.UserEmail,
                     Timestamp: s.Timestamp),
                 JobOfferEdited ed => new JobOfferHistoryEntry(
                     EventType: "Edited",
                     Description: "Job offer edited",
+                    ActorUserId: ed.EditedByUserId,
                     ActorEmail: ed.EditedByEmail,
                     Timestamp: ed.Timestamp),
                 JobOfferStatusChanged sc => new JobOfferHistoryEntry(
                     EventType: "StatusChanged",
                     Description: $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
                         + (sc.Notes != null ? $" — {sc.Notes}" : ""),
+                    ActorUserId: sc.ChangedByUserId,
                     ActorEmail: sc.ChangedByEmail,
                     Timestamp: sc.Timestamp),
                 JobOfferCancelled c => new JobOfferHistoryEntry(
                     EventType: "Cancelled",
                     Description: "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
+                    ActorUserId: c.CancelledByUserId,
                     ActorEmail: c.CancelledByEmail,
                     Timestamp: c.Timestamp),
                 JobOfferCommentAdded cm => new JobOfferHistoryEntry(
                     EventType: "Comment",
                     Description: cm.Content,
+                    ActorUserId: cm.UserId,
                     ActorEmail: cm.UserEmail,
                     Timestamp: cm.Timestamp),
                 _ => new JobOfferHistoryEntry(
                     EventType: "Unknown",
                     Description: "Unknown event",
+                    ActorUserId: Guid.Empty,
                     ActorEmail: "",
                     Timestamp: DateTimeOffset.MinValue)
             })

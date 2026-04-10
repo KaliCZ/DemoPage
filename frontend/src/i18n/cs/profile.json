@@ -12,6 +12,25 @@
     "description": "Pro správu nastavení účtu musíte být přihlášeni.",
     "signInButton": "Přihlásit se"
   },
+  "avatar": {
+    "title": "Profilový obrázek",
+    "change": "Změnit obrázek",
+    "remove": "Odebrat",
+    "uploading": "Nahrávání…",
+    "success": "Profilový obrázek byl aktualizován.",
+    "removeSuccess": "Profilový obrázek byl odebrán.",
+    "error": "Nepodařilo se aktualizovat profilový obrázek.",
+    "maxSize": "Max 1 MB. JPEG, PNG nebo WebP.",
+    "tooLarge": "Soubor překračuje limit 1 MB.",
+    "invalidType": "Povoleny jsou pouze obrázky JPEG, PNG a WebP.",
+    "errors": {
+      "file": {
+        "EmptyFile": "Soubor je prázdný.",
+        "TooLarge": "Soubor překračuje limit 1 MB.",
+        "InvalidContentType": "Povoleny jsou pouze obrázky JPEG, PNG a WebP."
+      }
+    }
+  },
   "displayName": {
     "label": "Zobrazované jméno",
     "placeholder": "Vaše jméno",
