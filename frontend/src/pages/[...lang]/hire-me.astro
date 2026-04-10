@@ -24,6 +24,7 @@ const t = translations[lang];
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
     <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+    <p class="text-sm text-on-surface-variant font-body max-w-xl mt-3">{t.hero.subtitleInfo}</p>
   </section>
 
   <!-- Login prompt (shown when not authenticated) -->
@@ -142,7 +143,7 @@ const t = translations[lang];
   </section>
 
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', turnstileSiteKey: import.meta.env.PUBLIC_TURNSTILE_SITE_KEY, submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, captchaError: t.form.captchaError, captchaRequiredError: t.form.captchaRequiredError, successText: t.form.successTitle, validationStrings: t.form.validation, apiErrorMap: t.form.errors, jobOffersPath: localePath(lang, 'job-offers') }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || '', turnstileSiteKey: import.meta.env.PUBLIC_TURNSTILE_SITE_KEY, submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, captchaError: t.form.captchaError, captchaRequiredError: t.form.captchaRequiredError, successText: t.form.successTitle, validationStrings: t.form.validation, apiErrorMap: t.form.errors, jobOffersPath: localePath(lang, 'job-offers') }}>
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database in case the provider suspended it (e.g. Neon free tier).
     // The health endpoint runs a Postgres check, so this warms the connection

@@ -35,6 +35,7 @@ TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 Auth.Add(builder.Services, authConfig);
 builder.Services.AddAppCors(builder.Environment);
+builder.Services.AddMemoryCache();
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();

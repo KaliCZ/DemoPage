@@ -12,6 +12,25 @@
     "description": "You need to be signed in to manage your account settings.",
     "signInButton": "Sign In"
   },
+  "avatar": {
+    "title": "Profile Picture",
+    "change": "Change picture",
+    "remove": "Remove",
+    "uploading": "Uploading…",
+    "success": "Profile picture updated.",
+    "removeSuccess": "Profile picture removed.",
+    "error": "Failed to update profile picture.",
+    "maxSize": "Max 1 MB. JPEG, PNG, or WebP.",
+    "tooLarge": "File exceeds the 1 MB limit.",
+    "invalidType": "Only JPEG, PNG, and WebP images are allowed.",
+    "errors": {
+      "file": {
+        "EmptyFile": "File is empty.",
+        "TooLarge": "File exceeds the 1 MB limit.",
+        "InvalidContentType": "Only JPEG, PNG, and WebP images are allowed."
+      }
+    }
+  },
   "displayName": {
     "label": "Display Name",
     "placeholder": "Your name",

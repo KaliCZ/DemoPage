@@ -67,12 +67,13 @@ public static class Auth
                     OnTokenValidated = context =>
                     {
                         // Project app_metadata.roles into ASP.NET role claims so authorization works.
-                        // user_metadata (full_name etc.) is handled in HttpContextCurrentUserAccessor.
+                        // user_metadata (full_name, avatar_url etc.) is handled in HttpContextCurrentUserAccessor.
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity == null)
                             return Task.CompletedTask;
 
                         ExtractRolesFromAppMetadata(context.Principal!, identity);
+
                         return Task.CompletedTask;
                     }
                 };

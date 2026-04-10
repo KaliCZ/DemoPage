@@ -29,4 +29,4 @@ export function getSupabaseClient(): SupabaseClient | null {
  * In production: https://api.kalandra.tech
  * In development: http://localhost:5000
  */
-export const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
+export const API_URL = import.meta.env.PUBLIC_API_URL || '';

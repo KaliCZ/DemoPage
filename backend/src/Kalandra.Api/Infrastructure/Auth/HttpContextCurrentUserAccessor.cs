@@ -26,11 +26,15 @@ public class HttpContextCurrentUserAccessor(
         if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var email))
             return null;
 
+        var userMetadata = principal.FindFirstValue("user_metadata");
+        var (fullName, avatarUrl) = ExtractUserMetadata(userMetadata, email);
+
         return new CurrentUser(
             Id: userId,
             Email: email,
-            FullName: ExtractFullName(principal.FindFirstValue("user_metadata"), email),
-            Roles: ExtractRoles(principal)
+            FullName: fullName,
+            Roles: ExtractRoles(principal),
+            AvatarUrl: avatarUrl
         );
     }
 
@@ -51,24 +55,34 @@ public class HttpContextCurrentUserAccessor(
     }
 
     /// <summary>
-    /// Parses user_metadata looking for "full_name", falling back to the
-    /// email's local part.
+    /// Parses user_metadata looking for "full_name" and "avatar_url",
+    /// falling back to the email's local part for the name.
     /// </summary>
-    private static string ExtractFullName(string? userMetadata, MailAddress email)
+    private static (string FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
     {
         if (string.IsNullOrEmpty(userMetadata))
-            return email.User;
+            return (email.User, null);
 
         using var doc = JsonDocument.Parse(userMetadata);
 
-        if (doc.RootElement.TryGetProperty("full_name", out var fullName) &&
-            fullName.ValueKind == JsonValueKind.String)
+        string? fullName = null;
+        if (doc.RootElement.TryGetProperty("full_name", out var fullNameProp) &&
+            fullNameProp.ValueKind == JsonValueKind.String)
         {
-            var name = fullName.GetString();
+            var name = fullNameProp.GetString();
             if (!string.IsNullOrEmpty(name))
-                return name;
+                fullName = name;
         }
 
-        return email.User;
+        Uri? avatarUrl = null;
+        if (doc.RootElement.TryGetProperty("avatar_url", out var avatarProp) &&
+            avatarProp.ValueKind == JsonValueKind.String)
+        {
+            var url = avatarProp.GetString();
+            if (!string.IsNullOrEmpty(url))
+                Uri.TryCreate(url, UriKind.Absolute, out avatarUrl);
+        }
+
+        return (fullName ?? email.User, avatarUrl);
     }
 }
