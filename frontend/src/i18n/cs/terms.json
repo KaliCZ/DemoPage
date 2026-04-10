@@ -4,7 +4,7 @@
     "description": "Podmínky používání webu kalandra.tech — pravidla a podmínky pro používání našich stránek."
   },
   "heading": "Podmínky používání",
-  "lastUpdated": "Poslední aktualizace: 4. dubna 2026",
+  "lastUpdated": "Poslední aktualizace: 10. dubna 2026",
   "intro": "Přístupem na kalandra.tech (\"webové stránky\") a jejich používáním souhlasíte s těmito podmínkami používání. Pokud s jakoukoli částí těchto podmínek nesouhlasíte, stránky prosím nepoužívejte.",
   "sections": [
     {
@@ -21,6 +21,10 @@
     {
       "title": "Zrušení účtu",
       "content": "Vyhrazujeme si právo pozastavit nebo zrušit váš účet dle vlastního uvážení, pokud porušíte tyto podmínky nebo se budete chovat způsobem, který je škodlivý pro webové stránky nebo ostatní uživatele."
+    },
+    {
+      "title": "Trvalost dat",
+      "content": "Odesláním obsahu na tuto platformu (včetně vašeho jména, e-mailové adresy, profilového obrázku, pracovních nabídek a komentářů) berete na vědomí, že tato data jsou uchovávána trvale a nelze je smazat. Deaktivace účtu odstraní vaši možnost přihlášení, ale nesmaže dříve odeslaný obsah. Úplné podrobnosti naleznete v našich Zásadách ochrany osobních údajů."
     },
     {
       "title": "Kontakt",

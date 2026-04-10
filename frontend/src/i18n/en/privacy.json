@@ -4,7 +4,7 @@
     "description": "Privacy policy for kalandra.tech — how we collect, use, and protect your data."
   },
   "heading": "Privacy Policy",
-  "lastUpdated": "Last updated: April 4, 2026",
+  "lastUpdated": "Last updated: April 10, 2026",
   "intro": "This privacy policy explains how kalandra.tech (\"we\", \"us\", \"our\") collects, uses, and protects your personal information when you use our website.",
   "sections": [
     {
@@ -12,8 +12,8 @@
       "content": "When you create an account or use our services, we may collect the following information:",
       "items": [
         "Email address (when you sign up or sign in)",
-        "Name and profile information (when you sign in via Google OAuth)",
-        "Information you voluntarily submit through forms (e.g., job offers)",
+        "Name, profile picture, and profile information (when you update your profile or sign in via Google OAuth)",
+        "Information you voluntarily submit through forms (e.g., job offers, comments)",
         "Authentication tokens and session data"
       ]
     },
@@ -46,14 +46,14 @@
     },
     {
       "title": "Data Retention",
-      "content": "We retain your personal information for as long as your account is active or as needed to provide you with our services. You may request deletion of your account and associated personal data by contacting us. Please note that job offers you have submitted, including all related data and comments, are retained indefinitely as part of our permanent records and will not be deleted upon account deletion."
+      "content": "All content you submit to this platform — including your name, email address, profile picture, job offers, and comments — is retained permanently and cannot be deleted. This is similar to sending an email: once you share information with us, it becomes part of our records. Account deletion removes your ability to sign in but does not erase any previously submitted content or personal data. By using this platform, you acknowledge and accept this retention policy."
     },
     {
       "title": "Your Rights",
       "content": "You have the right to:",
       "items": [
         "Access the personal data we hold about you via your Profile page",
-        "Request deletion of your account"
+        "Request deactivation of your account (note: previously submitted content and personal data are not deleted)"
       ]
     },
     {

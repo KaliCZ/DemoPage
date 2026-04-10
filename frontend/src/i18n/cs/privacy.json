@@ -4,7 +4,7 @@
     "description": "Zásady ochrany osobních údajů pro kalandra.tech — jak shromažďujeme, používáme a chráníme vaše údaje."
   },
   "heading": "Zásady ochrany osobních údajů",
-  "lastUpdated": "Poslední aktualizace: 4. dubna 2026",
+  "lastUpdated": "Poslední aktualizace: 10. dubna 2026",
   "intro": "Tyto zásady ochrany osobních údajů vysvětlují, jak kalandra.tech (\"my\", \"nás\", \"naše\") shromažďuje, používá a chrání vaše osobní údaje při používání našich webových stránek.",
   "sections": [
     {
@@ -12,8 +12,8 @@
       "content": "Při vytvoření účtu nebo používání našich služeb můžeme shromažďovat následující údaje:",
       "items": [
         "E-mailová adresa (při registraci nebo přihlášení)",
-        "Jméno a profilové informace (při přihlášení přes Google OAuth)",
-        "Informace, které dobrovolně zadáte prostřednictvím formulářů (např. pracovní nabídky)",
+        "Jméno, profilový obrázek a profilové informace (při aktualizaci profilu nebo přihlášení přes Google OAuth)",
+        "Informace, které dobrovolně zadáte prostřednictvím formulářů (např. pracovní nabídky, komentáře)",
         "Autentizační tokeny a data relace"
       ]
     },
@@ -46,14 +46,14 @@
     },
     {
       "title": "Uchovávání dat",
-      "content": "Vaše osobní údaje uchováváme po dobu, kdy je váš účet aktivní, nebo po dobu potřebnou k poskytování našich služeb. Můžete požádat o smazání svého účtu a souvisejících osobních údajů tím, že nás kontaktujete. Upozorňujeme, že vámi zadané pracovní nabídky, včetně všech souvisejících dat a komentářů, jsou uchovávány trvale jako součást našich záznamů a nebudou smazány při zrušení účtu."
+      "content": "Veškerý obsah, který na tuto platformu odešlete — včetně vašeho jména, e-mailové adresy, profilového obrázku, pracovních nabídek a komentářů — je uchováván trvale a nelze jej smazat. Je to podobné jako odeslání e-mailu: jakmile s námi informace sdílíte, stávají se součástí našich záznamů. Zrušení účtu odstraní vaši možnost přihlášení, ale nesmaže žádný dříve odeslaný obsah ani osobní údaje. Používáním této platformy berete na vědomí a přijímáte tyto zásady uchovávání dat."
     },
     {
       "title": "Vaše práva",
       "content": "Máte právo na:",
       "items": [
         "Přístup k osobním údajům, které o vás uchováváme, prostřednictvím stránky Profil",
-        "Smazání vašeho účtu"
+        "Deaktivaci vašeho účtu (upozornění: dříve odeslaný obsah a osobní údaje nebudou smazány)"
       ]
     },
     {
