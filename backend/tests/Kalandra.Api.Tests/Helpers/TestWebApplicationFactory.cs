@@ -1,8 +1,7 @@
 using Kalandra.Infrastructure.Auth;
-using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
-using Kalandra.Infrastructure.Users;
+using Kalandra.Infrastructure.Avatars;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -39,13 +38,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<ISupabaseAdminService>();
             services.AddSingleton<ISupabaseAdminService>(FakeAdminService);
 
-            services.RemoveAll<SupabaseUserService>();
-            services.AddSingleton<SupabaseUserService>(sp =>
-                new SupabaseUserService(
-                    new HttpClient(new NoOpAvatarHandler()),
-                    sp.GetRequiredService<SupabaseAuthConfig>(),
-                    sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
-                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SupabaseUserService>>()));
+            services.RemoveAll<IAvatarService>();
+            services.AddSingleton<IAvatarService, NoOpAvatarService>();
+
+            services.RemoveAll<Supabase.Client>();
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,

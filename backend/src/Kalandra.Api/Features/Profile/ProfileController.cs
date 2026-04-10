@@ -1,7 +1,7 @@
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
-using Kalandra.Infrastructure.Users;
+using Kalandra.Infrastructure.Avatars;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +13,7 @@ namespace Kalandra.Api.Features.Profile;
 [Authorize]
 public class ProfileController(
     ICurrentUserAccessor currentUser,
-    SupabaseUserService userService) : ControllerBase
+    IAvatarService avatarService) : ControllerBase
 {
     private static readonly HashSet<string> AllowedContentTypes =
         ["image/jpeg", "image/png", "image/webp"];
@@ -38,9 +38,9 @@ public class ProfileController(
             return this.ValidationError("file", UploadAvatarError.InvalidContentType);
 
         await using var stream = file.OpenReadStream();
-        var publicUrl = await userService.UploadAvatarAsync(AppUser.Id, stream, file.ContentType, ct);
+        var publicUrl = await avatarService.UploadAvatarAsync(AppUser.Id, stream, file.ContentType, ct);
 
-        await userService.UpdateAvatarUrlAsync(AppUser.Id, publicUrl, ct);
+        await avatarService.UpdateAvatarUrlAsync(AppUser.Id, publicUrl, ct);
 
         return new AvatarResponse(AvatarUrl: publicUrl);
     }
@@ -49,8 +49,8 @@ public class ProfileController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAvatar(CancellationToken ct)
     {
-        await userService.DeleteAvatarFilesAsync(AppUser.Id, ct);
-        await userService.UpdateAvatarUrlAsync(AppUser.Id, avatarUrl: null, ct);
+        await avatarService.DeleteAvatarFilesAsync(AppUser.Id, ct);
+        await avatarService.UpdateAvatarUrlAsync(AppUser.Id, avatarUrl: null, ct);
 
         return NoContent();
     }

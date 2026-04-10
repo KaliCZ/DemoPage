@@ -6,7 +6,7 @@ using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
-using Kalandra.Infrastructure.Users;
+using Kalandra.Infrastructure.Avatars;
 using Kalandra.JobOffers;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
@@ -37,7 +37,7 @@ public class JobOffersController(
     GetJobOfferHistoryHandler historyHandler,
     ListCommentsHandler listCommentsHandler,
     GetAttachmentInfoHandler attachmentHandler,
-    SupabaseUserService userService,
+    IAvatarService avatarService,
     ITurnstileValidator turnstileValidator) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
@@ -358,7 +358,7 @@ public class JobOffersController(
         if (entries == null)
             return NotFound();
 
-        var avatars = await userService.GetAvatarUrlsAsync(entries.Select(e => e.ActorUserId), ct);
+        var avatars = await avatarService.GetAvatarUrlsAsync(entries.Select(e => e.ActorUserId), ct);
 
         return new JobOfferHistoryResponse(entries.Select(HistoryEntryResponse.Serialize), avatars);
     }
@@ -376,7 +376,7 @@ public class JobOffersController(
         if (comments == null)
             return NotFound();
 
-        var avatars = await userService.GetAvatarUrlsAsync(comments.Select(c => c.UserId), ct);
+        var avatars = await avatarService.GetAvatarUrlsAsync(comments.Select(c => c.UserId), ct);
 
         return new ListCommentsResponse(comments.Select(CommentResponse.Serialize), avatars);
     }
