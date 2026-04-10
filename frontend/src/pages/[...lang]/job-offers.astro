@@ -35,8 +35,15 @@ const c = commonTranslations[lang];
     <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
   </section>
 
+  <!-- Loading (shown until auth check completes) -->
+  <section id="auth-loading" class="max-w-5xl mx-auto px-8 mb-16">
+    <div class="text-center py-12">
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
+    </div>
+  </section>
+
   <!-- Login prompt -->
-  <section id="login-prompt" class="max-w-5xl mx-auto px-8 mb-16">
+  <section id="login-prompt" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
@@ -51,7 +58,7 @@ const c = commonTranslations[lang];
   <!-- Offers list -->
   <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <!-- Status filter dropdown -->
-    <div id="status-filter" class="hidden relative mb-6">
+    <div id="status-filter" class="relative mb-6">
       <button id="status-filter-toggle" type="button"
         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-sm font-label font-semibold text-on-surface hover:border-primary/30 transition-colors cursor-pointer"
         aria-haspopup="listbox" aria-expanded="false">
@@ -218,11 +225,15 @@ const c = commonTranslations[lang];
 
     window.addEventListener('auth-change', async function(e) {
       var user = e.detail?.user;
+      document.getElementById('auth-loading')?.classList.add('hidden');
       if (user) {
         if (loadedForUserId === user.id) return;
         loadedForUserId = user.id;
         document.getElementById('login-prompt')?.classList.add('hidden');
-        document.getElementById('offers-list-section')?.classList.remove('hidden');
+        var hasHash = location.hash.replace('#', '');
+        if (!hasHash) {
+          document.getElementById('offers-list-section')?.classList.remove('hidden');
+        }
         await loadOffers();
         checkHashOnLoad();
       } else {
@@ -252,7 +263,6 @@ const c = commonTranslations[lang];
       }
 
       document.getElementById('offers-loading')?.classList.add('hidden');
-      document.getElementById('status-filter')?.classList.remove('hidden');
       if (!response.ok) { showError(response.status); return; }
 
       var data = await response.json();
