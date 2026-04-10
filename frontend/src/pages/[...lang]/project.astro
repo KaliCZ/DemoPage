@@ -166,7 +166,8 @@ const t = translations[lang];
                     </div>
                     <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>{version.title}</h3>
                     {'time' in version && version.time && <p class:list={["font-label text-xs text-on-surface-variant", 'nextTime' in version && version.nextTime ? "mb-1" : "mb-4"]}>{version.time}</p>}
-                    {'nextTime' in version && version.nextTime && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.nextTime}</p>}
+                    {'nextTime' in version && version.nextTime && <p class:list={["font-label text-xs text-on-surface-variant/60 italic", 'timeNote' in version && version.timeNote ? "mb-1" : "mb-4"]}>{version.nextTime}</p>}
+                    {'timeNote' in version && version.timeNote && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.timeNote}</p>}
                     <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>{version.description}</p>
                     {hasDetails && (
                       <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
@@ -235,7 +236,8 @@ const t = translations[lang];
                     </div>
                     <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>{version.title}</h3>
                     {'time' in version && version.time && <p class:list={["font-label text-xs text-on-surface-variant", 'nextTime' in version && version.nextTime ? "mb-1" : "mb-4"]}>{version.time}</p>}
-                    {'nextTime' in version && version.nextTime && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.nextTime}</p>}
+                    {'nextTime' in version && version.nextTime && <p class:list={["font-label text-xs text-on-surface-variant/60 italic", 'timeNote' in version && version.timeNote ? "mb-1" : "mb-4"]}>{version.nextTime}</p>}
+                    {'timeNote' in version && version.timeNote && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.timeNote}</p>}
                     <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>{version.description}</p>
                     {hasDetails && (
                       <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">

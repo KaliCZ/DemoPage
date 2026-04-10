@@ -43,7 +43,7 @@ Simple site with domain, hosting and deployment pipeline.
 ---
 
 ### Version 2 — Backend Included
-**Status:** Done (~10 hours)
+**Status:** Done (~25 hours)
 
 Supabase Auth with Google OAuth, job offer submission form, and ASP.NET Core backend with Marten event sourcing. Users can submit, track, and cancel offers. Admin can review all submissions and update statuses.
 
@@ -349,6 +349,6 @@ Monetize job offer submissions via Stripe.
 |---|---|---|---|
 | 2026-03-26 | Setup | — | Initial project setup, documentation |
 | 2026-03-27 | v1 | ~7 hours | Static site, i18n, dark mode, language picker, SEO, accessibility |
-| 2026-03-28 – 2026-04-01 | v2 | ~20 hours | Auth (Supabase + Google OAuth), job offer form, ASP.NET Core backend with Marten event sourcing, CI/CD, Docker, integration + E2E tests |
+| 2026-03-28 – 2026-04-01 | v2 | ~25 hours | Auth (Supabase + Google OAuth), job offer form, ASP.NET Core backend with Marten event sourcing, CI/CD, Docker, integration + E2E tests |
 
 <!-- Add rows as work progresses. This table will be rendered on the project page. -->
