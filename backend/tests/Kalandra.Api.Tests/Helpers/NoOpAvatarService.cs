@@ -8,13 +8,10 @@ public class NoOpAvatarService : IAvatarService
         IEnumerable<Guid> userIds, CancellationToken ct) =>
         Task.FromResult(new Dictionary<Guid, Uri>());
 
-    public Task<Uri> UploadAvatarAsync(
+    public Task<Uri> ReplaceAvatarAsync(
         Guid userId, Stream content, string contentType, CancellationToken ct) =>
         Task.FromResult(new Uri($"https://test-project.supabase.co/storage/v1/object/public/avatars/{userId}/avatar.jpg"));
 
-    public Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl, CancellationToken ct) =>
-        Task.CompletedTask;
-
-    public Task DeleteAvatarFilesAsync(Guid userId, CancellationToken ct) =>
+    public Task RemoveAvatarAsync(Guid userId, CancellationToken ct) =>
         Task.CompletedTask;
 }

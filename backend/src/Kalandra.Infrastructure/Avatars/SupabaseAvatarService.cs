@@ -45,6 +45,45 @@ public class SupabaseAvatarService(
         return result;
     }
 
+    public async Task<Uri> ReplaceAvatarAsync(
+        Guid userId, Stream content, string contentType, CancellationToken ct)
+    {
+        var extension = contentType switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            "image/webp" => ".webp",
+            _ => throw new ArgumentException($"Unsupported content type: {contentType}", nameof(contentType))
+        };
+        var storagePath = $"{userId}/avatar{extension}";
+
+        // 1. Upload new file
+        using var ms = new MemoryStream();
+        await content.CopyToAsync(ms, ct);
+
+        await supabase.Storage.From(avatarBucket)
+            .Upload(
+                ms.ToArray(),
+                storagePath,
+                new Supabase.Storage.FileOptions { ContentType = contentType });
+
+        // 2. Update user metadata to point to the new avatar
+        var publicUrl = supabase.Storage.From(avatarBucket).GetPublicUrl(storagePath);
+        var avatarUri = new Uri($"{publicUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
+        await UpdateAvatarUrlAsync(userId, avatarUri);
+
+        // 3. Clean up old files (excluding the one we just uploaded)
+        await DeleteAvatarFilesAsync(userId, excludePath: storagePath, ct);
+
+        return avatarUri;
+    }
+
+    public async Task RemoveAvatarAsync(Guid userId, CancellationToken ct)
+    {
+        await DeleteAvatarFilesAsync(userId, excludePath: null, ct);
+        await UpdateAvatarUrlAsync(userId, avatarUrl: null);
+    }
+
     private async Task<Uri?> FetchAvatarUrlAsync(Guid userId)
     {
         try
@@ -68,35 +107,7 @@ public class SupabaseAvatarService(
         return null;
     }
 
-    public async Task<Uri> UploadAvatarAsync(
-        Guid userId, Stream content, string contentType, CancellationToken ct)
-    {
-        var extension = contentType switch
-        {
-            "image/jpeg" => ".jpg",
-            "image/png" => ".png",
-            "image/webp" => ".webp",
-            _ => throw new ArgumentException($"Unsupported content type: {contentType}", nameof(contentType))
-        };
-        var storagePath = $"{userId}/avatar{extension}";
-
-        using var ms = new MemoryStream();
-        await content.CopyToAsync(ms, ct);
-
-        await supabase.Storage.From(avatarBucket)
-            .Upload(
-                ms.ToArray(),
-                storagePath,
-                new Supabase.Storage.FileOptions { ContentType = contentType });
-
-        // Clean up old files only after the new upload succeeds
-        await DeleteAvatarFilesAsync(userId, storagePath, ct);
-
-        var publicUrl = supabase.Storage.From(avatarBucket).GetPublicUrl(storagePath);
-        return new Uri($"{publicUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
-    }
-
-    public async Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl, CancellationToken ct)
+    private async Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl)
     {
         await adminAuthClient.UpdateUserById(userId.ToString(), new Supabase.Gotrue.AdminUserAttributes
         {
@@ -108,9 +119,6 @@ public class SupabaseAvatarService(
 
         InvalidateCache(userId);
     }
-
-    public async Task DeleteAvatarFilesAsync(Guid userId, CancellationToken ct) =>
-        await DeleteAvatarFilesAsync(userId, excludePath: null, ct);
 
     private async Task DeleteAvatarFilesAsync(Guid userId, string? excludePath, CancellationToken ct)
     {

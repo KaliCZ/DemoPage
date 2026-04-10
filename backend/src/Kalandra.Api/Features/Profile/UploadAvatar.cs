@@ -1,4 +1,5 @@
 using Kalandra.Infrastructure.Avatars;
+using StrongTypes;
 
 namespace Kalandra.Api.Features.Profile;
 
@@ -23,8 +24,7 @@ public class UploadAvatarHandler(IAvatarService avatarService)
         if (!AllowedContentTypes.Contains(contentType))
             return Try.Error<Uri, UploadAvatarHandlerError>(UploadAvatarHandlerError.InvalidContentType);
 
-        var publicUrl = await avatarService.UploadAvatarAsync(userId, content, contentType, ct);
-        await avatarService.UpdateAvatarUrlAsync(userId, publicUrl, ct);
+        var publicUrl = await avatarService.ReplaceAvatarAsync(userId, content, contentType, ct);
 
         return Try.Success<Uri, UploadAvatarHandlerError>(publicUrl);
     }
