@@ -80,9 +80,6 @@ public class SupabaseAvatarService(
         };
         var storagePath = $"{userId}/avatar{extension}";
 
-        // Delete any existing avatar files first
-        await DeleteAvatarFilesAsync(userId, ct);
-
         using var ms = new MemoryStream();
         await content.CopyToAsync(ms, ct);
 
@@ -91,6 +88,9 @@ public class SupabaseAvatarService(
                 ms.ToArray(),
                 storagePath,
                 new Supabase.Storage.FileOptions { ContentType = contentType });
+
+        // Clean up old files only after the new upload succeeds
+        await DeleteAvatarFilesAsync(userId, storagePath, ct);
 
         var publicUrl = supabase.Storage.From(avatarBucket).GetPublicUrl(storagePath);
         return new Uri($"{publicUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
@@ -109,7 +109,10 @@ public class SupabaseAvatarService(
         InvalidateCache(userId);
     }
 
-    public async Task DeleteAvatarFilesAsync(Guid userId, CancellationToken ct)
+    public async Task DeleteAvatarFilesAsync(Guid userId, CancellationToken ct) =>
+        await DeleteAvatarFilesAsync(userId, excludePath: null, ct);
+
+    private async Task DeleteAvatarFilesAsync(Guid userId, string? excludePath, CancellationToken ct)
     {
         var storage = supabase.Storage.From(avatarBucket);
         var files = await storage.List(userId.ToString());
@@ -117,8 +120,13 @@ public class SupabaseAvatarService(
         if (files is not { Count: > 0 })
             return;
 
-        var paths = files.Select(f => $"{userId}/{f.Name}").ToList();
-        await storage.Remove(paths);
+        var paths = files
+            .Select(f => $"{userId}/{f.Name}")
+            .Where(p => p != excludePath)
+            .ToList();
+
+        if (paths.Count > 0)
+            await storage.Remove(paths);
     }
 
     private void InvalidateCache(Guid userId) => cache.Remove(AvatarCacheKey(userId));
