@@ -87,15 +87,11 @@ public class JobOffersController(
 
         if (result.IsError)
         {
-            var error = result.Error.Get();
-            return error switch
+            return result.Error.Get() switch
             {
-                CreateJobOfferError.TooManyAttachments =>
-                    this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
-                CreateJobOfferError.TotalSizeTooLarge =>
-                    this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
-                CreateJobOfferError.DisallowedContentType =>
-                    this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
+                CreateJobOfferError.TooManyAttachments => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
+                CreateJobOfferError.TotalSizeTooLarge => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
+                CreateJobOfferError.DisallowedContentType => this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
             };
         }
 
@@ -146,8 +142,7 @@ public class JobOffersController(
                 {
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
-                    EditJobOfferError.NotSubmittedStatus =>
-                        this.ValidationError("status", EditOfferError.NotSubmittedStatus),
+                    EditJobOfferError.NotSubmittedStatus => this.ValidationError("status", EditOfferError.NotSubmittedStatus),
                 };
             }
 

@@ -14,7 +14,12 @@ public static class ControllerExtensions
         public ActionResult ValidationError<TError>(string field, TError error)
             where TError : struct, Enum
         {
-            controller.ModelState.AddModelError(field, error.ToString());
+            return controller.ValidationError(field, error.ToString());
+        }
+
+        public ActionResult ValidationError(string field, string error)
+        {
+            controller.ModelState.AddModelError(field, error);
             return controller.ValidationProblem();
         }
     }

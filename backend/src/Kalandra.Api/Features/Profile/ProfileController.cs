@@ -29,15 +29,11 @@ public class ProfileController(
 
         if (result.IsError)
         {
-            var error = result.Error.Get();
-            return error switch
+            return result.Error.Get() switch
             {
-                UploadAvatarHandlerError.EmptyFile =>
-                    this.ValidationError("file", UploadAvatarError.EmptyFile),
-                UploadAvatarHandlerError.TooLarge =>
-                    this.ValidationError("file", UploadAvatarError.TooLarge),
-                UploadAvatarHandlerError.InvalidContentType =>
-                    this.ValidationError("file", UploadAvatarError.InvalidContentType),
+                UploadAvatarHandlerError.EmptyFile => this.ValidationError("file", UploadAvatarError.EmptyFile),
+                UploadAvatarHandlerError.TooLarge => this.ValidationError("file", UploadAvatarError.TooLarge),
+                UploadAvatarHandlerError.InvalidContentType => this.ValidationError("file", UploadAvatarError.InvalidContentType),
             };
         }
 
