@@ -28,7 +28,18 @@ public class ProfileController(
             AppUser.Id, stream, file.Length, file.ContentType, ct);
 
         if (result.IsError)
-            return this.ValidationError("file", result.Error.Get());
+        {
+            var error = result.Error.Get();
+            return error switch
+            {
+                UploadAvatarHandlerError.EmptyFile =>
+                    this.ValidationError("file", UploadAvatarError.EmptyFile),
+                UploadAvatarHandlerError.TooLarge =>
+                    this.ValidationError("file", UploadAvatarError.TooLarge),
+                UploadAvatarHandlerError.InvalidContentType =>
+                    this.ValidationError("file", UploadAvatarError.InvalidContentType),
+            };
+        }
 
         return new AvatarResponse(AvatarUrl: result.Success.Get());
     }

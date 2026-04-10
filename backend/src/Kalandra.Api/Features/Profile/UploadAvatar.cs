@@ -3,6 +3,8 @@ using StrongTypes;
 
 namespace Kalandra.Api.Features.Profile;
 
+public enum UploadAvatarHandlerError { EmptyFile, TooLarge, InvalidContentType }
+
 public class UploadAvatarHandler(IAvatarService avatarService)
 {
     private static readonly HashSet<string> AllowedContentTypes =
@@ -10,21 +12,21 @@ public class UploadAvatarHandler(IAvatarService avatarService)
 
     private const long MaxFileSize = 1 * 1024 * 1024; // 1 MB
 
-    public async Task<Try<Uri, UploadAvatarError>> HandleAsync(
+    public async Task<Try<Uri, UploadAvatarHandlerError>> HandleAsync(
         Guid userId, Stream content, long fileSize, string contentType, CancellationToken ct)
     {
         if (fileSize == 0)
-            return Try.Error<Uri, UploadAvatarError>(UploadAvatarError.EmptyFile);
+            return Try.Error<Uri, UploadAvatarHandlerError>(UploadAvatarHandlerError.EmptyFile);
 
         if (fileSize > MaxFileSize)
-            return Try.Error<Uri, UploadAvatarError>(UploadAvatarError.TooLarge);
+            return Try.Error<Uri, UploadAvatarHandlerError>(UploadAvatarHandlerError.TooLarge);
 
         if (!AllowedContentTypes.Contains(contentType))
-            return Try.Error<Uri, UploadAvatarError>(UploadAvatarError.InvalidContentType);
+            return Try.Error<Uri, UploadAvatarHandlerError>(UploadAvatarHandlerError.InvalidContentType);
 
         var publicUrl = await avatarService.UploadAvatarAsync(userId, content, contentType, ct);
         await avatarService.UpdateAvatarUrlAsync(userId, publicUrl, ct);
 
-        return Try.Success<Uri, UploadAvatarError>(publicUrl);
+        return Try.Success<Uri, UploadAvatarHandlerError>(publicUrl);
     }
 }
