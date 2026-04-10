@@ -13,6 +13,8 @@ public class SupabaseAvatarService(
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
     private const string AvatarBucket = "avatars";
+    private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> admin =
+        supabase.AdminAuth(authConfig.ServiceKey.Value);
 
     /// <summary>
     /// Resolves avatar URLs for the given user IDs. Returns only users that
@@ -47,10 +49,10 @@ public class SupabaseAvatarService(
     {
         try
         {
-            var user = await supabase.AdminAuth(authConfig.ServiceKey.Value)
+            var user = await admin
                 .GetUserById(userId.ToString());
 
-            if (user?.UserMetadata is Dictionary<string, object> metadata &&
+            if (user?.UserMetadata is { } metadata &&
                 metadata.TryGetValue("avatar_url", out var avatarUrlObj) &&
                 avatarUrlObj is string url &&
                 !string.IsNullOrEmpty(url) &&
@@ -96,7 +98,7 @@ public class SupabaseAvatarService(
 
     public async Task UpdateAvatarUrlAsync(Guid userId, Uri? avatarUrl, CancellationToken ct)
     {
-        await supabase.AdminAuth(authConfig.ServiceKey.Value)
+        await admin
             .UpdateUserById(
                 userId.ToString(),
                 new Supabase.Gotrue.AdminUserAttributes
