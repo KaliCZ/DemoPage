@@ -81,9 +81,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(sp =>
         {
             var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseAuthConfig>();
-            return new Supabase.Client(
+            var client = new Supabase.Client(
                 config.ProjectUrl.Value,
-                config.ServiceKey.Value);
+                config.ServiceKey.Value,
+                new Supabase.SupabaseOptions { AutoConnectRealtime = false });
+            client.InitializeAsync().GetAwaiter().GetResult();
+            return client;
         });
 
         return services;
