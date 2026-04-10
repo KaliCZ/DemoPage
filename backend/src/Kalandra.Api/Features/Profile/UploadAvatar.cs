@@ -1,5 +1,4 @@
 using Kalandra.Infrastructure.Avatars;
-using StrongTypes;
 
 namespace Kalandra.Api.Features.Profile;
 

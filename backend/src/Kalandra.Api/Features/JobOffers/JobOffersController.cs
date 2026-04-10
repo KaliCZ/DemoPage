@@ -7,12 +7,9 @@ using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Avatars;
-using Kalandra.JobOffers;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
-using Kalandra.JobOffers.Events;
 using Kalandra.JobOffers.Queries;
-using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -137,8 +134,7 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get();
-                return error switch
+                return result.Error.Get() switch
                 {
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
@@ -177,13 +173,11 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get();
-                return error switch
+                return result.Error.Get() switch
                 {
                     CancelJobOfferError.NotFound => NotFound(),
                     CancelJobOfferError.NotAuthorized => Forbid(),
-                    CancelJobOfferError.InvalidStatus =>
-                        this.ValidationError("status", CancelOfferError.InvalidStatus),
+                    CancelJobOfferError.InvalidStatus => this.ValidationError("status", CancelOfferError.InvalidStatus),
                 };
             }
 
@@ -220,8 +214,7 @@ public class JobOffersController(
 
             if (result.IsError)
             {
-                var error = result.Error.Get();
-                return error switch
+                return result.Error.Get() switch
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
                     UpdateJobOfferStatusError.InvalidTransition =>
@@ -257,8 +250,7 @@ public class JobOffersController(
 
         if (result.IsError)
         {
-            var error = result.Error.Get();
-            return error switch
+            return result.Error.Get() switch
             {
                 AddCommentError.NotFound => NotFound(),
                 AddCommentError.NotAuthorized => Forbid(),
