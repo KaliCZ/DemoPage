@@ -78,6 +78,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IStorageService, SupabaseStorageService>();
         services.AddSingleton<IAvatarService, SupabaseAvatarService>();
         services.AddSingleton<Features.Profile.UploadAvatarHandler>();
+        services.AddSingleton<Features.Profile.DeleteAvatarHandler>();
 
         services.AddSingleton(sp =>
         {

@@ -1,7 +1,6 @@
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
-using Kalandra.Infrastructure.Avatars;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,8 +12,8 @@ namespace Kalandra.Api.Features.Profile;
 [Authorize]
 public class ProfileController(
     ICurrentUserAccessor currentUser,
-    IAvatarService avatarService,
-    UploadAvatarHandler uploadAvatarHandler) : ControllerBase
+    UploadAvatarHandler uploadAvatarHandler,
+    DeleteAvatarHandler deleteAvatarHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
@@ -38,8 +37,7 @@ public class ProfileController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAvatar(CancellationToken ct)
     {
-        await avatarService.DeleteAvatarFilesAsync(AppUser.Id, ct);
-        await avatarService.UpdateAvatarUrlAsync(AppUser.Id, avatarUrl: null, ct);
+        await deleteAvatarHandler.HandleAsync(AppUser.Id, ct);
 
         return NoContent();
     }
