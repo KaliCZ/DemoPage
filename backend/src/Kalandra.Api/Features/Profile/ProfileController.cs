@@ -13,7 +13,8 @@ namespace Kalandra.Api.Features.Profile;
 [Authorize]
 public class ProfileController(
     ICurrentUserAccessor currentUser,
-    IAvatarService avatarService) : ControllerBase
+    IAvatarService avatarService,
+    UploadAvatarHandler uploadAvatarHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
@@ -23,21 +24,14 @@ public class ProfileController(
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AvatarResponse>> UploadAvatar(IFormFile file, CancellationToken ct)
     {
-        if (file.Length == 0)
-            return this.ValidationError("file", UploadAvatarError.EmptyFile);
-
-        if (file.Length > IAvatarService.MaxFileSize)
-            return this.ValidationError("file", UploadAvatarError.TooLarge);
-
-        if (!IAvatarService.AllowedContentTypes.Contains(file.ContentType))
-            return this.ValidationError("file", UploadAvatarError.InvalidContentType);
-
         await using var stream = file.OpenReadStream();
-        var publicUrl = await avatarService.UploadAvatarAsync(AppUser.Id, stream, file.ContentType, ct);
+        var result = await uploadAvatarHandler.HandleAsync(
+            AppUser.Id, stream, file.Length, file.ContentType, ct);
 
-        await avatarService.UpdateAvatarUrlAsync(AppUser.Id, publicUrl, ct);
+        if (result.IsError)
+            return this.ValidationError("file", result.Error.Get());
 
-        return new AvatarResponse(AvatarUrl: publicUrl);
+        return new AvatarResponse(AvatarUrl: result.Success.Get());
     }
 
     [HttpDelete("avatar")]

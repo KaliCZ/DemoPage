@@ -77,6 +77,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpClient<IStorageService, SupabaseStorageService>();
         services.AddSingleton<IAvatarService, SupabaseAvatarService>();
+        services.AddSingleton<Features.Profile.UploadAvatarHandler>();
 
         services.AddSingleton(sp =>
         {
@@ -85,7 +86,7 @@ public static class ServiceCollectionExtensions
                 config.ProjectUrl.Value,
                 config.ServiceKey.Value,
                 new Supabase.SupabaseOptions { AutoConnectRealtime = false });
-            client.InitializeAsync().GetAwaiter().GetResult();
+            client.InitializeAsync().Wait();
             return client;
         });
 
