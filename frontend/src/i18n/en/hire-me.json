@@ -5,7 +5,8 @@
   },
   "hero": {
     "title": "Hire Me",
-    "subtitle": "Have an exciting opportunity? Send me a job offer directly through this form. I personally review every submission and will respond via the contact email you provide. You can track the status of your offer on the Job Offers page at any time."
+    "subtitle": "Have an exciting opportunity? Send me a job offer directly through this form.",
+    "subtitleInfo": "I personally review every submission and will respond via the contact email you provide. You can track the status of your offer on the Job Offers page at any time."
   },
   "loginPrompt": {
     "title": "Authentication Required",

@@ -5,7 +5,8 @@
   },
   "hero": {
     "title": "Najměte mě",
-    "subtitle": "Máte zajímavou příležitost? Pošlete mi pracovní nabídku přímo přes tento formulář. Každou nabídku osobně posoudím a odpovím vám na zadaný kontaktní e-mail. Stav vaší nabídky můžete kdykoli sledovat na stránce Pracovní nabídky."
+    "subtitle": "Máte zajímavou příležitost? Pošlete mi pracovní nabídku přímo přes tento formulář.",
+    "subtitleInfo": "Každou nabídku osobně posoudím a odpovím vám na zadaný kontaktní e-mail. Stav vaší nabídky můžete kdykoli sledovat na stránce Pracovní nabídky."
   },
   "loginPrompt": {
     "title": "Vyžadováno přihlášení",
