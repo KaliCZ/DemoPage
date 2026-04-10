@@ -18,5 +18,4 @@ public record HistoryEntryResponse(
 }
 
 public record JobOfferHistoryResponse(
-    IEnumerable<HistoryEntryResponse> Entries,
-    Dictionary<Guid, Uri> Avatars);
+    IEnumerable<HistoryEntryResponse> Entries);

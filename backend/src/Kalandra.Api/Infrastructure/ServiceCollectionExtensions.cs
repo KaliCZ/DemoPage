@@ -3,7 +3,7 @@ using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
-using Kalandra.Infrastructure.Avatars;
+using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
 
@@ -76,8 +76,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddStorageServices(this IServiceCollection services)
     {
         services.AddHttpClient<IStorageService, SupabaseStorageService>();
-        services.AddSingleton<IAvatarService, SupabaseAvatarService>();
-        services.AddSingleton<Features.Profile.UploadAvatarHandler>();
+        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
 
         services.AddSingleton(sp =>
         {

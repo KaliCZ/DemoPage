@@ -73,6 +73,12 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    server: {
+      proxy: {
+        '/api': 'http://localhost:5000',
+        '/health': 'http://localhost:5000',
+      },
+    },
   }
 });

@@ -20,5 +20,4 @@ public record CommentResponse(
 }
 
 public record ListCommentsResponse(
-    IEnumerable<CommentResponse> Comments,
-    Dictionary<Guid, Uri> Avatars);
+    IEnumerable<CommentResponse> Comments);

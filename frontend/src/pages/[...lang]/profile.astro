@@ -100,7 +100,7 @@ const t = translations[lang];
     <IconGoogle class="w-5 h-5 flex-shrink-0" />
   </template>
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000', strings: { avatar: t.avatar, displayName: t.displayName, email: t.email, password: t.password, provider: t.provider }, avatarErrorMap: t.avatar.errors }}>
+  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || '', strings: { avatar: t.avatar, displayName: t.displayName, email: t.email, password: t.password, provider: t.provider }, avatarErrorMap: t.avatar.errors }}>
     var googleSvg = document.getElementById('google-icon-template').innerHTML.trim();
 
     function esc(str) {
@@ -446,36 +446,47 @@ const t = translations[lang];
       if (btn) { btn.textContent = strings.avatar.uploading; btn.disabled = true; }
 
       try {
-        var token = await window.__getAccessToken?.();
-        if (!token) throw new Error('Not authenticated');
+        var supabase = window.__supabase;
+        if (!supabase) throw new Error('Not authenticated');
 
-        var backendUrl = apiUrl;
-        var formData = new FormData();
-        formData.append('file', file);
+        // Get current user ID for the storage path
+        var { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) throw new Error('Not authenticated');
 
-        var res = await fetch(apiUrl + '/api/profile/avatar', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + token },
-          body: formData
+        var storagePath = currentUser.id + '/avatar';
+
+        // Upload directly to Supabase Storage (upsert overwrites existing)
+        var { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(storagePath, file, { contentType: file.type, upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Build public URL with cache-busting timestamp
+        var { data: urlData } = supabase.storage.from('avatars').getPublicUrl(storagePath);
+        var avatarUrl = urlData.publicUrl + '?t=' + Math.floor(Date.now() / 1000);
+
+        // Update user metadata with new avatar URL
+        var { error: updateError } = await supabase.auth.updateUser({
+          data: { avatar_url: avatarUrl }
         });
 
-        if (!res.ok) {
-          var msg = await window.__getApiError?.(res, avatarErrorMap);
-          throw new Error(msg || strings.avatar.error);
+        if (updateError) throw updateError;
+
+        // Refresh session and update UI
+        await supabase.auth.refreshSession();
+        var { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          updateAvatarPreview(avatarUrl, userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
+          window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
         }
 
-        var data = await res.json();
-
-        // Refresh session so the cached JWT contains the new user_metadata.avatar_url
-        var supabase = window.__supabase;
-        if (supabase) {
-          await supabase.auth.refreshSession();
-          var { data: userData } = await supabase.auth.getUser();
-          if (userData?.user) {
-            updateAvatarPreview(data.avatarUrl, userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
-            window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
-          }
-        }
+        // Invalidate the cached user info so other pages fetch the new avatar
+        try {
+          var uiCache = JSON.parse(localStorage.getItem('userInfoCache')) || {};
+          delete uiCache[currentUser.id];
+          localStorage.setItem('userInfoCache', JSON.stringify(uiCache));
+        } catch {}
 
         window.__showSnackbar?.(strings.avatar.success, 'success');
       } catch (err) {

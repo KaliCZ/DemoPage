@@ -1,5 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
+import JobOfferDetail from '../../../components/JobOfferDetail.astro';
 import { locales, defaultLocale, localePath, type Locale } from '../../../i18n/utils';
 import enStrings from '../../../i18n/en/admin-job-offers.json';
 import csStrings from '../../../i18n/cs/admin-job-offers.json';
@@ -97,62 +98,10 @@ const c = commonTranslations[lang];
     <div id="offers-grid" class="hidden grid gap-4"></div>
   </section>
 
-  <!-- Detail view -->
-  <section id="offer-detail-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
-    <button id="back-to-list" type="button" class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8 cursor-pointer">
-      <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
-      {t.list.back}
-    </button>
-    <div id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"></div>
-
-    <!-- Admin status update -->
-    <div id="admin-controls" class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
-      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">{t.list.updateStatus}</h3>
-      <div class="flex flex-col sm:flex-row gap-4">
-        <select id="status-select" class="px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-          <option value="Submitted">{t.list.submitted}</option>
-          <option value="InReview">{t.list.inReview}</option>
-          <option value="LetsTalk">{t.list.accepted}</option>
-          <option value="Declined">{t.list.declined}</option>
-        </select>
-        <textarea id="admin-notes-input" rows="2" placeholder={t.list.adminNotes}
-          class="flex-1 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"></textarea>
-        <button id="save-status" type="button"
-          class="px-6 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer self-start">
-          {t.list.save}
-        </button>
-      </div>
-    </div>
-
-    <!-- Comments -->
-    <div id="comments-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
-      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-        <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">chat</span>
-        {t.list.comments}
-      </h3>
-      <div id="comments-list" class="space-y-4 mb-4"></div>
-      <div class="flex gap-3">
-        <textarea id="comment-input" rows="2" placeholder={t.list.commentPlaceholder}
-          class="flex-1 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"></textarea>
-        <button id="send-comment" type="button"
-          class="px-5 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer self-end">
-          {t.list.commentSend}
-        </button>
-      </div>
-    </div>
-
-    <!-- Activity log -->
-    <div id="history-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
-      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-        <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">history</span>
-        {t.list.history}
-      </h3>
-      <div id="history-list" class="space-y-3"></div>
-    </div>
-  </section>
+  <JobOfferDetail isAdmin={true} t={t} />
 
   <script define:vars={{
-    apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000',
+    apiUrl: import.meta.env.PUBLIC_API_URL || '',
     filterByStatusLabel: t.list.filterByStatus,
     statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
     remoteLabel: t.list.remote,
@@ -190,6 +139,63 @@ const c = commonTranslations[lang];
     var currentOffer = null;
     var currentToken = null;
     var activeStatuses = [];
+    var loadedForUserId = null;
+
+    // Client-side user info cache: userId → { displayName, avatarUrl, _ts }
+    // Persisted in localStorage so it survives page refreshes and works across tabs.
+    // Entries expire after 5 minutes to pick up avatar/name changes.
+    var USER_INFO_CACHE_KEY = 'userInfoCache';
+    var USER_INFO_CACHE_TTL = 5 * 60 * 1000;
+
+    function loadUserInfoCache() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(USER_INFO_CACHE_KEY)) || {};
+        var now = Date.now();
+        var valid = {};
+        for (var id in raw) {
+          if (raw[id] && raw[id]._ts && (now - raw[id]._ts) < USER_INFO_CACHE_TTL) {
+            valid[id] = raw[id];
+          }
+        }
+        return valid;
+      } catch { return {}; }
+    }
+
+    function saveUserInfoCache(cache) {
+      try { localStorage.setItem(USER_INFO_CACHE_KEY, JSON.stringify(cache)); } catch {}
+    }
+
+    var userInfoCache = loadUserInfoCache();
+
+    async function fetchUserInfo(userIds) {
+      if (!userIds || userIds.length === 0) return {};
+      var uncached = userIds.filter(function(id, i, arr) { return !(id in userInfoCache) && arr.indexOf(id) === i; });
+      if (uncached.length > 0) {
+        try {
+          var token = await window.__getAccessToken?.();
+          var res = await fetch(apiUrl + '/api/users?ids=' + uncached.join('&ids='), {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            var data = await res.json();
+            var now = Date.now();
+            for (var id in data) {
+              data[id]._ts = now;
+              userInfoCache[id] = data[id];
+            }
+            uncached.forEach(function(id) {
+              if (!(id in userInfoCache)) userInfoCache[id] = { _ts: now };
+            });
+            saveUserInfoCache(userInfoCache);
+          }
+        } catch (e) { /* user info fetch is best-effort */ }
+      }
+      var result = {};
+      userIds.forEach(function(id) {
+        if (userInfoCache[id] && userInfoCache[id].displayName) result[id] = userInfoCache[id];
+      });
+      return result;
+    }
 
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
@@ -212,6 +218,7 @@ const c = commonTranslations[lang];
       document.getElementById('admin-loading')?.classList.add('hidden');
 
       if (!user) {
+        loadedForUserId = null;
         document.getElementById('access-denied')?.classList.remove('hidden');
         document.getElementById('offers-list-section')?.classList.add('hidden');
         return;
@@ -219,10 +226,14 @@ const c = commonTranslations[lang];
 
       var isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf('admin') !== -1;
       if (!isAdmin) {
+        loadedForUserId = null;
         document.getElementById('access-denied')?.classList.remove('hidden');
         document.getElementById('offers-list-section')?.classList.add('hidden');
         return;
       }
+
+      if (loadedForUserId === user.id) return;
+      loadedForUserId = user.id;
 
       document.getElementById('access-denied')?.classList.add('hidden');
       document.getElementById('offers-list-section')?.classList.remove('hidden');
@@ -304,8 +315,8 @@ const c = commonTranslations[lang];
 
       renderDetail(offer);
       renderControls(offer);
-      if (historyRes.ok) renderHistory(await historyRes.json());
-      if (commentsRes.ok) renderComments(await commentsRes.json());
+      if (historyRes.ok) await renderHistory(await historyRes.json());
+      if (commentsRes.ok) await renderComments(await commentsRes.json());
     }
 
     function renderDetail(offer) {
@@ -390,7 +401,7 @@ const c = commonTranslations[lang];
       }
     }
 
-    function renderHistory(history) {
+    async function renderHistory(history) {
       var historyList = document.getElementById('history-list');
       if (!historyList) return;
       var entries = history.entries.filter(function(e) { return e.eventType !== 'Comment'; });
@@ -398,39 +409,51 @@ const c = commonTranslations[lang];
         historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + '</p>';
         return;
       }
+      var users = await fetchUserInfo(entries.map(function(e) { return e.actorUserId; }));
       historyList.innerHTML = '';
       entries.forEach(function(entry) {
         var icon = eventIcons[entry.eventType] || 'info';
         var el = document.createElement('div');
         el.className = 'flex items-start gap-3 text-sm';
+        var userInfo = users[entry.actorUserId];
+        var actorHtml = userInfo && userInfo.avatarUrl
+          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+          : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
+        var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
         el.innerHTML =
-          '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>' +
+          actorHtml +
           '<div class="flex-1 min-w-0">' +
             '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
-            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(entry.actorEmail) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
+            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(actorName) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
           '</div>';
         historyList.appendChild(el);
       });
     }
 
-    function renderComments(data) {
+    async function renderComments(data) {
       var list = document.getElementById('comments-list');
       if (!list) return;
       if (data.comments.length === 0) {
         list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + '</p>';
         return;
       }
+      var users = await fetchUserInfo(data.comments.map(function(c) { return c.userId; }));
       list.innerHTML = '';
       data.comments.forEach(function(c) {
         var el = document.createElement('div');
         el.className = 'flex gap-3';
+        var userInfo = users[c.userId];
+        var displayName = (userInfo && userInfo.displayName) || c.userName;
+        var avatarHtml = userInfo && userInfo.avatarUrl
+          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+          : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
+              '<span class="text-xs font-bold text-on-primary-container">' + esc(displayName.charAt(0).toUpperCase()) + '</span>' +
+            '</div>';
         el.innerHTML =
-          '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
-            '<span class="text-xs font-bold text-on-primary-container">' + esc(c.userName.charAt(0).toUpperCase()) + '</span>' +
-          '</div>' +
+          avatarHtml +
           '<div class="flex-1 min-w-0">' +
             '<div class="flex items-baseline gap-2">' +
-              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(c.userName) + '</span>' +
+              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(displayName) + '</span>' +
               '<span class="text-xs font-label text-on-surface-variant">' + new Date(c.createdAt).toLocaleString() + '</span>' +
             '</div>' +
             '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' + esc(c.content) + '</p>' +
@@ -478,11 +501,11 @@ const c = commonTranslations[lang];
         var commentsRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
-        if (commentsRes.ok) renderComments(await commentsRes.json());
+        if (commentsRes.ok) await renderComments(await commentsRes.json());
         var historyRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/history', {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
-        if (historyRes.ok) renderHistory(await historyRes.json());
+        if (historyRes.ok) await renderHistory(await historyRes.json());
       } else {
         await showApiError(res);
       }

@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import JobOfferDetail from '../../components/JobOfferDetail.astro';
 import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
 import enStrings from '../../i18n/en/job-offers.json';
 import csStrings from '../../i18n/cs/job-offers.json';
@@ -98,135 +99,10 @@ const c = commonTranslations[lang];
     <div id="offers-grid" class="hidden grid gap-4"></div>
   </section>
 
-  <!-- Detail view -->
-  <section id="offer-detail-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
-    <button id="back-to-list" type="button" class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8 cursor-pointer">
-      <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
-      {t.list.back}
-    </button>
-    <div id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"></div>
-
-    <!-- Edit form (hidden by default, shown when editing) -->
-    <div id="edit-form-section" class="hidden mt-6">
-      <form id="edit-form" novalidate class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label for="edit-companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.companyName}</label>
-            <input type="text" id="edit-companyName" name="companyName" required maxlength="200" placeholder={f.companyNamePlaceholder}
-              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-          </div>
-          <div>
-            <label for="edit-contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.contactName}</label>
-            <input type="text" id="edit-contactName" name="contactName" required maxlength="200" placeholder={f.contactNamePlaceholder}
-              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label for="edit-contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.contactEmail}</label>
-            <input type="email" id="edit-contactEmail" name="contactEmail" required maxlength="255" placeholder={f.contactEmailPlaceholder}
-              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-          </div>
-          <div>
-            <label for="edit-jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.jobTitle}</label>
-            <input type="text" id="edit-jobTitle" name="jobTitle" required maxlength="200" placeholder={f.jobTitlePlaceholder}
-              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-          </div>
-        </div>
-        <div>
-          <label for="edit-description" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.description}</label>
-          <textarea id="edit-description" name="description" required maxlength="5000" rows="5" placeholder={f.descriptionPlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label for="edit-salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.salaryRange}</label>
-            <input type="text" id="edit-salaryRange" name="salaryRange" maxlength="100" placeholder={f.salaryRangePlaceholder}
-              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-          </div>
-          <div>
-            <label for="edit-location" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.location}</label>
-            <input type="text" id="edit-location" name="location" maxlength="200" placeholder={f.locationPlaceholder}
-              class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <input type="checkbox" id="edit-isRemote" name="isRemote"
-            class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary" />
-          <label for="edit-isRemote" class="text-sm font-label font-semibold text-on-surface">{f.isRemote}</label>
-        </div>
-        <div>
-          <label for="edit-additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{f.additionalNotes}</label>
-          <textarea id="edit-additionalNotes" name="additionalNotes" maxlength="2000" rows="3" placeholder={f.additionalNotesPlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
-        </div>
-        <div id="edit-error" class="hidden text-error text-sm font-body"></div>
-        <div class="flex gap-4">
-          <button type="submit" class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
-            {t.list.editSave}
-          </button>
-          <button type="button" id="edit-discard" class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer">
-            {t.list.editCancel}
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <!-- User actions (edit / cancel) -->
-    <div id="user-actions" class="hidden mt-6 flex gap-4">
-      <button id="edit-btn" type="button"
-        class="hidden flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
-        <span class="material-symbols-outlined text-lg" aria-hidden="true">edit</span>
-        {t.list.edit}
-      </button>
-      <button id="cancel-btn" type="button"
-        class="hidden flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold font-label bg-error text-on-primary hover:bg-error/90 transition-colors cursor-pointer">
-        <span class="material-symbols-outlined text-lg" aria-hidden="true">cancel</span>
-        {t.list.cancel}
-      </button>
-    </div>
-
-    <!-- Cancel confirmation -->
-    <div id="cancel-controls" class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
-      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">{t.list.cancel}</h3>
-      <p class="text-sm text-on-surface-variant font-body mb-4">{t.list.cancelConfirm}</p>
-      <textarea id="cancel-reason" rows="2" placeholder={t.list.cancelReason}
-        class="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y mb-4"></textarea>
-      <button id="confirm-cancel" type="button"
-        class="px-6 py-2 rounded-xl text-sm font-semibold font-label bg-error text-on-primary hover:bg-error/90 transition-colors cursor-pointer">
-        {t.list.cancelButton}
-      </button>
-    </div>
-
-    <!-- Comments -->
-    <div id="comments-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
-      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-        <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">chat</span>
-        {t.list.comments}
-      </h3>
-      <div id="comments-list" class="space-y-4 mb-4"></div>
-      <div class="flex gap-3">
-        <textarea id="comment-input" rows="2" placeholder={t.list.commentPlaceholder}
-          class="flex-1 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"></textarea>
-        <button id="send-comment" type="button"
-          class="px-5 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer self-end">
-          {t.list.commentSend}
-        </button>
-      </div>
-    </div>
-
-    <!-- Activity log -->
-    <div id="history-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
-      <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-        <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">history</span>
-        {t.list.history}
-      </h3>
-      <div id="history-list" class="space-y-3"></div>
-    </div>
-  </section>
+  <JobOfferDetail isAdmin={false} t={t} f={f} />
 
   <script define:vars={{
-    apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:5000',
+    apiUrl: import.meta.env.PUBLIC_API_URL || '',
     hireMeUrl: localePath(lang, 'hire-me'),
     filterByStatusLabel: t.list.filterByStatus,
     statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
@@ -267,6 +143,62 @@ const c = commonTranslations[lang];
     var currentToken = null;
     var activeStatuses = [];
     var loadedForUserId = null;
+
+    // Client-side user info cache: userId → { displayName, avatarUrl, _ts }
+    // Persisted in localStorage so it survives page refreshes and works across tabs.
+    // Entries expire after 5 minutes to pick up avatar/name changes.
+    var USER_INFO_CACHE_KEY = 'userInfoCache';
+    var USER_INFO_CACHE_TTL = 5 * 60 * 1000;
+
+    function loadUserInfoCache() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(USER_INFO_CACHE_KEY)) || {};
+        var now = Date.now();
+        var valid = {};
+        for (var id in raw) {
+          if (raw[id] && raw[id]._ts && (now - raw[id]._ts) < USER_INFO_CACHE_TTL) {
+            valid[id] = raw[id];
+          }
+        }
+        return valid;
+      } catch { return {}; }
+    }
+
+    function saveUserInfoCache(cache) {
+      try { localStorage.setItem(USER_INFO_CACHE_KEY, JSON.stringify(cache)); } catch {}
+    }
+
+    var userInfoCache = loadUserInfoCache();
+
+    async function fetchUserInfo(userIds) {
+      if (!userIds || userIds.length === 0) return {};
+      var uncached = userIds.filter(function(id, i, arr) { return !(id in userInfoCache) && arr.indexOf(id) === i; });
+      if (uncached.length > 0) {
+        try {
+          var token = await window.__getAccessToken?.();
+          var res = await fetch(apiUrl + '/api/users?ids=' + uncached.join('&ids='), {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            var data = await res.json();
+            var now = Date.now();
+            for (var id in data) {
+              data[id]._ts = now;
+              userInfoCache[id] = data[id];
+            }
+            uncached.forEach(function(id) {
+              if (!(id in userInfoCache)) userInfoCache[id] = { _ts: now };
+            });
+            saveUserInfoCache(userInfoCache);
+          }
+        } catch (e) { /* user info fetch is best-effort */ }
+      }
+      var result = {};
+      userIds.forEach(function(id) {
+        if (userInfoCache[id] && userInfoCache[id].displayName) result[id] = userInfoCache[id];
+      });
+      return result;
+    }
 
     var statusColors = {
       Submitted: 'bg-secondary-container text-on-surface',
@@ -360,6 +292,7 @@ const c = commonTranslations[lang];
       if (!skipHashUpdate) history.pushState(null, '', '#' + id);
       document.getElementById('offers-list-section')?.classList.add('hidden');
       document.getElementById('offer-detail-section')?.classList.remove('hidden');
+      document.getElementById('offer-detail')?.classList.remove('hidden');
       document.getElementById('edit-form-section')?.classList.add('hidden');
       document.getElementById('cancel-controls')?.classList.add('hidden');
 
@@ -381,8 +314,8 @@ const c = commonTranslations[lang];
 
       renderDetail(offer);
       renderControls(offer);
-      if (historyRes.ok) renderHistory(await historyRes.json());
-      if (commentsRes.ok) renderComments(await commentsRes.json());
+      if (historyRes.ok) await renderHistory(await historyRes.json());
+      if (commentsRes.ok) await renderComments(await commentsRes.json());
     }
 
     function renderDetail(offer) {
@@ -466,7 +399,7 @@ const c = commonTranslations[lang];
       if (cancelBtn) cancelBtn.classList.toggle('hidden', !canCancel);
     }
 
-    function renderHistory(history) {
+    async function renderHistory(history) {
       var historyList = document.getElementById('history-list');
       if (!historyList) return;
       // Filter out Comment events — those are shown in the comments section
@@ -475,49 +408,51 @@ const c = commonTranslations[lang];
         historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + '</p>';
         return;
       }
+      var users = await fetchUserInfo(entries.map(function(e) { return e.actorUserId; }));
       historyList.innerHTML = '';
-      var avatars = history.avatars || {};
       entries.forEach(function(entry) {
         var icon = eventIcons[entry.eventType] || 'info';
         var el = document.createElement('div');
         el.className = 'flex items-start gap-3 text-sm';
-        var avatarUrl = avatars[entry.actorUserId];
-        var actorHtml = avatarUrl
-          ? '<img src="' + esc(avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+        var userInfo = users[entry.actorUserId];
+        var actorHtml = userInfo && userInfo.avatarUrl
+          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
           : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
+        var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
         el.innerHTML =
           actorHtml +
           '<div class="flex-1 min-w-0">' +
             '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
-            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(entry.actorEmail) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
+            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(actorName) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
           '</div>';
         historyList.appendChild(el);
       });
     }
 
-    function renderComments(data) {
+    async function renderComments(data) {
       var list = document.getElementById('comments-list');
       if (!list) return;
       if (data.comments.length === 0) {
         list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + '</p>';
         return;
       }
+      var users = await fetchUserInfo(data.comments.map(function(c) { return c.userId; }));
       list.innerHTML = '';
-      var avatars = data.avatars || {};
       data.comments.forEach(function(c) {
         var el = document.createElement('div');
         el.className = 'flex gap-3';
-        var avatarUrl = avatars[c.userId];
-        var avatarHtml = avatarUrl
-          ? '<img src="' + esc(avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+        var userInfo = users[c.userId];
+        var displayName = (userInfo && userInfo.displayName) || c.userName;
+        var avatarHtml = userInfo && userInfo.avatarUrl
+          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
           : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
-              '<span class="text-xs font-bold text-on-primary-container">' + esc(c.userName.charAt(0).toUpperCase()) + '</span>' +
+              '<span class="text-xs font-bold text-on-primary-container">' + esc(displayName.charAt(0).toUpperCase()) + '</span>' +
             '</div>';
         el.innerHTML =
           avatarHtml +
           '<div class="flex-1 min-w-0">' +
             '<div class="flex items-baseline gap-2">' +
-              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(c.userName) + '</span>' +
+              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(displayName) + '</span>' +
               '<span class="text-xs font-label text-on-surface-variant">' + new Date(c.createdAt).toLocaleString() + '</span>' +
             '</div>' +
             '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' + esc(c.content) + '</p>' +
@@ -699,12 +634,12 @@ const c = commonTranslations[lang];
         var commentsRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
-        if (commentsRes.ok) renderComments(await commentsRes.json());
+        if (commentsRes.ok) await renderComments(await commentsRes.json());
         // Reload history too
         var historyRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/history', {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
-        if (historyRes.ok) renderHistory(await historyRes.json());
+        if (historyRes.ok) await renderHistory(await historyRes.json());
       } else {
         await showApiError(res);
       }

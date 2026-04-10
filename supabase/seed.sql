@@ -116,12 +116,24 @@ END $$;
 -- Storage RLS policies for avatars bucket.
 -- Files are stored at: {user_id}/avatar.{ext}
 -- Authenticated users can upload/update/delete their own avatar.
--- No SELECT policy — avatars are served via the public bucket URL, which
--- bypasses RLS. This prevents unauthenticated users from listing folders
--- (and discovering user IDs) while still allowing direct image access.
+-- Public URL serves files without RLS, but authenticated operations (upsert)
+-- need SELECT to check file existence. The SELECT policy is scoped to the
+-- user's own folder so they cannot list other users' files.
 
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own avatar'
+  ) THEN
+    CREATE POLICY "Users can read own avatar"
+      ON storage.objects FOR SELECT
+      TO authenticated
+      USING (
+        bucket_id = 'avatars'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+      );
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE policyname = 'Users can upload own avatar'
   ) THEN
