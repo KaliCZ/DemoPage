@@ -5,7 +5,7 @@
   },
   "hero": {
     "title": "Hire Me",
-    "subtitle": "Have an exciting opportunity? Send me a job offer directly through this form."
+    "subtitle": "Have an exciting opportunity? Send me a job offer directly through this form. I personally review every submission and will respond via the contact email you provide. You can track the status of your offer on the Job Offers page at any time."
   },
   "loginPrompt": {
     "title": "Authentication Required",
@@ -36,7 +36,7 @@
     "submit": "Submit Offer",
     "submitting": "Submitting...",
     "successTitle": "Offer Submitted!",
-    "successMessage": "Thank you for your interest. I'll review your offer and get back to you.",
+    "successMessage": "Thank you for your interest. I'll review your offer and get back to you via email. You can track its status on the Job Offers page.",
     "captchaError": "Please complete the CAPTCHA verification.",
     "captchaRequiredError": "You've submitted several offers recently. Please verify you're human and try again.",
     "errorMessage": "Something went wrong. Please try again.",

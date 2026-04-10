@@ -5,7 +5,7 @@
   },
   "hero": {
     "title": "Najměte mě",
-    "subtitle": "Máte zajímavou příležitost? Pošlete mi pracovní nabídku přímo přes tento formulář."
+    "subtitle": "Máte zajímavou příležitost? Pošlete mi pracovní nabídku přímo přes tento formulář. Každou nabídku osobně posoudím a odpovím vám na zadaný kontaktní e-mail. Stav vaší nabídky můžete kdykoli sledovat na stránce Pracovní nabídky."
   },
   "loginPrompt": {
     "title": "Vyžadováno přihlášení",
@@ -36,7 +36,7 @@
     "submit": "Odeslat nabídku",
     "submitting": "Odesílám...",
     "successTitle": "Nabídka odeslána!",
-    "successMessage": "Děkuji za váš zájem. Vaši nabídku zkontroluji a ozvu se vám.",
+    "successMessage": "Děkuji za váš zájem. Vaši nabídku posoudím a ozvu se vám e-mailem. Její stav můžete sledovat na stránce Pracovní nabídky.",
     "captchaError": "Prosím dokončete ověření CAPTCHA.",
     "captchaRequiredError": "V poslední době jste odeslali několik nabídek. Potvrďte prosím, že jste člověk, a zkuste to znovu.",
     "errorMessage": "Něco se pokazilo. Zkuste to prosím znovu.",
