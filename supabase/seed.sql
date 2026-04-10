@@ -40,7 +40,7 @@ BEGIN
     v_password,
     NOW(),
     '{"provider":"email","providers":["email"],"roles":["admin"]}',
-    '{"full_name":"Dev User"}',
+    '{"full_name":"Admin User"}',
     '',
     '',
     '',
