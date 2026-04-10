@@ -48,39 +48,35 @@ public class SupabaseAvatarService(
     public async Task<Uri> ReplaceAvatarAsync(
         Guid userId, Stream content, string contentType, CancellationToken ct)
     {
-        var extension = contentType switch
-        {
-            "image/jpeg" => ".jpg",
-            "image/png" => ".png",
-            "image/webp" => ".webp",
-            _ => throw new ArgumentException($"Unsupported content type: {contentType}", nameof(contentType))
-        };
-        var storagePath = $"{userId}/avatar{extension}";
+        var storagePath = $"{userId}/avatar";
+        var fileOptions = new Supabase.Storage.FileOptions { ContentType = contentType };
 
-        // 1. Upload new file
         using var ms = new MemoryStream();
         await content.CopyToAsync(ms, ct);
+        var data = ms.ToArray();
 
-        await supabase.Storage.From(avatarBucket)
-            .Upload(
-                ms.ToArray(),
-                storagePath,
-                new Supabase.Storage.FileOptions { ContentType = contentType });
+        var storage = supabase.Storage.From(avatarBucket);
 
-        // 2. Update user metadata to point to the new avatar
-        var publicUrl = supabase.Storage.From(avatarBucket).GetPublicUrl(storagePath);
+        try
+        {
+            await storage.Upload(data, storagePath, fileOptions);
+        }
+        catch
+        {
+            // File already exists — overwrite it
+            await storage.Update(data, storagePath, fileOptions);
+        }
+
+        var publicUrl = storage.GetPublicUrl(storagePath);
         var avatarUri = new Uri($"{publicUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
         await UpdateAvatarUrlAsync(userId, avatarUri);
-
-        // 3. Clean up old files (excluding the one we just uploaded)
-        await DeleteAvatarFilesAsync(userId, excludePath: storagePath, ct);
 
         return avatarUri;
     }
 
     public async Task RemoveAvatarAsync(Guid userId, CancellationToken ct)
     {
-        await DeleteAvatarFilesAsync(userId, excludePath: null, ct);
+        await supabase.Storage.From(avatarBucket).Remove([$"{userId}/avatar"]);
         await UpdateAvatarUrlAsync(userId, avatarUrl: null);
     }
 
@@ -118,23 +114,6 @@ public class SupabaseAvatarService(
         });
 
         cache.Remove(AvatarCacheKey(userId));
-    }
-
-    private async Task DeleteAvatarFilesAsync(Guid userId, string? excludePath, CancellationToken ct)
-    {
-        var storage = supabase.Storage.From(avatarBucket);
-        var files = await storage.List(userId.ToString());
-
-        if (files is not { Count: > 0 })
-            return;
-
-        var paths = files
-            .Select(f => $"{userId}/{f.Name}")
-            .Where(p => p != excludePath)
-            .ToList();
-
-        if (paths.Count > 0)
-            await storage.Remove(paths);
     }
 
     private static string AvatarCacheKey(Guid userId) => $"avatar:{userId}";
