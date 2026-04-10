@@ -49,23 +49,15 @@ public class SupabaseAvatarService(
         Guid userId, Stream content, string contentType, CancellationToken ct)
     {
         var storagePath = $"{userId}/avatar";
-        var fileOptions = new Supabase.Storage.FileOptions { ContentType = contentType };
 
         using var ms = new MemoryStream();
         await content.CopyToAsync(ms, ct);
-        var data = ms.ToArray();
 
         var storage = supabase.Storage.From(avatarBucket);
-
-        try
-        {
-            await storage.Upload(data, storagePath, fileOptions);
-        }
-        catch
-        {
-            // File already exists — overwrite it
-            await storage.Update(data, storagePath, fileOptions);
-        }
+        await storage.Upload(
+            ms.ToArray(),
+            storagePath,
+            new Supabase.Storage.FileOptions { ContentType = contentType, Upsert = true });
 
         var publicUrl = storage.GetPublicUrl(storagePath);
         var avatarUri = new Uri($"{publicUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}");
