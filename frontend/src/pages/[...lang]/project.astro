@@ -52,6 +52,7 @@ const t = translations[lang];
           <div>
             <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.timeLabel}</div>
             <div class="font-body font-semibold text-on-surface">{t.quickStats.timeValue}</div>
+            {t.quickStats.timeNote && <div class="font-body text-xs text-on-surface-variant/60 italic mt-1">{t.quickStats.timeNote}</div>}
           </div>
           <div>
             <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.costOneTimeLabel}</div>

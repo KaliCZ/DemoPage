@@ -17,6 +17,7 @@
     "versionValue": "v2.0",
     "timeLabel": "Čas strávený",
     "timeValue": "32 hodin",
+    "timeNote": "Pouze prvotní nasazení. Vylepšení a iterace přidávají výrazně více.",
     "sourceLabel": "Zdrojový kód",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "Jednorázové náklady",

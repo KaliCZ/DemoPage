@@ -17,6 +17,7 @@
     "versionValue": "v2.0",
     "timeLabel": "Time Spent So Far",
     "timeValue": "32 hours",
+    "timeNote": "Initial rollout only. Improvements and iteration add significantly more.",
     "sourceLabel": "Source",
     "sourceValue": "GitHub",
     "costOneTimeLabel": "One-Time Cost",
