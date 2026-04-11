@@ -49,7 +49,7 @@
   "goals": {
     "title": "Cíle a požadavky",
     "items": [
-      { "icon": "person", "title": "Osobní prezentace", "description": "Představit se potenciálním zaměstnavatelům a recruiterům na www.kalandra.tech." },
+      { "icon": "person", "title": "Osobní prezentace", "description": "Představit se potenciálním zaměstnavatelům a recruiterům." },
       { "icon": "construction", "title": "Ukázka dovedností", "description": "Zdokumentovat proces stavby jako součást ukázky — architektura, rozhodnutí a pokrok." },
       { "icon": "science", "title": "Technologické hřiště", "description": "Experimentovat s novými technologiemi v reálném, nasazeném projektu.", "subItems": ["Event sourcing", "Cloudflare Pages zdarma", "Ekosystém Supabase", "Temporal"] }
     ],

@@ -49,7 +49,7 @@
   "goals": {
     "title": "Goals & Requirements",
     "items": [
-      { "icon": "person", "title": "Personal Showcase", "description": "Present myself to potential employers and recruiters at www.kalandra.tech." },
+      { "icon": "person", "title": "Personal Showcase", "description": "Present myself to potential employers and recruiters." },
       { "icon": "construction", "title": "Skills Demonstration", "description": "Document the building process as part of the showcase — architecture, decisions, and progress." },
       { "icon": "science", "title": "Technology Playground", "description": "Experiment with new technologies in a real, deployed project.", "subItems": ["Event sourcing", "Free Cloudflare Pages", "Supabase ecosystem", "Temporal"] }
     ],
