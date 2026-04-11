@@ -4,7 +4,7 @@
 
 Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core (.NET 10) backend with Marten (event sourcing) deployed to Oracle Cloud, connecting to Supabase PostgreSQL. Local dev uses Docker PostgreSQL.
 
-See `docs/PROJECT.md` for full architecture, roadmap, and decision log.
+See the `/project` page (`frontend/src/pages/[...lang]/project.astro`) for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
 
 ## Commands (all from repo root)
@@ -96,7 +96,6 @@ backend/
 supabase/
   config.toml              # Local Supabase config (auth, ports, email settings)
 docs/
-  PROJECT.md               # Source of truth for goals, architecture, roadmap
   SETUP.md                 # Step-by-step setup guide for backend & deployment
 ```
 
@@ -148,4 +147,4 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 ## Build & Deploy
 
 See `docs/SETUP.md` for local development setup, run configurations, test commands, and deployment infrastructure.
-See `docs/PROJECT.md` for architecture, tech stack, decision log, and roadmap.
+See the `/project` page for architecture, tech stack, decision log, and roadmap.
