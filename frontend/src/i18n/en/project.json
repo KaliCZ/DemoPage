@@ -118,7 +118,7 @@
       },
       {
         "id": "frontend-framework",
-        "title": "Frontend Framework → Astro SSG with Vue Islands",
+        "title": "Frontend Framework → Astro SSG",
         "summary": "Astro in SSG mode with Vue components hydrated only where needed.",
         "context": "Need a frontend framework for a mostly-static site hosted on Cloudflare Pages. Requirements: Tailwind CSS, i18n (Czech/English), progressive interactivity, minimal JS shipped to users.",
         "decision": "Astro in static site generation (SSG) mode. Interactive components use vanilla JS, with the option of Vue islands for complex UI logic. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN.",

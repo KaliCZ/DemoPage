@@ -118,7 +118,7 @@
       },
       {
         "id": "frontend-framework",
-        "title": "Frontend Framework → Astro SSG s Vue Islands",
+        "title": "Frontend Framework → Astro SSG",
         "summary": "Astro v SSG režimu s Vue komponentami hydratovanými jen tam, kde je třeba.",
         "context": "Potřebujeme frontend framework pro převážně statický web na Cloudflare Pages. Požadavky: Tailwind CSS, i18n (čeština/angličtina), progresivní interaktivita, minimum JS pro uživatele.",
         "decision": "Astro ve statickém režimu (SSG). Interaktivní komponenty používají vanilla JS, s možností Vue islands pro složitější UI logiku. Žádné Cloudflare Workers — Pages servíruje čisté HTML/CSS/JS z CDN.",
