@@ -2,11 +2,8 @@
 
 The API layer is the HTTP boundary of the backend. It lives in `backend/src/Kalandra.Api/` and is the only project that references ASP.NET Core. Its job is to translate HTTP into handler calls, translate handler results back into HTTP responses, and enforce cross-cutting HTTP concerns (auth, rate limiting, content negotiation, problem details). **It must not contain business logic.**
 
-> This document is the full-rationale companion to the `Key Conventions` bullets in `CLAUDE.md`. Read CLAUDE.md first for the short rules; come here when you need the why, the shape, or a concrete example.
-
 ## Table of contents
 
-- [Project layout](#project-layout)
 - [Controller responsibilities](#controller-responsibilities)
 - [Vertical slice structure](#vertical-slice-structure)
 - [Request & response DTOs](#request--response-dtos)
@@ -16,32 +13,6 @@ The API layer is the HTTP boundary of the backend. It lives in `backend/src/Kala
 - [Rate limiting](#rate-limiting)
 - [Concurrency handling](#concurrency-handling)
 - [What controllers must not do](#what-controllers-must-not-do)
-
-## Project layout
-
-```
-Kalandra.Api/
-  Program.cs                # Host + pipeline wiring
-  GlobalUsings.cs           # global using StrongTypes;
-  Infrastructure/
-    Auth/                   # JWT validation, AuthPolicies, ICurrentUserAccessor
-    ControllerValidationError.cs  # ValidationError<TError>() extension
-    RateLimits.cs           # Named policies + OnRejected handler
-    ServiceCollectionExtensions.cs
-    AuthorizeOperationFilter.cs   # Swagger decoration
-    CommitHashHealthCheck.cs
-  Features/
-    JobOffers/
-      JobOffersController.cs
-      Contracts/            # Request/response DTOs and API error enums
-    Auth/
-      AuthController.cs
-      Contracts/
-    Users/
-      UsersController.cs
-```
-
-Each HTTP feature lives in its own folder under `Features/`. A feature owns its controller and its `Contracts/` subfolder; it never reaches into another feature's contracts.
 
 ## Controller responsibilities
 
@@ -54,51 +25,7 @@ A controller action has a strict, short job:
 5. **Map** handler error enums onto API error enums and HTTP status codes via an exhaustive `switch` expression.
 6. **Serialize** the success value to a typed response DTO.
 
-Nothing else. No LINQ queries, no direct Marten calls, no business rules. See `Kalandra.Api/Features/JobOffers/JobOffersController.cs` for a full example.
-
-### Example: `Create` action shape
-
-```csharp
-public async Task<ActionResult<GetJobOfferDetailResponse>> Create(
-    [FromForm] CreateJobOfferRequest request,
-    [FromForm] List<IFormFile>? attachments,
-    [FromForm(Name = "cf-turnstile-response")] string? turnstileToken,
-    CancellationToken ct)
-{
-    // 2. HTTP-only guard
-    if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
-        return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
-
-    // 3. Build command
-    var command = new CreateJobOfferCommand(
-        User: AppUser,
-        CompanyName: request.CompanyName.AsNonEmpty().Get(),
-        // ...
-        Timestamp: timeProvider.GetUtcNow());
-
-    // 4. Call handler
-    var result = await createHandler.HandleAsync(command, ct);
-
-    // 5. Map errors
-    if (result.IsError)
-    {
-        return result.Error.Get() switch
-        {
-            CreateJobOfferError.TooManyAttachments   => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
-            CreateJobOfferError.TotalSizeTooLarge    => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
-            CreateJobOfferError.DisallowedContentType => this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
-        };
-    }
-
-    // 6. Serialize success
-    var streamId = result.Success.Get();
-    var offer = await getDetailHandler.HandleAsync(new GetJobOfferDetailQuery(streamId, AppUser), ct);
-    return CreatedAtAction(nameof(GetDetail), new { id = streamId },
-        GetJobOfferDetailResponse.Serialize(offer!, AppUser));
-}
-```
-
-The `switch` expression has no default arm — the compiler enforces that every domain error is explicitly mapped. Adding a new variant to the domain enum breaks the build until the controller is updated.
+Nothing else. No LINQ queries, no direct Marten calls, no business rules. See `JobOffersController.cs` for a full example.
 
 ## Vertical slice structure
 
