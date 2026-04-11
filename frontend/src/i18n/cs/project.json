@@ -71,7 +71,11 @@
     "authentication": "Autentizace",
     "fileStorage": "Avatary / Soubory",
     "cicd": "CI / CD",
-    "pipeline": "Build + Test → GHCR → Deploy",
+    "pipelineBackendTests": "Backend testy",
+    "pipelineFrontendTests": "Frontend testy",
+    "pipelineE2eTests": "E2E testy",
+    "pipelineDeployBackend": "BE deploy na VPS",
+    "pipelineDeployFrontend": "FE deploy na Cloudflare",
     "notifications": "NOTIFIKACE",
     "observability": "OBSERVABILITA"
   },

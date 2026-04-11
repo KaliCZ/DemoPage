@@ -10,7 +10,11 @@ interface Props {
     authentication: string;
     fileStorage: string;
     cicd: string;
-    pipeline: string;
+    pipelineBackendTests: string;
+    pipelineFrontendTests: string;
+    pipelineE2eTests: string;
+    pipelineDeployBackend: string;
+    pipelineDeployFrontend: string;
     notifications: string;
     observability: string;
   };
@@ -274,7 +278,7 @@ const { t, class: className, ...rest } = Astro.props;
       fill="none" stroke="var(--color-outline)" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arrow)" />
 
     <!-- Supabase Auth → Brevo Email (auth emails) -->
-    <path d="M482,535 C620,535 690,440 723,390"
+    <path d="M482,535 C620,535 690,460 723,420"
       fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
 
     <!-- ===== CI/CD GROUP ===== -->
@@ -286,36 +290,52 @@ const { t, class: className, ...rest } = Astro.props;
 
       <!-- GitHub Actions -->
       <g>
-        <rect x="730" y="58" width="120" height="44" rx="8"
+        <rect x="730" y="58" width="120" height="102" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <circle cx="746" cy="77" r="3" fill="var(--color-outline)" opacity="0.6" />
-        <text x="754" y="81"
+        <circle cx="746" cy="74" r="3" fill="var(--color-outline)" opacity="0.6" />
+        <text x="754" y="78"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
           GitHub Actions
         </text>
-        <text x="790" y="95" text-anchor="middle"
+        <text x="746" y="96"
           fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
-          {t.pipeline}
+          {t.pipelineBackendTests}
+        </text>
+        <text x="746" y="109"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          {t.pipelineFrontendTests}
+        </text>
+        <text x="746" y="122"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          {t.pipelineE2eTests}
+        </text>
+        <text x="746" y="135"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          {t.pipelineDeployBackend}
+        </text>
+        <text x="746" y="148"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          {t.pipelineDeployFrontend}
         </text>
       </g>
     </g>
 
     <!-- ===== OBSERVABILITY GROUP ===== -->
     <g>
-      <text x="850" y="130" text-anchor="end"
+      <text x="850" y="188" text-anchor="end"
         fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
         {t.observability}
       </text>
 
       <!-- Sentry (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="140" width="120" height="32" rx="8"
+        <rect x="730" y="198" width="120" height="32" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="161" text-anchor="middle"
+        <text x="790" y="219" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
           Sentry
         </text>
-        <g transform="translate(838, 156)">
+        <g transform="translate(838, 214)">
           <g class="planned-spinner">
             <circle cx="0" cy="0" r="5" fill="none"
               stroke="var(--color-outline-variant)" stroke-width="1.2" />
@@ -327,13 +347,13 @@ const { t, class: className, ...rest } = Astro.props;
 
       <!-- PostHog (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="182" width="120" height="32" rx="8"
+        <rect x="730" y="240" width="120" height="32" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="203" text-anchor="middle"
+        <text x="790" y="261" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
           PostHog
         </text>
-        <g transform="translate(838, 198)">
+        <g transform="translate(838, 256)">
           <g class="planned-spinner">
             <circle cx="0" cy="0" r="5" fill="none"
               stroke="var(--color-outline-variant)" stroke-width="1.2" />
@@ -345,13 +365,13 @@ const { t, class: className, ...rest } = Astro.props;
 
       <!-- BetterStack (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="224" width="120" height="32" rx="8"
+        <rect x="730" y="282" width="120" height="32" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="245" text-anchor="middle"
+        <text x="790" y="303" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
           BetterStack
         </text>
-        <g transform="translate(838, 240)">
+        <g transform="translate(838, 298)">
           <g class="planned-spinner">
             <circle cx="0" cy="0" r="5" fill="none"
               stroke="var(--color-outline-variant)" stroke-width="1.2" />
@@ -364,20 +384,20 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== NOTIFICATIONS GROUP ===== -->
     <g>
-      <text x="850" y="290" text-anchor="end"
+      <text x="850" y="348" text-anchor="end"
         fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
         {t.notifications}
       </text>
 
       <!-- Slack (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="300" width="120" height="32" rx="8"
+        <rect x="730" y="358" width="120" height="32" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="321" text-anchor="middle"
+        <text x="790" y="379" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="12" font-weight="600">
           Slack
         </text>
-        <g transform="translate(838, 316)">
+        <g transform="translate(838, 374)">
           <g class="planned-spinner">
             <circle cx="0" cy="0" r="5" fill="none"
               stroke="var(--color-outline-variant)" stroke-width="1.2" />
@@ -389,13 +409,13 @@ const { t, class: className, ...rest } = Astro.props;
 
       <!-- Email -->
       <g>
-        <rect x="730" y="342" width="120" height="44" rx="8"
+        <rect x="730" y="400" width="120" height="44" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <text x="790" y="361" text-anchor="middle"
+        <text x="790" y="419" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="12" font-weight="600">
           Brevo
         </text>
-        <text x="790" y="377" text-anchor="middle"
+        <text x="790" y="435" text-anchor="middle"
           fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
           Email (SMTP)
         </text>
@@ -403,11 +423,11 @@ const { t, class: className, ...rest } = Astro.props;
     </g>
 
     <!-- Arrow: Backend API → Slack (planned, dashed) -->
-    <path d="M578,148 L723,314"
+    <path d="M578,148 L723,372"
       fill="none" stroke="var(--color-outline-variant)" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-muted)" />
 
     <!-- Arrow: Backend API → Email -->
-    <path d="M578,158 L723,362"
+    <path d="M578,158 L723,420"
       fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
   </svg>
 </div>

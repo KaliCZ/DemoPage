@@ -71,7 +71,11 @@
     "authentication": "Authentication",
     "fileStorage": "Avatars / Files",
     "cicd": "CI / CD",
-    "pipeline": "Build + Test → GHCR → Deploy",
+    "pipelineBackendTests": "Backend tests",
+    "pipelineFrontendTests": "Frontend tests",
+    "pipelineE2eTests": "E2E tests",
+    "pipelineDeployBackend": "BE deploy to VPS",
+    "pipelineDeployFrontend": "FE deploy to Cloudflare",
     "notifications": "NOTIFICATIONS",
     "observability": "OBSERVABILITY"
   },
