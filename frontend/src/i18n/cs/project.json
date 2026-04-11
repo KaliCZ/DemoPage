@@ -139,16 +139,16 @@
       },
       {
         "id": "marten-event-sourcing",
-        "title": "Event Sourcing → Marten",
-        "summary": "Marten event sourcing pro sledování životního cyklu pracovních nabídek na PostgreSQL.",
-        "context": "Pracovní nabídky mají životní cyklus (Podáno → Přezkoumáváno → Přijato/Odmítnuto/Zrušeno), kde je sledování kompletní historie změn cenné pro uživatele i admina.",
-        "decision": "Použít Marten s event sourcingem pro správu stavu pracovních nabídek.",
+        "title": "Event Sourcing → Marten na PostgreSQL",
+        "summary": "Framework Marten na PostgreSQL místo vlastní implementace na MongoDB.",
+        "context": "Event sourcing byl jasná volba — otázka byla, jestli ho stavět od nuly na MongoDB nebo použít zavedený framework. Tohle je první implementace event sourcingu, takže záleží na křivce učení a rychlosti.",
+        "decision": "Použít Marten na PostgreSQL — vyspělý .NET event sourcing framework běžící na stejné databázi, kterou už máme.",
         "why": [
-          "Události poskytují přirozený audit trail — každá změna stavu je zachycena neměnně",
-          "Activity log (event stream) je prvotřídní feature, ne přilepená audit tabulka",
+          "Žádná extra infrastruktura — využívá existující Supabase PostgreSQL, není potřeba provozovat MongoDB",
           "Inline snapshot projekce udržují read modely bez extra kódu",
-          "Používá přímo PostgreSQL — stejná databáze, žádná další infrastruktura",
-          "Vzor Apply() metody dělá přechody stavů explicitními a testovatelnými"
+          "Vzor Apply() metody dělá přechody stavů explicitními a testovatelnými",
+          "Vyspělý framework s dobrou dokumentací — rychlejší na naučení než stavba od nuly",
+          "Activity log (event stream) je prvotřídní feature, ne přilepená audit tabulka"
         ]
       },
       {

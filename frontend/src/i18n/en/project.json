@@ -139,16 +139,16 @@
       },
       {
         "id": "marten-event-sourcing",
-        "title": "Event Sourcing → Marten",
-        "summary": "Marten event sourcing for job offer lifecycle tracking on PostgreSQL.",
-        "context": "Job offers have a lifecycle (Submitted → InReview → Accepted/Declined/Cancelled) where tracking the full history of changes is valuable for both the user and admin.",
-        "decision": "Use Marten with event sourcing for job offer state management.",
+        "title": "Event Sourcing → Marten on PostgreSQL",
+        "summary": "Marten framework on PostgreSQL instead of a custom implementation on MongoDB.",
+        "context": "Event sourcing was a given — the question was whether to build it from scratch on MongoDB or use an established framework. This is the first event sourcing implementation, so learning curve and speed matter.",
+        "decision": "Use Marten on PostgreSQL — a mature .NET event sourcing framework that runs on the same database we already have.",
         "why": [
-          "Events provide a natural audit trail — every status change is captured immutably",
-          "The activity log (event stream) is a first-class feature, not a bolted-on audit table",
+          "No extra infrastructure — reuses the existing Supabase PostgreSQL, no need to run MongoDB",
           "Inline snapshot projections maintain read models with zero extra code",
-          "Uses PostgreSQL directly — same database, no additional infrastructure",
-          "The Apply() method pattern makes state transitions explicit and testable"
+          "The Apply() method pattern makes state transitions explicit and testable",
+          "Mature framework with good documentation — faster to learn than building from scratch",
+          "Activity log (event stream) is a first-class feature, not a bolted-on audit table"
         ]
       },
       {
