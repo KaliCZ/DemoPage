@@ -168,7 +168,7 @@
         ],
         "alternatives": [
           { "option": "Custom auth implementation", "reason": "Full control, but building OAuth flows, token management, and security from scratch is complex and error-prone." },
-          { "option": "WorkOS / Clerk / Auth0", "reason": "Mature auth providers, but adds another external dependency and cost. Most don't run locally — Supabase auth works fully offline in Docker." }
+          { "option": "WorkOS / Clerk / Auth0", "reason": "Mature auth providers, but adds another external dependency and cost. Supabase auth is already included — no reason to add a separate service." }
         ]
       },
       {

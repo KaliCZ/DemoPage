@@ -168,7 +168,7 @@
         ],
         "alternatives": [
           { "option": "Vlastní implementace auth", "reason": "Plná kontrola, ale stavba OAuth flow, správy tokenů a zabezpečení od nuly je složitá a náchylná k chybám." },
-          { "option": "WorkOS / Clerk / Auth0", "reason": "Vyspělí poskytovatelé auth, ale přidávají další externí závislost a náklady. Většina neběží lokálně — Supabase auth funguje plně offline v Dockeru." }
+          { "option": "WorkOS / Clerk / Auth0", "reason": "Vyspělí poskytovatelé auth, ale přidávají další externí závislost a náklady. Supabase auth je už součástí — není důvod přidávat další službu." }
         ]
       },
       {
