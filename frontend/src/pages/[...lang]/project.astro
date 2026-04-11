@@ -404,11 +404,29 @@ const t = translations[lang];
 
   </div>
 
+  <!-- Mobile TOC — Sticky Bottom Tab Bar -->
+  <nav
+    id="toc-bar"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+    aria-label={t.toc.title}
+  >
+    <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
+      <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant/60 pr-1">{t.toc.title}</span>
+      <span class="shrink-0 w-px h-4 bg-outline-variant/40" aria-hidden="true"></span>
+      <a href="#hero" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="hero">{t.toc.overview}</a>
+      <a href="#tech-stack" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="tech-stack">{t.toc.techStack}</a>
+      <a href="#goals" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="goals">{t.toc.goals}</a>
+      <a href="#architecture" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="architecture">{t.toc.architecture}</a>
+      <a href="#decisions" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="decisions">{t.toc.decisions}</a>
+      <a href="#roadmap" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="roadmap">{t.toc.roadmap}</a>
+    </div>
+  </nav>
+
   <!-- TOC Rail (desktop only) -->
   <aside class="hidden lg:block">
     <nav class="sticky top-24 space-y-3" aria-label="Table of contents">
       <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-4">{t.toc.title}</h4>
-      <a href="#" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors">{t.toc.overview}</a>
+      <a href="#hero" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="hero">{t.toc.overview}</a>
       <a href="#tech-stack" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="tech-stack">{t.toc.techStack}</a>
       <a href="#goals" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="goals">{t.toc.goals}</a>
       <a href="#architecture" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="architecture">{t.toc.architecture}</a>
@@ -428,19 +446,50 @@ const t = translations[lang];
     padding-left: 0.5rem;
     margin-left: -0.625rem;
   }
+  .toc-pill-active {
+    background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+  /* Hide scrollbar for the pill bar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  /* Bottom padding so content isn't hidden behind the sticky bar */
+  @media (max-width: 1023px) {
+    body {
+      padding-bottom: 3.5rem;
+    }
+  }
 </style>
 
 <script>
   const sections = document.querySelectorAll('section[id]');
   const tocLinks = document.querySelectorAll('.toc-link');
+  const tocPills = document.querySelectorAll('.toc-pill');
 
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
+          const id = entry.target.id;
+
+          // Desktop rail
           tocLinks.forEach((link) => link.classList.remove('toc-link-active'));
-          const active = document.querySelector(`.toc-link[data-toc-target="${entry.target.id}"]`);
-          if (active) active.classList.add('toc-link-active');
+          const activeDesktop = document.querySelector(`.toc-link[data-toc-target="${id}"]`);
+          if (activeDesktop) activeDesktop.classList.add('toc-link-active');
+
+          // Mobile pill bar
+          tocPills.forEach((l) => l.classList.remove('toc-pill-active'));
+          const activePill = document.querySelector(`.toc-pill[data-toc-target="${id}"]`);
+          if (activePill) {
+            activePill.classList.add('toc-pill-active');
+            activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
         }
       });
     },
