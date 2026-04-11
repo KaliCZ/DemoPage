@@ -1,26 +1,15 @@
-# CLAUDE.md — Project Guidelines for AI Assistants
+# CLAUDE.md — Project Guidelines
 
-## Project Overview
+Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). See `docs/SETUP.md` for setup.
 
-Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Astro SSG frontend with Tailwind CSS, deployed to Cloudflare Pages. ASP.NET Core (.NET 10) backend with Marten (event sourcing) deployed to Oracle Cloud, connecting to Supabase PostgreSQL. Local dev uses Docker PostgreSQL.
-
-See the `/project` page (`frontend/src/pages/[...lang]/project.astro`) for full architecture, roadmap, and decision log.
-See `docs/SETUP.md` for setup instructions.
-
-## Commands (all from repo root)
+## Commands (from repo root)
 
 ```bash
-# Install
-npm install                         # Root + frontend deps (via postinstall)
-
-# Build
-dotnet build                        # Backend — all projects via DemoPage.slnx
-npm run build:frontend              # Frontend — Astro static build
-
-# Test
-dotnet test                         # Backend integration tests (needs Docker for Testcontainers)
-npm run test:frontend               # Frontend Playwright page tests
-npm test                            # All tests: backend + frontend + E2E
+npm install            # Root + frontend deps (via postinstall)
+npm run dev            # Docker PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev)
+npm test               # All tests: backend (dotnet test) + frontend (Playwright) + E2E
+dotnet build           # Backend only
+npm run build:frontend # Frontend only
 ```
 
 ## Design Principles
@@ -39,7 +28,3 @@ When making decisions, **choose the approach you'd use in a professional team en
 | Marten config, DB queries    | `docs/backend-db.md`                                            |
 | Tests (writing or changing)  | `docs/backend-testing.md`                                       |
 | Frontend pages or components | `docs/frontend.md`                                      |
-
-## Dev Workflow
-
-`npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required). See `docs/SETUP.md` for full setup and deployment.
