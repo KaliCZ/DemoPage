@@ -157,15 +157,19 @@
       },
       {
         "id": "supabase-auth",
-        "title": "Auth → Supabase (lokální + produkce)",
-        "summary": "Validace JWT přes JWKS, se záložním symetrickým klíčem pro testy a lokální vývoj.",
-        "context": "Backend potřebuje validovat Supabase JWT a lokální vývoj musí fungovat bez internetu nebo externího Supabase projektu.",
-        "decision": "Backend validuje JWT podpisy přes JWKS (stahuje veřejné klíče z Supabase OpenID Connect endpointu). Nikdy nevolá Supabase API přímo. Záložní symetrický klíč existuje pro testy a lokální Supabase.",
+        "title": "Auth → Supabase Auth",
+        "summary": "Vestavěná autentizace Supabase místo vlastního řešení nebo externího poskytovatele.",
+        "context": "Aplikace potřebuje OAuth (Google) pro budoucí MCP integrace a standardní email/heslo. Žádné předchozí zkušenosti s poskytovateli autentizace třetích stran.",
+        "decision": "Použít Supabase Auth — je součástí ekosystému Supabase, který už používáme pro databázi, podporuje OAuth ihned po instalaci a běží lokálně v Dockeru pro vývoj.",
         "why": [
-          "Lokální vývoj spouští kompletní Supabase instanci v Dockeru — žádné externí závislosti",
-          "Produkce používá Supabase Cloud s Google OAuth + email/heslo",
-          "E2E testy používají lokální Supabase s programatickým vytvářením uživatelů",
-          "Backend integrační testy generují JWT se známým testovacím klíčem přes Testcontainers"
+          "Již používáme Supabase pro databázi — auth je součástí, žádná extra služba",
+          "OAuth podpora ihned po instalaci (Google, GitHub, atd.) — potřebné pro budoucí MCP integrace",
+          "Běží lokálně v Dockeru — kompletní auth flow funguje offline bez externích závislostí",
+          "Žádné zkušenosti s poskytovateli autentizace třetích stran — Supabase je nejjednodušší cesta"
+        ],
+        "alternatives": [
+          { "option": "Vlastní implementace auth", "reason": "Plná kontrola, ale stavba OAuth flow, správy tokenů a zabezpečení od nuly je složitá a náchylná k chybám." },
+          { "option": "WorkOS / Clerk / Auth0", "reason": "Vyspělí poskytovatelé auth, ale přidávají další externí závislost a náklady. Většina neběží lokálně — Supabase auth funguje plně offline v Dockeru." }
         ]
       },
       {

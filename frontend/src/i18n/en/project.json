@@ -157,15 +157,19 @@
       },
       {
         "id": "supabase-auth",
-        "title": "Auth → Supabase (Local + Production)",
-        "summary": "JWT validation via JWKS, with symmetric secret fallback for tests and local dev.",
-        "context": "The backend needs to validate Supabase JWTs, and local development needs to work without an internet connection or external Supabase project.",
-        "decision": "The backend validates JWT signatures via JWKS (fetching public keys from Supabase's OpenID Connect endpoint). It never calls the Supabase API directly. A symmetric secret fallback exists for tests and local Supabase.",
+        "title": "Auth → Supabase Auth",
+        "summary": "Use Supabase's built-in auth instead of building custom or using a separate provider.",
+        "context": "The app needs OAuth (Google) for future MCP integrations and standard email/password. No prior experience with third-party auth providers.",
+        "decision": "Use Supabase Auth — it's already part of the Supabase ecosystem we chose for the database, supports OAuth out of the box, and runs locally in Docker for development.",
         "why": [
-          "Local dev runs a full Supabase instance in Docker — no external dependencies",
-          "Production uses Supabase Cloud with Google OAuth + email/password",
-          "E2E tests use local Supabase with programmatic user creation",
-          "Backend integration tests generate JWTs with a known test secret via Testcontainers"
+          "Already using Supabase for the database — auth comes included, no extra service to manage",
+          "OAuth support out of the box (Google, GitHub, etc.) — needed for future MCP integrations",
+          "Runs locally in Docker — full auth flow works offline without external dependencies",
+          "No experience with third-party auth providers — Supabase is the simplest path to get started"
+        ],
+        "alternatives": [
+          { "option": "Custom auth implementation", "reason": "Full control, but building OAuth flows, token management, and security from scratch is complex and error-prone." },
+          { "option": "WorkOS / Clerk / Auth0", "reason": "Mature auth providers, but adds another external dependency and cost. Most don't run locally — Supabase auth works fully offline in Docker." }
         ]
       },
       {
