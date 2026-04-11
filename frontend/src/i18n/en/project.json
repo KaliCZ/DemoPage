@@ -190,7 +190,8 @@
         "context": "Need a testing approach that provides high confidence with minimal mocking, covering the full stack from API endpoints to database.",
         "decision": "Three layers of testing, all running in parallel in CI/CD. Each blocks deployment on failure.",
         "why": [
-          "Backend integration tests: xUnit + Testcontainers — real PostgreSQL, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, external services like Slack/email will be mocked), but the database is real so most functionality is easy to assert",
+          "Backend integration tests (main focus): xUnit + Testcontainers — real PostgreSQL, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, external services like Slack/email will be mocked), but the database is real so most functionality is easy to assert",
+          "Backend unit tests: for domain logic and pure functions where integration tests would be overkill",
           "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, and dark mode",
           "E2E tests: Playwright against the full running application — working auth, working DB, everything real. Only external systems like Slack and email can't be asserted",
           "CI/CD: All three test suites run in parallel, all block deployment on failure"

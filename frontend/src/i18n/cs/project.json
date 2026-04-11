@@ -190,7 +190,8 @@
         "context": "Potřebujeme testovací přístup, který poskytuje vysokou jistotu s minimem mockování a pokrývá celý stack od API endpointů po databázi.",
         "decision": "Tři vrstvy testování, všechny běží paralelně v CI/CD. Každá blokuje deployment při selhání.",
         "why": [
-          "Backend integrační testy: xUnit + Testcontainers — reálný PostgreSQL, celé API přes WebApplicationFactory. Mockovat co nejméně (auth je mockovaný, externí služby jako Slack/email budou mockované), ale databáze je reálná, takže většinu funkcionality lze snadno ověřit",
+          "Backend integrační testy (hlavní zaměření): xUnit + Testcontainers — reálný PostgreSQL, celé API přes WebApplicationFactory. Mockovat co nejméně (auth je mockovaný, externí služby jako Slack/email budou mockované), ale databáze je reálná, takže většinu funkcionality lze snadno ověřit",
+          "Backend unit testy: pro doménovou logiku a čisté funkce, kde by integrační testy byly zbytečně složité",
           "Frontend page testy: Playwright — builduje statický web, ověřuje renderování, navigaci, i18n a dark mode",
           "E2E testy: Playwright proti celé běžící aplikaci — fungující auth, fungující DB, vše reálné. Pouze externí systémy jako Slack a email nelze ověřit",
           "CI/CD: Všechny tři testovací sady běží paralelně, všechny blokují deployment při selhání"
