@@ -215,7 +215,7 @@
   "roadmap": {
     "timelineLabel": "Timeline",
     "title": "Development Roadmap",
-    "subtitle": "5 versions from static site to advanced backend features. Each version adds a layer of complexity.",
+    "subtitle": "6 versions from static site to advanced backend features. Each version adds a layer of complexity.",
     "versions": [
       {
         "number": 1,
@@ -278,11 +278,19 @@
       },
       {
         "number": 5,
+        "title": "MCP Server",
+        "done": false,
+        "faded": true,
+        "description": "Expose job offer management via a Model Context Protocol server. Users can submit, track, and manage their job offers through any MCP-compatible client.",
+        "side": "left"
+      },
+      {
+        "number": 6,
         "title": "Pay to Win (Stripe)",
         "done": false,
         "faded": true,
         "description": "Monetize job offer submissions via Stripe with tiered pricing.",
-        "side": "left",
+        "side": "right",
         "pricingTable": {
           "headers": ["Tier", "Price", "Guarantee"],
           "rows": [

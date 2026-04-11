@@ -215,7 +215,7 @@
   "roadmap": {
     "timelineLabel": "Časová osa",
     "title": "Plán vývoje",
-    "subtitle": "5 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
+    "subtitle": "6 verzí od statické stránky po pokročilé backendové funkce. Každá verze přidá vrstvu složitosti.",
     "versions": [
       {
         "number": 1,
@@ -278,11 +278,19 @@
       },
       {
         "number": 5,
+        "title": "MCP Server",
+        "done": false,
+        "faded": true,
+        "description": "Zpřístupnění správy pracovních nabídek přes Model Context Protocol server. Uživatelé mohou podávat, sledovat a spravovat své nabídky přes jakéhokoliv MCP-kompatibilního klienta.",
+        "side": "left"
+      },
+      {
+        "number": 6,
         "title": "Pay to Win (Stripe)",
         "done": false,
         "faded": true,
         "description": "Monetizace podání pracovních nabídek přes Stripe s odstupňovanými cenami.",
-        "side": "left",
+        "side": "right",
         "pricingTable": {
           "headers": ["Úroveň", "Cena", "Garance"],
           "rows": [
