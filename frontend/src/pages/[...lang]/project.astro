@@ -46,9 +46,15 @@ const t = translations[lang];
             <a href="#v2" class="font-body font-semibold text-primary hover:underline">{t.quickStats.statusValue}</a>
           </div>
           <div>
-            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.timeLabel}</div>
+            <div class="font-label text-xs text-on-surface-variant uppercase mb-1 flex items-center gap-1">
+              {t.quickStats.timeLabel}
+              <span class="relative group cursor-help">
+                <span class="material-symbols-outlined text-[14px] text-on-surface-variant/50" aria-hidden="true">info</span>
+                <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-container-highest text-on-surface text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center normal-case tracking-normal font-normal" role="tooltip">{t.quickStats.timeTooltip}</span>
+              </span>
+            </div>
             <a href="#roadmap" class="font-body font-semibold text-primary hover:underline">{t.quickStats.timeValue}</a>
-            {t.quickStats.timeNote && <div class="font-body text-xs text-on-surface-variant/60 italic mt-1">{t.quickStats.timeNote}</div>}
+            <div class="font-body text-xs text-on-surface-variant/60 italic mt-1">{t.quickStats.timeNote}</div>
           </div>
           <div>
             <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.costOneTimeLabel}</div>
