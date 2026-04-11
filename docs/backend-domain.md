@@ -2,11 +2,8 @@
 
 The domain layer owns the business. It lives in `backend/src/Kalandra.JobOffers/` and is the only place where business rules, invariants, and event shapes are defined. It has no reference to ASP.NET Core and does not know what HTTP is. Its dependencies are `Marten` (event store) and `Kalandra.Infrastructure` (cross-cutting types like `CurrentUser`, `IStorageService`).
 
-> This document expands on the `Key Conventions` bullets in `CLAUDE.md` that cover event sourcing, handlers, and domain error enums.
-
 ## Table of contents
 
-- [Project layout](#project-layout)
 - [The handler pattern](#the-handler-pattern)
 - [Commands, queries, handlers](#commands-queries-handlers)
 - [The `Try<TSuccess, TError>` return type](#the-trytsuccess-terror-return-type)
@@ -14,41 +11,7 @@ The domain layer owns the business. It lives in `backend/src/Kalandra.JobOffers/
 - [Events](#events)
 - [Multiple streams per aggregate](#multiple-streams-per-aggregate)
 - [Domain error enums](#domain-error-enums)
-- [Dependency injection](#dependency-injection)
 - [What the domain must not do](#what-the-domain-must-not-do)
-
-## Project layout
-
-```
-Kalandra.JobOffers/
-  Commands/
-    CreateJobOffer.cs           # record + enum + handler, all in one file
-    EditJobOffer.cs
-    CancelJobOffer.cs
-    UpdateJobOfferStatus.cs
-    AddComment.cs
-  Queries/
-    GetJobOfferDetail.cs
-    ListJobOffers.cs
-    GetJobOfferHistory.cs
-    ListComments.cs
-    GetAttachmentInfo.cs
-  Entities/
-    JobOffer.cs                 # Aggregate + Apply methods + domain error enums
-    JobOfferStatus.cs
-    AttachmentInfo.cs
-  Events/
-    JobOfferSubmitted.cs
-    JobOfferEdited.cs
-    JobOfferCancelled.cs
-    JobOfferStatusChanged.cs
-    JobOfferCommentAdded.cs
-  MartenConfiguration.cs        # ConfigureJobOffers() extension on StoreOptions
-  CommentStreamId.cs            # Deterministic UUID v5 for comment stream
-  ServiceRegistration.cs        # AddJobOffersDomain() DI registration
-```
-
-Each command file is self-contained: the command record, its error enum, and its handler live together. When reading the code, you only need to open one file to understand a single operation. Queries follow the same rule.
 
 ## The handler pattern
 
@@ -65,44 +28,6 @@ Handlers do **not** own:
 - HTTP-specific guards (Turnstile, rate limits, content-size caps on `IFormFile`)
 
 A handler's validation is the **last line of defence**. The API layer may reject bad input earlier for UX reasons, but a handler that assumes its inputs have already been validated is a bug.
-
-### Example handler shape
-
-```csharp
-public class EditJobOfferHandler(IDocumentSession session)
-{
-    public async Task<Try<JobOffer, EditJobOfferError>> HandleAsync(
-        EditJobOfferCommand command, CancellationToken ct)
-    {
-        var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);
-        if (stream.Aggregate is not { } offer)
-            return Try.Error<JobOffer, EditJobOfferError>(EditJobOfferError.NotFound);
-
-        var result = offer.Edit(
-            user: command.User,
-            companyName: command.CompanyName.Value,
-            // ...
-            timestamp: command.Timestamp);
-
-        if (result.IsError)
-            return Try.Error<JobOffer, EditJobOfferError>(result.Error.Get());
-
-        var evt = result.Success.Get();
-        stream.AppendOne(evt);
-        offer.Apply(evt);
-        await session.SaveChangesAsync(ct);
-        return Try.Success<JobOffer, EditJobOfferError>(offer);
-    }
-}
-```
-
-Note the shape:
-
-1. Load via `FetchForWriting<T>` — this takes the stream lock that Marten uses to detect concurrency conflicts on `SaveChangesAsync`.
-2. Delegate the "can I do this?" check to the entity (`offer.Edit(...)`).
-3. If the entity returns an event, append it, apply it to the in-memory aggregate, and commit.
-
-The handler does not decide whether the edit is allowed; the entity does. The handler's only responsibility is to translate the decision into a stream append.
 
 ## Commands, queries, handlers
 
@@ -233,25 +158,6 @@ Each feature defines its own error enum next to its handler or entity. Examples:
 - `AddCommentError { NotFound, NotAuthorized }` — in `Entities/JobOffer.cs`
 
 These enums are **internal to the domain**. They may be renamed, split, or merged freely when refactoring — the API layer's parallel enums shield the frontend from those changes (see `docs/backend-api.md` → "Error contracts: the two-enum rule"). That freedom is the whole point of keeping them separate: domain refactoring should never break the wire contract.
-
-## Dependency injection
-
-Handlers are registered in `ServiceRegistration.AddJobOffersDomain()`, which is called from `Program.cs`:
-
-```csharp
-public static IServiceCollection AddJobOffersDomain(this IServiceCollection services)
-{
-    services.AddScoped<CreateJobOfferHandler>();
-    services.AddScoped<EditJobOfferHandler>();
-    // ...
-    services.AddScoped<GetJobOfferDetailHandler>();
-    // ...
-    return services;
-}
-```
-
-- Handlers are `Scoped` because they depend on `IDocumentSession` / `IQuerySession`, which are themselves scoped per request.
-- There is no mediator, no pipeline, no `IRequestHandler<TRequest, TResponse>`. Controllers inject the concrete handler types they need. A `JobOffersController` constructor lists every handler it uses, which makes the surface of each controller explicit and greppable.
 
 ## What the domain must not do
 
