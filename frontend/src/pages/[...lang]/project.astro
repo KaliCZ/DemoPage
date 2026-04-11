@@ -404,6 +404,50 @@ const t = translations[lang];
 
   </div>
 
+  <!-- Mobile TOC — Option A: Floating FAB -->
+  <div id="toc-fab" class="lg:hidden fixed bottom-6 right-6 z-50" data-toc-variant="a">
+    <button
+      id="toc-fab-btn"
+      type="button"
+      class="w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center hover:opacity-90 transition-all active:scale-95"
+      aria-label={t.toc.title}
+      aria-expanded="false"
+      aria-controls="toc-fab-panel"
+    >
+      <span class="material-symbols-outlined text-2xl" aria-hidden="true">toc</span>
+    </button>
+    <nav
+      id="toc-fab-panel"
+      class="absolute bottom-[4.5rem] right-0 w-56 bg-surface-container border border-outline-variant/40 rounded-xl shadow-xl p-4 space-y-2 hidden"
+      aria-label={t.toc.title}
+    >
+      <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-3">{t.toc.title}</h4>
+      <a href="#" class="toc-link-mobile block font-body text-sm text-on-surface-variant hover:text-primary transition-colors py-1">{t.toc.overview}</a>
+      <a href="#tech-stack" class="toc-link-mobile block font-body text-sm text-on-surface-variant hover:text-primary transition-colors py-1" data-toc-target="tech-stack">{t.toc.techStack}</a>
+      <a href="#goals" class="toc-link-mobile block font-body text-sm text-on-surface-variant hover:text-primary transition-colors py-1" data-toc-target="goals">{t.toc.goals}</a>
+      <a href="#architecture" class="toc-link-mobile block font-body text-sm text-on-surface-variant hover:text-primary transition-colors py-1" data-toc-target="architecture">{t.toc.architecture}</a>
+      <a href="#decisions" class="toc-link-mobile block font-body text-sm text-on-surface-variant hover:text-primary transition-colors py-1" data-toc-target="decisions">{t.toc.decisions}</a>
+      <a href="#roadmap" class="toc-link-mobile block font-body text-sm text-on-surface-variant hover:text-primary transition-colors py-1" data-toc-target="roadmap">{t.toc.roadmap}</a>
+    </nav>
+  </div>
+
+  <!-- Mobile TOC — Option B: Sticky Bottom Tab Bar -->
+  <nav
+    id="toc-bar"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] toc-variant-hidden"
+    aria-label={t.toc.title}
+    data-toc-variant="b"
+  >
+    <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide">
+      <a href="#" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap">{t.toc.overview}</a>
+      <a href="#tech-stack" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="tech-stack">{t.toc.techStack}</a>
+      <a href="#goals" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="goals">{t.toc.goals}</a>
+      <a href="#architecture" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="architecture">{t.toc.architecture}</a>
+      <a href="#decisions" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="decisions">{t.toc.decisions}</a>
+      <a href="#roadmap" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="roadmap">{t.toc.roadmap}</a>
+    </div>
+  </nav>
+
   <!-- TOC Rail (desktop only) -->
   <aside class="hidden lg:block">
     <nav class="sticky top-24 space-y-3" aria-label="Table of contents">
@@ -428,9 +472,35 @@ const t = translations[lang];
     padding-left: 0.5rem;
     margin-left: -0.625rem;
   }
+  .toc-link-mobile-active {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+  .toc-pill-active {
+    background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+  /* Hide scrollbar for the pill bar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  /* JS variant toggle — separate from Tailwind's `hidden` and `lg:hidden` */
+  .toc-variant-hidden {
+    display: none !important;
+  }
+  /* Bottom padding when bar variant is active, so content isn't hidden */
+  body:has(#toc-bar:not(.toc-variant-hidden)) {
+    padding-bottom: 3.5rem;
+  }
 </style>
 
 <script>
+  // --- Desktop TOC highlight ---
   const sections = document.querySelectorAll('section[id]');
   const tocLinks = document.querySelectorAll('.toc-link');
 
@@ -438,9 +508,26 @@ const t = translations[lang];
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
+          const id = entry.target.id;
+
+          // Desktop rail
           tocLinks.forEach((link) => link.classList.remove('toc-link-active'));
-          const active = document.querySelector(`.toc-link[data-toc-target="${entry.target.id}"]`);
-          if (active) active.classList.add('toc-link-active');
+          const activeDesktop = document.querySelector(`.toc-link[data-toc-target="${id}"]`);
+          if (activeDesktop) activeDesktop.classList.add('toc-link-active');
+
+          // Option A — FAB panel
+          document.querySelectorAll('.toc-link-mobile').forEach((l) => l.classList.remove('toc-link-mobile-active'));
+          const activeFab = document.querySelector(`.toc-link-mobile[data-toc-target="${id}"]`);
+          if (activeFab) activeFab.classList.add('toc-link-mobile-active');
+
+          // Option B — pill bar
+          document.querySelectorAll('.toc-pill').forEach((l) => l.classList.remove('toc-pill-active'));
+          const activePill = document.querySelector(`.toc-pill[data-toc-target="${id}"]`);
+          if (activePill) {
+            activePill.classList.add('toc-pill-active');
+            // Scroll active pill into view
+            activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
         }
       });
     },
@@ -448,4 +535,51 @@ const t = translations[lang];
   );
 
   sections.forEach((section) => observer.observe(section));
+
+  // --- Option A: FAB toggle ---
+  const fabBtn = document.getElementById('toc-fab-btn')!;
+  const fabPanel = document.getElementById('toc-fab-panel')!;
+
+  fabBtn.addEventListener('click', () => {
+    const isOpen = !fabPanel.classList.contains('hidden');
+    fabPanel.classList.toggle('hidden');
+    fabBtn.setAttribute('aria-expanded', String(!isOpen));
+  });
+
+  // Close FAB panel on link click
+  fabPanel.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      fabPanel.classList.add('hidden');
+      fabBtn.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Close FAB panel on click outside
+  document.addEventListener('click', (e) => {
+    const fab = document.getElementById('toc-fab')!;
+    if (!fab.contains(e.target as Node)) {
+      fabPanel.classList.add('hidden');
+      fabBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // --- Variant toggle ---
+  // Append ?toc=b to URL to see Option B, default is Option A
+  function applyTocVariant() {
+    const params = new URLSearchParams(window.location.search);
+    const variant = params.get('toc') || 'a';
+
+    const fab = document.getElementById('toc-fab')!;
+    const bar = document.getElementById('toc-bar')!;
+
+    if (variant === 'b') {
+      fab.classList.add('toc-variant-hidden');
+      bar.classList.remove('toc-variant-hidden');
+    } else {
+      fab.classList.remove('toc-variant-hidden');
+      bar.classList.add('toc-variant-hidden');
+    }
+  }
+
+  applyTocVariant();
 </script>
