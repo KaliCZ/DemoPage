@@ -11,7 +11,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Testcontainers.PostgreSql;
 
-namespace Kalandra.Api.Tests.Helpers;
+namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {

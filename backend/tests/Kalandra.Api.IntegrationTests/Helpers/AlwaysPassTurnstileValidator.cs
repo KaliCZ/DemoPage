@@ -1,6 +1,6 @@
 using Kalandra.Infrastructure.Turnstile;
 
-namespace Kalandra.Api.Tests.Helpers;
+namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class AlwaysPassTurnstileValidator : ITurnstileValidator
 {
