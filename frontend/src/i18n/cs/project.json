@@ -122,6 +122,8 @@
         "context": "Potřebujeme frontend framework pro převážně statický web na Cloudflare Pages. Požadavky: Tailwind CSS, i18n (čeština/angličtina), progresivní interaktivita, minimum JS pro uživatele.",
         "decision": "Astro ve statickém režimu (SSG). Interaktivní komponenty používají vanilla JS, s možností Vue islands pro složitější UI logiku. Žádné Cloudflare Workers — Pages servíruje čisté HTML/CSS/JS z CDN.",
         "why": [
+          "Zdarma navždy — SSG na Cloudflare Pages nemá žádné náklady za request, na rozdíl od SSR s Workers, které se účtují za volání",
+          "Každá stránka je předgenerovaná a cachovaná na CDN edge nodech po celém světě — téměř okamžité načítání",
           "Ve výchozím stavu posílá nula JS — jen interaktivní islands obsahují klientský kód",
           "Vestavěný i18n routing a detekce locale",
           "Cloudflare koupil Astro (leden 2026) — nejlepší integrace s Pages",

@@ -122,6 +122,8 @@
         "context": "Need a frontend framework for a mostly-static site hosted on Cloudflare Pages. Requirements: Tailwind CSS, i18n (Czech/English), progressive interactivity, minimal JS shipped to users.",
         "decision": "Astro in static site generation (SSG) mode. Interactive components use vanilla JS, with the option of Vue islands for complex UI logic. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN.",
         "why": [
+          "Free forever — SSG on Cloudflare Pages has no per-request cost, unlike SSR with Workers which bills per invocation",
+          "Every page is pre-built and cached on CDN edge nodes worldwide — near-instant loading",
           "Ships zero JS by default — only interactive islands include client-side code",
           "Built-in i18n routing and locale detection",
           "Cloudflare acquired Astro (Jan 2026) — best-in-class Pages integration",
