@@ -55,6 +55,12 @@ public class JobOffer
         // Emit only the fields that actually changed. Null on the event means
         // "not edited" so unchanged fields stay null and are skipped by both
         // Apply() and the activity-log projection.
+        //
+        // Clearing a previously-set optional field is NOT supported: when the
+        // caller passes null for SalaryRange / Location / AdditionalNotes we
+        // treat it as "leave this field alone" rather than "set it to null".
+        // The frontend is expected to mirror this — see the edit form in
+        // frontend/src/pages/[...lang]/job-offers.astro.
         return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
             EditedByUserId: user.Id,
             EditedByEmail: user.Email.Address,
@@ -63,10 +69,10 @@ public class JobOffer
             ContactEmail: contactEmail != ContactEmail ? contactEmail : null,
             JobTitle: jobTitle != JobTitle ? jobTitle : null,
             Description: description != Description ? description : null,
-            SalaryRange: salaryRange != SalaryRange ? salaryRange : null,
-            Location: location != Location ? location : null,
+            SalaryRange: salaryRange is not null && salaryRange != SalaryRange ? salaryRange : null,
+            Location: location is not null && location != Location ? location : null,
             IsRemote: isRemote != IsRemote ? isRemote : null,
-            AdditionalNotes: additionalNotes != AdditionalNotes ? additionalNotes : null,
+            AdditionalNotes: additionalNotes is not null && additionalNotes != AdditionalNotes ? additionalNotes : null,
             Timestamp: timestamp));
     }
 

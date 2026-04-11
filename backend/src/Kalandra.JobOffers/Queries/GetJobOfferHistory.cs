@@ -31,37 +31,19 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
 
         var entries = new List<JobOfferHistoryEntry>();
 
-        // We walk the offer stream in append order and maintain the current
-        // field state as each event is processed. When a JobOfferEdited event
-        // is encountered we diff the fields *it actually changed* (non-null
-        // fields in the event — null means "not edited") against the running
-        // state built from the Submitted event and every prior edit. After
-        // building the diff we advance the state so subsequent edits compare
-        // against the correct baseline.
-        var companyName = "";
-        var contactName = "";
-        var contactEmail = "";
-        var jobTitle = "";
-        var description = "";
-        string? salaryRange = null;
-        string? location = null;
-        var isRemote = false;
-        string? additionalNotes = null;
+        // Replay the stream through a fresh aggregate so state reconstruction
+        // goes through the real JobOffer.Apply() methods — this keeps the
+        // history handler from having its own shadow copy of the apply logic.
+        // For JobOfferEdited we snapshot fields before and after Apply() and
+        // diff the two to describe what actually changed.
+        var replay = new JobOffer();
 
         foreach (var evt in offerEvents)
         {
             switch (evt.Data)
             {
                 case JobOfferSubmitted s:
-                    companyName = s.CompanyName;
-                    contactName = s.ContactName;
-                    contactEmail = s.ContactEmail;
-                    jobTitle = s.JobTitle;
-                    description = s.Description;
-                    salaryRange = s.SalaryRange;
-                    location = s.Location;
-                    isRemote = s.IsRemote;
-                    additionalNotes = s.AdditionalNotes;
+                    replay.Apply(s);
                     entries.Add(new JobOfferHistoryEntry(
                         EventType: "Submitted",
                         Description: "Job offer submitted",
@@ -71,65 +53,23 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                     break;
 
                 case JobOfferEdited ed:
-                    var changes = new List<string>();
-                    if (ed.CompanyName != null && ed.CompanyName != companyName)
-                    {
-                        changes.Add($"company: {companyName} → {ed.CompanyName}");
-                        companyName = ed.CompanyName;
-                    }
-                    if (ed.JobTitle != null && ed.JobTitle != jobTitle)
-                    {
-                        changes.Add($"job title: {jobTitle} → {ed.JobTitle}");
-                        jobTitle = ed.JobTitle;
-                    }
-                    if (ed.ContactName != null && ed.ContactName != contactName)
-                    {
-                        changes.Add($"contact name: {contactName} → {ed.ContactName}");
-                        contactName = ed.ContactName;
-                    }
-                    if (ed.ContactEmail != null && ed.ContactEmail != contactEmail)
-                    {
-                        changes.Add($"contact email: {contactEmail} → {ed.ContactEmail}");
-                        contactEmail = ed.ContactEmail;
-                    }
-                    if (ed.Location != null && ed.Location != location)
-                    {
-                        changes.Add($"location: {Display(location)} → {ed.Location}");
-                        location = ed.Location;
-                    }
-                    if (ed.SalaryRange != null && ed.SalaryRange != salaryRange)
-                    {
-                        changes.Add($"salary: {Display(salaryRange)} → {ed.SalaryRange}");
-                        salaryRange = ed.SalaryRange;
-                    }
-                    if (ed.IsRemote.HasValue && ed.IsRemote.Value != isRemote)
-                    {
-                        changes.Add($"remote: {YesNo(isRemote)} → {YesNo(ed.IsRemote.Value)}");
-                        isRemote = ed.IsRemote.Value;
-                    }
-                    if (ed.Description != null && ed.Description != description)
-                    {
-                        changes.Add("description changed");
-                        description = ed.Description;
-                    }
-                    if (ed.AdditionalNotes != null && ed.AdditionalNotes != additionalNotes)
-                    {
-                        changes.Add("additional notes changed");
-                        additionalNotes = ed.AdditionalNotes;
-                    }
+                    var before = FieldSnapshot.From(replay);
+                    replay.Apply(ed);
+                    var after = FieldSnapshot.From(replay);
+                    var changes = FieldSnapshot.Diff(before, after);
 
-                    var editDescription = changes.Count > 0
-                        ? "Edited — " + string.Join(", ", changes)
-                        : "Job offer edited";
                     entries.Add(new JobOfferHistoryEntry(
                         EventType: "Edited",
-                        Description: editDescription,
+                        Description: changes.Count > 0
+                            ? "Edited — " + string.Join(", ", changes)
+                            : "Job offer edited",
                         ActorUserId: ed.EditedByUserId,
                         ActorEmail: ed.EditedByEmail,
                         Timestamp: ed.Timestamp));
                     break;
 
                 case JobOfferStatusChanged sc:
+                    replay.Apply(sc);
                     entries.Add(new JobOfferHistoryEntry(
                         EventType: "StatusChanged",
                         Description: $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
@@ -140,6 +80,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                     break;
 
                 case JobOfferCancelled c:
+                    replay.Apply(c);
                     entries.Add(new JobOfferHistoryEntry(
                         EventType: "Cancelled",
                         Description: "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
@@ -176,7 +117,58 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         JobOfferStatus.Cancelled => "Cancelled",
     };
 
-    private static string Display(string? value) => string.IsNullOrEmpty(value) ? "—" : value;
+    /// <summary>
+    /// Immutable snapshot of the fields that can change via JobOfferEdited.
+    /// Taken before and after Apply() so we can diff the two without having
+    /// to mirror the aggregate's apply logic in this handler.
+    /// </summary>
+    private record FieldSnapshot(
+        string CompanyName,
+        string ContactName,
+        string ContactEmail,
+        string JobTitle,
+        string Description,
+        string? SalaryRange,
+        string? Location,
+        bool IsRemote,
+        string? AdditionalNotes)
+    {
+        public static FieldSnapshot From(JobOffer offer) => new(
+            CompanyName: offer.CompanyName,
+            ContactName: offer.ContactName,
+            ContactEmail: offer.ContactEmail,
+            JobTitle: offer.JobTitle,
+            Description: offer.Description,
+            SalaryRange: offer.SalaryRange,
+            Location: offer.Location,
+            IsRemote: offer.IsRemote,
+            AdditionalNotes: offer.AdditionalNotes);
 
-    private static string YesNo(bool value) => value ? "yes" : "no";
+        public static List<string> Diff(FieldSnapshot before, FieldSnapshot after)
+        {
+            var changes = new List<string>();
+            if (before.CompanyName != after.CompanyName)
+                changes.Add($"company: {before.CompanyName} → {after.CompanyName}");
+            if (before.JobTitle != after.JobTitle)
+                changes.Add($"job title: {before.JobTitle} → {after.JobTitle}");
+            if (before.ContactName != after.ContactName)
+                changes.Add($"contact name: {before.ContactName} → {after.ContactName}");
+            if (before.ContactEmail != after.ContactEmail)
+                changes.Add($"contact email: {before.ContactEmail} → {after.ContactEmail}");
+            if (before.Location != after.Location)
+                changes.Add($"location: {Display(before.Location)} → {Display(after.Location)}");
+            if (before.SalaryRange != after.SalaryRange)
+                changes.Add($"salary: {Display(before.SalaryRange)} → {Display(after.SalaryRange)}");
+            if (before.IsRemote != after.IsRemote)
+                changes.Add($"remote: {YesNo(before.IsRemote)} → {YesNo(after.IsRemote)}");
+            if (before.Description != after.Description)
+                changes.Add("description changed");
+            if (before.AdditionalNotes != after.AdditionalNotes)
+                changes.Add("additional notes changed");
+            return changes;
+        }
+
+        private static string Display(string? value) => string.IsNullOrEmpty(value) ? "—" : value;
+        private static string YesNo(bool value) => value ? "yes" : "no";
+    }
 }

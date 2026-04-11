@@ -39,6 +39,7 @@
     "edit": "Upravit nabídku",
     "editSave": "Uložit změny",
     "editCancel": "Zahodit změny",
+    "editClearNotAllowed": "Vymazání volitelných polí není podporováno. Ponechte prosím původní hodnotu nebo zadejte novou pro: ",
     "cancel": "Zrušit nabídku",
     "cancelConfirm": "Opravdu chcete zrušit tuto nabídku?",
     "cancelReason": "Důvod zrušení (volitelné)",

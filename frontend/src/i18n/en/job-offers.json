@@ -39,6 +39,7 @@
     "edit": "Edit Submission",
     "editSave": "Save Changes",
     "editCancel": "Discard Changes",
+    "editClearNotAllowed": "Clearing optional fields isn't supported. Please keep or replace the value of: ",
     "cancel": "Cancel Submission",
     "cancelConfirm": "Are you sure you want to cancel this submission?",
     "cancelReason": "Reason for cancellation (optional)",
