@@ -6,9 +6,7 @@ This document explains how the backend layers fit together: which project owns w
 
 - [The three projects](#the-three-projects)
 - [Dependency direction](#dependency-direction)
-- [Request flow: end to end](#request-flow-end-to-end)
 - [Error flow](#error-flow)
-- [DI registration](#di-registration)
 - [Why this shape](#why-this-shape)
 - [Where to put new code](#where-to-put-new-code)
 
@@ -42,70 +40,6 @@ Kalandra.Api  ───────────►  Kalandra.JobOffers  ──�
 - `Kalandra.Api` references both. It is the only project allowed to compose and host them.
 
 This direction is enforced by `.csproj` `<ProjectReference>` entries — the compiler will reject any attempt to introduce a cycle.
-
-## Request flow: end to end
-
-Take a write path: `POST /api/job-offers` (create a job offer).
-
-```
-HTTP request
-    │
-    ▼
-ASP.NET Core pipeline
-    │  • CORS                       (Kalandra.Api/Infrastructure/ServiceCollectionExtensions.AddAppCors)
-    │  • UseExceptionHandler        (Program.cs)
-    │  • Authentication             (Kalandra.Api/Infrastructure/Auth/Auth.cs)
-    │  • Authorization              ([Authorize] on JobOffersController)
-    │  • Rate limiting              ([EnableRateLimiting(...)] policy in RateLimits.cs)
-    │
-    ▼
-JobOffersController.Create
-    │  1. Resolve CurrentUser via ICurrentUserAccessor.RequiredUser
-    │  2. Validate Turnstile token (HTTP-only guard)
-    │  3. Map IFormFile inputs into CreateJobOfferFile records
-    │  4. Build CreateJobOfferCommand
-    │
-    ▼
-CreateJobOfferHandler.HandleAsync                         (Kalandra.JobOffers/Commands/CreateJobOffer.cs)
-    │  1. Validate count, total size, content types       → returns Try.Error<CreateJobOfferError>
-    │  2. Upload attachments via IStorageService          (HTTP → Supabase Storage bucket)
-    │  3. Build JobOfferSubmitted event                   (Kalandra.JobOffers/Events/JobOfferSubmitted.cs)
-    │  4. session.Events.StartStream<JobOffer>(streamId, submitted)
-    │  5. session.SaveChangesAsync(ct)
-    │       │
-    │       ▼
-    │     Marten
-    │       • Inserts the event row in mt_events
-    │       • Runs the inline JobOffer projection in the same transaction
-    │       • Inserts the snapshot row in mt_doc_joboffer with duplicated Status column
-    │       • Commits PostgreSQL transaction
-    │
-    ▼
-Handler returns Try.Success<Guid>                         (the new stream ID)
-    │
-    ▼
-Controller
-    │  • Calls GetJobOfferDetailHandler to fetch the freshly-created snapshot
-    │  • Wraps it in GetJobOfferDetailResponse.Serialize(offer, viewer)
-    │  • Returns 201 CreatedAtAction with the typed DTO
-    │
-    ▼
-ASP.NET Core serializes via System.Text.Json with JsonStringEnumConverter
-    │
-    ▼
-HTTP response
-```
-
-A read path is the same shape minus the write side. `GET /api/job-offers/{id}`:
-
-```
-Controller → GetJobOfferDetailQuery → GetJobOfferDetailHandler → IQuerySession.LoadAsync<JobOffer>
-                                                                              │
-                                                                              ▼
-                                                                      mt_doc_joboffer (snapshot)
-```
-
-The handler enforces "owners and admins only" by returning `null` for unauthorized lookups. The controller maps `null` to `404 NotFound` so non-owners cannot tell the difference between "doesn't exist" and "not yours".
 
 ## Error flow
 
@@ -148,54 +82,6 @@ Some shortcuts the controller takes for errors that don't need a stable wire-lev
 | Unknown failures from `SupabaseAdminService`                          | `Problem()` (500, RFC 7807) |
 
 The two-enum split (handler enum ↔ API enum) is the single most important rule for error contracts. It is restated in detail in `docs/backend-api.md` and `docs/backend-domain.md`; the short version is: domain enums may be renamed freely; API enums must not be — they are the i18n key the frontend imports.
-
-## DI registration
-
-`Program.cs` is the only place that wires services together. The order matters because some registrations read configuration that earlier registrations have parsed:
-
-```csharp
-// 1. Framework services
-builder.Services.AddProblemDetails();
-builder.Services.AddControllers().AddJsonOptions(...);     // JsonStringEnumConverter
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(...);                       // Bearer auth scheme + AuthorizeOperationFilter
-
-// 2. Configuration records (singleton, parsed from IConfiguration)
-var authConfig = SupabaseAuthConfig.AddSingleton(...);
-SupabaseStorageConfig.AddSingleton(...);
-TurnstileConfig.AddSingleton(...);
-
-// 3. Marten + auth pipeline (need configs above)
-builder.Services.AddAppMarten(...);                        // Calls options.ConfigureJobOffers()
-Auth.Add(builder.Services, authConfig);
-builder.Services.AddAppCors(builder.Environment);
-
-// 4. Cross-cutting infrastructure
-builder.Services.AddMemoryCache();
-builder.Services.AddStorageServices();                     // typed HttpClient<IStorageService, SupabaseStorageService>
-builder.Services.AddTurnstile();                           // typed HttpClient<ITurnstileValidator, ...>
-builder.Services.AddAuthAdminServices();                   // typed HttpClient<ISupabaseAdminService, ...>
-
-// 5. API request-scoped services
-builder.Services.AddApiServices();                         // IHttpContextAccessor, ICurrentUserAccessor, TimeProvider
-
-// 6. Domain handlers
-builder.Services.AddJobOffersDomain();                     // Lives in Kalandra.JobOffers/ServiceRegistration.cs
-
-// 7. Cross-cutting HTTP middleware
-RateLimits.Add(builder.Services);
-
-// 8. Health checks
-builder.Services.AddHealthChecks().AddNpgSql(...).AddCheck<CommitHashHealthCheck>("version");
-```
-
-Conventions:
-
-- **Configuration records** (`SupabaseAuthConfig`, `SupabaseStorageConfig`, `TurnstileConfig`) own their own `AddSingleton(services, configuration)` static methods. The composition root never reads `IConfiguration[...]` directly — it delegates to the config record.
-- **Domain projects** own their own `Add{Domain}(...)` extension. `Kalandra.JobOffers/ServiceRegistration.cs` registers every handler in the domain. The API just calls it.
-- **Typed `HttpClient`s** are used for every external HTTP dependency (`IStorageService`, `ITurnstileValidator`, `ISupabaseAdminService`). This gives them per-request lifetime, retry/circuit-breaker plug points, and shared `HttpMessageHandler` pooling without ceremony.
-- **No mediator, no MediatR.** Controllers inject the concrete handler types they call. The class signature of `JobOffersController` is the explicit list of capabilities the controller has — searchable, refactorable, no magic dispatch.
-- **`TimeProvider.System`** is registered as a singleton. Handlers and controllers read time through it and pass timestamps into commands; the entity never reads the clock. Tests can substitute `FakeTimeProvider`.
 
 ## Why this shape
 
