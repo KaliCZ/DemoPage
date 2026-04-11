@@ -407,6 +407,68 @@ public class JobOfferAggregateTests
     }
 
     [Fact]
+    public void Apply_Edited_NullFields_ArePreserved()
+    {
+        // Null on a JobOfferEdited field means "not edited" — existing values
+        // on the aggregate should be kept intact.
+        var offer = CreateSubmittedOffer();
+        var originalCompany = offer.CompanyName;
+        var originalLocation = offer.Location;
+        var originalIsRemote = offer.IsRemote;
+
+        offer.Apply(new JobOfferEdited(
+            EditedByUserId: OwnerId,
+            EditedByEmail: "owner@test.com",
+            CompanyName: null,
+            ContactName: null,
+            ContactEmail: null,
+            JobTitle: "CTO", // the only field actually edited
+            Description: null,
+            SalaryRange: null,
+            Location: null,
+            IsRemote: null,
+            AdditionalNotes: null,
+            Timestamp: Now.AddHours(1)));
+
+        Assert.Equal(originalCompany, offer.CompanyName);
+        Assert.Equal("CTO", offer.JobTitle);
+        Assert.Equal(originalLocation, offer.Location);
+        Assert.Equal(originalIsRemote, offer.IsRemote);
+    }
+
+    [Fact]
+    public void Edit_OnlyEmitsChangedFields()
+    {
+        // Edit() compares input against the aggregate's current state and
+        // emits null for any field that wasn't actually changed.
+        var offer = CreateSubmittedOffer();
+        var result = offer.Edit(
+            user: Owner,
+            companyName: "Acme",           // unchanged
+            contactName: "John",           // unchanged
+            contactEmail: "john@acme.com", // unchanged
+            jobTitle: "Senior Dev",        // changed (was "Dev")
+            description: "Desc",           // unchanged
+            salaryRange: null,             // unchanged (was null)
+            location: "Prague",            // unchanged
+            isRemote: true,                // unchanged
+            additionalNotes: null,         // unchanged (was null)
+            timestamp: Now.AddHours(1));
+
+        Assert.True(result.IsSuccess);
+        var evt = result.Success.Get();
+        Assert.Null(evt.CompanyName);
+        Assert.Null(evt.ContactName);
+        Assert.Null(evt.ContactEmail);
+        Assert.Equal("Senior Dev", evt.JobTitle);
+        Assert.Null(evt.Description);
+        Assert.Null(evt.SalaryRange);
+        Assert.Null(evt.Location);
+        Assert.Null(evt.IsRemote);
+        Assert.Null(evt.AdditionalNotes);
+    }
+
+    [Fact]
     public void Apply_StatusChanged_UpdatesStatus()
     {
         var offer = CreateSubmittedOffer();

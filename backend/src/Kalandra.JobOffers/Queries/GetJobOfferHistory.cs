@@ -31,9 +31,13 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
 
         var entries = new List<JobOfferHistoryEntry>();
 
-        // Track current field state as we iterate the offer stream in append
-        // order. When a JobOfferEdited event is encountered we diff its fields
-        // against this state to produce a human-readable change summary.
+        // We walk the offer stream in append order and maintain the current
+        // field state as each event is processed. When a JobOfferEdited event
+        // is encountered we diff the fields *it actually changed* (non-null
+        // fields in the event — null means "not edited") against the running
+        // state built from the Submitted event and every prior edit. After
+        // building the diff we advance the state so subsequent edits compare
+        // against the correct baseline.
         var companyName = "";
         var contactName = "";
         var contactEmail = "";
@@ -68,34 +72,51 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
 
                 case JobOfferEdited ed:
                     var changes = new List<string>();
-                    if (companyName != ed.CompanyName)
+                    if (ed.CompanyName != null && ed.CompanyName != companyName)
+                    {
                         changes.Add($"company: {companyName} → {ed.CompanyName}");
-                    if (jobTitle != ed.JobTitle)
+                        companyName = ed.CompanyName;
+                    }
+                    if (ed.JobTitle != null && ed.JobTitle != jobTitle)
+                    {
                         changes.Add($"job title: {jobTitle} → {ed.JobTitle}");
-                    if (contactName != ed.ContactName)
+                        jobTitle = ed.JobTitle;
+                    }
+                    if (ed.ContactName != null && ed.ContactName != contactName)
+                    {
                         changes.Add($"contact name: {contactName} → {ed.ContactName}");
-                    if (contactEmail != ed.ContactEmail)
+                        contactName = ed.ContactName;
+                    }
+                    if (ed.ContactEmail != null && ed.ContactEmail != contactEmail)
+                    {
                         changes.Add($"contact email: {contactEmail} → {ed.ContactEmail}");
-                    if (location != ed.Location)
-                        changes.Add($"location: {Display(location)} → {Display(ed.Location)}");
-                    if (salaryRange != ed.SalaryRange)
-                        changes.Add($"salary: {Display(salaryRange)} → {Display(ed.SalaryRange)}");
-                    if (isRemote != ed.IsRemote)
-                        changes.Add($"remote: {YesNo(isRemote)} → {YesNo(ed.IsRemote)}");
-                    if (description != ed.Description)
+                        contactEmail = ed.ContactEmail;
+                    }
+                    if (ed.Location != null && ed.Location != location)
+                    {
+                        changes.Add($"location: {Display(location)} → {ed.Location}");
+                        location = ed.Location;
+                    }
+                    if (ed.SalaryRange != null && ed.SalaryRange != salaryRange)
+                    {
+                        changes.Add($"salary: {Display(salaryRange)} → {ed.SalaryRange}");
+                        salaryRange = ed.SalaryRange;
+                    }
+                    if (ed.IsRemote.HasValue && ed.IsRemote.Value != isRemote)
+                    {
+                        changes.Add($"remote: {YesNo(isRemote)} → {YesNo(ed.IsRemote.Value)}");
+                        isRemote = ed.IsRemote.Value;
+                    }
+                    if (ed.Description != null && ed.Description != description)
+                    {
                         changes.Add("description changed");
-                    if (additionalNotes != ed.AdditionalNotes)
+                        description = ed.Description;
+                    }
+                    if (ed.AdditionalNotes != null && ed.AdditionalNotes != additionalNotes)
+                    {
                         changes.Add("additional notes changed");
-
-                    companyName = ed.CompanyName;
-                    contactName = ed.ContactName;
-                    contactEmail = ed.ContactEmail;
-                    jobTitle = ed.JobTitle;
-                    description = ed.Description;
-                    salaryRange = ed.SalaryRange;
-                    location = ed.Location;
-                    isRemote = ed.IsRemote;
-                    additionalNotes = ed.AdditionalNotes;
+                        additionalNotes = ed.AdditionalNotes;
+                    }
 
                     var editDescription = changes.Count > 0
                         ? "Edited — " + string.Join(", ", changes)
