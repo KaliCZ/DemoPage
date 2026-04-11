@@ -126,9 +126,7 @@
           "Každá stránka je předgenerovaná a cachovaná na CDN edge nodech po celém světě — téměř okamžité načítání",
           "Ve výchozím stavu posílá nula JS — jen interaktivní islands obsahují klientský kód",
           "Vestavěný i18n routing a detekce locale",
-          "Cloudflare koupil Astro (leden 2026) — nejlepší integrace s Pages",
-          "Šablonová syntaxe .astro se podobá HTML/Vue — nízká křivka učení",
-          "Vue dovednosti se přímo přenesou do budoucího Vue/Nuxt projektu"
+          "Cloudflare koupil Astro (leden 2026) — nejlepší integrace s Pages"
         ],
         "alternatives": [
           { "option": "Vanilla ES6 moduly", "reason": "Stále potřebuje Tailwind build krok. Museli bychom ručně stavět routing, i18n a komponentový systém." },

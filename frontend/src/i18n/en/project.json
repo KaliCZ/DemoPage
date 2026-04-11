@@ -126,9 +126,7 @@
           "Every page is pre-built and cached on CDN edge nodes worldwide — near-instant loading",
           "Ships zero JS by default — only interactive islands include client-side code",
           "Built-in i18n routing and locale detection",
-          "Cloudflare acquired Astro (Jan 2026) — best-in-class Pages integration",
-          ".astro template syntax feels similar to HTML/Vue — low learning curve",
-          "Vue skills transfer directly to a future Vue/Nuxt project if heavier UI logic is needed"
+          "Cloudflare acquired Astro (Jan 2026) — best-in-class Pages integration"
         ],
         "alternatives": [
           { "option": "Vanilla ES6 modules", "reason": "Still needs a Tailwind build step. Would have to manually build routing, i18n, and component system." },
