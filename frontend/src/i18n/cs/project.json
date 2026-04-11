@@ -69,11 +69,11 @@
     "backgroundJobs": "Úlohy na pozadí",
     "database": "Databáze",
     "authentication": "Autentizace",
-    "cicd": "CI/CD",
+    "fileStorage": "Avatary / Soubory",
+    "cicd": "CI / CD",
     "pipeline": "Build + Test → GHCR → Deploy",
     "notifications": "NOTIFIKACE",
-    "observability": "CI/CD & OBSERVABILITA",
-    "planned": "Plánováno"
+    "observability": "OBSERVABILITA"
   },
   "decisions": {
     "title": "Architektonická rozhodnutí",

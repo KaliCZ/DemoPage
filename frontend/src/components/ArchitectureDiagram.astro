@@ -8,11 +8,11 @@ interface Props {
     backgroundJobs: string;
     database: string;
     authentication: string;
+    fileStorage: string;
     cicd: string;
     pipeline: string;
     notifications: string;
     observability: string;
-    planned: string;
   };
   class?: string;
 }
@@ -22,7 +22,7 @@ const { t, class: className, ...rest } = Astro.props;
 
 <div class:list={["overflow-x-auto", className]} {...rest}>
   <svg
-    viewBox="0 0 960 660"
+    viewBox="0 0 960 700"
     xmlns="http://www.w3.org/2000/svg"
     class="w-full min-w-[640px]"
     role="img"
@@ -44,6 +44,7 @@ const { t, class: className, ...rest } = Astro.props;
       }
       .planned-spinner {
         animation: spin 2s linear infinite;
+        transform-box: fill-box;
         transform-origin: center;
       }
     </style>
@@ -175,7 +176,7 @@ const { t, class: className, ...rest } = Astro.props;
           fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.backgroundJobs}
         </text>
-        <!-- Animated loading spinner for planned items -->
+        <!-- Animated loading spinner -->
         <g transform="translate(556, 252)">
           <g class="planned-spinner">
             <circle cx="0" cy="0" r="6" fill="none"
@@ -183,17 +184,13 @@ const { t, class: className, ...rest } = Astro.props;
             <path d="M0,-6 A6,6 0 0,1 6,0"
               fill="none" stroke="var(--color-tertiary)" stroke-width="1.5" stroke-linecap="round" />
           </g>
-          <text x="12" y="4"
-            fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="9" font-weight="600">
-            {t.planned}
-          </text>
         </g>
       </g>
     </g>
 
     <!-- ===== SUPABASE CONTAINER (bottom-center) ===== -->
     <g>
-      <rect x="160" y="400" width="340" height="195" rx="12"
+      <rect x="160" y="400" width="340" height="260" rx="12"
         fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
       <rect x="160" y="400" width="340" height="5" rx="2.5"
         fill="var(--color-on-surface-variant)" />
@@ -235,6 +232,23 @@ const { t, class: className, ...rest } = Astro.props;
           {t.authentication} (JWT)
         </text>
       </g>
+
+      <!-- File Storage -->
+      <g>
+        <rect x="178" y="575" width="304" height="50" rx="8"
+          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
+        <rect x="178" y="575" width="4" height="50" rx="2"
+          fill="var(--color-on-surface-variant)" />
+        <circle cx="196" cy="595" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6" />
+        <text x="206" y="599"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+          Supabase Storage
+        </text>
+        <text x="194" y="616"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+          {t.fileStorage}
+        </text>
+      </g>
     </g>
 
     <!-- ===== NODE-TO-NODE ARROWS ===== -->
@@ -255,22 +269,127 @@ const { t, class: className, ...rest } = Astro.props;
     <path d="M440,196 C420,320 340,400 330,503"
       fill="none" stroke="var(--color-outline)" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arrow)" />
 
-    <!-- ===== NOTIFICATIONS GROUP (Email & Slack) ===== -->
+    <!-- Backend API → Supabase Storage (file uploads) -->
+    <path d="M490,203 C500,400 460,530 440,568"
+      fill="none" stroke="var(--color-outline)" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arrow)" />
+
+    <!-- Supabase Auth → Brevo Email (auth emails) -->
+    <path d="M482,535 C600,535 680,500 723,480"
+      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+
+    <!-- ===== CI/CD GROUP ===== -->
     <g>
-      <text x="850" y="58" text-anchor="end"
+      <text x="850" y="48" text-anchor="end"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
+        {t.cicd}
+      </text>
+
+      <!-- GitHub Actions -->
+      <g>
+        <rect x="730" y="58" width="120" height="44" rx="8"
+          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
+        <circle cx="746" cy="77" r="3" fill="var(--color-outline)" opacity="0.6" />
+        <text x="754" y="81"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+          GitHub Actions
+        </text>
+        <text x="790" y="95" text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          {t.pipeline}
+        </text>
+      </g>
+    </g>
+
+    <!-- ===== OBSERVABILITY GROUP ===== -->
+    <g>
+      <text x="850" y="130" text-anchor="end"
+        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
+        {t.observability}
+      </text>
+
+      <!-- Sentry (planned) -->
+      <g opacity="0.4">
+        <rect x="730" y="140" width="120" height="44" rx="8"
+          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
+        <text x="790" y="163" text-anchor="middle"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+          Sentry
+        </text>
+        <text x="790" y="177" text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          Errors
+        </text>
+        <g transform="translate(838, 149)">
+          <g class="planned-spinner">
+            <circle cx="0" cy="0" r="5" fill="none"
+              stroke="var(--color-outline-variant)" stroke-width="1.2" />
+            <path d="M0,-5 A5,5 0 0,1 5,0"
+              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+          </g>
+        </g>
+      </g>
+
+      <!-- PostHog (planned) -->
+      <g opacity="0.4">
+        <rect x="730" y="194" width="120" height="44" rx="8"
+          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
+        <text x="790" y="217" text-anchor="middle"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+          PostHog
+        </text>
+        <text x="790" y="231" text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          Analytics
+        </text>
+        <g transform="translate(838, 203)">
+          <g class="planned-spinner">
+            <circle cx="0" cy="0" r="5" fill="none"
+              stroke="var(--color-outline-variant)" stroke-width="1.2" />
+            <path d="M0,-5 A5,5 0 0,1 5,0"
+              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+          </g>
+        </g>
+      </g>
+
+      <!-- BetterStack (planned) -->
+      <g opacity="0.4">
+        <rect x="730" y="248" width="120" height="44" rx="8"
+          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
+        <text x="790" y="271" text-anchor="middle"
+          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+          BetterStack
+        </text>
+        <text x="790" y="285" text-anchor="middle"
+          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+          Logs + Uptime
+        </text>
+        <g transform="translate(838, 257)">
+          <g class="planned-spinner">
+            <circle cx="0" cy="0" r="5" fill="none"
+              stroke="var(--color-outline-variant)" stroke-width="1.2" />
+            <path d="M0,-5 A5,5 0 0,1 5,0"
+              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ===== NOTIFICATIONS GROUP ===== -->
+    <g>
+      <text x="850" y="325" text-anchor="end"
         fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
         {t.notifications}
       </text>
 
       <!-- Slack -->
       <g>
-        <rect x="730" y="68" width="120" height="44" rx="8"
+        <rect x="730" y="335" width="120" height="44" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <text x="790" y="87" text-anchor="middle"
+        <text x="790" y="354" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="12" font-weight="600">
           Slack
         </text>
-        <text x="790" y="103" text-anchor="middle"
+        <text x="790" y="370" text-anchor="middle"
           fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
           Webhook
         </text>
@@ -278,13 +397,13 @@ const { t, class: className, ...rest } = Astro.props;
 
       <!-- Email -->
       <g>
-        <rect x="730" y="122" width="120" height="44" rx="8"
+        <rect x="730" y="389" width="120" height="44" rx="8"
           fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <text x="790" y="141" text-anchor="middle"
+        <text x="790" y="408" text-anchor="middle"
           fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="12" font-weight="600">
           Brevo
         </text>
-        <text x="790" y="157" text-anchor="middle"
+        <text x="790" y="424" text-anchor="middle"
           fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
           Email (SMTP)
         </text>
@@ -292,100 +411,11 @@ const { t, class: className, ...rest } = Astro.props;
     </g>
 
     <!-- Arrow: Backend API → Slack -->
-    <path d="M578,148 L723,88"
+    <path d="M578,148 L723,355"
       fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
 
     <!-- Arrow: Backend API → Email -->
-    <path d="M578,158 L723,140"
+    <path d="M578,158 L723,408"
       fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
-
-    <!-- ===== CI/CD & OBSERVABILITY GROUP ===== -->
-    <g>
-      <text x="850" y="225" text-anchor="end"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
-        {t.observability}
-      </text>
-
-      <!-- GitHub Actions -->
-      <g>
-        <rect x="730" y="235" width="120" height="44" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <circle cx="746" cy="254" r="3" fill="var(--color-outline)" opacity="0.6" />
-        <text x="754" y="258"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
-          GitHub Actions
-        </text>
-        <text x="790" y="272" text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
-          {t.cicd}
-        </text>
-      </g>
-
-      <!-- Grafana (planned) -->
-      <g opacity="0.4">
-        <rect x="730" y="289" width="120" height="44" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="312" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
-          Grafana
-        </text>
-        <text x="790" y="326" text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
-          Metrics
-        </text>
-        <g transform="translate(838, 298)">
-          <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
-          </g>
-        </g>
-      </g>
-
-      <!-- Sentry (planned) -->
-      <g opacity="0.4">
-        <rect x="730" y="343" width="120" height="44" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="366" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
-          Sentry
-        </text>
-        <text x="790" y="380" text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
-          Errors
-        </text>
-        <g transform="translate(838, 352)">
-          <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
-          </g>
-        </g>
-      </g>
-
-      <!-- Seq (planned) -->
-      <g opacity="0.4">
-        <rect x="730" y="397" width="120" height="44" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="420" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
-          Seq
-        </text>
-        <text x="790" y="434" text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
-          Logs
-        </text>
-        <g transform="translate(838, 406)">
-          <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
-          </g>
-        </g>
-      </g>
-    </g>
   </svg>
 </div>

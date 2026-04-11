@@ -69,11 +69,11 @@
     "backgroundJobs": "Background Jobs",
     "database": "Database",
     "authentication": "Authentication",
-    "cicd": "CI/CD",
+    "fileStorage": "Avatars / Files",
+    "cicd": "CI / CD",
     "pipeline": "Build + Test → GHCR → Deploy",
     "notifications": "NOTIFICATIONS",
-    "observability": "CI/CD & OBSERVABILITY",
-    "planned": "Planned"
+    "observability": "OBSERVABILITY"
   },
   "decisions": {
     "title": "Architecture Decisions",
