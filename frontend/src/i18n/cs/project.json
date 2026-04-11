@@ -147,7 +147,12 @@
           "Již zkušenosti s SQL, ale ne s MongoDB — rychlejší rozjezd",
           "Žádná extra infrastruktura — využívá existující Supabase PostgreSQL, není potřeba provozovat MongoDB",
           "Inline snapshot projekce udržují read modely bez extra kódu",
-          "Vyspělý framework s dobrou dokumentací — rychlejší na naučení než stavba od nuly"
+          "Vyspělý framework s dobrou dokumentací — rychlejší na naučení než stavba od nuly",
+          "Chtěl jsem vyzkoušet ekosystém Supabase — to znamenalo PostgreSQL, a Marten do toho přirozeně zapadá"
+        ],
+        "alternatives": [
+          { "option": "Vlastní ES na PostgreSQL", "reason": "Jednodušší indexování a řízení souběžnosti než Marten. Ale vyžaduje ruční schema migrace při vývoji modelu — Marten ukládá eventy jako JSON a tomuto se vyhýbá." },
+          { "option": "Vlastní ES na MongoDB", "reason": "Globálně distribuovaná multi-master DB s free tierem na Azure Cosmos DB. Ale žádné zkušenosti s MongoDB transakcemi a řízením souběžnosti — příliš mnoho neznámých pro první ES implementaci." }
         ]
       },
       {
