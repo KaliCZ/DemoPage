@@ -147,9 +147,7 @@
           "Již zkušenosti s SQL, ale ne s MongoDB — rychlejší rozjezd",
           "Žádná extra infrastruktura — využívá existující Supabase PostgreSQL, není potřeba provozovat MongoDB",
           "Inline snapshot projekce udržují read modely bez extra kódu",
-          "Vzor Apply() metody dělá přechody stavů explicitními a testovatelnými",
-          "Vyspělý framework s dobrou dokumentací — rychlejší na naučení než stavba od nuly",
-          "Activity log (event stream) je prvotřídní feature, ne přilepená audit tabulka"
+          "Vyspělý framework s dobrou dokumentací — rychlejší na naučení než stavba od nuly"
         ]
       },
       {

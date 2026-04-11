@@ -147,9 +147,7 @@
           "Already experienced with SQL but not MongoDB — faster to get up and running",
           "No extra infrastructure — reuses the existing Supabase PostgreSQL, no need to run MongoDB",
           "Inline snapshot projections maintain read models with zero extra code",
-          "The Apply() method pattern makes state transitions explicit and testable",
-          "Mature framework with good documentation — faster to learn than building from scratch",
-          "Activity log (event stream) is a first-class feature, not a bolted-on audit table"
+          "Mature framework with good documentation — faster to learn than building from scratch"
         ]
       },
       {
