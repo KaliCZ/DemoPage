@@ -151,8 +151,8 @@
           "Chtěl jsem vyzkoušet ekosystém Supabase — to znamenalo PostgreSQL, a Marten do toho přirozeně zapadá"
         ],
         "alternatives": [
-          { "option": "Vlastní ES na PostgreSQL", "reason": "Jednodušší indexování a řízení souběžnosti než Marten. Ale vyžaduje ruční schema migrace při vývoji modelu — Marten ukládá eventy jako JSON a tomuto se vyhýbá." },
-          { "option": "Vlastní ES na MongoDB", "reason": "Globálně distribuovaná multi-master DB s free tierem na Azure Cosmos DB. Ale žádné zkušenosti s MongoDB transakcemi a řízením souběžnosti — příliš mnoho neznámých pro první ES implementaci." }
+          { "option": "Postavit sám na PostgreSQL", "reason": "Jednodušší indexování a řízení souběžnosti než Marten. Ale vyžaduje ruční schema migrace při vývoji modelu — Marten ukládá eventy jako JSON a tomuto se vyhýbá." },
+          { "option": "Postavit sám na MongoDB", "reason": "Globálně distribuovaná multi-master DB s free tierem na Azure Cosmos DB. Ale žádné zkušenosti s MongoDB transakcemi a řízením souběžnosti — příliš mnoho neznámých pro první implementaci event sourcingu." }
         ]
       },
       {

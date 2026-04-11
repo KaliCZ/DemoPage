@@ -151,8 +151,8 @@
           "Wanted to try Supabase ecosystem — that meant PostgreSQL, and Marten fits naturally"
         ],
         "alternatives": [
-          { "option": "Custom ES on PostgreSQL", "reason": "Easier indexing and concurrency control than Marten. But requires manual schema migrations as the model evolves — Marten stores events as JSON, avoiding this entirely." },
-          { "option": "Custom ES on MongoDB", "reason": "Globally distributed multi-master DB with a free tier on Azure Cosmos DB. But no experience with MongoDB transactions and concurrency control — too much unknown for a first ES implementation." }
+          { "option": "Build it myself on PostgreSQL", "reason": "Easier indexing and concurrency control than Marten. But requires manual schema migrations as the model evolves — Marten stores events as JSON, avoiding this entirely." },
+          { "option": "Build it myself on MongoDB", "reason": "Globally distributed multi-master DB with a free tier on Azure Cosmos DB. But no experience with MongoDB transactions and concurrency control — too much unknown for a first event sourcing implementation." }
         ]
       },
       {
