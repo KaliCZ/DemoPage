@@ -1,18 +1,36 @@
 # C# Conventions
 
-Language-level rules that apply across all backend projects. These are about *how we write C#*, not about architecture — see `docs/backend-architecture.md` and the per-layer guides for that.
+Language-level rules that apply across all backend projects.
 
-## Table of contents
+## Parse, don't validate
 
-- [Named arguments](#named-arguments)
-- [Enum switches: no default branch](#enum-switches-no-default-branch)
+Prefer strong types that make invalid states unrepresentable. Use the `Kalicz.StrongTypes` library (`NonEmptyString`, etc.) and BCL types over raw primitives:
+
+- `NonEmptyString` instead of `string` for required text fields.
+- `MailAddress` instead of `string` for emails.
+- `Guid` (or a typed ID) instead of `string` for identifiers.
+- `DateTimeOffset` instead of `string` for timestamps.
+
+Parse at the boundary (API layer), then pass the strong type through commands and into the domain. If parsing fails, the error is caught at the edge — the domain never has to check for empty strings or malformed emails.
+
+```csharp
+// Good — parsed at the API boundary, domain receives NonEmptyString
+var command = new CreateJobOfferCommand(
+    CompanyName: request.CompanyName.AsNonEmpty().Get(),
+    ContactEmail: new MailAddress(request.ContactEmail),
+    ...);
+
+// Bad — raw string passed through, domain has to validate
+var command = new CreateJobOfferCommand(
+    CompanyName: request.CompanyName,  // might be empty
+    ContactEmail: request.ContactEmail, // might not be an email
+    ...);
+```
 
 ## Named arguments
 
-Two rules for method/constructor calls:
-
-1. **Multi-line calls**: When a call spans multiple lines, every argument gets a named parameter.
-2. **Opaque literal values**: When passing `null`, `true`, `false`, `0`, `""`, `[]`, or similar literals where the meaning isn't obvious from context, use named parameters. If the meaning is obvious from the variable name (e.g., `userId`, `request`), the name can be omitted on single-line calls.
+1. **Multi-line calls**: every argument gets a named parameter.
+2. **Opaque literals**: `null`, `true`, `false`, `0`, `""`, `[]` get named parameters. If the meaning is obvious from the variable name, the name can be omitted on single-line calls.
 
 ```csharp
 // Good — multi-line, all named
@@ -24,42 +42,8 @@ var (success, error, edited) = offer.Edit(
 
 // Good — single line, null is labeled
 var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
-
-// Bad — multi-line without names
-var (success, error, edited) = offer.Edit(
-    userId,
-    userEmail,
-    request.CompanyName,
-    timeProvider.GetUtcNow());
-
-// Bad — null without label
-var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 ```
 
 ## Enum switches: no default branch
 
-Never use `default` or `_` catch-all branches in switch expressions or statements that switch on an enum value. Always enumerate every case explicitly.
-
-**Why:** When a new value is added to the enum, the compiler warns about unhandled cases. A `default` branch silently swallows new values and hides the fact that the switch needs updating. This is especially critical for the two-enum error contract (see `docs/backend-api.md`) — a new domain error that isn't mapped to an API error must be a compile-time signal, not a silent runtime fallthrough.
-
-```csharp
-// Good — compiler warns when a new status is added
-return status switch
-{
-    JobOfferStatus.Submitted => "Submitted",
-    JobOfferStatus.InReview  => "In Review",
-    JobOfferStatus.LetsTalk  => "Let's Talk",
-    JobOfferStatus.Declined  => "Declined",
-    JobOfferStatus.Cancelled => "Cancelled",
-};
-
-// Bad — new enum values silently fall through
-return status switch
-{
-    JobOfferStatus.Submitted => "Submitted",
-    JobOfferStatus.InReview  => "In Review",
-    _ => "Unknown",
-};
-```
-
-If you encounter an existing `default`/`_` on an enum switch, replace it with explicit cases.
+Never use `default` or `_` in switch expressions on enums. Enumerate every case explicitly so the compiler warns when a new value is added. This is critical for the two-enum error contract — a new domain error that isn't mapped must be a compile-time signal, not a silent fallthrough.
