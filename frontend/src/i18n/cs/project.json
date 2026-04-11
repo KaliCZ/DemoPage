@@ -156,18 +156,6 @@
         ]
       },
       {
-        "id": "admin-role",
-        "title": "Admin Role → JWT Claims",
-        "summary": "Role uloženy v Supabase app_metadata, extrahovány z JWT při každém požadavku.",
-        "context": "Aplikace potřebuje autorizaci na základě rolí (běžní uživatelé vs admin) bez udržování samostatné tabulky rolí v backendu.",
-        "decision": "Role jsou uloženy jako pole v Supabase app_metadata (např. \"roles\": [\"admin\"]). Backend extrahuje role z JWT a mapuje každou na standardní .NET role claim.",
-        "why": [
-          "Žádný seznam uživatelských ID na serveru ani databázová tabulka rolí — role cestují s tokenem",
-          "Standardní .NET autorizační infrastruktura (RequireRole) funguje bez úprav",
-          "Přidání nových rolí = aktualizace app_metadata v Supabase, žádné změny backendu"
-        ]
-      },
-      {
         "id": "supabase-auth",
         "title": "Auth → Supabase (lokální + produkce)",
         "summary": "Validace JWT přes JWKS, se záložním symetrickým klíčem pro testy a lokální vývoj.",

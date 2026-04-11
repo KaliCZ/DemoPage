@@ -156,18 +156,6 @@
         ]
       },
       {
-        "id": "admin-role",
-        "title": "Admin Role → JWT Claims",
-        "summary": "Roles stored in Supabase app_metadata, extracted from JWT on each request.",
-        "context": "The app needs role-based authorization (regular users vs admin) without maintaining a separate roles table in the backend.",
-        "decision": "Roles are stored as an array in Supabase app_metadata (e.g., \"roles\": [\"admin\"]). The backend extracts roles from the JWT and maps each to a standard .NET role claim.",
-        "why": [
-          "No server-side user ID list or database roles table needed — roles travel with the token",
-          "Standard .NET authorization infrastructure (RequireRole) works out of the box",
-          "Adding new roles = updating app_metadata in Supabase, no backend changes"
-        ]
-      },
-      {
         "id": "supabase-auth",
         "title": "Auth → Supabase (Local + Production)",
         "summary": "JWT validation via JWKS, with symmetric secret fallback for tests and local dev.",
