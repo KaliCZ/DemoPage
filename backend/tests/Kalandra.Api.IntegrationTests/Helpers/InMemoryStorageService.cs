@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Kalandra.Infrastructure.Storage;
 
-namespace Kalandra.Api.Tests.Helpers;
+namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class InMemoryStorageService : IStorageService
 {

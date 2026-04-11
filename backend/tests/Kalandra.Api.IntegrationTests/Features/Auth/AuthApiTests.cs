@@ -2,10 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Kalandra.Api.Tests.Helpers;
+using Kalandra.Api.IntegrationTests.Helpers;
 using Kalandra.Infrastructure.Auth;
 
-namespace Kalandra.Api.Tests.Features.Auth;
+namespace Kalandra.Api.IntegrationTests.Features.Auth;
 
 public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {

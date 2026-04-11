@@ -1,12 +1,20 @@
 # Backend Testing Guide
 
-xUnit v3 with Microsoft.Testing.Platform. Integration tests run against a real PostgreSQL via Testcontainers — no mocks for the database.
+xUnit v3 with Microsoft.Testing.Platform.
 
 ## Table of contents
 
+- [Test project naming](#test-project-naming)
 - [Test infrastructure](#test-infrastructure)
 - [The contract-detection rule](#the-contract-detection-rule)
 - [Writing tests](#writing-tests)
+
+## Test project naming
+
+- **`{Project}.Tests`** — unit tests for that project. No external dependencies (no Testcontainers, no `WebApplicationFactory`). Example: `Kalandra.JobOffers.Tests` for aggregate decide/apply tests.
+- **`{Project}.IntegrationTests`** — integration tests that need real infrastructure. Example: `Kalandra.Api.IntegrationTests` uses Testcontainers PostgreSQL + `TestWebApplicationFactory` for full HTTP round-trip tests.
+
+Each test project lives in `backend/tests/` and references only the project it's testing (plus `Kalandra.Infrastructure` if needed for shared types like `CurrentUser`).
 
 ## Test infrastructure
 

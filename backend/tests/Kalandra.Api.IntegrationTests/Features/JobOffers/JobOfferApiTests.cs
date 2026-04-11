@@ -3,9 +3,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Kalandra.Api.Tests.Helpers;
+using Kalandra.Api.IntegrationTests.Helpers;
 
-namespace Kalandra.Api.Tests.Features.JobOffers;
+namespace Kalandra.Api.IntegrationTests.Features.JobOffers;
 
 public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {

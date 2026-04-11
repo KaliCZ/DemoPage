@@ -1,6 +1,6 @@
 using Kalandra.Infrastructure.Auth;
 
-namespace Kalandra.Api.Tests.Helpers;
+namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class FakeSupabaseAdminService : ISupabaseAdminService
 {
