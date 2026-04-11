@@ -164,7 +164,7 @@
         "why": [
           "Již používáme Supabase pro databázi — auth je součástí, žádná extra služba",
           "Podporuje fungování jako OAuth provider — potřebné pro MCP, kde se uživatelé autentizují vůči aplikaci přes OAuth",
-          "Běží lokálně v Dockeru — kompletní auth flow funguje offline bez externích závislostí",
+          "Běží lokálně v Dockeru — kompletní auth flow funguje offline bez externích závislostí"
         ],
         "alternatives": [
           { "option": "Vlastní implementace auth", "reason": "Plná kontrola, ale stavba OAuth flow, správy tokenů a zabezpečení od nuly je složitá a náchylná k chybám." },

@@ -164,7 +164,7 @@
         "why": [
           "Already using Supabase for the database — auth comes included, no extra service to manage",
           "Supports acting as an OAuth provider — needed for MCP, where users authenticate with the app via OAuth",
-          "Runs locally in Docker — full auth flow works offline without external dependencies",
+          "Runs locally in Docker — full auth flow works offline without external dependencies"
         ],
         "alternatives": [
           { "option": "Custom auth implementation", "reason": "Full control, but building OAuth flows, token management, and security from scratch is complex and error-prone." },
