@@ -367,30 +367,6 @@ const t = translations[lang];
     </div>
   </section>
 
-  <!-- Open Questions -->
-  <section id="open-questions" class="max-w-7xl mx-auto px-8 mt-32 mb-32">
-    <div class="bg-tertiary-container/20 border border-tertiary/20 rounded-xl p-8">
-      <h2 class="font-headline text-2xl font-bold mb-6 text-on-surface flex items-center gap-2">
-        <span class="material-symbols-outlined text-tertiary" aria-hidden="true">help_outline</span>
-        {t.openQuestions.title}
-      </h2>
-      {t.openQuestions.items.map((q) => (
-        <div>
-          <h3 class="font-headline font-bold text-on-surface mb-2">{q.title}</h3>
-          <p class="font-body text-on-surface-variant text-sm mb-3">{q.description}</p>
-          <ul class="space-y-1">
-            {q.options.map((opt) => (
-              <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5"></span>
-                {opt}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  </section>
-
   <!-- CTA Section -->
   <section class="max-w-7xl mx-auto px-8 mt-32">
     <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
@@ -424,7 +400,6 @@ const t = translations[lang];
       <a href="#architecture" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="architecture">{t.toc.architecture}</a>
       <a href="#decisions" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="decisions">{t.toc.decisions}</a>
       <a href="#roadmap" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="roadmap">{t.toc.roadmap}</a>
-      <a href="#open-questions" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="open-questions">{t.toc.openQuestions}</a>
     </nav>
   </aside>
 </div>
