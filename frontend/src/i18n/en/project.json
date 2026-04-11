@@ -51,7 +51,7 @@
     "items": [
       { "icon": "person", "title": "Personal Showcase", "description": "Present myself to potential employers and recruiters at www.kalandra.tech." },
       { "icon": "construction", "title": "Skills Demonstration", "description": "Document the building process as part of the showcase — architecture, decisions, and progress." },
-      { "icon": "science", "title": "Technology Playground", "description": "Experiment with new technologies in a real, deployed project." }
+      { "icon": "science", "title": "Technology Playground", "description": "Experiment with new technologies in a real, deployed project: Event sourcing, free Cloudflare Pages, Supabase ecosystem, Temporal." }
     ],
     "nfrTitle": "Non-Functional Requirements",
     "nfrItems": [
