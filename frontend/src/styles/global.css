@@ -90,6 +90,15 @@ body {
   background-clip: text;
 }
 
+/* Details/accordion smooth animation */
+details {
+  overflow: hidden;
+}
+
+details > summary + * {
+  will-change: opacity;
+}
+
 /* Suppress transitions during theme toggle to prevent flash */
 .no-transitions,
 .no-transitions *,
