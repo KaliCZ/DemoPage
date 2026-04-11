@@ -103,7 +103,7 @@
           { "risk": "Pozastavení účtu", "details": "Vzácné hlášení o pozastavení účtů bez jasného důvodu", "mitigation": "Mít PAYG zapnutý; udržovat reálné využití" }
         ],
         "setupNotes": [
-          "Použít Ubuntu 24.04 Minimal aarch64 (ne Oracle Linux) pro jednoduchou podporu Dockeru",
+          "Oracle Linux 8 aarch64 — Podman funguje rovnou po instalaci, optimalizovaný pro Oracle Cloud hardware",
           "Nastavit velký boot volume (~150 GB) při vytvoření, aby se předešlo složitosti iSCSI block volume",
           "Otevřít porty v OCI security list i v OS firewallu"
         ],

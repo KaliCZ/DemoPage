@@ -103,7 +103,7 @@
           { "risk": "Account suspension", "details": "Rare reports of accounts suspended without clear reason", "mitigation": "Keep PAYG enabled; maintain real usage" }
         ],
         "setupNotes": [
-          "Use Ubuntu 24.04 Minimal aarch64 (not Oracle Linux) for straightforward Docker support",
+          "Oracle Linux 8 aarch64 — ships with Podman out of the box, optimized for Oracle Cloud hardware",
           "Set a large boot volume (~150 GB) at creation to avoid iSCSI block volume complexity",
           "Open ports in both OCI security list and OS firewall"
         ],
