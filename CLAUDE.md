@@ -6,6 +6,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ast
 
 See the `/project` page (`frontend/src/pages/[...lang]/project.astro`) for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
+See `docs/architecture.md` for the bird's-eye view of the backend layers, then `docs/api.md`, `docs/domain.md`, and `docs/db.md` for per-layer rules and rationale.
 
 ## Commands (all from repo root)
 
@@ -136,13 +137,22 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 - **Dark mode** uses `.dark` class on `<html>` with CSS custom property overrides. Flash prevention via `.no-transitions` class.
 - **Accessibility**: skip-to-content link, aria-current on nav, aria-hidden on decorative elements, aria-haspopup on dropdowns, role="menu"/role="menuitem", role="contentinfo" on footer.
 - **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend via JWKS (public keys fetched from Supabase's OpenID Connect endpoint; symmetric secret fallback for tests). Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__supabase`, `window.__getAccessToken()`, and `window.__getUser()` for pages. Sign-in dialog supports both email/password and Google OAuth.
-- **No anonymous objects in API responses.** Controllers must never return `new { error = "..." }` or similar. Use typed error enums with `ModelState`/`ValidationProblem()` for 400s (gives RFC 7807 + traceId), and `Problem()` for 500s. Define a per-feature error enum (e.g., `LinkEmailError`, `CreateJobOfferError`) so the frontend can do direct i18n key lookups.
-- **API error enums are a separate, stable contract.** Handlers return domain/handler error enums (e.g., `UploadAvatarHandlerError`, `CreateJobOfferError`). Controllers map these to API-layer error enums (e.g., `UploadAvatarError`, `CreateOfferError`) via an explicit `switch`. Never pass `result.Error.Get()` directly to `ValidationError()` — a domain enum rename would silently break the frontend's i18n key lookups.
-- **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration.
-- **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models.
-- **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy.
+- **No anonymous objects in API responses.** Controllers must never return `new { error = "..." }` or similar. Use typed error enums with `ModelState`/`ValidationProblem()` for 400s (gives RFC 7807 + traceId), and `Problem()` for 500s. Define a per-feature error enum (e.g., `LinkEmailError`, `CreateJobOfferError`) so the frontend can do direct i18n key lookups. See `docs/api.md` for the controller pattern and full rationale.
+- **API error enums are a separate, stable contract.** Handlers return domain/handler error enums (e.g., `UploadAvatarHandlerError`, `CreateJobOfferError`). Controllers map these to API-layer error enums (e.g., `UploadAvatarError`, `CreateOfferError`) via an explicit `switch`. Never pass `result.Error.Get()` directly to `ValidationError()` — a domain enum rename would silently break the frontend's i18n key lookups. See `docs/api.md` → "Error contracts: the two-enum rule".
+- **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration. See `docs/api.md` and `docs/domain.md` for the exact layout per layer.
+- **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models. See `docs/domain.md` for the entity / event / handler pattern and `docs/db.md` for Marten configuration, sessions, streams, and projection lifecycle.
+- **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy. See `docs/api.md` → "Authorization" and `docs/db.md` → "Supabase auth integration".
 - **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner. API integration tests must **never** reference request/response contract classes — send anonymous objects and assert on raw JSON (`JsonElement`) properties so that any contract change (renamed field, changed enum) is caught as a test failure. Domain entity/event types are fine for test setup, DB seeding, and direct DB assertions.
 - **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
+
+## Backend Layer Guides
+
+For the long-form rules, rationale, and worked examples behind the bullets above, read the per-layer guides in `docs/`:
+
+- **`docs/architecture.md`** — Bird's-eye view: which project owns what (`Kalandra.Api` / `Kalandra.JobOffers` / `Kalandra.Infrastructure`), end-to-end request flow, error flow across layer boundaries, DI registration order, and a "where to put new code" cheat sheet.
+- **`docs/api.md`** — API layer rules: thin controllers, vertical slices under `Features/{Name}/`, the two-enum error contract, RFC 7807 validation problems, authorization policies, rate limiting, concurrency wrapping.
+- **`docs/domain.md`** — Domain layer rules: the handler pattern, `Try<TSuccess, TError>` return type, entity decide/apply split, event design rules, multi-stream aggregates (job offers + comments), domain error enums.
+- **`docs/db.md`** — Database layer: Marten configuration and per-domain `StoreOptions`, `AutoCreate` modes by environment, read vs. write sessions, inline projections, event streams and concurrency control, Supabase auth/storage integrations, health checks.
 
 ## Build & Deploy
 
