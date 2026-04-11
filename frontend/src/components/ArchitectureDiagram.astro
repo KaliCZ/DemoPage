@@ -22,7 +22,7 @@ const { t, class: className, ...rest } = Astro.props;
 
 <div class:list={["overflow-x-auto", className]} {...rest}>
   <svg
-    viewBox="0 0 920 660"
+    viewBox="0 0 960 660"
     xmlns="http://www.w3.org/2000/svg"
     class="w-full min-w-[640px]"
     role="img"
@@ -257,7 +257,7 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== NOTIFICATIONS GROUP (Email & Slack) ===== -->
     <g>
-      <text x="790" y="58" text-anchor="middle"
+      <text x="850" y="58" text-anchor="end"
         fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
         {t.notifications}
       </text>
@@ -292,16 +292,16 @@ const { t, class: className, ...rest } = Astro.props;
     </g>
 
     <!-- Arrow: Backend API → Slack -->
-    <path d="M578,155 L723,88"
+    <path d="M578,148 L723,88"
       fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
 
     <!-- Arrow: Backend API → Email -->
-    <path d="M578,166 L723,140"
+    <path d="M578,158 L723,140"
       fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
 
     <!-- ===== CI/CD & OBSERVABILITY GROUP ===== -->
     <g>
-      <text x="790" y="225" text-anchor="middle"
+      <text x="850" y="225" text-anchor="end"
         fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
         {t.observability}
       </text>
