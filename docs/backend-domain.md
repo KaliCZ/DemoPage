@@ -75,33 +75,6 @@ Separating "decide" from "apply" means:
 - `Edit` / `Cancel` / `ChangeStatus` can be tested by constructing an aggregate in a given state and asserting on the returned `Try`, without touching Marten at all.
 - Marten's snapshot projection (`SnapshotLifecycle.Inline`) can rebuild the aggregate from events on load, guaranteeing that persisted state and derived state are identical.
 
-### Example
-
-```csharp
-public Try<JobOfferEdited, EditJobOfferError> Edit(
-    CurrentUser user, string companyName, /* ... */, DateTimeOffset timestamp)
-{
-    if (UserId != user.Id)
-        return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotAuthorized);
-
-    if (Status != JobOfferStatus.Submitted)
-        return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotSubmittedStatus);
-
-    return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
-        EditedByUserId: user.Id,
-        CompanyName: companyName,
-        // ...
-        Timestamp: timestamp));
-}
-
-public void Apply(JobOfferEdited e)
-{
-    CompanyName = e.CompanyName;
-    // ...
-    UpdatedAt = e.Timestamp;
-}
-```
-
 ### Status transitions
 
 State machines belong on the entity. `JobOffer.CanTransitionTo(JobOfferStatus)` is private and used inside `ChangeStatus`. The handler never switches on `offer.Status` to decide whether a transition is legal — that's the entity's job.
