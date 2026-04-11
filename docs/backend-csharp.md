@@ -44,6 +44,16 @@ var (success, error, edited) = offer.Edit(
 var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
 ```
 
+## `Try<TSuccess, TError>` result type
+
+`Try<TSuccess, TError>` is a discriminated-union-like result type from the `Kalicz.StrongTypes` package (available via `global using StrongTypes;`). Use it for handler and entity methods whose "failure" is a business decision, not an exception.
+
+- `Try.Success<TSuccess, TError>(value)` — successful case.
+- `Try.Error<TSuccess, TError>(error)` — business-logic failure.
+- `result.IsError`, `result.Success.Get()`, `result.Error.Get()` — interrogation.
+
+Exceptions are reserved for truly exceptional conditions (storage failures, DB outages, concurrency conflicts). A user trying to edit someone else's job offer is not an exception — it's a `Try.Error`.
+
 ## Enum switches: no default branch
 
 Never use `default` or `_` in switch expressions on enums. Enumerate every case explicitly so the compiler warns when a new value is added. This is critical for the two-enum error contract — a new domain error that isn't mapped must be a compile-time signal, not a silent fallthrough.

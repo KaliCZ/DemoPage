@@ -25,7 +25,7 @@ Handlers do **not** own:
 
 - Presentation (no DTOs — handlers return domain entities or event objects)
 - Authorization translation (they return `NotAuthorized` as a domain error; the controller translates that to 403)
-- HTTP-specific guards (Turnstile, rate limits, content-size caps on `IFormFile`)
+- HTTP-specific guards (Turnstile token validation, rate limits). Note: handlers *do* validate business limits on files (count, total size, content types) — what they don't do is deal with `IFormFile` or multipart parsing, which is the controller's job.
 
 A handler's validation is the **last line of defence**. The API layer may reject bad input earlier for UX reasons, but a handler that assumes its inputs have already been validated is a bug.
 
@@ -56,13 +56,7 @@ Queries that shouldn't expose an aggregate's existence return `null` (not a doma
 
 ## The `Try<TSuccess, TError>` return type
 
-`Try<TSuccess, TError>` is a discriminated-union-like result type from the `Kalicz.StrongTypes` NuGet package (made available via `global using StrongTypes;` in `GlobalUsings.cs`). Use it consistently for handler and entity methods whose "failure" is a business decision, not an exception.
-
-- `Try.Success<TSuccess, TError>(value)` — successful case.
-- `Try.Error<TSuccess, TError>(error)` — business-logic failure.
-- `result.IsError`, `result.Success.Get()`, `result.Error.Get()` — interrogation.
-
-Exceptions are reserved for truly exceptional conditions — storage failures, DB outages, concurrency conflicts, programmer errors. A user who tries to edit someone else's job offer is not an exception; it is a `Try.Error<..., EditJobOfferError>(NotAuthorized)`.
+See `docs/backend-csharp.md` → "Try result type" for the API. Handlers and entity decision methods return `Try<TSuccess, TError>` for business failures. Exceptions are only for infrastructure faults.
 
 ## Entities and event sourcing
 
