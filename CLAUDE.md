@@ -6,7 +6,8 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ast
 
 See the `/project` page (`frontend/src/pages/[...lang]/project.astro`) for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
-See `docs/architecture.md` for the bird's-eye view of the backend layers, then `docs/api.md`, `docs/domain.md`, and `docs/db.md` for per-layer rules and rationale.
+See `docs/frontend.md` for the frontend guide: component extraction, i18n, styling, dark mode, auth, and accessibility.
+See `docs/architecture.md` for the bird's-eye view of the backend layers, then `docs/api.md`, `docs/domain.md`, `docs/db.md`, and `docs/testing.md` for per-layer rules and rationale.
 
 ## Commands (all from repo root)
 
@@ -28,63 +29,15 @@ npm test                            # All tests: backend + frontend + E2E
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
 
-### Example: i18n Architecture
+### i18n Architecture
 
-We use **per-page translation files** (pattern 2) instead of a single file per language (pattern 1):
-
-```
-src/i18n/
-  utils.ts                 # Locale type, helper functions
-  en/
-    common.json            # Nav, footer, theme, auth, a11y strings
-    home.json              # Home page content
-    about.json             # About page content
-    project.json           # Project page content
-    hire-me.json           # Hire Me form page content
-    job-offers.json        # Job Offers list/detail page content
-  cs/
-    common.json
-    home.json
-    about.json
-    project.json
-    hire-me.json
-    job-offers.json
-```
-
-**Why pattern 2 over pattern 1?**
-- A single file per language works fine for small projects, but doesn't scale to teams or larger codebases
-- Per-page files reduce merge conflicts when multiple people edit different pages
-- Each file is self-contained — you can find all strings for a page without scrolling through hundreds of keys
-- The breaking point for a single file is around 10–15 pages / 200–300 keys, but we chose pattern 2 from the start because this is a portfolio project meant to demonstrate professional practices
-
-**How it works:**
-- Route pages use Astro's `[...lang]` rest parameter — a single route file handles all locales via `getStaticPaths()`. English gets no prefix (`/about`), Czech gets `/cs/about`.
-- Each route page imports both `en/*.json` and `cs/*.json` and selects based on the resolved `lang` param. No separate component layer needed — each page file is the single source of truth for its UI.
-- Layout.astro imports `common.json` for nav, footer, and accessibility strings.
-- Adding a new language = adding JSON files + one entry in `locales` array in `utils.ts`. No new route files, no UI changes.
+Per-page translation files (one JSON per page per language) — see `docs/frontend.md` → "Routing and i18n" for the full pattern and rationale.
 
 ## Project Structure
 
+Frontend layout is in `docs/frontend.md` → "Directory layout".
+
 ```
-frontend/
-  src/
-    i18n/                  # Translation files + utilities
-      utils.ts             # Locale type, localePath(), alternateLangUrl()
-      en/*.json            # English translations (per page)
-      cs/*.json            # Czech translations (per page)
-    lib/
-      supabase.ts          # Supabase config (public env vars, API URL)
-    layouts/
-      Layout.astro         # Shell: nav, footer, SEO, dark mode, auth UI
-    pages/
-      [...lang]/           # Dynamic routes — one file per page, all locales
-        index.astro        # Home (/, /cs/)
-        about.astro        # About (/about, /cs/about)
-        project.astro      # Project (/project, /cs/project)
-        hire-me.astro      # Hire Me form (/hire-me, /cs/hire-me)
-        job-offers.astro   # Job Offers list (/job-offers, /cs/job-offers)
-    styles/
-      global.css           # Tailwind + CSS custom properties + dark mode
 backend/
   src/
     Kalandra.Api/          # ASP.NET Core Web API
@@ -98,6 +51,7 @@ supabase/
   config.toml              # Local Supabase config (auth, ports, email settings)
 docs/
   SETUP.md                 # Step-by-step setup guide for backend & deployment
+  frontend.md              # Frontend guide: components, i18n, styling, auth, a11y
 ```
 
 ### C# Named Arguments
@@ -131,28 +85,26 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 
 ## Key Conventions
 
-- **UI changes** go in `src/pages/[...lang]/` — one file per page, all languages served from it
-- **Content changes** go in `src/i18n/{lang}/` JSON files — always use raw UTF-8 characters, never Unicode escapes (`č` not `\u010d`)
-- **Route pages** use `[...lang]` dynamic routes with `getStaticPaths()`. One file per page handles all locales. No separate component layer.
-- **Dark mode** uses `.dark` class on `<html>` with CSS custom property overrides. Flash prevention via `.no-transitions` class.
-- **Accessibility**: skip-to-content link, aria-current on nav, aria-hidden on decorative elements, aria-haspopup on dropdowns, role="menu"/role="menuitem", role="contentinfo" on footer.
-- **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend via JWKS (public keys fetched from Supabase's OpenID Connect endpoint; symmetric secret fallback for tests). Auth state managed client-side via `@supabase/supabase-js`. Layout.astro exposes `window.__supabase`, `window.__getAccessToken()`, and `window.__getUser()` for pages. Sign-in dialog supports both email/password and Google OAuth.
+- **Frontend conventions** — see `docs/frontend.md` for routing, i18n, component extraction, styling, dark mode, auth, and accessibility rules.
+- **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend via JWKS (public keys fetched from Supabase's OpenID Connect endpoint; symmetric secret fallback for tests). Client-side details in `docs/frontend.md` → "Auth on the frontend".
 - **No anonymous objects in API responses.** Controllers must never return `new { error = "..." }` or similar. Use typed error enums with `ModelState`/`ValidationProblem()` for 400s (gives RFC 7807 + traceId), and `Problem()` for 500s. Define a per-feature error enum (e.g., `LinkEmailError`, `CreateJobOfferError`) so the frontend can do direct i18n key lookups. See `docs/api.md` for the controller pattern and full rationale.
 - **API error enums are a separate, stable contract.** Handlers return domain/handler error enums (e.g., `UploadAvatarHandlerError`, `CreateJobOfferError`). Controllers map these to API-layer error enums (e.g., `UploadAvatarError`, `CreateOfferError`) via an explicit `switch`. Never pass `result.Error.Get()` directly to `ValidationError()` — a domain enum rename would silently break the frontend's i18n key lookups. See `docs/api.md` → "Error contracts: the two-enum rule".
 - **Backend feature code** uses vertical slices: each feature in `Features/{Name}/` with its own controller, DTOs, handlers, and entity configuration. See `docs/api.md` and `docs/domain.md` for the exact layout per layer.
 - **Event sourcing**: Marten event store for job offers. Events define state changes, inline projections maintain read models. See `docs/domain.md` for the entity / event / handler pattern and `docs/db.md` for Marten configuration, sessions, streams, and projection lifecycle.
 - **Admin role**: Role-based via Supabase `app_metadata.roles` array (e.g., `["admin"]`). Backend extracts roles from JWT and maps each to a .NET role claim. `RequireRole("admin")` authorization policy. See `docs/api.md` → "Authorization" and `docs/db.md` → "Supabase auth integration".
-- **Testing**: xUnit v3 with Microsoft.Testing.Platform. `global.json` in `backend/` configures the test runner. API integration tests must **never** reference request/response contract classes — send anonymous objects and assert on raw JSON (`JsonElement`) properties so that any contract change (renamed field, changed enum) is caught as a test failure. Domain entity/event types are fine for test setup, DB seeding, and direct DB assertions.
+- **Testing**: xUnit v3 with Testcontainers PostgreSQL. API tests use anonymous objects for requests and raw `JsonElement` for responses — never reference contract classes, so renames/changes break the test. See `docs/testing.md` for the full contract-detection rule, test patterns, and helpers.
 - **Dev workflow**: `npm run dev` starts PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev). Local Supabase provides auth with email/password sign-in (no email confirmation required).
 
-## Backend Layer Guides
+## Layer Guides
 
 For the long-form rules, rationale, and worked examples behind the bullets above, read the per-layer guides in `docs/`:
 
+- **`docs/frontend.md`** — Frontend guide: Astro component extraction, i18n per-page pattern, Tailwind styling, dark mode, client-side auth, accessibility baseline, and a "where to put new code" cheat sheet.
 - **`docs/architecture.md`** — Bird's-eye view: which project owns what (`Kalandra.Api` / `Kalandra.JobOffers` / `Kalandra.Infrastructure`), end-to-end request flow, error flow across layer boundaries, DI registration order, and a "where to put new code" cheat sheet.
 - **`docs/api.md`** — API layer rules: thin controllers, vertical slices under `Features/{Name}/`, the two-enum error contract, RFC 7807 validation problems, authorization policies, rate limiting, concurrency wrapping.
 - **`docs/domain.md`** — Domain layer rules: the handler pattern, `Try<TSuccess, TError>` return type, entity decide/apply split, event design rules, multi-stream aggregates (job offers + comments), domain error enums.
 - **`docs/db.md`** — Database layer: Marten configuration and per-domain `StoreOptions`, `AutoCreate` modes by environment, read vs. write sessions, inline projections, event streams and concurrency control, Supabase auth/storage integrations, health checks.
+- **`docs/testing.md`** — Backend testing: the contract-detection rule (anonymous objects + raw JSON, never contract classes), API integration test patterns, domain aggregate tests, concurrency tests, test infrastructure and helpers.
 
 ## Build & Deploy
 
