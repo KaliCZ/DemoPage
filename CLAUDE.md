@@ -7,6 +7,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ast
 See the `/project` page (`frontend/src/pages/[...lang]/project.astro`) for full architecture, roadmap, and decision log.
 See `docs/SETUP.md` for setup instructions.
 See `docs/frontend.md` for the frontend guide: component extraction, i18n, styling, dark mode, auth, and accessibility.
+See `docs/csharp.md` for C# language conventions (named arguments, enum switches).
 See `docs/architecture.md` for the bird's-eye view of the backend layers, then `docs/api.md`, `docs/domain.md`, `docs/db.md`, and `docs/testing.md` for per-layer rules and rationale.
 
 ## Commands (all from repo root)
@@ -54,37 +55,22 @@ docs/
   frontend.md              # Frontend guide: components, i18n, styling, auth, a11y
 ```
 
-### C# Named Arguments
+## Required Reading Before Changes
 
-Two rules for method/constructor calls:
+**Always read the relevant guide before modifying code.** Do not assume content or conventions — read the actual docs first.
 
-1. **Multi-line calls**: When a call spans multiple lines, every argument gets a named parameter.
-2. **Opaque literal values**: When passing `null`, `true`, `false`, `0`, `""`, `[]`, or similar literals where the meaning isn't obvious from context, use named parameters. If the meaning is obvious from the variable name (e.g., `userId`, `request`), the name can be omitted on single-line calls.
-
-```csharp
-// Good — multi-line, all named
-var (success, error, edited) = offer.Edit(
-    userId: userId,
-    userEmail: userEmail,
-    companyName: request.CompanyName,
-    timestamp: timeProvider.GetUtcNow());
-
-// Good — single line, null is labeled
-var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
-
-// Bad — multi-line without names
-var (success, error, edited) = offer.Edit(
-    userId,
-    userEmail,
-    request.CompanyName,
-    timeProvider.GetUtcNow());
-
-// Bad — null without label
-var result = await listHandler.HandleAsync(null, page, pageSize, ct);
-```
+| Changing...                  | Read first                                              |
+|------------------------------|---------------------------------------------------------|
+| Any backend code             | `docs/csharp.md` + `docs/architecture.md`               |
+| Controllers, DTOs, endpoints | `docs/api.md`                                           |
+| Entities, events, handlers   | `docs/domain.md`                                        |
+| Marten config, DB queries    | `docs/db.md`                                            |
+| Tests (writing or changing)  | `docs/testing.md`                                       |
+| Frontend pages or components | `docs/frontend.md`                                      |
 
 ## Key Conventions
 
+- **C# conventions** — named arguments, no default in enum switches. See `docs/csharp.md`.
 - **Frontend conventions** — see `docs/frontend.md` for routing, i18n, component extraction, styling, dark mode, auth, and accessibility rules.
 - **Auth**: Supabase Auth with email/password + Google OAuth. JWT validated on backend via JWKS (public keys fetched from Supabase's OpenID Connect endpoint; symmetric secret fallback for tests). Client-side details in `docs/frontend.md` → "Auth on the frontend".
 - **No anonymous objects in API responses.** Controllers must never return `new { error = "..." }` or similar. Use typed error enums with `ModelState`/`ValidationProblem()` for 400s (gives RFC 7807 + traceId), and `Problem()` for 500s. Define a per-feature error enum (e.g., `LinkEmailError`, `CreateJobOfferError`) so the frontend can do direct i18n key lookups. See `docs/api.md` for the controller pattern and full rationale.
@@ -99,6 +85,7 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 
 For the long-form rules, rationale, and worked examples behind the bullets above, read the per-layer guides in `docs/`:
 
+- **`docs/csharp.md`** — C# language conventions: named argument rules, no default/_ in enum switches.
 - **`docs/frontend.md`** — Frontend guide: Astro component extraction, i18n per-page pattern, Tailwind styling, dark mode, client-side auth, accessibility baseline, and a "where to put new code" cheat sheet.
 - **`docs/architecture.md`** — Bird's-eye view: which project owns what (`Kalandra.Api` / `Kalandra.JobOffers` / `Kalandra.Infrastructure`), end-to-end request flow, error flow across layer boundaries, DI registration order, and a "where to put new code" cheat sheet.
 - **`docs/api.md`** — API layer rules: thin controllers, vertical slices under `Features/{Name}/`, the two-enum error contract, RFC 7807 validation problems, authorization policies, rate limiting, concurrency wrapping.
