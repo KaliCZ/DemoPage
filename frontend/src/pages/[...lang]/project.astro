@@ -143,6 +143,16 @@ const t = translations[lang];
           <span class="material-symbols-outlined text-primary text-3xl mb-4 block" aria-hidden="true">{item.icon}</span>
           <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{item.title}</h3>
           <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
+          {item.subItems && (
+            <ul class="mt-3 space-y-1">
+              {item.subItems.map((sub: string) => (
+                <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5"></span>
+                  {sub}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ))}
     </div>
