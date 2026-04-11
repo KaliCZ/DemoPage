@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 
-namespace Kalandra.Api.Tests.Helpers;
+namespace Kalandra.Api.IntegrationTests.Helpers;
 
 /// <summary>
 /// An HttpMessageHandler that serves fake OpenID Connect discovery and JWKS

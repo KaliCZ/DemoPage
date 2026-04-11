@@ -3,7 +3,7 @@ using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 
-namespace Kalandra.Api.Tests.Features.JobOffers;
+namespace Kalandra.JobOffers.Tests;
 
 public class JobOfferAggregateTests
 {

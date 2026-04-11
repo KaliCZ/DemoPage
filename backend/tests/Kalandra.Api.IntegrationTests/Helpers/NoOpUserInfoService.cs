@@ -1,6 +1,6 @@
 using Kalandra.Infrastructure.Users;
 
-namespace Kalandra.Api.Tests.Helpers;
+namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class NoOpUserInfoService : IUserInfoService
 {
