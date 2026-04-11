@@ -43,7 +43,7 @@ const t = translations[lang];
         <div class="space-y-6">
           <div>
             <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.statusLabel}</div>
-            <a href="#roadmap" class="font-body font-semibold text-primary hover:underline">{t.quickStats.statusValue}</a>
+            <a href="#v2" class="font-body font-semibold text-primary hover:underline">{t.quickStats.statusValue}</a>
           </div>
           <div>
             <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.timeLabel}</div>
@@ -286,7 +286,7 @@ const t = translations[lang];
           const hasDates = 'dates' in version && version.dates;
 
           const versionContent = (
-            <div>
+            <div id={`v${version.number}`}>
               <div class:list={["font-label text-primary mb-2 text-sm uppercase", version.done && `flex items-center gap-1.5 ${isLeft ? 'md:justify-end' : ''}`]}>
                 {`Version ${version.number}`}
                 {version.done && (
