@@ -159,11 +159,11 @@
         "id": "supabase-auth",
         "title": "Auth → Supabase Auth",
         "summary": "Use Supabase's built-in auth instead of building custom or using a separate provider.",
-        "context": "The app needs OAuth (Google) for future MCP integrations and standard email/password. No prior experience with third-party auth providers.",
+        "context": "The app needs to act as an OAuth provider — users will authenticate via OAuth when connecting through MCP. Also needs standard email/password login. No prior experience with third-party auth providers.",
         "decision": "Use Supabase Auth — it's already part of the Supabase ecosystem we chose for the database, supports OAuth out of the box, and runs locally in Docker for development.",
         "why": [
           "Already using Supabase for the database — auth comes included, no extra service to manage",
-          "OAuth support out of the box (Google, GitHub, etc.) — needed for future MCP integrations",
+          "Supports acting as an OAuth provider — needed for MCP, where users authenticate with the app via OAuth",
           "Runs locally in Docker — full auth flow works offline without external dependencies",
           "No experience with third-party auth providers — Supabase is the simplest path to get started"
         ],

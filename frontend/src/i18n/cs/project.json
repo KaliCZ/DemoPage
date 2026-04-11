@@ -159,11 +159,11 @@
         "id": "supabase-auth",
         "title": "Auth → Supabase Auth",
         "summary": "Vestavěná autentizace Supabase místo vlastního řešení nebo externího poskytovatele.",
-        "context": "Aplikace potřebuje OAuth (Google) pro budoucí MCP integrace a standardní email/heslo. Žádné předchozí zkušenosti s poskytovateli autentizace třetích stran.",
+        "context": "Aplikace musí fungovat jako OAuth provider — uživatelé se budou autentizovat přes OAuth při připojení přes MCP. Také potřebuje standardní email/heslo přihlášení. Žádné předchozí zkušenosti s poskytovateli autentizace třetích stran.",
         "decision": "Použít Supabase Auth — je součástí ekosystému Supabase, který už používáme pro databázi, podporuje OAuth ihned po instalaci a běží lokálně v Dockeru pro vývoj.",
         "why": [
           "Již používáme Supabase pro databázi — auth je součástí, žádná extra služba",
-          "OAuth podpora ihned po instalaci (Google, GitHub, atd.) — potřebné pro budoucí MCP integrace",
+          "Podporuje fungování jako OAuth provider — potřebné pro MCP, kde se uživatelé autentizují vůči aplikaci přes OAuth",
           "Běží lokálně v Dockeru — kompletní auth flow funguje offline bez externích závislostí",
           "Žádné zkušenosti s poskytovateli autentizace třetích stran — Supabase je nejjednodušší cesta"
         ],
