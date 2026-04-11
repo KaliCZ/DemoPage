@@ -129,7 +129,7 @@
           "Cloudflare acquired Astro (Jan 2026) — best-in-class Pages integration"
         ],
         "alternatives": [
-          { "option": "Vue/Nuxt (SSR)", "reason": "Second-best option — hosted as a Cloudflare Worker or as a Docker image on the VPS. But SSG is simpler and free, so starting with that as long as it works." },
+          { "option": "Vue/Nuxt (SSR)", "reason": "Second-best option — hosted preferably as a Cloudflare Worker, or potentially as a Docker image on the VPS. But SSG is simpler and free, so starting with that as long as it works." },
           { "option": "Vanilla ES6 modules", "reason": "Still needs a Tailwind build step. Would have to manually build routing, i18n, and component system." },
           { "option": "React/Next.js", "reason": "Ships ~80-120 KB React runtime. JS-first authoring. Next.js is Vercel-aligned, not Cloudflare-aligned." },
           { "option": "SvelteKit", "reason": "Good framework, but i18n is not built-in. More geared toward interactive apps." },

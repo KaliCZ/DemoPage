@@ -129,7 +129,7 @@
           "Cloudflare koupil Astro (leden 2026) — nejlepší integrace s Pages"
         ],
         "alternatives": [
-          { "option": "Vue/Nuxt (SSR)", "reason": "Druhá nejlepší volba — hostováno jako Cloudflare Worker nebo jako Docker image na VPS. Ale SSG je jednodušší a zdarma, tak začínám s tím, dokud to stačí." },
+          { "option": "Vue/Nuxt (SSR)", "reason": "Druhá nejlepší volba — hostováno ideálně jako Cloudflare Worker, případně jako Docker image na VPS. Ale SSG je jednodušší a zdarma, tak začínám s tím, dokud to stačí." },
           { "option": "Vanilla ES6 moduly", "reason": "Stále potřebuje Tailwind build krok. Museli bychom ručně stavět routing, i18n a komponentový systém." },
           { "option": "React/Next.js", "reason": "Posílá ~80-120 KB React runtime. JS-first přístup. Next.js je Vercel-aligned, ne Cloudflare." },
           { "option": "SvelteKit", "reason": "Dobrý framework, ale i18n stále není vestavěný. Více zaměřený na interaktivní aplikace." },
