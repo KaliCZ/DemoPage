@@ -186,14 +186,14 @@
       {
         "id": "testing-strategy",
         "title": "Testing Strategy",
-        "summary": "Integration tests with real databases, Playwright for UI and E2E, no mocks.",
+        "summary": "Mock as little as possible. Real database everywhere, full-stack E2E with working auth.",
         "context": "Need a testing approach that provides high confidence with minimal mocking, covering the full stack from API endpoints to database.",
-        "decision": "Multi-layer testing with real infrastructure at every level.",
+        "decision": "Three layers of testing, all running in parallel in CI/CD. Each blocks deployment on failure.",
         "why": [
-          "Backend integration tests: xUnit + Testcontainers — real PostgreSQL, full API via WebApplicationFactory, generated JWTs, no mocks",
+          "Backend integration tests: xUnit + Testcontainers — real PostgreSQL, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, external services like Slack/email will be mocked), but the database is real so most functionality is easy to assert",
           "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, and dark mode",
-          "E2E smoke tests: Playwright against full stack (frontend + backend + DB)",
-          "CI/CD: Backend and frontend tests run in separate pipelines, both block deployment on failure"
+          "E2E tests: Playwright against the full running application — working auth, working DB, everything real. Only external systems like Slack and email can't be asserted",
+          "CI/CD: All three test suites run in parallel, all block deployment on failure"
         ]
       }
     ]
