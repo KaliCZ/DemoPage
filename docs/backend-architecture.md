@@ -1,6 +1,6 @@
 # Backend Architecture
 
-This document explains how the backend layers fit together: which project owns what, how a request flows from HTTP through the domain to the database and back, and how errors are translated at each boundary. Read this after `docs/api.md`, `docs/domain.md`, and `docs/db.md` if you want the bird's-eye view; read it first if you're trying to find the right place to add a new feature.
+This document explains how the backend layers fit together: which project owns what, how a request flows from HTTP through the domain to the database and back, and how errors are translated at each boundary. Read this after `docs/backend-api.md`, `docs/backend-domain.md`, and `docs/backend-db.md` if you want the bird's-eye view; read it first if you're trying to find the right place to add a new feature.
 
 ## Table of contents
 
@@ -147,7 +147,7 @@ Some shortcuts the controller takes for errors that don't need a stable wire-lev
 | `Marten.ConcurrencyException` / `EventStreamUnexpectedMaxEventIdException` | `Conflict(...)` via `WithConcurrencyHandling` (409) |
 | Unknown failures from `SupabaseAdminService`                          | `Problem()` (500, RFC 7807) |
 
-The two-enum split (handler enum ↔ API enum) is the single most important rule for error contracts. It is restated in detail in `docs/api.md` and `docs/domain.md`; the short version is: domain enums may be renamed freely; API enums must not be — they are the i18n key the frontend imports.
+The two-enum split (handler enum ↔ API enum) is the single most important rule for error contracts. It is restated in detail in `docs/backend-api.md` and `docs/backend-domain.md`; the short version is: domain enums may be renamed freely; API enums must not be — they are the i18n key the frontend imports.
 
 ## DI registration
 

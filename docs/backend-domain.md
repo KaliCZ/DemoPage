@@ -232,7 +232,7 @@ Each feature defines its own error enum next to its handler or entity. Examples:
 - `EditJobOfferError { NotFound, NotAuthorized, NotSubmittedStatus }` — in `Entities/JobOffer.cs` (used by both `JobOffer.Edit` and `EditJobOfferHandler`)
 - `AddCommentError { NotFound, NotAuthorized }` — in `Entities/JobOffer.cs`
 
-These enums are **internal to the domain**. They may be renamed, split, or merged freely when refactoring — the API layer's parallel enums shield the frontend from those changes (see `docs/api.md` → "Error contracts: the two-enum rule"). That freedom is the whole point of keeping them separate: domain refactoring should never break the wire contract.
+These enums are **internal to the domain**. They may be renamed, split, or merged freely when refactoring — the API layer's parallel enums shield the frontend from those changes (see `docs/backend-api.md` → "Error contracts: the two-enum rule"). That freedom is the whole point of keeping them separate: domain refactoring should never break the wire contract.
 
 ## Dependency injection
 

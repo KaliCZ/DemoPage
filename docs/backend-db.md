@@ -2,7 +2,7 @@
 
 The database layer covers everything that touches PostgreSQL or Supabase: Marten configuration, event-store schema, projections, and the Supabase auth/storage integrations. There is no separate "Db" project — Marten lives in `Kalandra.JobOffers` (the domain that owns the events) and Supabase clients live in `Kalandra.Infrastructure`. The wiring of both is in `Kalandra.Api/Infrastructure/ServiceCollectionExtensions.cs`.
 
-> This document expands on the `Event sourcing` and `Auth` bullets in `CLAUDE.md` and covers the database side of the rules in `docs/domain.md`.
+> This document expands on the `Event sourcing` and `Auth` bullets in `CLAUDE.md` and covers the database side of the rules in `docs/backend-domain.md`.
 
 ## Table of contents
 
@@ -106,7 +106,7 @@ Streams are the unit of consistency in Marten:
 
 - A `JobOffer` stream is started in `CreateJobOfferHandler` with `session.Events.StartStream<JobOffer>(streamId, submittedEvent)`. The stream ID is the aggregate's `Guid`.
 - Subsequent edits, status changes, and cancellations append onto that same stream via `stream.AppendOne(evt)` after `FetchForWriting<JobOffer>`.
-- **Comments live on a separate stream**, derived deterministically from the aggregate ID with `CommentStreamId.For(jobOfferId)` (UUID v5, SHA-1 namespace hash). This keeps high-volume comment events out of the snapshot replay path. See `docs/domain.md` → "Multiple streams per aggregate" for the rationale.
+- **Comments live on a separate stream**, derived deterministically from the aggregate ID with `CommentStreamId.For(jobOfferId)` (UUID v5, SHA-1 namespace hash). This keeps high-volume comment events out of the snapshot replay path. See `docs/backend-domain.md` → "Multiple streams per aggregate" for the rationale.
 
 When you need a related collection that can grow unboundedly, follow the comment-stream pattern: a deterministic UUID v5 derived from the parent's ID via a fixed namespace Guid.
 

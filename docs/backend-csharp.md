@@ -1,6 +1,6 @@
 # C# Conventions
 
-Language-level rules that apply across all backend projects. These are about *how we write C#*, not about architecture — see `docs/architecture.md` and the per-layer guides for that.
+Language-level rules that apply across all backend projects. These are about *how we write C#*, not about architecture — see `docs/backend-architecture.md` and the per-layer guides for that.
 
 ## Table of contents
 
@@ -40,7 +40,7 @@ var result = await listHandler.HandleAsync(null, page, pageSize, ct);
 
 Never use `default` or `_` catch-all branches in switch expressions or statements that switch on an enum value. Always enumerate every case explicitly.
 
-**Why:** When a new value is added to the enum, the compiler warns about unhandled cases. A `default` branch silently swallows new values and hides the fact that the switch needs updating. This is especially critical for the two-enum error contract (see `docs/api.md`) — a new domain error that isn't mapped to an API error must be a compile-time signal, not a silent runtime fallthrough.
+**Why:** When a new value is added to the enum, the compiler warns about unhandled cases. A `default` branch silently swallows new values and hides the fact that the switch needs updating. This is especially critical for the two-enum error contract (see `docs/backend-api.md`) — a new domain error that isn't mapped to an API error must be a compile-time signal, not a silent runtime fallthrough.
 
 ```csharp
 // Good — compiler warns when a new status is added
