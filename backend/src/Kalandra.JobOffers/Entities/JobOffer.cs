@@ -30,7 +30,6 @@ public class JobOffer
     public IReadOnlyList<AttachmentInfo> Attachments { get; set; } = [];
 
     public JobOfferStatus Status { get; set; } = JobOfferStatus.Submitted;
-    public string? AdminNotes { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
@@ -126,7 +125,6 @@ public class JobOffer
     public void Apply(JobOfferStatusChanged e)
     {
         Status = e.NewStatus;
-        AdminNotes = e.Notes ?? AdminNotes;
         UpdatedAt = e.Timestamp;
     }
 

@@ -419,7 +419,6 @@ public class JobOfferAggregateTests
             Timestamp: Now));
 
         Assert.Equal(JobOfferStatus.InReview, offer.Status);
-        Assert.Equal("Reviewing", offer.AdminNotes);
     }
 
     [Fact]

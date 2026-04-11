@@ -114,7 +114,6 @@ const c = commonTranslations[lang];
     filterByStatusLabel: t.list.filterByStatus,
     statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
     remoteLabel: t.list.remote,
-    adminNotesLabel: t.list.adminNotes,
     historyEmptyLabel: t.list.historyEmpty,
     commentsEmptyLabel: t.list.commentsEmpty,
     errorText: c.errors.generic,
@@ -363,8 +362,7 @@ const c = commonTranslations[lang];
               '</button>' +
             '</div>';
           }).join('') +
-          '</div></div>' : '') +
-        (offer.adminNotes ? '<div class="mt-4"><p class="text-xs font-label text-on-surface-variant mb-1">' + adminNotesLabel + '</p><p class="text-sm font-body text-on-surface-variant italic">' + esc(offer.adminNotes) + '</p></div>' : '');
+          '</div></div>' : '');
 
       // Bind download buttons
       detail.querySelectorAll('.download-attachment-btn').forEach(function(btn) {

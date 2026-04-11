@@ -95,7 +95,7 @@ public class JobOffersController(
         var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
         var offer = await getDetailHandler.HandleAsync(query, ct);
         return CreatedAtAction(nameof(GetDetail), new { id = streamId },
-            GetJobOfferDetailResponse.Serialize(offer!, AppUser));
+            GetJobOfferDetailResponse.Serialize(offer!));
     }
 
     // ───── Edit ─────
@@ -141,7 +141,7 @@ public class JobOffersController(
             }
 
             var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+            return GetJobOfferDetailResponse.Serialize(offer);
         });
     }
 
@@ -180,7 +180,7 @@ public class JobOffersController(
             }
 
             var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+            return GetJobOfferDetailResponse.Serialize(offer);
         });
     }
 
@@ -221,7 +221,7 @@ public class JobOffersController(
             }
 
             var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+            return GetJobOfferDetailResponse.Serialize(offer);
         });
     }
 
@@ -299,7 +299,7 @@ public class JobOffersController(
         var offer = await getDetailHandler.HandleAsync(query, ct);
         if (offer == null)
             return NotFound();
-        return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+        return GetJobOfferDetailResponse.Serialize(offer);
     }
 
     // ───── Download Attachment ─────
@@ -381,7 +381,7 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(j => GetJobOfferDetailResponse.Serialize(j, AppUser)).ToList(),
+            result.Items.Select(GetJobOfferDetailResponse.Serialize).ToList(),
             result.TotalCount);
     }
 

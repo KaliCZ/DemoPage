@@ -106,7 +106,6 @@ const c = commonTranslations[lang];
     statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
     remoteLabel: t.list.remote,
     submittedByLabel: t.list.submittedBy,
-    adminNotesLabel: t.list.adminNotes,
     historyEmptyLabel: t.list.historyEmpty,
     commentsEmptyLabel: t.list.commentsEmpty,
     errorText: c.errors.generic,
@@ -355,8 +354,7 @@ const c = commonTranslations[lang];
             '</div>';
           }).join('') +
           '</div></div>' : '') +
-        (offer.userEmail ? '<div class="pt-4 border-t border-outline-variant/10"><p class="text-xs font-label text-on-surface-variant">' + submittedByLabel + ': ' + esc(offer.userEmail) + '</p></div>' : '') +
-        (offer.adminNotes ? '<div class="mt-4"><p class="text-xs font-label text-on-surface-variant mb-1">' + adminNotesLabel + '</p><p class="text-sm font-body text-on-surface-variant italic">' + esc(offer.adminNotes) + '</p></div>' : '');
+        (offer.userEmail ? '<div class="pt-4 border-t border-outline-variant/10"><p class="text-xs font-label text-on-surface-variant">' + submittedByLabel + ': ' + esc(offer.userEmail) + '</p></div>' : '');
 
       // Bind download buttons
       detail.querySelectorAll('.download-attachment-btn').forEach(function(btn) {
@@ -395,7 +393,7 @@ const c = commonTranslations[lang];
         var select = document.getElementById('status-select');
         if (select) select.value = offer.status;
         var notes = document.getElementById('admin-notes-input');
-        if (notes) notes.value = offer.adminNotes || '';
+        if (notes) notes.value = '';
       } else {
         document.getElementById('admin-controls')?.classList.add('hidden');
       }
