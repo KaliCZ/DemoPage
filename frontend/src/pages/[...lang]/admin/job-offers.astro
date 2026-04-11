@@ -106,6 +106,10 @@ const c = commonTranslations[lang];
     statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
     remoteLabel: t.list.remote,
     submittedByLabel: t.list.submittedBy,
+    historyFieldLabels: t.list.fieldLabels,
+    historyFieldChanged: t.list.fieldChanged,
+    historyFieldYes: t.list.fieldYes,
+    historyFieldNo: t.list.fieldNo,
     historyEmptyLabel: t.list.historyEmpty,
     commentsEmptyLabel: t.list.commentsEmpty,
     errorText: c.errors.generic,
@@ -399,6 +403,28 @@ const c = commonTranslations[lang];
       }
     }
 
+    function formatFieldValue(val, field) {
+      if (val == null || val === '') return '—';
+      if (field === 'isRemote') return val === 'true' ? historyFieldYes : historyFieldNo;
+      return esc(val);
+    }
+
+    function renderChanges(changes) {
+      if (!changes || changes.length === 0) return '';
+      return '<ul class="mt-1 space-y-0.5 list-none pl-0">' +
+        changes.map(function(c) {
+          var label = (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
+          if (c.oldValue == null && c.newValue == null) {
+            return '<li class="text-on-surface-variant"><span class="font-semibold">' + esc(label) + '</span> ' + historyFieldChanged + '</li>';
+          }
+          return '<li class="text-on-surface-variant"><span class="font-semibold">' + esc(label) + ':</span> ' +
+            '<span class="line-through opacity-60">' + formatFieldValue(c.oldValue, c.field) + '</span>' +
+            ' → ' +
+            '<span>' + formatFieldValue(c.newValue, c.field) + '</span></li>';
+        }).join('') +
+      '</ul>';
+    }
+
     async function renderHistory(history) {
       var historyList = document.getElementById('history-list');
       if (!historyList) return;
@@ -418,10 +444,14 @@ const c = commonTranslations[lang];
           ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
           : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
         var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
+        var hasChanges = entry.changes && entry.changes.length > 0;
+        var descHtml = hasChanges
+          ? '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' + renderChanges(entry.changes)
+          : '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>';
         el.innerHTML =
           actorHtml +
           '<div class="flex-1 min-w-0">' +
-            '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
+            descHtml +
             '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(actorName) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
           '</div>';
         historyList.appendChild(el);

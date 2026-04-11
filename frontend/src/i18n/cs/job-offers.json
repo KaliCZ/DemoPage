@@ -51,6 +51,20 @@
     "commentPlaceholder": "Napište komentář...",
     "commentSend": "Odeslat",
     "attachments": "Přílohy",
-    "download": "Stáhnout"
+    "download": "Stáhnout",
+    "fieldLabels": {
+      "companyName": "Společnost",
+      "jobTitle": "Pozice",
+      "contactName": "Kontaktní osoba",
+      "contactEmail": "Kontaktní e-mail",
+      "location": "Lokalita",
+      "salaryRange": "Mzdové rozpětí",
+      "isRemote": "Vzdáleně",
+      "description": "Popis",
+      "additionalNotes": "Další poznámky"
+    },
+    "fieldChanged": "změněno",
+    "fieldYes": "ano",
+    "fieldNo": "ne"
   }
 }

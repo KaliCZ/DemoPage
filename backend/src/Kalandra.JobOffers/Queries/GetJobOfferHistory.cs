@@ -7,12 +7,15 @@ namespace Kalandra.JobOffers.Queries;
 
 public record GetJobOfferHistoryQuery(Guid Id, CurrentUser User);
 
+public record FieldChange(string Field, string? OldValue, string? NewValue);
+
 public record JobOfferHistoryEntry(
     string EventType,
     string Description,
     Guid ActorUserId,
     string ActorEmail,
-    DateTimeOffset Timestamp);
+    DateTimeOffset Timestamp,
+    IReadOnlyList<FieldChange>? Changes = null);
 
 public class GetJobOfferHistoryHandler(IQuerySession session)
 {
@@ -35,7 +38,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         // goes through the real JobOffer.Apply() methods — this keeps the
         // history handler from having its own shadow copy of the apply logic.
         // For JobOfferEdited we snapshot fields before and after Apply() and
-        // diff the two to describe what actually changed.
+        // diff the two to produce structured FieldChange records.
         var replay = new JobOffer();
 
         foreach (var evt in offerEvents)
@@ -60,12 +63,11 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
 
                     entries.Add(new JobOfferHistoryEntry(
                         EventType: "Edited",
-                        Description: changes.Count > 0
-                            ? "Edited — " + string.Join(", ", changes)
-                            : "Job offer edited",
+                        Description: "Job offer edited",
                         ActorUserId: ed.EditedByUserId,
                         ActorEmail: ed.EditedByEmail,
-                        Timestamp: ed.Timestamp));
+                        Timestamp: ed.Timestamp,
+                        Changes: changes));
                     break;
 
                 case JobOfferStatusChanged sc:
@@ -144,31 +146,29 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
             IsRemote: offer.IsRemote,
             AdditionalNotes: offer.AdditionalNotes);
 
-        public static List<string> Diff(FieldSnapshot before, FieldSnapshot after)
+        public static List<FieldChange> Diff(FieldSnapshot before, FieldSnapshot after)
         {
-            var changes = new List<string>();
+            var changes = new List<FieldChange>();
             if (before.CompanyName != after.CompanyName)
-                changes.Add($"company: {before.CompanyName} → {after.CompanyName}");
+                changes.Add(new FieldChange("companyName", before.CompanyName, after.CompanyName));
             if (before.JobTitle != after.JobTitle)
-                changes.Add($"job title: {before.JobTitle} → {after.JobTitle}");
+                changes.Add(new FieldChange("jobTitle", before.JobTitle, after.JobTitle));
             if (before.ContactName != after.ContactName)
-                changes.Add($"contact name: {before.ContactName} → {after.ContactName}");
+                changes.Add(new FieldChange("contactName", before.ContactName, after.ContactName));
             if (before.ContactEmail != after.ContactEmail)
-                changes.Add($"contact email: {before.ContactEmail} → {after.ContactEmail}");
+                changes.Add(new FieldChange("contactEmail", before.ContactEmail, after.ContactEmail));
             if (before.Location != after.Location)
-                changes.Add($"location: {Display(before.Location)} → {Display(after.Location)}");
+                changes.Add(new FieldChange("location", before.Location, after.Location));
             if (before.SalaryRange != after.SalaryRange)
-                changes.Add($"salary: {Display(before.SalaryRange)} → {Display(after.SalaryRange)}");
+                changes.Add(new FieldChange("salaryRange", before.SalaryRange, after.SalaryRange));
             if (before.IsRemote != after.IsRemote)
-                changes.Add($"remote: {YesNo(before.IsRemote)} → {YesNo(after.IsRemote)}");
+                changes.Add(new FieldChange("isRemote", before.IsRemote.ToString().ToLowerInvariant(), after.IsRemote.ToString().ToLowerInvariant()));
+            // Long-text fields: signal that the field changed but omit the full content.
             if (before.Description != after.Description)
-                changes.Add("description changed");
+                changes.Add(new FieldChange("description", null, null));
             if (before.AdditionalNotes != after.AdditionalNotes)
-                changes.Add("additional notes changed");
+                changes.Add(new FieldChange("additionalNotes", null, null));
             return changes;
         }
-
-        private static string Display(string? value) => string.IsNullOrEmpty(value) ? "—" : value;
-        private static string YesNo(bool value) => value ? "yes" : "no";
     }
 }
