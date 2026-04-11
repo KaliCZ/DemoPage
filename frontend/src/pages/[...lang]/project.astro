@@ -286,7 +286,7 @@ const t = translations[lang];
           const hasDates = 'dates' in version && version.dates;
 
           const versionContent = (
-            <div id={`v${version.number}`}>
+            <div id={`v${version.number}`} class="scroll-mt-24">
               <div class:list={["font-label text-primary mb-2 text-sm uppercase", version.done && `flex items-center gap-1.5 ${isLeft ? 'md:justify-end' : ''}`]}>
                 {`Version ${version.number}`}
                 {version.done && (
