@@ -62,17 +62,18 @@
   },
   "architectureDiagram": {
     "title": "Architecture Overview",
-    "browser": "Browser",
     "staticSite": "Static Site (CDN)",
     "dns": "DNS / Domain",
     "reverseProxy": "Reverse Proxy",
-    "active": "Active",
-    "standby": "Standby",
+    "blueGreen": "Blue/Green",
     "backgroundJobs": "Background Jobs",
     "database": "Database",
     "authentication": "Authentication",
     "cicd": "CI/CD",
-    "pipeline": "Build + Test → GHCR → Deploy"
+    "pipeline": "Build + Test → GHCR → Deploy",
+    "notifications": "NOTIFICATIONS",
+    "observability": "CI/CD & OBSERVABILITY",
+    "planned": "Planned"
   },
   "decisions": {
     "title": "Architecture Decisions",

@@ -62,17 +62,18 @@
   },
   "architectureDiagram": {
     "title": "Přehled architektury",
-    "browser": "Prohlížeč",
     "staticSite": "Statický web (CDN)",
     "dns": "DNS / Doména",
     "reverseProxy": "Reverzní proxy",
-    "active": "Aktivní",
-    "standby": "Záložní",
+    "blueGreen": "Blue/Green",
     "backgroundJobs": "Úlohy na pozadí",
     "database": "Databáze",
     "authentication": "Autentizace",
     "cicd": "CI/CD",
-    "pipeline": "Build + Test → GHCR → Deploy"
+    "pipeline": "Build + Test → GHCR → Deploy",
+    "notifications": "NOTIFIKACE",
+    "observability": "CI/CD & OBSERVABILITA",
+    "planned": "Plánováno"
   },
   "decisions": {
     "title": "Architektonická rozhodnutí",
