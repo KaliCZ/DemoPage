@@ -17,7 +17,7 @@ PostgreSQL is the only database. Supabase is used as managed Postgres + auth + o
 ## Marten conventions
 
 - **Domain projects own their Marten config.** Each domain exposes a `Configure{Domain}()` extension on `StoreOptions` (e.g. `MartenConfiguration.ConfigureJobOffers()`). The API just calls it from `AddAppMarten`.
-- **`AutoCreate.All`** in dev (schema drift auto-corrected), **`CreateOrUpdate`** in prod (additive only, never drops). Destructive schema changes require manual SQL.
+- **`AutoCreate.All`** in dev (schema drift auto-corrected), **`CreateOrUpdate`** in prod (additive only, never drops). There are no EF-style migration files — Marten manages table schemas automatically. The only case requiring manual SQL is removing a duplicated column from a snapshot table, since `CreateOrUpdate` won't drop columns. Event shapes are stored as JSON, so changing event records doesn't affect table schema at all (see `docs/backend-domain.md` → "Events" for evolution rules).
 - **Inline projections** (`SnapshotLifecycle.Inline`) — the snapshot is updated in the same transaction as the events. Read-after-write is consistent; snapshot and stream cannot diverge.
 - **Duplicated columns** — fields filtered on regularly (e.g. `Status`) are projected into real Postgres columns via `Duplicate(j => j.Field)` so queries use WHERE clauses instead of scanning JSON.
 
