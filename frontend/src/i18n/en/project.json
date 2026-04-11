@@ -144,6 +144,7 @@
         "context": "Event sourcing was a given — the question was whether to build it from scratch on MongoDB or use an established framework. This is the first event sourcing implementation, so learning curve and speed matter.",
         "decision": "Use Marten on PostgreSQL — a mature .NET event sourcing framework that runs on the same database we already have.",
         "why": [
+          "Already experienced with SQL but not MongoDB — faster to get up and running",
           "No extra infrastructure — reuses the existing Supabase PostgreSQL, no need to run MongoDB",
           "Inline snapshot projections maintain read models with zero extra code",
           "The Apply() method pattern makes state transitions explicit and testable",

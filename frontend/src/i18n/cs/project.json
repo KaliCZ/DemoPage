@@ -144,6 +144,7 @@
         "context": "Event sourcing byl jasná volba — otázka byla, jestli ho stavět od nuly na MongoDB nebo použít zavedený framework. Tohle je první implementace event sourcingu, takže záleží na křivce učení a rychlosti.",
         "decision": "Použít Marten na PostgreSQL — vyspělý .NET event sourcing framework běžící na stejné databázi, kterou už máme.",
         "why": [
+          "Již zkušenosti s SQL, ale ne s MongoDB — rychlejší rozjezd",
           "Žádná extra infrastruktura — využívá existující Supabase PostgreSQL, není potřeba provozovat MongoDB",
           "Inline snapshot projekce udržují read modely bez extra kódu",
           "Vzor Apply() metody dělá přechody stavů explicitními a testovatelnými",
