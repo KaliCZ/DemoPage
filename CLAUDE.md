@@ -16,6 +16,10 @@ npm run build:frontend # Frontend only
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
 
+## GitHub Workflow
+
+**Never close issues directly.** Always create a pull request with `Closes #N` in the PR body and let the merge close the issue. An issue without a merged PR has no reviewable change trail.
+
 ## Required Reading Before Changes
 
 **Always read the relevant guide before modifying code.** Do not assume content or conventions — read the actual docs first.

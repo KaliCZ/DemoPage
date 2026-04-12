@@ -35,14 +35,14 @@ public class JobOffer
 
     public Try<JobOfferEdited, EditJobOfferError> Edit(
         CurrentUser user,
-        string companyName,
-        string contactName,
-        string contactEmail,
-        string jobTitle,
-        string description,
+        string? companyName,
+        string? contactName,
+        string? contactEmail,
+        string? jobTitle,
+        string? description,
         string? salaryRange,
         string? location,
-        bool isRemote,
+        bool? isRemote,
         string? additionalNotes,
         DateTimeOffset timestamp)
     {
@@ -52,26 +52,24 @@ public class JobOffer
         if (Status != JobOfferStatus.Submitted)
             return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotSubmittedStatus);
 
-        // Emit only the fields that actually changed. Null on the event means
-        // "not edited" so unchanged fields stay null and are skipped by both
-        // Apply() and the activity-log projection.
+        // Null on a parameter means "no change" (PATCH semantics). Null on the
+        // emitted event field means the same thing — unchanged fields stay null
+        // and are skipped by both Apply() and the activity-log projection.
         //
         // Clearing a previously-set optional field is NOT supported: when the
         // caller passes null for SalaryRange / Location / AdditionalNotes we
         // treat it as "leave this field alone" rather than "set it to null".
-        // The frontend is expected to mirror this — see the edit form in
-        // frontend/src/pages/[...lang]/job-offers.astro.
         return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
             EditedByUserId: user.Id,
             EditedByEmail: user.Email.Address,
-            CompanyName: companyName != CompanyName ? companyName : null,
-            ContactName: contactName != ContactName ? contactName : null,
-            ContactEmail: contactEmail != ContactEmail ? contactEmail : null,
-            JobTitle: jobTitle != JobTitle ? jobTitle : null,
-            Description: description != Description ? description : null,
+            CompanyName: companyName is not null && companyName != CompanyName ? companyName : null,
+            ContactName: contactName is not null && contactName != ContactName ? contactName : null,
+            ContactEmail: contactEmail is not null && contactEmail != ContactEmail ? contactEmail : null,
+            JobTitle: jobTitle is not null && jobTitle != JobTitle ? jobTitle : null,
+            Description: description is not null && description != Description ? description : null,
             SalaryRange: salaryRange is not null && salaryRange != SalaryRange ? salaryRange : null,
             Location: location is not null && location != Location ? location : null,
-            IsRemote: isRemote != IsRemote ? isRemote : null,
+            IsRemote: isRemote.HasValue && isRemote.Value != IsRemote ? isRemote.Value : null,
             AdditionalNotes: additionalNotes is not null && additionalNotes != AdditionalNotes ? additionalNotes : null,
             Timestamp: timestamp));
     }

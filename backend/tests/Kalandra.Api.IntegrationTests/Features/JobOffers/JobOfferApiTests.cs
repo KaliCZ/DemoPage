@@ -260,7 +260,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     {
         var (id, _) = await CreateOfferAs("edit@test.com");
 
-        var editRes = await client.PutAsJsonAsync(
+        var editRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}",
             new
             {
@@ -304,12 +304,36 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task Edit_PartialUpdate_OnlyChangesProvidedFields()
+    {
+        var (id, _) = await CreateOfferAs("partialedit@test.com");
+
+        // Send only jobTitle — all other fields should remain unchanged
+        var editRes = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}",
+            new { jobTitle = "Principal Engineer" },
+            Ct);
+        Assert.Equal(HttpStatusCode.OK, editRes.StatusCode);
+
+        var edited = await ParseJsonAsync(editRes);
+        Assert.Equal("Acme Corp", edited.GetProperty("companyName").GetString());
+        Assert.Equal("John Doe", edited.GetProperty("contactName").GetString());
+        Assert.Equal("john@acme.com", edited.GetProperty("contactEmail").GetString());
+        Assert.Equal("Principal Engineer", edited.GetProperty("jobTitle").GetString());
+        Assert.Equal("We are looking for a senior developer to join our team.", edited.GetProperty("description").GetString());
+        Assert.Equal("$120k - $160k", edited.GetProperty("salaryRange").GetString());
+        Assert.Equal("Prague, CZ", edited.GetProperty("location").GetString());
+        Assert.True(edited.GetProperty("isRemote").GetBoolean());
+        Assert.Equal("Submitted", edited.GetProperty("status").GetString());
+    }
+
+    [Fact]
     public async Task Edit_AsOtherUser_Returns403()
     {
         var (id, _) = await CreateOfferAs("editowner@test.com");
 
         Authenticate("editother@test.com");
-        var editRes = await client.PutAsJsonAsync(
+        var editRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}",
             CreateValidEditBody(),
             Ct);
@@ -323,7 +347,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         await client.PostAsJsonAsync($"/api/job-offers/{id}/cancel", new { reason = "" }, Ct);
 
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{id}", CreateValidEditBody(), Ct);
+        var editRes = await client.PatchAsJsonAsync($"/api/job-offers/{id}", CreateValidEditBody(), Ct);
         Assert.Equal(HttpStatusCode.BadRequest, editRes.StatusCode);
     }
 
