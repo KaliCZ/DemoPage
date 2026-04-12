@@ -137,8 +137,6 @@ jobs:
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
           Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
-          Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
-          Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
           Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
 
@@ -362,8 +360,6 @@ jobs:
             cat > "$HOME/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
-            Storage__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
-            Storage__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             EOF
 

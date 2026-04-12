@@ -4,10 +4,7 @@ using StrongTypes;
 
 namespace Kalandra.Infrastructure.Configuration;
 
-public record SupabaseStorageConfig(
-    NonEmptyString ProjectUrl,
-    NonEmptyString BucketName,
-    NonEmptyString ServiceKey)
+public record SupabaseStorageConfig(NonEmptyString BucketName)
 {
     public static SupabaseStorageConfig AddSingleton(
         IServiceCollection services,
@@ -16,9 +13,7 @@ public record SupabaseStorageConfig(
         var section = configuration.GetSection("Storage");
 
         var config = new SupabaseStorageConfig(
-            ProjectUrl: NonEmptyString.CreateUnsafe(section["SupabaseProjectUrl"]),
-            BucketName: NonEmptyString.CreateUnsafe(section["BucketName"]),
-            ServiceKey: NonEmptyString.CreateUnsafe(section["ServiceKey"]));
+            BucketName: NonEmptyString.CreateUnsafe(section["BucketName"]));
 
         services.AddSingleton(config);
 

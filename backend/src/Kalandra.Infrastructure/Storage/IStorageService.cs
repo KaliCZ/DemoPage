@@ -8,6 +8,8 @@ public interface IStorageService
         CancellationToken ct);
 
     Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct);
+
+    string GetPublicUrl(string storagePath);
 }
 
 public record FileUploadItem(

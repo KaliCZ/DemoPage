@@ -75,9 +75,6 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddStorageServices(this IServiceCollection services)
     {
-        services.AddHttpClient<IStorageService, SupabaseStorageService>();
-        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
-
         services.AddSingleton(sp =>
         {
             var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseAuthConfig>();
@@ -87,6 +84,9 @@ public static class ServiceCollectionExtensions
             client.InitializeAsync().Wait();
             return client;
         });
+
+        services.AddSingleton<IStorageService, SupabaseStorageService>();
+        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
 
         return services;
     }

@@ -26,7 +26,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Auth:ServiceKey", "test-service-key");
         builder.UseSetting("Storage:BucketName", "test-bucket");
-        builder.UseSetting("Storage:ServiceKey", "test-service-key");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IStorageService>();
