@@ -22,7 +22,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). See
 ```bash
 npm install            # Root + frontend deps (via postinstall)
 npm run dev            # Docker PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev)
-npm test               # All tests: backend (dotnet test) + frontend (Playwright) + E2E
+npm test               # All tests: backend + frontend + E2E
 dotnet build           # Backend only
 npm run build:frontend # Frontend only
 ```
