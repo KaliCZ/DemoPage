@@ -138,6 +138,7 @@ jobs:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
           Supabase__ProjectUrl: "http://127.0.0.1:54321"
           Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
+          RateLimit__HireMePermitLimit: "20"
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend

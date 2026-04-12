@@ -64,6 +64,17 @@ Both configurations run `npm install` as a before-launch step, so dependencies a
 
 > The remaining configurations in `.run/` (`Backend`, `Frontend`, `Watch Backend`) are building blocks used by the compound configs above.
 
+### 1.3.1 Backend Development Config
+
+Copy the template to create your local config (gitignored, never committed):
+
+```bash
+cp backend/src/Kalandra.Api/appsettings.Development.json.template \
+   backend/src/Kalandra.Api/appsettings.Development.json
+```
+
+This overrides `appsettings.json` when `ASPNETCORE_ENVIRONMENT=Development` and sets a higher rate limit for local E2E tests. Add any real secrets (Turnstile keys, etc.) here — the file is in `.gitignore`.
+
 ### 1.4 CLI Alternative
 
 ```bash

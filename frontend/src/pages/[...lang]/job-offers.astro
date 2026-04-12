@@ -138,18 +138,18 @@ const c = commonTranslations[lang];
     // Wake up the database (see hire-me.astro for details).
     fetch(apiUrl + '/health').catch(function() {});
 
-    function showError(status) {
+    function showError(status, traceId) {
       var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;
-      window.__showSnackbar?.(msg, 'error');
+      window.__showSnackbar?.(msg, 'error', 8000, traceId);
     }
 
     async function showApiError(res) {
-      var msg = await window.__getApiError?.(res, apiErrorMap);
-      if (msg) {
-        window.__showSnackbar?.(msg, 'error');
-        return msg;
+      var result = await window.__getApiError?.(res, apiErrorMap);
+      if (result?.message) {
+        window.__showSnackbar?.(result.message, 'error', 8000, result.traceId);
+        return result.message;
       }
-      showError(res.status);
+      showError(res.status, result?.traceId);
     }
 
     var currentOfferId = null;
@@ -661,7 +661,7 @@ const c = commonTranslations[lang];
 
       try {
         var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
           body: JSON.stringify(body)
         });

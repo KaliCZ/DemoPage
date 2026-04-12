@@ -63,6 +63,45 @@ public class JobOfferAggregateTests
     }
 
     [Fact]
+    public void Edit_PartialUpdate_OnlyChangesProvidedFields()
+    {
+        var offer = CreateSubmittedOffer();
+        var result = offer.Edit(
+            user: Owner,
+            companyName: null,    // no change
+            contactName: null,    // no change
+            contactEmail: null,   // no change
+            jobTitle: "CTO",      // changed
+            description: null,    // no change
+            salaryRange: null,    // no change
+            location: null,       // no change
+            isRemote: null,       // no change
+            additionalNotes: null,// no change
+            timestamp: Now.AddHours(1));
+
+        Assert.True(result.IsSuccess);
+        var evt = result.Success.Get();
+
+        // Only jobTitle should be emitted as changed
+        Assert.Null(evt.CompanyName);
+        Assert.Null(evt.ContactName);
+        Assert.Null(evt.ContactEmail);
+        Assert.Equal("CTO", evt.JobTitle);
+        Assert.Null(evt.Description);
+        Assert.Null(evt.SalaryRange);
+        Assert.Null(evt.Location);
+        Assert.Null(evt.IsRemote);
+        Assert.Null(evt.AdditionalNotes);
+
+        // Apply and verify only jobTitle changed on the aggregate
+        offer.Apply(evt);
+        Assert.Equal("Acme", offer.CompanyName);
+        Assert.Equal("CTO", offer.JobTitle);
+        Assert.Equal("Prague", offer.Location);
+        Assert.True(offer.IsRemote);
+    }
+
+    [Fact]
     public void Edit_ByNonOwner_Fails()
     {
         var offer = CreateSubmittedOffer();

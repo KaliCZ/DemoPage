@@ -1,28 +1,39 @@
 /** Nested error map: field name → error code → localized message. */
 export type ApiErrorMap = Record<string, Record<string, string>>;
 
+/** Result from parsing a ProblemDetails API error response. */
+export type ApiErrorResult = {
+  message: string | null;
+  traceId?: string;
+};
+
 /**
- * Extracts the first localized error from a ValidationProblemDetails response.
- * Returns the translated message if found, or null if the response doesn't
- * contain a recognized error code.
+ * Extracts the first localized error and traceId from a ProblemDetails response.
+ * Returns an object with the translated message (if found) and traceId (if present),
+ * or null if the response doesn't contain either.
  *
  * Expected response shape (RFC 7807):
- * { "errors": { "fieldName": ["ErrorCode"] } }
+ * { "errors": { "fieldName": ["ErrorCode"] }, "traceId": "00-..." }
  */
 export async function getApiError(
   response: Response,
   errorMap: ApiErrorMap,
-): Promise<string | null> {
-  if (response.status < 400 || response.status >= 500) return null;
+): Promise<ApiErrorResult | null> {
+  if (response.status < 400) return null;
   try {
     const body = await response.json();
-    if (body?.errors) {
+    const traceId: string | undefined = body?.traceId ?? undefined;
+    let message: string | null = null;
+
+    if (body?.errors && response.status < 500) {
       for (const field in body.errors) {
         const code = body.errors[field]?.[0];
         const msg = errorMap?.[field]?.[code];
-        if (msg) return msg;
+        if (msg) { message = msg; break; }
       }
     }
+
+    if (message || traceId) return { message, traceId };
   } catch {}
   return null;
 }
