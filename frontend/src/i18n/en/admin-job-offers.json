@@ -44,6 +44,22 @@
     "commentPlaceholder": "Write a comment...",
     "commentSend": "Send",
     "attachments": "Attachments",
-    "download": "Download"
+    "download": "Download",
+    "fieldLabels": {
+      "CompanyName": "Company",
+      "JobTitle": "Job Title",
+      "ContactName": "Contact Name",
+      "ContactEmail": "Contact Email",
+      "Location": "Location",
+      "SalaryRange": "Salary Range",
+      "IsRemote": "Remote",
+      "Description": "Description",
+      "AdditionalNotes": "Additional Notes"
+    },
+    "fieldChanged": "changed",
+    "fieldBefore": "Before",
+    "fieldAfter": "After",
+    "fieldYes": "yes",
+    "fieldNo": "no"
   }
 }

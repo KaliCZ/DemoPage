@@ -30,7 +30,6 @@ public class JobOffer
     public IReadOnlyList<AttachmentInfo> Attachments { get; set; } = [];
 
     public JobOfferStatus Status { get; set; } = JobOfferStatus.Submitted;
-    public string? AdminNotes { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
@@ -53,18 +52,27 @@ public class JobOffer
         if (Status != JobOfferStatus.Submitted)
             return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotSubmittedStatus);
 
+        // Emit only the fields that actually changed. Null on the event means
+        // "not edited" so unchanged fields stay null and are skipped by both
+        // Apply() and the activity-log projection.
+        //
+        // Clearing a previously-set optional field is NOT supported: when the
+        // caller passes null for SalaryRange / Location / AdditionalNotes we
+        // treat it as "leave this field alone" rather than "set it to null".
+        // The frontend is expected to mirror this — see the edit form in
+        // frontend/src/pages/[...lang]/job-offers.astro.
         return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
             EditedByUserId: user.Id,
             EditedByEmail: user.Email.Address,
-            CompanyName: companyName,
-            ContactName: contactName,
-            ContactEmail: contactEmail,
-            JobTitle: jobTitle,
-            Description: description,
-            SalaryRange: salaryRange,
-            Location: location,
-            IsRemote: isRemote,
-            AdditionalNotes: additionalNotes,
+            CompanyName: companyName != CompanyName ? companyName : null,
+            ContactName: contactName != ContactName ? contactName : null,
+            ContactEmail: contactEmail != ContactEmail ? contactEmail : null,
+            JobTitle: jobTitle != JobTitle ? jobTitle : null,
+            Description: description != Description ? description : null,
+            SalaryRange: salaryRange is not null && salaryRange != SalaryRange ? salaryRange : null,
+            Location: location is not null && location != Location ? location : null,
+            IsRemote: isRemote != IsRemote ? isRemote : null,
+            AdditionalNotes: additionalNotes is not null && additionalNotes != AdditionalNotes ? additionalNotes : null,
             Timestamp: timestamp));
     }
 
@@ -126,21 +134,21 @@ public class JobOffer
     public void Apply(JobOfferStatusChanged e)
     {
         Status = e.NewStatus;
-        AdminNotes = e.Notes ?? AdminNotes;
         UpdatedAt = e.Timestamp;
     }
 
     public void Apply(JobOfferEdited e)
     {
-        CompanyName = e.CompanyName;
-        ContactName = e.ContactName;
-        ContactEmail = e.ContactEmail;
-        JobTitle = e.JobTitle;
-        Description = e.Description;
-        SalaryRange = e.SalaryRange;
-        Location = e.Location;
-        IsRemote = e.IsRemote;
-        AdditionalNotes = e.AdditionalNotes;
+        // Null means "not edited" — preserve the current value for that field.
+        if (e.CompanyName != null) CompanyName = e.CompanyName;
+        if (e.ContactName != null) ContactName = e.ContactName;
+        if (e.ContactEmail != null) ContactEmail = e.ContactEmail;
+        if (e.JobTitle != null) JobTitle = e.JobTitle;
+        if (e.Description != null) Description = e.Description;
+        if (e.SalaryRange != null) SalaryRange = e.SalaryRange;
+        if (e.Location != null) Location = e.Location;
+        if (e.IsRemote.HasValue) IsRemote = e.IsRemote.Value;
+        if (e.AdditionalNotes != null) AdditionalNotes = e.AdditionalNotes;
         UpdatedAt = e.Timestamp;
     }
 

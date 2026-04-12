@@ -7,12 +7,28 @@ namespace Kalandra.JobOffers.Queries;
 
 public record GetJobOfferHistoryQuery(Guid Id, CurrentUser User);
 
+public enum JobOfferField
+{
+    CompanyName,
+    JobTitle,
+    ContactName,
+    ContactEmail,
+    Location,
+    SalaryRange,
+    IsRemote,
+    Description,
+    AdditionalNotes,
+}
+
+public record FieldChange(JobOfferField Field, string? OldValue, string? NewValue);
+
 public record JobOfferHistoryEntry(
     string EventType,
     string Description,
     Guid ActorUserId,
     string ActorEmail,
-    DateTimeOffset Timestamp);
+    DateTimeOffset Timestamp,
+    IReadOnlyList<FieldChange>? Changes = null);
 
 public class GetJobOfferHistoryHandler(IQuerySession session)
 {
@@ -29,49 +45,82 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         var offerEvents = await session.Events.FetchStreamAsync(query.Id, token: ct);
         var commentEvents = await session.Events.FetchStreamAsync(CommentStreamId.For(query.Id), token: ct);
 
-        return offerEvents.Concat(commentEvents)
-            .Select(e => e.Data switch
+        var entries = new List<JobOfferHistoryEntry>();
+
+        // Replay the stream through a fresh aggregate so state reconstruction
+        // goes through the real JobOffer.Apply() methods — this keeps the
+        // history handler from having its own shadow copy of the apply logic.
+        // For JobOfferEdited we snapshot fields before and after Apply() and
+        // diff the two to produce structured FieldChange records.
+        var replay = new JobOffer();
+
+        foreach (var evt in offerEvents)
+        {
+            switch (evt.Data)
             {
-                JobOfferSubmitted s => new JobOfferHistoryEntry(
-                    EventType: "Submitted",
-                    Description: "Job offer submitted",
-                    ActorUserId: s.UserId,
-                    ActorEmail: s.UserEmail,
-                    Timestamp: s.Timestamp),
-                JobOfferEdited ed => new JobOfferHistoryEntry(
-                    EventType: "Edited",
-                    Description: "Job offer edited",
-                    ActorUserId: ed.EditedByUserId,
-                    ActorEmail: ed.EditedByEmail,
-                    Timestamp: ed.Timestamp),
-                JobOfferStatusChanged sc => new JobOfferHistoryEntry(
-                    EventType: "StatusChanged",
-                    Description: $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
-                        + (sc.Notes != null ? $" — {sc.Notes}" : ""),
-                    ActorUserId: sc.ChangedByUserId,
-                    ActorEmail: sc.ChangedByEmail,
-                    Timestamp: sc.Timestamp),
-                JobOfferCancelled c => new JobOfferHistoryEntry(
-                    EventType: "Cancelled",
-                    Description: "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
-                    ActorUserId: c.CancelledByUserId,
-                    ActorEmail: c.CancelledByEmail,
-                    Timestamp: c.Timestamp),
-                JobOfferCommentAdded cm => new JobOfferHistoryEntry(
+                case JobOfferSubmitted s:
+                    replay.Apply(s);
+                    entries.Add(new JobOfferHistoryEntry(
+                        EventType: "Submitted",
+                        Description: "Job offer submitted",
+                        ActorUserId: s.UserId,
+                        ActorEmail: s.UserEmail,
+                        Timestamp: s.Timestamp));
+                    break;
+
+                case JobOfferEdited ed:
+                    var before = FieldSnapshot.From(replay);
+                    replay.Apply(ed);
+                    var after = FieldSnapshot.From(replay);
+                    var changes = FieldSnapshot.Diff(before, after);
+
+                    entries.Add(new JobOfferHistoryEntry(
+                        EventType: "Edited",
+                        Description: "Job offer edited",
+                        ActorUserId: ed.EditedByUserId,
+                        ActorEmail: ed.EditedByEmail,
+                        Timestamp: ed.Timestamp,
+                        Changes: changes));
+                    break;
+
+                case JobOfferStatusChanged sc:
+                    replay.Apply(sc);
+                    entries.Add(new JobOfferHistoryEntry(
+                        EventType: "StatusChanged",
+                        Description: $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
+                            + (sc.Notes != null ? $" — {sc.Notes}" : ""),
+                        ActorUserId: sc.ChangedByUserId,
+                        ActorEmail: sc.ChangedByEmail,
+                        Timestamp: sc.Timestamp));
+                    break;
+
+                case JobOfferCancelled c:
+                    replay.Apply(c);
+                    entries.Add(new JobOfferHistoryEntry(
+                        EventType: "Cancelled",
+                        Description: "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
+                        ActorUserId: c.CancelledByUserId,
+                        ActorEmail: c.CancelledByEmail,
+                        Timestamp: c.Timestamp));
+                    break;
+            }
+        }
+
+        // Comments live on a separate stream and don't affect field state.
+        foreach (var evt in commentEvents)
+        {
+            if (evt.Data is JobOfferCommentAdded cm)
+            {
+                entries.Add(new JobOfferHistoryEntry(
                     EventType: "Comment",
                     Description: cm.Content,
                     ActorUserId: cm.UserId,
                     ActorEmail: cm.UserEmail,
-                    Timestamp: cm.Timestamp),
-                _ => new JobOfferHistoryEntry(
-                    EventType: "Unknown",
-                    Description: "Unknown event",
-                    ActorUserId: Guid.Empty,
-                    ActorEmail: "",
-                    Timestamp: DateTimeOffset.MinValue)
-            })
-            .OrderBy(e => e.Timestamp)
-            .ToList();
+                    Timestamp: cm.Timestamp));
+            }
+        }
+
+        return entries.OrderBy(e => e.Timestamp).ToList();
     }
 
     private static string FormatStatus(JobOfferStatus status) => status switch
@@ -82,4 +131,56 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         JobOfferStatus.Declined => "Declined",
         JobOfferStatus.Cancelled => "Cancelled",
     };
+
+    /// <summary>
+    /// Immutable snapshot of the fields that can change via JobOfferEdited.
+    /// Taken before and after Apply() so we can diff the two without having
+    /// to mirror the aggregate's apply logic in this handler.
+    /// </summary>
+    private record FieldSnapshot(
+        string CompanyName,
+        string ContactName,
+        string ContactEmail,
+        string JobTitle,
+        string Description,
+        string? SalaryRange,
+        string? Location,
+        bool IsRemote,
+        string? AdditionalNotes)
+    {
+        public static FieldSnapshot From(JobOffer offer) => new(
+            CompanyName: offer.CompanyName,
+            ContactName: offer.ContactName,
+            ContactEmail: offer.ContactEmail,
+            JobTitle: offer.JobTitle,
+            Description: offer.Description,
+            SalaryRange: offer.SalaryRange,
+            Location: offer.Location,
+            IsRemote: offer.IsRemote,
+            AdditionalNotes: offer.AdditionalNotes);
+
+        public static List<FieldChange> Diff(FieldSnapshot before, FieldSnapshot after)
+        {
+            var changes = new List<FieldChange>();
+            if (before.CompanyName != after.CompanyName)
+                changes.Add(new FieldChange(JobOfferField.CompanyName, before.CompanyName, after.CompanyName));
+            if (before.JobTitle != after.JobTitle)
+                changes.Add(new FieldChange(JobOfferField.JobTitle, before.JobTitle, after.JobTitle));
+            if (before.ContactName != after.ContactName)
+                changes.Add(new FieldChange(JobOfferField.ContactName, before.ContactName, after.ContactName));
+            if (before.ContactEmail != after.ContactEmail)
+                changes.Add(new FieldChange(JobOfferField.ContactEmail, before.ContactEmail, after.ContactEmail));
+            if (before.Location != after.Location)
+                changes.Add(new FieldChange(JobOfferField.Location, before.Location, after.Location));
+            if (before.SalaryRange != after.SalaryRange)
+                changes.Add(new FieldChange(JobOfferField.SalaryRange, before.SalaryRange, after.SalaryRange));
+            if (before.IsRemote != after.IsRemote)
+                changes.Add(new FieldChange(JobOfferField.IsRemote, before.IsRemote.ToString().ToLowerInvariant(), after.IsRemote.ToString().ToLowerInvariant()));
+            if (before.Description != after.Description)
+                changes.Add(new FieldChange(JobOfferField.Description, before.Description, after.Description));
+            if (before.AdditionalNotes != after.AdditionalNotes)
+                changes.Add(new FieldChange(JobOfferField.AdditionalNotes, before.AdditionalNotes, after.AdditionalNotes));
+            return changes;
+        }
+    }
 }
