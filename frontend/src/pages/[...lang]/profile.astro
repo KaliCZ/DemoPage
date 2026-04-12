@@ -473,11 +473,16 @@ const t = translations[lang];
 
         if (updateError) throw updateError;
 
-        // Refresh session and update UI
+        // Update preview immediately — avatarUrl is already confirmed by the
+        // successful upload + metadata update above, so we don't need to wait
+        // for getUser() to reflect it.
+        var displayName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+        updateAvatarPreview(avatarUrl, displayName);
+
+        // Refresh session so future pages see the new avatar URL in the token
         await supabase.auth.refreshSession();
         var { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
-          updateAvatarPreview(avatarUrl, userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'User');
           window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
         }
 
