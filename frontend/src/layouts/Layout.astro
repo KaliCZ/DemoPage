@@ -25,6 +25,13 @@ const {
 
 const t = lang === 'cs' ? csCommon : enCommon;
 
+const navItems = [
+  { label: t.nav.home, page: 'home' as const },
+  { label: t.nav.about, page: 'about' as const },
+  { label: t.nav.project, page: 'project' as const },
+  { label: t.nav.hireMe, page: 'hire-me' as const },
+];
+
 const siteUrl = 'https://www.kalandra.tech';
 const enUrl = activePage === 'home' ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
 const csUrl = activePage === 'home' ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
@@ -58,6 +65,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <meta property="og:locale" content={lang === 'cs' ? 'cs_CZ' : 'en_US'} />
   <meta property="og:locale:alternate" content={lang === 'cs' ? 'en_US' : 'cs_CZ'} />
 
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -118,6 +126,10 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     html.auth-known-out .signed-in-only { display: none !important; }
     html.auth-known-in .signed-in-only { display: block !important; }
 
+    /* Hide Material Symbols icon text until the font loads to prevent FOUT.
+       The `icons-ready` class is added by the inline script below once the font is available. */
+    html:not(.icons-ready) .material-symbols-outlined { visibility: hidden; }
+
     /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
        `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
        happened while the end-of-body updateToggleIcons() script had not yet run. */
@@ -125,6 +137,11 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     html.dark .dark-hidden { display: none !important; }
     html.dark .dark-visible { display: inline-block !important; }
   </style>
+  <script is:inline>
+    document.fonts.ready.then(function() {
+      document.documentElement.classList.add('icons-ready');
+    });
+  </script>
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -139,42 +156,17 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
       <a href={localePath(lang, 'home')} class="text-xl font-bold tracking-tighter text-on-surface font-headline">kalandra.tech</a>
 
       <div class="hidden md:flex items-center gap-8 font-headline tracking-tighter font-bold">
-        <a
-          href={localePath(lang, 'home')}
-          class:list={[
-            activePage === 'home'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'home' ? 'page' : undefined}
-        >{t.nav.home}</a>
-        <a
-          href={localePath(lang, 'about')}
-          class:list={[
-            activePage === 'about'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'about' ? 'page' : undefined}
-        >{t.nav.about}</a>
-        <a
-          href={localePath(lang, 'project')}
-          class:list={[
-            activePage === 'project'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'project' ? 'page' : undefined}
-        >{t.nav.project}</a>
-        <a
-          href={localePath(lang, 'hire-me')}
-          class:list={[
-            activePage === 'hire-me'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'hire-me' ? 'page' : undefined}
-        >{t.nav.hireMe}</a>
+        {navItems.map(({ label, page }) => (
+          <a
+            href={localePath(lang, page)}
+            class:list={[
+              activePage === page
+                ? 'text-primary border-b-2 border-primary pb-1'
+                : 'text-on-surface-variant hover:text-on-surface transition-colors border-b-2 border-transparent pb-1',
+            ]}
+            aria-current={activePage === page ? 'page' : undefined}
+          >{label}</a>
+        ))}
       </div>
 
       <!-- Theme toggle + Language picker + Auth (desktop) -->
@@ -297,42 +289,17 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
 
     <!-- Mobile nav -->
     <div class="md:hidden flex items-center gap-6 px-8 pb-3 font-headline tracking-tighter font-bold text-sm">
-      <a
-        href={localePath(lang, 'home')}
-        class:list={[
-          activePage === 'home'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'home' ? 'page' : undefined}
-      >{t.nav.home}</a>
-      <a
-        href={localePath(lang, 'about')}
-        class:list={[
-          activePage === 'about'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'about' ? 'page' : undefined}
-      >{t.nav.about}</a>
-      <a
-        href={localePath(lang, 'project')}
-        class:list={[
-          activePage === 'project'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'project' ? 'page' : undefined}
-      >{t.nav.project}</a>
-      <a
-        href={localePath(lang, 'hire-me')}
-        class:list={[
-          activePage === 'hire-me'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'hire-me' ? 'page' : undefined}
-      >{t.nav.hireMe}</a>
+      {navItems.map(({ label, page }) => (
+        <a
+          href={localePath(lang, page)}
+          class:list={[
+            activePage === page
+              ? 'text-primary border-b-2 border-primary pb-1'
+              : 'text-on-surface-variant border-b-2 border-transparent pb-1',
+          ]}
+          aria-current={activePage === page ? 'page' : undefined}
+        >{label}</a>
+      ))}
       <!-- Theme toggle + Language picker + Auth (mobile) -->
       <div class="flex items-center gap-2 ml-auto">
         <button
