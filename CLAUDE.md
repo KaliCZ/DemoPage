@@ -22,7 +22,7 @@ When making decisions, **choose the approach you'd use in a professional team en
 
 ## Required Reading Before Changes
 
-**Always read the relevant guide before modifying code.** Do not assume content or conventions — read the actual docs first.
+**MANDATORY: Before writing or editing ANY code, you MUST use the Read tool to read every doc listed in the table below that matches the areas you will touch.** This is not optional. Do not skip this step for "simple" changes. Do not assume you know the conventions — read the actual files first. If you are about to edit a test, read `docs/backend-testing.md`. If you are about to edit a controller, read `docs/backend-api.md` AND `docs/backend-csharp.md` AND `docs/backend-architecture.md`. Read ALL matching docs BEFORE writing any code.
 
 | Changing...                  | Read first                                              |
 |------------------------------|---------------------------------------------------------|
