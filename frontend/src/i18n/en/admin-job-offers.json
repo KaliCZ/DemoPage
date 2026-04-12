@@ -60,6 +60,9 @@
     "fieldBefore": "Before",
     "fieldAfter": "After",
     "fieldYes": "yes",
-    "fieldNo": "no"
+    "fieldNo": "no",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "paginationPage": "Page {current} of {total}"
   }
 }

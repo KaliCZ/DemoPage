@@ -194,6 +194,63 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         AssertValidTimestamp(first, "createdAt");
     }
 
+    [Fact]
+    public async Task ListMine_ReturnsPaginationMetadata()
+    {
+        await CreateOfferAs("paging@test.com");
+
+        var response = await client.GetAsync("/api/job-offers/mine?page=1&pageSize=5", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        Assert.Equal(1, json.GetProperty("page").GetInt32());
+        Assert.Equal(5, json.GetProperty("pageSize").GetInt32());
+        Assert.True(json.GetProperty("pageCount").GetInt32() >= 1);
+        Assert.True(json.TryGetProperty("hasNextPage", out _));
+        Assert.True(json.TryGetProperty("hasPreviousPage", out _));
+        Assert.False(json.GetProperty("hasPreviousPage").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ListAll_AsAdmin_ReturnsPaginationMetadata()
+    {
+        await CreateOfferAs("adminpaging@test.com");
+
+        AuthenticateAs(AdminUserId, "admin@test.com", isAdmin: true);
+        var response = await client.GetAsync("/api/job-offers?page=1&pageSize=5", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        Assert.Equal(1, json.GetProperty("page").GetInt32());
+        Assert.Equal(5, json.GetProperty("pageSize").GetInt32());
+        Assert.True(json.GetProperty("pageCount").GetInt32() >= 1);
+        Assert.True(json.TryGetProperty("hasNextPage", out _));
+        Assert.True(json.TryGetProperty("hasPreviousPage", out _));
+        Assert.False(json.GetProperty("hasPreviousPage").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ListMine_PageSizeLimitsResults()
+    {
+        // Create 2 offers for the same user
+        var userId = Authenticate("pagelimit@test.com");
+        await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
+        await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
+
+        var page1Res = await client.GetAsync("/api/job-offers/mine?page=1&pageSize=1", Ct);
+        Assert.Equal(HttpStatusCode.OK, page1Res.StatusCode);
+        var page1 = await ParseJsonAsync(page1Res);
+        Assert.Equal(1, page1.GetProperty("items").GetArrayLength());
+        Assert.True(page1.GetProperty("totalCount").GetInt32() >= 2);
+        Assert.True(page1.GetProperty("hasNextPage").GetBoolean());
+
+        var page2Res = await client.GetAsync("/api/job-offers/mine?page=2&pageSize=1", Ct);
+        Assert.Equal(HttpStatusCode.OK, page2Res.StatusCode);
+        var page2 = await ParseJsonAsync(page2Res);
+        Assert.Equal(1, page2.GetProperty("items").GetArrayLength());
+        Assert.True(page2.GetProperty("hasPreviousPage").GetBoolean());
+    }
+
     // ───── Edit ─────
 
     [Fact]

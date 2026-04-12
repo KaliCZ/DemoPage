@@ -8,7 +8,14 @@ namespace Kalandra.JobOffers.Queries;
 
 public record ListJobOffersQuery(CurrentUser User, bool ShowAll, JobOfferStatus[]? Statuses, int Page, int PageSize);
 
-public record ListJobOffersResult(IReadOnlyList<JobOffer> Items, int TotalCount);
+public record ListJobOffersResult(
+    IReadOnlyList<JobOffer> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int PageCount,
+    bool HasNextPage,
+    bool HasPreviousPage);
 
 public class ListJobOffersHandler(IQuerySession session)
 {
@@ -37,6 +44,13 @@ public class ListJobOffersHandler(IQuerySession session)
             .OrderByDescending(j => j.CreatedAt)
             .ToPagedListAsync(query.Page, query.PageSize, ct);
 
-        return new ListJobOffersResult(pagedResult.ToList(), (int)pagedResult.TotalItemCount);
+        return new ListJobOffersResult(
+            Items: pagedResult.ToList(),
+            TotalCount: (int)pagedResult.TotalItemCount,
+            Page: (int)pagedResult.PageNumber,
+            PageSize: (int)pagedResult.PageSize,
+            PageCount: (int)pagedResult.PageCount,
+            HasNextPage: pagedResult.HasNextPage,
+            HasPreviousPage: pagedResult.HasPreviousPage);
     }
 }

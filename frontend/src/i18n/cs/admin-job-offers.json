@@ -60,6 +60,9 @@
     "fieldBefore": "Před",
     "fieldAfter": "Po",
     "fieldYes": "ano",
-    "fieldNo": "ne"
+    "fieldNo": "ne",
+    "paginationPrev": "Předchozí",
+    "paginationNext": "Další",
+    "paginationPage": "Stránka {current} z {total}"
   }
 }

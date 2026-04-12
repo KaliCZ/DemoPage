@@ -96,6 +96,22 @@ const c = commonTranslations[lang];
       <p class="text-on-surface-variant font-body">{t.empty.description}</p>
     </div>
     <div id="offers-grid" class="hidden grid gap-4"></div>
+    <!-- Pagination controls -->
+    <nav id="pagination-controls" class="hidden flex items-center justify-center gap-3 mt-8" aria-label="Pagination">
+      <button id="pagination-prev" type="button"
+        class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled>
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
+        {t.list.paginationPrev}
+      </button>
+      <span id="pagination-indicator" class="text-sm font-label text-on-surface-variant"></span>
+      <button id="pagination-next" type="button"
+        class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled>
+        {t.list.paginationNext}
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
+      </button>
+    </nav>
   </section>
 
   <JobOfferDetail isAdmin={true} t={t} />
@@ -121,10 +137,14 @@ const c = commonTranslations[lang];
     errorNetwork: c.errors.networkError,
     attachmentsLabel: t.list.attachments,
     downloadLabel: t.list.download,
-    apiErrorMap: t.errors
+    apiErrorMap: t.errors,
+    paginationPageLabel: t.list.paginationPage
   }}>
     // Wake up the database
     fetch(apiUrl + '/health').catch(function() {});
+
+    var currentPage = 1;
+    var pageSize = 20;
 
     function showError(status) {
       var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;
@@ -252,8 +272,9 @@ const c = commonTranslations[lang];
 
       var response;
       try {
-        var statusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
-        response = await fetch(apiUrl + '/api/job-offers' + statusParam, {
+        var params = ['page=' + currentPage, 'pageSize=' + pageSize];
+        activeStatuses.forEach(function(s) { params.push('status=' + s); });
+        response = await fetch(apiUrl + '/api/job-offers?' + params.join('&'), {
           headers: { 'Authorization': 'Bearer ' + currentToken }
         });
       } catch (e) {
@@ -265,9 +286,10 @@ const c = commonTranslations[lang];
       if (!response.ok) { showError(response.status); return; }
 
       var data = await response.json();
-      if (data.items.length === 0) {
+      if (data.totalCount === 0) {
         document.getElementById('offers-empty')?.classList.remove('hidden');
         document.getElementById('offers-grid')?.classList.add('hidden');
+        document.getElementById('pagination-controls')?.classList.add('hidden');
         return;
       }
 
@@ -294,6 +316,27 @@ const c = commonTranslations[lang];
         card.addEventListener('click', function() { showDetail(offer.id); });
         grid.appendChild(card);
       });
+
+      renderPagination(data);
+    }
+
+    function renderPagination(data) {
+      var controls = document.getElementById('pagination-controls');
+      var prevBtn = document.getElementById('pagination-prev');
+      var nextBtn = document.getElementById('pagination-next');
+      var indicator = document.getElementById('pagination-indicator');
+
+      if (data.pageCount <= 1) {
+        controls?.classList.add('hidden');
+        return;
+      }
+
+      controls?.classList.remove('hidden');
+      prevBtn.disabled = !data.hasPreviousPage;
+      nextBtn.disabled = !data.hasNextPage;
+      indicator.textContent = paginationPageLabel
+        .replace('{current}', String(data.page))
+        .replace('{total}', String(data.pageCount));
     }
 
     async function showDetail(id, skipHashUpdate) {
@@ -644,8 +687,21 @@ const c = commonTranslations[lang];
           filterCount.classList.add('hidden');
           filterLabel.textContent = filterByStatusLabel;
         }
+        currentPage = 1;
         await loadOffers();
       });
+    });
+
+    document.getElementById('pagination-prev')?.addEventListener('click', async function() {
+      if (currentPage > 1) {
+        currentPage--;
+        await loadOffers();
+      }
+    });
+
+    document.getElementById('pagination-next')?.addEventListener('click', async function() {
+      currentPage++;
+      await loadOffers();
     });
 
     function esc(str) {

@@ -381,8 +381,13 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(GetJobOfferDetailResponse.Serialize).ToList(),
-            result.TotalCount);
+            Items: result.Items.Select(GetJobOfferDetailResponse.Serialize).ToList(),
+            TotalCount: result.TotalCount,
+            Page: result.Page,
+            PageSize: result.PageSize,
+            PageCount: result.PageCount,
+            HasNextPage: result.HasNextPage,
+            HasPreviousPage: result.HasPreviousPage);
     }
 
     private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)
