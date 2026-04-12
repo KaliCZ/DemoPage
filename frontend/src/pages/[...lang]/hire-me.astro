@@ -378,19 +378,19 @@ const t = translations[lang];
           body: formData
         });
 
-        if (!response.ok) {
-          if (response.status === 429) {
-            // Clone before reading — getApiError needs the body if this check doesn't match.
-            var body = await response.clone().json().catch(function() { return {}; });
-            if (body && body.error === 'captcha_required') {
-              // Rate limit hit — force visible Turnstile checkbox on next attempt.
-              interactiveCaptchaMode = true;
-              renderTurnstile('always');
-              window.__showSnackbar?.(captchaRequiredError, 'error');
-              if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
-              return;
-            }
+        if (response.status === 429) {
+          var body = await response.json().catch(function() { return {}; });
+          if (body && body.error === 'captcha_required') {
+            // Rate limit hit — force visible Turnstile checkbox on next attempt.
+            interactiveCaptchaMode = true;
+            renderTurnstile('always');
+            window.__showSnackbar?.(captchaRequiredError, 'error');
+            if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+            return;
           }
+        }
+
+        if (!response.ok) {
           var result = await window.__getApiError?.(response, apiErrorMap);
           window.__showSnackbar?.(result?.message || errorText, 'error', 8000, result?.traceId);
           if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
