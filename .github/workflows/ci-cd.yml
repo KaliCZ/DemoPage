@@ -124,8 +124,8 @@ jobs:
       # By now ~40s of setup/build work has overlapped with the ~50s startup.
       - name: Wait for Supabase
         run: |
-          echo "Waiting for Supabase Auth to accept connections..."
-          until curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null 2>&1; do
+          echo "Waiting for Supabase to be ready..."
+          until supabase status > /dev/null 2>&1; do
             echo "Still waiting..."
             sleep 3
           done
