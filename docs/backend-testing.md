@@ -112,3 +112,7 @@ The rule is about the **HTTP boundary** — what goes over the wire as JSON must
 **Domain aggregate tests** — pure unit tests that exercise decide/apply directly. No HTTP, no database. Use domain types directly (no wire-contract risk). Test every state-machine transition: which succeed, which fail, and which error variant is returned.
 
 **Concurrency tests** — verify Marten's optimistic concurrency by opening two sessions against the same stream and confirming the second writer gets a concurrency exception. Also verify that separate streams (e.g. comments vs. job offer) don't conflict.
+
+## Running tests locally
+
+Use `npm test` from the repo root — it runs backend, frontend, and E2E tests. This is what CI runs.

@@ -267,7 +267,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListJobOffersResponse>> ListMine(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await ListOffersAsync(showAll: false, status, page, pageSize, ct);
@@ -281,7 +281,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListJobOffersResponse>> ListAll(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await ListOffersAsync(showAll: true, status, page, pageSize, ct);
@@ -378,8 +378,8 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(GetJobOfferDetailResponse.Serialize).ToList(),
-            result.TotalCount);
+            Items: result.Select(GetJobOfferDetailResponse.Serialize).ToList(),
+            Pagination: PaginationMetadata.FromPagedList(result));
     }
 
     private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)
