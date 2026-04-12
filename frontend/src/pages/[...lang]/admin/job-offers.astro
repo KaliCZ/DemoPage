@@ -108,6 +108,8 @@ const c = commonTranslations[lang];
     submittedByLabel: t.list.submittedBy,
     historyFieldLabels: t.list.fieldLabels,
     historyFieldChanged: t.list.fieldChanged,
+    historyFieldBefore: t.list.fieldBefore,
+    historyFieldAfter: t.list.fieldAfter,
     historyFieldYes: t.list.fieldYes,
     historyFieldNo: t.list.fieldNo,
     historyEmptyLabel: t.list.historyEmpty,
@@ -403,19 +405,39 @@ const c = commonTranslations[lang];
       }
     }
 
+    var longTextFields = { description: true, additionalNotes: true };
+
     function formatFieldValue(val, field) {
       if (val == null || val === '') return '—';
       if (field === 'isRemote') return val === 'true' ? historyFieldYes : historyFieldNo;
       return esc(val);
     }
 
+    var diffIdCounter = 0;
+
     function renderChanges(changes) {
       if (!changes || changes.length === 0) return '';
-      return '<ul class="mt-1 space-y-0.5 list-none pl-0">' +
+      return '<ul class="mt-1 space-y-1 list-none pl-0">' +
         changes.map(function(c) {
           var label = (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
-          if (c.oldValue == null && c.newValue == null) {
-            return '<li class="text-on-surface-variant"><span class="font-semibold">' + esc(label) + '</span> ' + historyFieldChanged + '</li>';
+          if (longTextFields[c.field]) {
+            var id = 'diff-' + (++diffIdCounter);
+            return '<li class="text-on-surface-variant">' +
+              '<button type="button" data-diff-toggle="' + id + '" class="diff-toggle inline-flex items-center gap-1 font-semibold text-primary hover:underline cursor-pointer bg-transparent border-none p-0 text-sm">' +
+                esc(label) + ' ' + historyFieldChanged +
+                ' <span class="material-symbols-outlined text-sm transition-transform" aria-hidden="true">expand_more</span>' +
+              '</button>' +
+              '<div id="' + id + '" class="hidden mt-2 rounded-lg border border-outline-variant/20 overflow-hidden text-xs">' +
+                '<div class="px-3 py-2 bg-error-container/30">' +
+                  '<p class="font-label font-semibold text-on-surface-variant mb-1">' + historyFieldBefore + '</p>' +
+                  '<p class="font-body text-on-surface whitespace-pre-line">' + esc(c.oldValue || '—') + '</p>' +
+                '</div>' +
+                '<div class="px-3 py-2 bg-tertiary-container/30">' +
+                  '<p class="font-label font-semibold text-on-surface-variant mb-1">' + historyFieldAfter + '</p>' +
+                  '<p class="font-body text-on-surface whitespace-pre-line">' + esc(c.newValue || '—') + '</p>' +
+                '</div>' +
+              '</div>' +
+            '</li>';
           }
           return '<li class="text-on-surface-variant"><span class="font-semibold">' + esc(label) + ':</span> ' +
             '<span class="line-through opacity-60">' + formatFieldValue(c.oldValue, c.field) + '</span>' +
@@ -455,6 +477,18 @@ const c = commonTranslations[lang];
             '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(actorName) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
           '</div>';
         historyList.appendChild(el);
+      });
+
+      // Bind expand/collapse toggles for long-text diffs
+      historyList.querySelectorAll('.diff-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = btn.getAttribute('data-diff-toggle');
+          var panel = document.getElementById(id);
+          if (!panel) return;
+          var icon = btn.querySelector('.material-symbols-outlined');
+          panel.classList.toggle('hidden');
+          if (icon) icon.style.transform = panel.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        });
       });
     }
 

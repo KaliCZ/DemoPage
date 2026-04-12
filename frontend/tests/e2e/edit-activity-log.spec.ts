@@ -84,9 +84,10 @@ test.describe('Edit Activity Log', () => {
 
     await expect(page.locator('#edit-form-section')).toBeVisible();
 
-    // Change company name and job title
+    // Change company name, job title, and description
     await page.fill('#edit-companyName', 'Updated Corp');
     await page.fill('#edit-jobTitle', 'Senior Developer');
+    await page.fill('#edit-description', 'An updated description for the role.');
 
     // Submit the edit
     await page.locator('#edit-form button[type="submit"]').click();
@@ -99,20 +100,39 @@ test.describe('Edit Activity Log', () => {
     const historySection = page.locator('#history-section');
     await expect(historySection).toBeVisible();
 
-    // The activity log should have an "Edited" entry with the field changes
     const historyList = page.locator('#history-list');
 
-    // Verify old and new values appear in the activity log
+    // Verify old and new values appear for short fields
     await expect(historyList).toContainText('Original Corp');
     await expect(historyList).toContainText('Updated Corp');
     await expect(historyList).toContainText('Developer');
     await expect(historyList).toContainText('Senior Developer');
-
-    // Verify the arrow separator is present (old → new)
     await expect(historyList).toContainText('→');
 
     // Verify the localized field labels are shown
     await expect(historyList).toContainText('Company');
     await expect(historyList).toContainText('Job Title');
+
+    // --- Step 5: Verify expandable description diff ---
+    // Description is a long-text field: shows "Description changed" as a toggle
+    const descToggle = historyList.locator('.diff-toggle', { hasText: 'Description' });
+    await expect(descToggle).toBeVisible();
+    await expect(descToggle).toContainText('changed');
+
+    // The diff panel should be hidden by default
+    const diffPanel = historyList.locator('.diff-toggle + div', { hasText: 'Before' }).first();
+    await expect(diffPanel).toBeHidden();
+
+    // Click to expand
+    await descToggle.click();
+    await expect(diffPanel).toBeVisible();
+
+    // Verify the old and new description text are shown
+    await expect(diffPanel).toContainText('A developer role at Original Corp.');
+    await expect(diffPanel).toContainText('An updated description for the role.');
+
+    // Click again to collapse
+    await descToggle.click();
+    await expect(diffPanel).toBeHidden();
   });
 });

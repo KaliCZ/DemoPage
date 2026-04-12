@@ -57,6 +57,8 @@
       "additionalNotes": "Additional Notes"
     },
     "fieldChanged": "changed",
+    "fieldBefore": "Before",
+    "fieldAfter": "After",
     "fieldYes": "yes",
     "fieldNo": "no"
   }

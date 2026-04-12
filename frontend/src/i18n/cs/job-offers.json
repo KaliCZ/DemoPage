@@ -64,6 +64,8 @@
       "additionalNotes": "Další poznámky"
     },
     "fieldChanged": "změněno",
+    "fieldBefore": "Před",
+    "fieldAfter": "Po",
     "fieldYes": "ano",
     "fieldNo": "ne"
   }

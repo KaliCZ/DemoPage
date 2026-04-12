@@ -163,11 +163,13 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                 changes.Add(new FieldChange("salaryRange", before.SalaryRange, after.SalaryRange));
             if (before.IsRemote != after.IsRemote)
                 changes.Add(new FieldChange("isRemote", before.IsRemote.ToString().ToLowerInvariant(), after.IsRemote.ToString().ToLowerInvariant()));
-            // Long-text fields: signal that the field changed but omit the full content.
+            // Long-text fields: send old/new values so the frontend can offer
+            // an expandable diff, but the frontend collapses them by default
+            // behind a "changed" toggle to keep the log scannable.
             if (before.Description != after.Description)
-                changes.Add(new FieldChange("description", null, null));
+                changes.Add(new FieldChange("description", before.Description, after.Description));
             if (before.AdditionalNotes != after.AdditionalNotes)
-                changes.Add(new FieldChange("additionalNotes", null, null));
+                changes.Add(new FieldChange("additionalNotes", before.AdditionalNotes, after.AdditionalNotes));
             return changes;
         }
     }
