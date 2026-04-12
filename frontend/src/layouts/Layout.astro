@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css'
 import AuthDialog from '../components/AuthDialog.astro';
+import Snackbar from '../components/Snackbar.astro';
 import IconEmail from '../components/icons/IconEmail.astro';
 import IconGitHub from '../components/icons/IconGitHub.astro';
 import IconLinkedIn from '../components/icons/IconLinkedIn.astro';
@@ -595,110 +596,9 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     };
   </script>
 
-  <!-- Global snackbar -->
-  <div id="snackbar" role="status" aria-live="polite"
-    class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 -translate-y-4">
-    <div class="flex flex-col gap-1 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md">
-      <div class="flex items-center gap-3">
-        <span id="snackbar-icon" class="material-symbols-outlined text-lg flex-shrink-0" aria-hidden="true"></span>
-        <span id="snackbar-message" class="flex-1"></span>
-        <button id="snackbar-close" type="button" class="hidden material-symbols-outlined text-lg flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" aria-label="Close">close</button>
-      </div>
-      <div id="snackbar-trace" class="hidden flex items-center gap-2 pl-8 text-xs opacity-70">
-        <span id="snackbar-trace-text" class="truncate"></span>
-        <button id="snackbar-trace-copy" type="button" class="material-symbols-outlined text-sm flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" aria-label="Copy trace ID">content_copy</button>
-      </div>
-    </div>
-  </div>
+  <Snackbar />
 
   <script>
-    window.__showSnackbar = function(message: string, type: 'success' | 'error' | 'info' = 'info', duration = 8000, traceId?: string) {
-      const snackbar = document.getElementById('snackbar');
-      const icon = document.getElementById('snackbar-icon');
-      const msg = document.getElementById('snackbar-message');
-      if (!snackbar || !icon || !msg) return;
-
-      const inner = snackbar.firstElementChild as HTMLElement;
-
-      // Reset classes
-      inner.classList.remove('bg-tertiary-container', 'text-on-surface', 'bg-error-container', 'bg-surface-container-high');
-      icon.classList.remove('text-tertiary', 'text-error', 'text-primary');
-
-      if (type === 'success') {
-        inner.classList.add('bg-tertiary-container', 'text-on-surface');
-        icon.classList.add('text-tertiary');
-        icon.textContent = 'check_circle';
-      } else if (type === 'error') {
-        inner.classList.add('bg-error-container', 'text-on-surface');
-        icon.classList.add('text-error');
-        icon.textContent = 'error';
-      } else {
-        inner.classList.add('bg-surface-container-high', 'text-on-surface');
-        icon.classList.add('text-primary');
-        icon.textContent = 'info';
-      }
-
-      msg.textContent = message;
-
-      // Show/hide traceId section
-      const traceEl = document.getElementById('snackbar-trace');
-      const traceText = document.getElementById('snackbar-trace-text');
-      if (traceEl && traceText) {
-        if (traceId) {
-          traceText.textContent = 'Trace: ' + traceId;
-          traceEl.classList.remove('hidden');
-        } else {
-          traceEl.classList.add('hidden');
-        }
-      }
-
-      // Show/hide close button for persistent snackbars
-      const closeBtn = document.getElementById('snackbar-close');
-      if (closeBtn) {
-        if (duration === 0) { closeBtn.classList.remove('hidden'); } else { closeBtn.classList.add('hidden'); }
-      }
-
-      // Show
-      snackbar.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
-      snackbar.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
-
-      // Auto-hide (0 = persistent, dismissed via close button or by next snackbar)
-      clearTimeout((window as any).__snackbarTimer);
-      if (duration > 0) {
-        (window as any).__snackbarTimer = setTimeout(() => {
-          snackbar.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-          snackbar.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
-        }, duration);
-      }
-    };
-
-    // Copy traceId to clipboard
-    document.getElementById('snackbar-trace-copy')?.addEventListener('click', () => {
-      const traceText = document.getElementById('snackbar-trace-text')?.textContent;
-      if (traceText) {
-        const traceId = traceText.replace(/^Trace:\s*/, '');
-        navigator.clipboard.writeText(traceId);
-      }
-    });
-
-    document.getElementById('snackbar-close')?.addEventListener('click', () => {
-      const snackbar = document.getElementById('snackbar');
-      if (snackbar) {
-        snackbar.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-        snackbar.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
-      }
-    });
-
-    // Show snackbar from sessionStorage (for cross-page messages like form submission redirects)
-    try {
-      const pending = sessionStorage.getItem('snackbar');
-      if (pending) {
-        sessionStorage.removeItem('snackbar');
-        const { message, type } = JSON.parse(pending);
-        (window as any).__showSnackbar(message, type);
-      }
-    } catch {}
-
     // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
     // Sign out any existing session — the person clicking the link is the one who signed up.
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
