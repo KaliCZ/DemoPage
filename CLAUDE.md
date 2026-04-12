@@ -27,6 +27,8 @@ dotnet build           # Backend only
 npm run build:frontend # Frontend only
 ```
 
+**Always run `npm test` to verify changes.** Do not run subsets (`dotnet test`, `npm run test:frontend`, etc.) as a substitute — always run the full suite.
+
 ## Design Principles
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
