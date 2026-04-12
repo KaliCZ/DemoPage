@@ -1,0 +1,8 @@
+{
+  "RateLimit": {
+    "HireMePermitLimit": 20
+  },
+  "Turnstile": {
+    "SecretKey": "1x0000000000000000000000000000000AA"
+  }
+}
