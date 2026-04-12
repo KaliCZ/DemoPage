@@ -213,7 +213,7 @@
         "observations": [
           "PostgreSQL zdarma je super a samo o sobě stojí za to",
           { "text": "Auth má některé hrubé hrany — např. problémy s email providerem", "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605", "linkText": "viz diskuze" },
-          "File storage je levný, takže to není rozhodující faktor pro nebo proti Supabase",
+          "File storage je levný všude — S3 nebo Azure Blobs stojí stejně a věřil bych jim víc než Supabase Storage",
           "Použití Supabase zpomaluje dev CLI oproti prostému PostgreSQL Docker image",
           "Není žádný skutečný tlak používat přibalený file storage a auth — ale připadáte si hloupě, když to nepoužijete, když už to tam je"
         ]
