@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
@@ -10,31 +9,14 @@ public record GetJobOfferHistoryQuery(Guid Id, CurrentUser User);
 
 public enum JobOfferField
 {
-    [JsonStringEnumMemberName("companyName")]
     CompanyName,
-
-    [JsonStringEnumMemberName("jobTitle")]
     JobTitle,
-
-    [JsonStringEnumMemberName("contactName")]
     ContactName,
-
-    [JsonStringEnumMemberName("contactEmail")]
     ContactEmail,
-
-    [JsonStringEnumMemberName("location")]
     Location,
-
-    [JsonStringEnumMemberName("salaryRange")]
     SalaryRange,
-
-    [JsonStringEnumMemberName("isRemote")]
     IsRemote,
-
-    [JsonStringEnumMemberName("description")]
     Description,
-
-    [JsonStringEnumMemberName("additionalNotes")]
     AdditionalNotes,
 }
 
