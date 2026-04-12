@@ -380,6 +380,42 @@ const t = translations[lang];
     </div>
   </section>
 
+  <!-- Lessons Learned -->
+  <section id="lessons-learned" class="max-w-7xl mx-auto px-8 mt-32 mb-32">
+    <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.lessonsLearned.title}</h2>
+    <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.lessonsLearned.subtitle}</p>
+    <div class="space-y-4">
+      {t.lessonsLearned.items.map((item) => (
+        <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
+          <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-tertiary text-2xl" aria-hidden="true">{item.icon}</span>
+              <h3 class="font-headline font-bold text-on-surface">{item.title}</h3>
+            </div>
+            <span class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
+            <div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-tertiary">
+              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Verdict</h4>
+              <p class="font-body text-sm text-on-surface font-medium">{item.verdict}</p>
+            </div>
+            <div>
+              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Observations</h4>
+              <ul class="space-y-2">
+                {item.observations.map((obs) => (
+                  <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5"></span>
+                    {obs}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </details>
+      ))}
+    </div>
+  </section>
+
   <!-- CTA Section -->
   <section class="max-w-7xl mx-auto px-8 mt-32">
     <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
@@ -419,6 +455,7 @@ const t = translations[lang];
       <a href="#architecture" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="architecture">{t.toc.architecture}</a>
       <a href="#decisions" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="decisions">{t.toc.decisions}</a>
       <a href="#roadmap" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="roadmap">{t.toc.roadmap}</a>
+      <a href="#lessons-learned" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="lessons-learned">{t.toc.lessonsLearned}</a>
     </div>
   </nav>
 
@@ -432,6 +469,7 @@ const t = translations[lang];
       <a href="#architecture" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="architecture">{t.toc.architecture}</a>
       <a href="#decisions" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="decisions">{t.toc.decisions}</a>
       <a href="#roadmap" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="roadmap">{t.toc.roadmap}</a>
+      <a href="#lessons-learned" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="lessons-learned">{t.toc.lessonsLearned}</a>
     </nav>
   </aside>
 </div>

@@ -34,6 +34,7 @@
     "architecture": "Architektura",
     "decisions": "Architektonická rozhodnutí",
     "roadmap": "Plán vývoje",
+    "lessonsLearned": "Poučení z projektu",
     "openQuestions": "Otevřené otázky"
   },
   "techStack": {
@@ -196,6 +197,47 @@
           "Frontend page testy: Playwright — builduje statický web, ověřuje renderování, navigaci, i18n a dark mode",
           "E2E testy: Playwright proti celé běžící aplikaci — fungující auth, fungující DB, vše reálné. Pouze externí systémy jako Slack a email nelze ověřit",
           "CI/CD: Všechny tři testovací sady běží paralelně, všechny blokují deployment při selhání"
+        ]
+      }
+    ]
+  },
+  "lessonsLearned": {
+    "title": "Poučení z projektu",
+    "subtitle": "Názory utvořené po stavbě a nasazení s těmito technologiemi.",
+    "items": [
+      {
+        "id": "supabase",
+        "icon": "cloud",
+        "title": "Použití Supabase",
+        "verdict": "Asi bych to udělal znovu pro jednoduchost nastavení u osobních projektů. Ne u komerčních projektů se skutečným rozpočtem.",
+        "observations": [
+          "PostgreSQL zdarma je super a samo o sobě stojí za to",
+          "Auth má některé hrubé hrany — např. problémy s email providerem",
+          "File storage je levný, takže to není rozhodující faktor pro nebo proti Supabase",
+          "Použití Supabase zpomaluje dev CLI oproti prostému PostgreSQL Docker image",
+          "Není žádný skutečný tlak používat přibalený file storage a auth — ale připadáte si hloupě, když to nepoužijete, když už to tam je"
+        ]
+      },
+      {
+        "id": "event-sourcing",
+        "icon": "history",
+        "title": "Použití Event Sourcingu / Marten",
+        "verdict": "Příště bych asi napsal něco vlastního místo použití Martenu tak jak je.",
+        "observations": [
+          "Nepsal bych 100% čistý event sourcing — místo toho by každý update také uložil záznam o změně obsahující předchozí hodnoty",
+          "Ukládání předchozích hodnot jde proti filozofii ES, ale umožňuje stránkování záznamů historie — což je praktičtější",
+          "Pro projekce bych použil standardní SQL úložiště místo JSONu",
+          "Eventy by se ukládaly ve stejné transakci do jiné tabulky, pak přesouvaly do levnějšího úložiště (např. Azure Table Storage) přes outbox pattern"
+        ]
+      },
+      {
+        "id": "astro-ssg",
+        "icon": "rocket_launch",
+        "title": "Astro SSG",
+        "verdict": "Příště bych asi zvolil SSR framework.",
+        "observations": [
+          "Už teď byly místa, kde by pomohl router — např. sdílený header, footer a auth status napříč stránkami",
+          "SSG je jednodušší pro nastavení deploye, ale v reálných podmínkách prostě zaplatíte za infrastrukturu a neřešíte to"
         ]
       }
     ]

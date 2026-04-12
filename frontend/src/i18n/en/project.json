@@ -34,6 +34,7 @@
     "architecture": "Architecture",
     "decisions": "Architecture Decisions",
     "roadmap": "Roadmap",
+    "lessonsLearned": "Lessons Learned",
     "openQuestions": "Open Questions"
   },
   "techStack": {
@@ -196,6 +197,47 @@
           "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, and dark mode",
           "E2E tests: Playwright against the full running application — working auth, working DB, everything real. Only external systems like Slack and email can't be asserted",
           "CI/CD: All three test suites run in parallel, all block deployment on failure"
+        ]
+      }
+    ]
+  },
+  "lessonsLearned": {
+    "title": "Lessons Learned",
+    "subtitle": "Opinions formed after building and shipping with these technologies.",
+    "items": [
+      {
+        "id": "supabase",
+        "icon": "cloud",
+        "title": "Using Supabase",
+        "verdict": "Would probably do it again just for the setup simplicity on personal projects. Not on commercial projects with real budgets.",
+        "observations": [
+          "Free PostgreSQL is cool and worth it on its own",
+          "Auth has some rough edges — e.g. email provider issues",
+          "File storage is cheap, so that's not the deciding factor for or against Supabase",
+          "Using Supabase slows down the dev CLI compared to just using a plain PostgreSQL Docker image",
+          "There's no real pressure to use the bundled file storage and auth — but you kinda feel like an idiot if you don't, since it's right there"
+        ]
+      },
+      {
+        "id": "event-sourcing",
+        "icon": "history",
+        "title": "Using Event Sourcing / Marten",
+        "verdict": "Would probably write some custom stuff next time rather than using Marten as-is.",
+        "observations": [
+          "Wouldn't write 100% clean event sourcing — instead, every update would also store a change record containing the previous values",
+          "Storing previous values goes against ES philosophy, but allows pagination of history records — which is more practical",
+          "Would use standard SQL storage for projections rather than JSON",
+          "Events would be stored in the same transaction into another table, then moved to cheaper storage (e.g. Azure Table Storage) via an outbox pattern"
+        ]
+      },
+      {
+        "id": "astro-ssg",
+        "icon": "rocket_launch",
+        "title": "Astro SSG",
+        "verdict": "Would probably go for an SSR framework next time.",
+        "observations": [
+          "Already had places where a router would help — e.g. shared header, footer, and auth status across pages",
+          "SSG is simpler for deploy setup, but in real circumstances you just pay for the infrastructure and don't worry about it"
         ]
       }
     ]
