@@ -25,7 +25,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Supabase:ProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Supabase:ServiceKey", "test-service-key");
-        builder.UseSetting("Supabase:BucketName", "test-bucket");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IStorageService>();

@@ -6,8 +6,7 @@ namespace Kalandra.Infrastructure.Configuration;
 
 public record SupabaseConfig(
     NonEmptyString ProjectUrl,
-    NonEmptyString ServiceKey,
-    NonEmptyString BucketName)
+    NonEmptyString ServiceKey)
 {
     public static SupabaseConfig AddSingleton(
         IServiceCollection services,
@@ -17,8 +16,7 @@ public record SupabaseConfig(
 
         var config = new SupabaseConfig(
             ProjectUrl: NonEmptyString.CreateUnsafe(section["ProjectUrl"]),
-            ServiceKey: NonEmptyString.CreateUnsafe(section["ServiceKey"]),
-            BucketName: NonEmptyString.CreateUnsafe(section["BucketName"]));
+            ServiceKey: NonEmptyString.CreateUnsafe(section["ServiceKey"]));
 
         services.AddSingleton(config);
 
