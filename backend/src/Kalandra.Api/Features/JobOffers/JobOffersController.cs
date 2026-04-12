@@ -100,7 +100,7 @@ public class JobOffersController(
 
     // ───── Edit ─────
 
-    [HttpPut("{id:guid}")]
+    [HttpPatch("{id:guid}")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -117,11 +117,11 @@ public class JobOffersController(
             var command = new EditJobOfferCommand(
                 Id: id,
                 User: AppUser,
-                CompanyName: request.CompanyName.AsNonEmpty().Get(),
-                ContactName: request.ContactName.AsNonEmpty().Get(),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
-                JobTitle: request.JobTitle.AsNonEmpty().Get(),
-                Description: request.Description.AsNonEmpty().Get(),
+                CompanyName: request.CompanyName is { } cn ? cn.AsNonEmpty().Get().Value : null,
+                ContactName: request.ContactName is { } ctn ? ctn.AsNonEmpty().Get().Value : null,
+                ContactEmail: request.ContactEmail is { } ce ? ce.AsNonEmpty().Get().Value : null,
+                JobTitle: request.JobTitle is { } jt ? jt.AsNonEmpty().Get().Value : null,
+                Description: request.Description is { } d ? d.AsNonEmpty().Get().Value : null,
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
