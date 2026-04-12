@@ -291,10 +291,10 @@ const c = commonTranslations[lang];
       }
 
       document.getElementById('offers-loading')?.classList.add('hidden');
-      if (!response.ok) { showError(response.status); return; }
+      if (!response.ok) { await showApiError(response); return; }
 
       var data = await response.json();
-      if (data.totalCount === 0) {
+      if (data.pagination.totalCount === 0) {
         document.getElementById('offers-empty')?.classList.remove('hidden');
         document.getElementById('offers-grid')?.classList.add('hidden');
         document.getElementById('pagination-controls')?.classList.add('hidden');
@@ -333,18 +333,19 @@ const c = commonTranslations[lang];
       var prevBtn = document.getElementById('pagination-prev');
       var nextBtn = document.getElementById('pagination-next');
       var indicator = document.getElementById('pagination-indicator');
+      var p = data.pagination;
 
-      if (data.pageCount <= 1) {
+      if (p.pageCount <= 1) {
         controls?.classList.add('hidden');
         return;
       }
 
       controls?.classList.remove('hidden');
-      prevBtn.disabled = !data.hasPreviousPage;
-      nextBtn.disabled = !data.hasNextPage;
+      prevBtn.disabled = !p.hasPreviousPage;
+      nextBtn.disabled = !p.hasNextPage;
       indicator.textContent = paginationPageLabel
-        .replace('{current}', String(data.page))
-        .replace('{total}', String(data.pageCount));
+        .replace('{current}', String(p.page))
+        .replace('{total}', String(p.pageCount));
     }
 
     async function showDetail(id, skipHashUpdate) {

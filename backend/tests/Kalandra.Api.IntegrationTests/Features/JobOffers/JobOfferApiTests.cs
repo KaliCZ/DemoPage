@@ -147,7 +147,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var ownerListRes = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, ownerListRes.StatusCode);
         var ownerList = await ParseJsonAsync(ownerListRes);
-        Assert.True(ownerList.GetProperty("totalCount").GetInt32() >= 1);
+        Assert.True(ownerList.GetProperty("pagination").GetProperty("totalCount").GetInt32() >= 1);
         Assert.Contains(
             ownerList.GetProperty("items").EnumerateArray(),
             item => item.GetProperty("id").GetString() == ownerId);
@@ -182,7 +182,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.True(json.GetProperty("totalCount").GetInt32() >= 1);
+        Assert.True(json.GetProperty("pagination").GetProperty("totalCount").GetInt32() >= 1);
         var items = json.GetProperty("items");
         Assert.True(items.GetArrayLength() >= 1);
 
@@ -203,12 +203,13 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal(1, json.GetProperty("page").GetInt32());
-        Assert.Equal(5, json.GetProperty("pageSize").GetInt32());
-        Assert.True(json.GetProperty("pageCount").GetInt32() >= 1);
-        Assert.True(json.TryGetProperty("hasNextPage", out _));
-        Assert.True(json.TryGetProperty("hasPreviousPage", out _));
-        Assert.False(json.GetProperty("hasPreviousPage").GetBoolean());
+        var pagination = json.GetProperty("pagination");
+        Assert.Equal(1, pagination.GetProperty("page").GetInt32());
+        Assert.Equal(5, pagination.GetProperty("pageSize").GetInt32());
+        Assert.True(pagination.GetProperty("pageCount").GetInt32() >= 1);
+        Assert.True(pagination.TryGetProperty("hasNextPage", out _));
+        Assert.True(pagination.TryGetProperty("hasPreviousPage", out _));
+        Assert.False(pagination.GetProperty("hasPreviousPage").GetBoolean());
     }
 
     [Fact]
@@ -221,12 +222,13 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.Equal(1, json.GetProperty("page").GetInt32());
-        Assert.Equal(5, json.GetProperty("pageSize").GetInt32());
-        Assert.True(json.GetProperty("pageCount").GetInt32() >= 1);
-        Assert.True(json.TryGetProperty("hasNextPage", out _));
-        Assert.True(json.TryGetProperty("hasPreviousPage", out _));
-        Assert.False(json.GetProperty("hasPreviousPage").GetBoolean());
+        var pagination = json.GetProperty("pagination");
+        Assert.Equal(1, pagination.GetProperty("page").GetInt32());
+        Assert.Equal(5, pagination.GetProperty("pageSize").GetInt32());
+        Assert.True(pagination.GetProperty("pageCount").GetInt32() >= 1);
+        Assert.True(pagination.TryGetProperty("hasNextPage", out _));
+        Assert.True(pagination.TryGetProperty("hasPreviousPage", out _));
+        Assert.False(pagination.GetProperty("hasPreviousPage").GetBoolean());
     }
 
     [Fact]
@@ -241,14 +243,14 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, page1Res.StatusCode);
         var page1 = await ParseJsonAsync(page1Res);
         Assert.Equal(1, page1.GetProperty("items").GetArrayLength());
-        Assert.True(page1.GetProperty("totalCount").GetInt32() >= 2);
-        Assert.True(page1.GetProperty("hasNextPage").GetBoolean());
+        Assert.True(page1.GetProperty("pagination").GetProperty("totalCount").GetInt32() >= 2);
+        Assert.True(page1.GetProperty("pagination").GetProperty("hasNextPage").GetBoolean());
 
         var page2Res = await client.GetAsync("/api/job-offers/mine?page=2&pageSize=1", Ct);
         Assert.Equal(HttpStatusCode.OK, page2Res.StatusCode);
         var page2 = await ParseJsonAsync(page2Res);
         Assert.Equal(1, page2.GetProperty("items").GetArrayLength());
-        Assert.True(page2.GetProperty("hasPreviousPage").GetBoolean());
+        Assert.True(page2.GetProperty("pagination").GetProperty("hasPreviousPage").GetBoolean());
     }
 
     // ───── Edit ─────
