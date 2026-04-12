@@ -55,6 +55,7 @@ app.UseSwaggerUI();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+RobotsTag.Use(app);
 
 app.UseCors("DefaultPolicy");
 Auth.Use(app);
