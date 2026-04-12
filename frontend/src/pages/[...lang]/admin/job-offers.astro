@@ -405,11 +405,11 @@ const c = commonTranslations[lang];
       }
     }
 
-    var longTextFields = { description: true, additionalNotes: true };
+    var longTextFields = { Description: true, AdditionalNotes: true };
 
     function formatFieldValue(val, field) {
       if (val == null || val === '') return '—';
-      if (field === 'isRemote') return val === 'true' ? historyFieldYes : historyFieldNo;
+      if (field === 'IsRemote') return val === 'true' ? historyFieldYes : historyFieldNo;
       return esc(val);
     }
 

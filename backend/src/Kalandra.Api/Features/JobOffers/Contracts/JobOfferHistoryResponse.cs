@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Kalandra.JobOffers.Queries;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
@@ -7,34 +6,19 @@ namespace Kalandra.Api.Features.JobOffers.Contracts;
 /// Stable API contract for field identifiers in edit history entries.
 /// Separate from the domain <see cref="JobOfferField"/> enum so that
 /// internal renames don't silently break frontend i18n keys.
+/// Serialized as PascalCase strings via the global JsonStringEnumConverter,
+/// consistent with all other API enums (e.g. JobOfferStatus).
 /// </summary>
 public enum HistoryField
 {
-    [JsonStringEnumMemberName("companyName")]
     CompanyName,
-
-    [JsonStringEnumMemberName("jobTitle")]
     JobTitle,
-
-    [JsonStringEnumMemberName("contactName")]
     ContactName,
-
-    [JsonStringEnumMemberName("contactEmail")]
     ContactEmail,
-
-    [JsonStringEnumMemberName("location")]
     Location,
-
-    [JsonStringEnumMemberName("salaryRange")]
     SalaryRange,
-
-    [JsonStringEnumMemberName("isRemote")]
     IsRemote,
-
-    [JsonStringEnumMemberName("description")]
     Description,
-
-    [JsonStringEnumMemberName("additionalNotes")]
     AdditionalNotes,
 }
 
