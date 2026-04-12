@@ -1,12 +1,12 @@
 using Kalandra.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
-using Supabase;
 using Supabase.Storage;
+using Supabase.Storage.Interfaces;
 
 namespace Kalandra.Infrastructure.Storage;
 
 public class SupabaseStorageService(
-    Client supabase,
+    Supabase.Client supabase,
     SupabaseStorageConfig storageConfig,
     ILogger<SupabaseStorageService> logger) : IStorageService
 {
@@ -31,7 +31,7 @@ public class SupabaseStorageService(
                 await bucket.Upload(
                     ms.ToArray(),
                     storagePath,
-                    new FileOptions { ContentType = file.ContentType });
+                    new Supabase.Storage.FileOptions { ContentType = file.ContentType });
             }
             catch (Exception ex)
             {
@@ -62,7 +62,7 @@ public class SupabaseStorageService(
 
         try
         {
-            var data = await bucket.Download(storagePath);
+            var data = await bucket.Download(storagePath, (TransformOptions?)null);
             var contentType = InferContentType(storagePath);
             var stream = new MemoryStream(data);
 
@@ -85,7 +85,7 @@ public class SupabaseStorageService(
             .GetPublicUrl(storagePath, transformOptions: null);
     }
 
-    private async Task CleanupAsync(StorageFileApi bucket, List<StorageFileInfo> uploaded)
+    private async Task CleanupAsync(IStorageFileApi<FileObject> bucket, List<StorageFileInfo> uploaded)
     {
         if (uploaded.Count == 0)
             return;
