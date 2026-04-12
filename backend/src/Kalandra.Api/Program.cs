@@ -42,7 +42,7 @@ builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
-RateLimits.Add(builder.Services);
+RateLimits.Add(builder.Services, builder.Configuration);
 
 builder.Services.AddResponseCompression(options =>
 {
