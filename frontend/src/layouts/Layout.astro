@@ -58,6 +58,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   <meta property="og:locale" content={lang === 'cs' ? 'cs_CZ' : 'en_US'} />
   <meta property="og:locale:alternate" content={lang === 'cs' ? 'en_US' : 'cs_CZ'} />
 
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -118,6 +119,10 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     html.auth-known-out .signed-in-only { display: none !important; }
     html.auth-known-in .signed-in-only { display: block !important; }
 
+    /* Hide Material Symbols icon text until the font loads to prevent FOUT.
+       The `icons-ready` class is added by the inline script below once the font is available. */
+    html:not(.icons-ready) .material-symbols-outlined { visibility: hidden; }
+
     /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
        `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
        happened while the end-of-body updateToggleIcons() script had not yet run. */
@@ -125,6 +130,11 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     html.dark .dark-hidden { display: none !important; }
     html.dark .dark-visible { display: inline-block !important; }
   </style>
+  <script is:inline>
+    document.fonts.ready.then(function() {
+      document.documentElement.classList.add('icons-ready');
+    });
+  </script>
 </head>
 <body class="min-h-screen flex flex-col">
 
