@@ -70,7 +70,11 @@ test.describe('Hire Me Flow', () => {
     await expect(page.locator('#auth-profile-desktop')).toBeVisible();
     await expect(page.locator('#auth-sign-in-desktop')).toBeHidden();
 
-    // 4. Fill out the job offer form
+    // 4. Verify contact fields are prefilled from the user profile
+    await expect(page.locator('#contactName')).toHaveValue(testUser.fullName);
+    await expect(page.locator('#contactEmail')).toHaveValue(testUser.email);
+
+    // 5. Fill out the job offer form (overwriting prefilled values)
     await page.fill('#companyName', 'E2E Test Corp');
     await page.fill('#contactName', 'E2E Tester');
     await page.fill('#contactEmail', 'tester@e2etest.com');
@@ -80,7 +84,7 @@ test.describe('Hire Me Flow', () => {
     await page.fill('#location', 'Remote');
     await page.check('#isRemote');
 
-    // 5. Inject Turnstile token (widget doesn't auto-complete in headless CI)
+    // 6. Inject Turnstile token (widget doesn't auto-complete in headless CI)
     await page.evaluate(() => {
       let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
       if (!input) {
