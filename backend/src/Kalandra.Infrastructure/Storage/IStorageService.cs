@@ -18,7 +18,7 @@ public record FileUploadItem(
     string ContentType,
     Stream Content);
 
-public record StorageDownloadResult(Stream Content, string ContentType, long? ContentLength) : IAsyncDisposable
+public record StorageDownloadResult(Stream Content, long? ContentLength) : IAsyncDisposable
 {
     public async ValueTask DisposeAsync()
     {

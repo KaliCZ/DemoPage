@@ -55,10 +55,7 @@ public class SupabaseStorageService(
         try
         {
             var data = await bucket.Download(storagePath, (TransformOptions?)null);
-            var contentType = InferContentType(storagePath);
-            var stream = new MemoryStream(data);
-
-            return new StorageDownloadResult(stream, contentType, data.Length);
+            return new StorageDownloadResult(new MemoryStream(data), data.Length);
         }
         catch (Exception ex)
         {
@@ -86,21 +83,5 @@ public class SupabaseStorageService(
         {
             logger.LogWarning(ex, "Failed to clean up {Count} uploaded files after upload failure", uploaded.Count);
         }
-    }
-
-    private static string InferContentType(string path)
-    {
-        var ext = Path.GetExtension(path).ToLowerInvariant();
-        return ext switch
-        {
-            ".pdf" => "application/pdf",
-            ".doc" => "application/msword",
-            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".webp" => "image/webp",
-            _ => "application/octet-stream",
-        };
     }
 }

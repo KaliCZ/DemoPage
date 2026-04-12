@@ -21,7 +21,7 @@ public class InMemoryStorageService : IStorageService
             using var ms = new MemoryStream();
             await file.Content.CopyToAsync(ms, ct);
 
-            _files[storagePath] = new StoredFile(ms.ToArray(), file.ContentType);
+            _files[storagePath] = new StoredFile(ms.ToArray());
 
             results.Add(new StorageFileInfo(
                 FileName: file.FileName,
@@ -38,9 +38,8 @@ public class InMemoryStorageService : IStorageService
         if (!_files.TryGetValue(storagePath, out var stored))
             return Task.FromResult<StorageDownloadResult?>(null);
 
-        var stream = new MemoryStream(stored.Content);
         return Task.FromResult<StorageDownloadResult?>(
-            new StorageDownloadResult(stream, stored.ContentType, stored.Content.Length));
+            new StorageDownloadResult(new MemoryStream(stored.Content), stored.Content.Length));
     }
 
     public string GetPublicUrl(string storagePath)
@@ -48,5 +47,5 @@ public class InMemoryStorageService : IStorageService
         return $"https://test-storage.local/public/{storagePath}";
     }
 
-    private record StoredFile(byte[] Content, string ContentType);
+    private record StoredFile(byte[] Content);
 }

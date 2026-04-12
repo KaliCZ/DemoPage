@@ -325,7 +325,7 @@ public class JobOffersController(
 
         return File(
             fileStream: download.Content,
-            contentType: download.ContentType,
+            contentType: info.Attachment.ContentType,
             fileDownloadName: info.Attachment.FileName,
             enableRangeProcessing: true);
     }
