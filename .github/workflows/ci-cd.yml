@@ -140,7 +140,6 @@ jobs:
           Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
           Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
           Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
-          RateLimit__HireMePermitLimit: "20"
           ASPNETCORE_ENVIRONMENT: Development
 
       - name: Wait for backend

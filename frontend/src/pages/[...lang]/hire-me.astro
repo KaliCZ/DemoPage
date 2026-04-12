@@ -379,7 +379,7 @@ const t = translations[lang];
         });
 
         if (response.status === 429) {
-          var body = await response.clone().json().catch(function() { return {}; });
+          var body = await response.json().catch(function() { return {}; });
           if (body && body.error === 'captcha_required') {
             // Rate limit hit — force visible Turnstile checkbox on next attempt.
             interactiveCaptchaMode = true;
