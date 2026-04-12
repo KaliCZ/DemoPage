@@ -391,8 +391,10 @@ const t = translations[lang];
         }
 
         if (!response.ok) {
-          var apiMsg = await window.__getApiError?.(response, apiErrorMap);
-          throw new Error(apiMsg || errorText);
+          var result = await window.__getApiError?.(response, apiErrorMap);
+          window.__showSnackbar?.(result?.message || errorText, 'error', 8000, result?.traceId);
+          if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+          return;
         }
 
         var offer = await response.json();
