@@ -48,20 +48,11 @@ public class SupabaseStorageService(
         return uploaded;
     }
 
-    public async Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct)
+    public async Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct)
     {
         var bucket = supabase.Storage.From(BucketName);
-
-        try
-        {
-            var data = await bucket.Download(storagePath, (TransformOptions?)null);
-            return new StorageDownloadResult(new MemoryStream(data), data.Length);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to download {StoragePath} from Supabase Storage", storagePath);
-            return null;
-        }
+        var data = await bucket.Download(storagePath, (TransformOptions?)null);
+        return new StorageDownloadResult(new MemoryStream(data), data.Length);
     }
 
 

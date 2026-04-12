@@ -320,9 +320,6 @@ public class JobOffersController(
             return NotFound();
 
         var download = await storageService.DownloadAsync(info.StoragePath, ct);
-        if (download == null)
-            return NotFound();
-
         return File(
             fileStream: download.Content,
             contentType: info.Attachment.ContentType,

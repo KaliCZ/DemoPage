@@ -33,12 +33,12 @@ public class InMemoryStorageService : IStorageService
         return results;
     }
 
-    public Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct)
+    public Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct)
     {
         if (!_files.TryGetValue(storagePath, out var stored))
-            return Task.FromResult<StorageDownloadResult?>(null);
+            throw new InvalidOperationException($"File not found: {storagePath}");
 
-        return Task.FromResult<StorageDownloadResult?>(
+        return Task.FromResult(
             new StorageDownloadResult(new MemoryStream(stored.Content), stored.Content.Length));
     }
 

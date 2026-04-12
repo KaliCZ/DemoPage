@@ -7,7 +7,7 @@ public interface IStorageService
         IReadOnlyList<FileUploadItem> files,
         CancellationToken ct);
 
-    Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct);
+    Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct);
 }
 
 public record FileUploadItem(
