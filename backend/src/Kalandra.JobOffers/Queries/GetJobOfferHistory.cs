@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
@@ -7,7 +8,37 @@ namespace Kalandra.JobOffers.Queries;
 
 public record GetJobOfferHistoryQuery(Guid Id, CurrentUser User);
 
-public record FieldChange(string Field, string? OldValue, string? NewValue);
+public enum JobOfferField
+{
+    [JsonStringEnumMemberName("companyName")]
+    CompanyName,
+
+    [JsonStringEnumMemberName("jobTitle")]
+    JobTitle,
+
+    [JsonStringEnumMemberName("contactName")]
+    ContactName,
+
+    [JsonStringEnumMemberName("contactEmail")]
+    ContactEmail,
+
+    [JsonStringEnumMemberName("location")]
+    Location,
+
+    [JsonStringEnumMemberName("salaryRange")]
+    SalaryRange,
+
+    [JsonStringEnumMemberName("isRemote")]
+    IsRemote,
+
+    [JsonStringEnumMemberName("description")]
+    Description,
+
+    [JsonStringEnumMemberName("additionalNotes")]
+    AdditionalNotes,
+}
+
+public record FieldChange(JobOfferField Field, string? OldValue, string? NewValue);
 
 public record JobOfferHistoryEntry(
     string EventType,
@@ -150,26 +181,23 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         {
             var changes = new List<FieldChange>();
             if (before.CompanyName != after.CompanyName)
-                changes.Add(new FieldChange("companyName", before.CompanyName, after.CompanyName));
+                changes.Add(new FieldChange(JobOfferField.CompanyName, before.CompanyName, after.CompanyName));
             if (before.JobTitle != after.JobTitle)
-                changes.Add(new FieldChange("jobTitle", before.JobTitle, after.JobTitle));
+                changes.Add(new FieldChange(JobOfferField.JobTitle, before.JobTitle, after.JobTitle));
             if (before.ContactName != after.ContactName)
-                changes.Add(new FieldChange("contactName", before.ContactName, after.ContactName));
+                changes.Add(new FieldChange(JobOfferField.ContactName, before.ContactName, after.ContactName));
             if (before.ContactEmail != after.ContactEmail)
-                changes.Add(new FieldChange("contactEmail", before.ContactEmail, after.ContactEmail));
+                changes.Add(new FieldChange(JobOfferField.ContactEmail, before.ContactEmail, after.ContactEmail));
             if (before.Location != after.Location)
-                changes.Add(new FieldChange("location", before.Location, after.Location));
+                changes.Add(new FieldChange(JobOfferField.Location, before.Location, after.Location));
             if (before.SalaryRange != after.SalaryRange)
-                changes.Add(new FieldChange("salaryRange", before.SalaryRange, after.SalaryRange));
+                changes.Add(new FieldChange(JobOfferField.SalaryRange, before.SalaryRange, after.SalaryRange));
             if (before.IsRemote != after.IsRemote)
-                changes.Add(new FieldChange("isRemote", before.IsRemote.ToString().ToLowerInvariant(), after.IsRemote.ToString().ToLowerInvariant()));
-            // Long-text fields: send old/new values so the frontend can offer
-            // an expandable diff, but the frontend collapses them by default
-            // behind a "changed" toggle to keep the log scannable.
+                changes.Add(new FieldChange(JobOfferField.IsRemote, before.IsRemote.ToString().ToLowerInvariant(), after.IsRemote.ToString().ToLowerInvariant()));
             if (before.Description != after.Description)
-                changes.Add(new FieldChange("description", before.Description, after.Description));
+                changes.Add(new FieldChange(JobOfferField.Description, before.Description, after.Description));
             if (before.AdditionalNotes != after.AdditionalNotes)
-                changes.Add(new FieldChange("additionalNotes", before.AdditionalNotes, after.AdditionalNotes));
+                changes.Add(new FieldChange(JobOfferField.AdditionalNotes, before.AdditionalNotes, after.AdditionalNotes));
             return changes;
         }
     }

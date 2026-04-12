@@ -2,7 +2,7 @@ using Kalandra.JobOffers.Queries;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
-public record FieldChangeResponse(string Field, string? OldValue, string? NewValue);
+public record FieldChangeResponse(JobOfferField Field, string? OldValue, string? NewValue);
 
 public record HistoryEntryResponse(
     string EventType,
