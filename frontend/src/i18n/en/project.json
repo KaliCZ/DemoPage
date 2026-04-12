@@ -212,7 +212,7 @@
         "verdict": "Would probably do it again just for the setup simplicity on personal projects. Not on commercial projects with real budgets.",
         "observations": [
           "Free PostgreSQL is cool and worth it on its own",
-          "Auth has some rough edges — e.g. email provider issues",
+          { "text": "Auth has some rough edges — e.g. email provider issues", "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605", "linkText": "see discussion" },
           "File storage is cheap, so that's not the deciding factor for or against Supabase",
           "Using Supabase slows down the dev CLI compared to just using a plain PostgreSQL Docker image",
           "There's no real pressure to use the bundled file storage and auth — but you kinda feel like an idiot if you don't, since it's right there"

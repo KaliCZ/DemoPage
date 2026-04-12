@@ -405,7 +405,9 @@ const t = translations[lang];
                 {item.observations.map((obs) => (
                   <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5"></span>
-                    {obs}
+                    {typeof obs === 'string' ? obs : (
+                      <span>{obs.text} (<a href={obs.link} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">{obs.linkText}</a>)</span>
+                    )}
                   </li>
                 ))}
               </ul>
