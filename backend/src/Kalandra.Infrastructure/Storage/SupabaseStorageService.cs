@@ -31,11 +31,10 @@ public class SupabaseStorageService(
                 var fileOptions = new Supabase.Storage.FileOptions { ContentType = file.ContentType };
                 await bucket.Upload(ms.ToArray(), storagePath, fileOptions);
             }
-            catch (Exception ex)
+            catch
             {
-                logger.LogError(ex, "Failed to upload {StoragePath} to Supabase Storage", storagePath);
                 await CleanupAsync(bucket, uploaded);
-                throw new StorageUploadException($"Failed to upload file '{file.FileName}' to storage.");
+                throw;
             }
 
             uploaded.Add(new StorageFileInfo(

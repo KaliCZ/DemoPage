@@ -23,5 +23,3 @@ public record StorageDownloadResult(Stream Content, long? ContentLength) : IAsyn
         await Content.DisposeAsync();
     }
 }
-
-public class StorageUploadException(string message) : Exception(message);
