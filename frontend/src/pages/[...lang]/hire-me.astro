@@ -159,6 +159,10 @@ const t = translations[lang];
       if (user) {
         if (loginPrompt) loginPrompt.classList.add('hidden');
         if (formSection) formSection.classList.remove('hidden');
+        var emailField = document.getElementById('contactEmail');
+        if (emailField && !emailField.value && user.email) {
+          emailField.value = user.email;
+        }
       } else {
         if (loginPrompt) loginPrompt.classList.remove('hidden');
         if (formSection) formSection.classList.add('hidden');
