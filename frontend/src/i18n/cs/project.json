@@ -227,7 +227,7 @@
           "Nepsal bych 100% čistý event sourcing — místo toho by každý update také uložil záznam o změně obsahující předchozí hodnoty",
           "Ukládání předchozích hodnot jde proti filozofii ES, ale umožňuje stránkování záznamů historie — což je praktičtější",
           "Pro projekce bych použil standardní SQL úložiště místo JSONu — to také umožňuje jemnější řízení souběžnosti. Marten nabízí jen dva extrémy: připojit vše bez kontrol, nebo spadnout pokud se cokoliv změnilo. Žádná střední cesta",
-          "Eventy by se ukládaly ve stejné transakci do jiné tabulky, pak přesouvaly do levnějšího úložiště (např. Azure Table Storage) přes outbox pattern"
+          "Eventy by se ukládaly ve stejné transakci do jiné tabulky, pak přesouvaly do levnějšího úložiště (např. Azure Table Storage) přes outbox pattern, až by velikost SQL začala vadit"
         ]
       },
       {
