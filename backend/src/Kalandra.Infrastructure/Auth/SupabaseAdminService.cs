@@ -8,7 +8,7 @@ namespace Kalandra.Infrastructure.Auth;
 
 public class SupabaseAdminService(
     HttpClient httpClient,
-    SupabaseAuthConfig authConfig,
+    SupabaseConfig supabaseConfig,
     ILogger<SupabaseAdminService> logger) : ISupabaseAdminService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -28,8 +28,8 @@ public class SupabaseAdminService(
             email_confirm = true,
         };
 
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
-        var serviceKey = authConfig.ServiceKey.Value;
+        var projectUrl = supabaseConfig.ProjectUrl.Value.TrimEnd('/');
+        var serviceKey = supabaseConfig.ServiceKey.Value;
 
         using var request = new HttpRequestMessage(
             HttpMethod.Put,

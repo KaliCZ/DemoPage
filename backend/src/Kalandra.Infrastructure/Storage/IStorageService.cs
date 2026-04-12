@@ -7,7 +7,7 @@ public interface IStorageService
         IReadOnlyList<FileUploadItem> files,
         CancellationToken ct);
 
-    Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct);
+    Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct);
 }
 
 public record FileUploadItem(
@@ -16,12 +16,10 @@ public record FileUploadItem(
     string ContentType,
     Stream Content);
 
-public record StorageDownloadResult(Stream Content, string ContentType, long? ContentLength) : IAsyncDisposable
+public record StorageDownloadResult(Stream Content, long? ContentLength) : IAsyncDisposable
 {
     public async ValueTask DisposeAsync()
     {
         await Content.DisposeAsync();
     }
 }
-
-public class StorageUploadException(string message) : Exception(message);

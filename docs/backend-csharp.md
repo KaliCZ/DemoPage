@@ -57,3 +57,36 @@ Exceptions are reserved for truly exceptional conditions (storage failures, DB o
 ## Enum switches: no default branch
 
 Never use `default` or `_` in switch expressions on enums. Enumerate every case explicitly so the compiler warns when a new value is added. This is critical for the two-enum error contract — a new domain error that isn't mapped must be a compile-time signal, not a silent fallthrough.
+
+## Keep method calls compact
+
+Prefer single-line calls. When one argument is too large for a one-liner, extract it into a local variable — don't break the call itself across lines.
+
+```csharp
+// Good — complex argument extracted, call stays on one line
+var fileOptions = new FileOptions { ContentType = file.ContentType };
+await bucket.Upload(ms.ToArray(), storagePath, fileOptions);
+
+// Bad — call broken across many lines
+await bucket.Upload(
+    ms.ToArray(),
+    storagePath,
+    new FileOptions { ContentType = file.ContentType });
+```
+
+For logging, keep it on one line. If parameters make the line too long, split into the message line and the parameters line — but never more than two lines. Short arguments like an exception variable belong on the first line before the message string.
+
+```csharp
+// Good — single line
+logger.LogError(ex, "Failed to upload {StoragePath} to Supabase Storage", storagePath);
+
+// Good — message + parameters when the line would be very long
+logger.LogError(ex, "Failed to upload {StoragePath} to bucket {Bucket}",
+    storagePath, bucketName);
+
+// Bad — broken across too many lines
+logger.LogError(
+    ex,
+    "Failed to upload {StoragePath} to Supabase Storage",
+    storagePath);
+```

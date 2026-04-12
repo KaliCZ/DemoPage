@@ -10,7 +10,7 @@ Marten lives in domain projects (e.g. `Kalandra.JobOffers`), Supabase clients li
 | Read models           | Marten snapshots | Same PostgreSQL instance, inline-projected               |
 | Identity              | Supabase Auth    | JWT validated by API via JWKS                            |
 | User admin operations | Supabase Auth    | `SupabaseAdminService` (HTTP, service-key)               |
-| File attachments      | Supabase Storage | `SupabaseStorageService` (HTTP, service-key)             |
+| File attachments      | Supabase Storage | `SupabaseStorageService` (SDK, service-key)              |
 
 PostgreSQL is the only database. Supabase is used as managed Postgres + auth + object storage.
 
