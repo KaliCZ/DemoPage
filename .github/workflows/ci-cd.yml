@@ -136,7 +136,7 @@ jobs:
           dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 &
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
-          Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
+          Supabase__ProjectUrl: "http://127.0.0.1:54321"
           Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
 
@@ -359,7 +359,7 @@ jobs:
             umask 077
             cat > "$HOME/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
-            Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
+            Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             EOF
 

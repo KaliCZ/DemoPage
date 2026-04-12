@@ -29,12 +29,11 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<AuthorizeOperationFilter>();
 });
 
-var authConfig = SupabaseAuthConfig.AddSingleton(builder.Services, builder.Configuration);
-SupabaseStorageConfig.AddSingleton(builder.Services, builder.Configuration);
+var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration);
 TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
-Auth.Add(builder.Services, authConfig);
+Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
 builder.Services.AddStorageServices();

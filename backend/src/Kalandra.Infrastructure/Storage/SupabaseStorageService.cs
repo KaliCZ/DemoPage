@@ -7,7 +7,7 @@ namespace Kalandra.Infrastructure.Storage;
 
 public class SupabaseStorageService(
     Supabase.Client supabase,
-    SupabaseStorageConfig storageConfig,
+    SupabaseConfig supabaseConfig,
     ILogger<SupabaseStorageService> logger) : IStorageService
 {
     public async Task<IReadOnlyList<StorageFileInfo>> UploadAsync(
@@ -15,7 +15,7 @@ public class SupabaseStorageService(
         IReadOnlyList<FileUploadItem> files,
         CancellationToken ct)
     {
-        var bucket = supabase.Storage.From(storageConfig.BucketName.Value);
+        var bucket = supabase.Storage.From(supabaseConfig.BucketName.Value);
         var uploaded = new List<StorageFileInfo>(files.Count);
 
         foreach (var file in files)
@@ -58,7 +58,7 @@ public class SupabaseStorageService(
 
     public async Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct)
     {
-        var bucket = supabase.Storage.From(storageConfig.BucketName.Value);
+        var bucket = supabase.Storage.From(supabaseConfig.BucketName.Value);
 
         try
         {
@@ -81,7 +81,7 @@ public class SupabaseStorageService(
     public string GetPublicUrl(string storagePath)
     {
         return supabase.Storage
-            .From(storageConfig.BucketName.Value)
+            .From(supabaseConfig.BucketName.Value)
             .GetPublicUrl(storagePath, transformOptions: null);
     }
 

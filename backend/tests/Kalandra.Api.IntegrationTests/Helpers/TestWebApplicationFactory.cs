@@ -23,9 +23,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
-        builder.UseSetting("Auth:SupabaseProjectUrl", "https://test-project.supabase.co");
-        builder.UseSetting("Auth:ServiceKey", "test-service-key");
-        builder.UseSetting("Storage:BucketName", "test-bucket");
+        builder.UseSetting("Supabase:ProjectUrl", "https://test-project.supabase.co");
+        builder.UseSetting("Supabase:ServiceKey", "test-service-key");
+        builder.UseSetting("Supabase:BucketName", "test-bucket");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IStorageService>();

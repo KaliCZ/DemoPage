@@ -7,12 +7,12 @@ namespace Kalandra.Infrastructure.Users;
 
 public class SupabaseUserInfoService(
     Client supabase,
-    SupabaseAuthConfig authConfig,
+    SupabaseConfig supabaseConfig,
     IStorageService storageService,
     ILogger<SupabaseUserInfoService> logger) : IUserInfoService
 {
     private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient =
-        supabase.AdminAuth(authConfig.ServiceKey.Value);
+        supabase.AdminAuth(supabaseConfig.ServiceKey.Value);
 
     public async Task<Dictionary<Guid, UserPublicInfo>> GetUserInfoAsync(
         IEnumerable<Guid> userIds, CancellationToken ct)
