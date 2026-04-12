@@ -28,22 +28,14 @@ public class SupabaseStorageService(
                 using var ms = new MemoryStream();
                 await file.Content.CopyToAsync(ms, ct);
 
-                await bucket.Upload(
-                    ms.ToArray(),
-                    storagePath,
-                    new Supabase.Storage.FileOptions { ContentType = file.ContentType });
+                var fileOptions = new Supabase.Storage.FileOptions { ContentType = file.ContentType };
+                await bucket.Upload(ms.ToArray(), storagePath, fileOptions);
             }
             catch (Exception ex)
             {
-                logger.LogError(
-                    ex,
-                    "Failed to upload {StoragePath} to Supabase Storage",
-                    storagePath);
-
+                logger.LogError(ex, "Failed to upload {StoragePath} to Supabase Storage", storagePath);
                 await CleanupAsync(bucket, uploaded);
-
-                throw new StorageUploadException(
-                    $"Failed to upload file '{file.FileName}' to storage.");
+                throw new StorageUploadException($"Failed to upload file '{file.FileName}' to storage.");
             }
 
             uploaded.Add(new StorageFileInfo(
@@ -70,19 +62,14 @@ public class SupabaseStorageService(
         }
         catch (Exception ex)
         {
-            logger.LogError(
-                ex,
-                "Failed to download {StoragePath} from Supabase Storage",
-                storagePath);
+            logger.LogError(ex, "Failed to download {StoragePath} from Supabase Storage", storagePath);
             return null;
         }
     }
 
     public string GetPublicUrl(string storagePath)
     {
-        return supabase.Storage
-            .From(BucketName)
-            .GetPublicUrl(storagePath, transformOptions: null);
+        return supabase.Storage.From(BucketName).GetPublicUrl(storagePath, transformOptions: null);
     }
 
     private async Task CleanupAsync(IStorageFileApi<FileObject> bucket, List<StorageFileInfo> uploaded)
@@ -97,10 +84,7 @@ public class SupabaseStorageService(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(
-                ex,
-                "Failed to clean up {Count} uploaded files after upload failure",
-                uploaded.Count);
+            logger.LogWarning(ex, "Failed to clean up {Count} uploaded files after upload failure", uploaded.Count);
         }
     }
 
