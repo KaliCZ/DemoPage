@@ -226,9 +226,8 @@
         "observations": [
           "Wouldn't write 100% clean event sourcing — instead, every update would also store a change record containing the previous values",
           "Storing previous values goes against ES philosophy, but allows pagination of history records — which is more practical",
-          "Would use standard SQL storage for projections rather than JSON",
-          "Events would be stored in the same transaction into another table, then moved to cheaper storage (e.g. Azure Table Storage) via an outbox pattern",
-          "Custom action log events would allow more granular concurrency controls — Marten only offers two extremes: append everything without checks, or crash if anything has changed. No middle ground"
+          "Would use standard SQL storage for projections rather than JSON — this also enables more granular concurrency controls. Marten only offers two extremes: append everything without checks, or crash if anything has changed. No middle ground",
+          "Events would be stored in the same transaction into another table, then moved to cheaper storage (e.g. Azure Table Storage) via an outbox pattern"
         ]
       },
       {
