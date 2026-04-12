@@ -3,6 +3,7 @@ using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,11 +44,20 @@ builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 RateLimits.Add(builder.Services);
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.EnableForHttps = true;
+});
+
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
     .AddCheck<CommitHashHealthCheck>("version");
 
 var app = builder.Build();
+
+app.UseResponseCompression();
 
 // Yes, even for production.
 app.UseSwagger();
@@ -55,6 +65,7 @@ app.UseSwaggerUI();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+RobotsTag.Use(app);
 
 app.UseCors("DefaultPolicy");
 Auth.Use(app);
