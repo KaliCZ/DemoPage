@@ -41,10 +41,7 @@ async function createOfferViaApi(token: string, suffix: string) {
 
   const res = await fetch(`${API_URL}/api/job-offers`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'X-Interactive-Captcha': '1',
-    },
+    headers: { 'Authorization': `Bearer ${token}` },
     body: form,
   });
   if (!res.ok) throw new Error(`Failed to create offer: ${res.status}`);
