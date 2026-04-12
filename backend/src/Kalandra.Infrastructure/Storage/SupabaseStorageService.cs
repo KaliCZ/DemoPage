@@ -64,10 +64,6 @@ public class SupabaseStorageService(
         }
     }
 
-    public string GetPublicUrl(string storagePath)
-    {
-        return supabase.Storage.From(BucketName).GetPublicUrl(storagePath, transformOptions: null);
-    }
 
     private async Task CleanupAsync(IStorageFileApi<FileObject> bucket, List<StorageFileInfo> uploaded)
     {

@@ -42,10 +42,6 @@ public class InMemoryStorageService : IStorageService
             new StorageDownloadResult(new MemoryStream(stored.Content), stored.Content.Length));
     }
 
-    public string GetPublicUrl(string storagePath)
-    {
-        return $"https://test-storage.local/public/{storagePath}";
-    }
 
     private record StoredFile(byte[] Content);
 }

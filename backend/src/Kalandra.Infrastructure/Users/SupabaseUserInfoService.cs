@@ -1,5 +1,4 @@
 using Kalandra.Infrastructure.Configuration;
-using Kalandra.Infrastructure.Storage;
 using Microsoft.Extensions.Logging;
 using Supabase;
 
@@ -8,7 +7,6 @@ namespace Kalandra.Infrastructure.Users;
 public class SupabaseUserInfoService(
     Client supabase,
     SupabaseConfig supabaseConfig,
-    IStorageService storageService,
     ILogger<SupabaseUserInfoService> logger) : IUserInfoService
 {
     private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient =
@@ -44,18 +42,9 @@ public class SupabaseUserInfoService(
             {
                 if (metadata.TryGetValue("avatar_url", out var avatarObj) &&
                     avatarObj is string url &&
-                    !string.IsNullOrEmpty(url))
+                    Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
-                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-                    {
-                        avatarUrl = uri;
-                    }
-                    else
-                    {
-                        // Treat as a storage path and resolve via the storage service
-                        var publicUrl = storageService.GetPublicUrl(url);
-                        Uri.TryCreate(publicUrl, UriKind.Absolute, out avatarUrl);
-                    }
+                    avatarUrl = uri;
                 }
 
                 if (metadata.TryGetValue("display_name", out var nameObj) &&
