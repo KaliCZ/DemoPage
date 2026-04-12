@@ -358,7 +358,7 @@ const c = commonTranslations[lang];
         showError(); return;
       }
 
-      if (!detailRes.ok) { showError(detailRes.status); return; }
+      if (!detailRes.ok) { await showApiError(detailRes); return; }
       var offer = await detailRes.json();
       currentOffer = offer;
 

@@ -6,11 +6,11 @@ namespace Kalandra.Infrastructure.Users;
 
 public class SupabaseUserInfoService(
     Client supabase,
-    SupabaseAuthConfig authConfig,
+    SupabaseConfig supabaseConfig,
     ILogger<SupabaseUserInfoService> logger) : IUserInfoService
 {
     private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient =
-        supabase.AdminAuth(authConfig.ServiceKey.Value);
+        supabase.AdminAuth(supabaseConfig.ServiceKey.Value);
 
     public async Task<Dictionary<Guid, UserPublicInfo>> GetUserInfoAsync(
         IEnumerable<Guid> userIds, CancellationToken ct)
@@ -42,7 +42,6 @@ public class SupabaseUserInfoService(
             {
                 if (metadata.TryGetValue("avatar_url", out var avatarObj) &&
                     avatarObj is string url &&
-                    !string.IsNullOrEmpty(url) &&
                     Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
                     avatarUrl = uri;

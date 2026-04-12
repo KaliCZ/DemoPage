@@ -1,23 +1,21 @@
-using System.Net;
-using Kalandra.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
+using Supabase.Storage;
+using Supabase.Storage.Interfaces;
 
 namespace Kalandra.Infrastructure.Storage;
 
 public class SupabaseStorageService(
-    HttpClient httpClient,
-    SupabaseStorageConfig storageConfig,
+    Supabase.Client supabase,
     ILogger<SupabaseStorageService> logger) : IStorageService
 {
+    private const string BucketName = "job-offer-attachments";
+
     public async Task<IReadOnlyList<StorageFileInfo>> UploadAsync(
         string folderPrefix,
         IReadOnlyList<FileUploadItem> files,
         CancellationToken ct)
     {
-        var projectUrl = storageConfig.ProjectUrl.Value.TrimEnd('/');
-        var serviceKey = storageConfig.ServiceKey.Value;
-        var bucketName = storageConfig.BucketName.Value;
-
+        var bucket = supabase.Storage.From(BucketName);
         var uploaded = new List<StorageFileInfo>(files.Count);
 
         foreach (var file in files)
@@ -25,33 +23,18 @@ public class SupabaseStorageService(
             var extension = Path.GetExtension(file.FileName);
             var storagePath = $"{folderPrefix}{Guid.NewGuid()}{extension}";
 
-            using var content = new StreamContent(file.Content);
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-            using var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                $"{projectUrl}/storage/v1/object/{EncodeBucketPath(bucketName, storagePath)}");
-            request.Headers.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
-            request.Headers.Add("apikey", serviceKey);
-            request.Content = content;
-
-            using var response = await httpClient.SendAsync(request, ct);
-
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var responseBody = await response.Content.ReadAsStringAsync(ct);
-                logger.LogError(
-                    "Failed to upload {StoragePath} to Supabase Storage. Status: {StatusCode}. Response: {ResponseBody}",
-                    storagePath,
-                    (int)response.StatusCode,
-                    responseBody);
+                using var ms = new MemoryStream();
+                await file.Content.CopyToAsync(ms, ct);
 
-                // Best-effort cleanup of already-uploaded files
-                await CleanupAsync(projectUrl, bucketName, serviceKey, uploaded, ct);
-
-                throw new StorageUploadException(
-                    $"Failed to upload file '{file.FileName}' to storage.");
+                var fileOptions = new Supabase.Storage.FileOptions { ContentType = file.ContentType };
+                await bucket.Upload(ms.ToArray(), storagePath, fileOptions);
+            }
+            catch
+            {
+                await CleanupAsync(bucket, uploaded);
+                throw;
             }
 
             uploaded.Add(new StorageFileInfo(
@@ -64,84 +47,27 @@ public class SupabaseStorageService(
         return uploaded;
     }
 
-    public async Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct)
+    public async Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct)
     {
-        var projectUrl = storageConfig.ProjectUrl.Value.TrimEnd('/');
-        var serviceKey = storageConfig.ServiceKey.Value;
-        var bucketName = storageConfig.BucketName.Value;
-
-        var request = new HttpRequestMessage(
-            HttpMethod.Get,
-            $"{projectUrl}/storage/v1/object/{EncodeBucketPath(bucketName, storagePath)}");
-        request.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
-        request.Headers.Add("apikey", serviceKey);
-
-        var response = await httpClient.SendAsync(
-            request,
-            HttpCompletionOption.ResponseHeadersRead,
-            ct);
-
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            response.Dispose();
-            return null;
-        }
-
-        if (!response.IsSuccessStatusCode)
-        {
-            logger.LogError(
-                "Failed to download {StoragePath} from Supabase Storage. Status: {StatusCode}",
-                storagePath,
-                (int)response.StatusCode);
-            response.Dispose();
-            return null;
-        }
-
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-        var contentLength = response.Content.Headers.ContentLength;
-        var stream = await response.Content.ReadAsStreamAsync(ct);
-
-        return new StorageDownloadResult(stream, contentType, contentLength);
+        var bucket = supabase.Storage.From(BucketName);
+        var data = await bucket.Download(storagePath, (TransformOptions?)null);
+        return new StorageDownloadResult(new MemoryStream(data), data.Length);
     }
 
-    private async Task CleanupAsync(
-        string projectUrl,
-        string bucketName,
-        string serviceKey,
-        List<StorageFileInfo> uploaded,
-        CancellationToken ct)
+
+    private async Task CleanupAsync(IStorageFileApi<FileObject> bucket, List<StorageFileInfo> uploaded)
     {
-        foreach (var file in uploaded)
+        if (uploaded.Count == 0)
+            return;
+
+        try
         {
-            try
-            {
-                using var deleteRequest = new HttpRequestMessage(
-                    HttpMethod.Delete,
-                    $"{projectUrl}/storage/v1/object/{EncodeBucketPath(bucketName, file.StoragePath)}");
-                deleteRequest.Headers.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceKey);
-                deleteRequest.Headers.Add("apikey", serviceKey);
-
-                await httpClient.SendAsync(deleteRequest, ct);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(
-                    ex,
-                    "Failed to clean up uploaded file {StoragePath} after upload failure.",
-                    file.StoragePath);
-            }
+            var paths = uploaded.Select(f => f.StoragePath).ToList();
+            await bucket.Remove(paths);
         }
-    }
-
-    private static string EncodeBucketPath(string bucketName, string storagePath)
-    {
-        var encodedBucket = Uri.EscapeDataString(bucketName);
-        var encodedPath = string.Join(
-            "/",
-            storagePath.Split('/', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Uri.EscapeDataString));
-        return $"{encodedBucket}/{encodedPath}";
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to clean up {Count} uploaded files after upload failure", uploaded.Count);
+        }
     }
 }

@@ -21,7 +21,7 @@ public class InMemoryStorageService : IStorageService
             using var ms = new MemoryStream();
             await file.Content.CopyToAsync(ms, ct);
 
-            _files[storagePath] = new StoredFile(ms.ToArray(), file.ContentType);
+            _files[storagePath] = new StoredFile(ms.ToArray());
 
             results.Add(new StorageFileInfo(
                 FileName: file.FileName,
@@ -33,15 +33,15 @@ public class InMemoryStorageService : IStorageService
         return results;
     }
 
-    public Task<StorageDownloadResult?> DownloadAsync(string storagePath, CancellationToken ct)
+    public Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct)
     {
         if (!_files.TryGetValue(storagePath, out var stored))
-            return Task.FromResult<StorageDownloadResult?>(null);
+            throw new InvalidOperationException($"File not found: {storagePath}");
 
-        var stream = new MemoryStream(stored.Content);
-        return Task.FromResult<StorageDownloadResult?>(
-            new StorageDownloadResult(stream, stored.ContentType, stored.Content.Length));
+        return Task.FromResult(
+            new StorageDownloadResult(new MemoryStream(stored.Content), stored.Content.Length));
     }
 
-    private record StoredFile(byte[] Content, string ContentType);
+
+    private record StoredFile(byte[] Content);
 }
