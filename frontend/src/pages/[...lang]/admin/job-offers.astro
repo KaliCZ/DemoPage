@@ -144,7 +144,7 @@ const c = commonTranslations[lang];
     fetch(apiUrl + '/health').catch(function() {});
 
     var currentPage = 1;
-    var pageSize = 20;
+    var pageSize = 10;
 
     function showError(status, traceId) {
       var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;

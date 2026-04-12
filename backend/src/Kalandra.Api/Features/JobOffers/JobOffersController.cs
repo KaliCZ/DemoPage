@@ -267,7 +267,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListJobOffersResponse>> ListMine(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await ListOffersAsync(showAll: false, status, page, pageSize, ct);
@@ -281,7 +281,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListJobOffersResponse>> ListAll(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await ListOffersAsync(showAll: true, status, page, pageSize, ct);

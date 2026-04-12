@@ -79,9 +79,9 @@ test.describe('Job Offers Pagination', () => {
     const signInData = await signInRes.json();
     accessToken = signInData.access_token;
 
-    // Create enough offers to trigger pagination (pageSize=20, create 21)
+    // Create enough offers to trigger pagination (pageSize=10, create 11)
     const promises = [];
-    for (let i = 1; i <= 21; i++) {
+    for (let i = 1; i <= 11; i++) {
       promises.push(createOfferViaApi(accessToken, String(i)));
     }
     await Promise.all(promises);
@@ -94,7 +94,7 @@ test.describe('Job Offers Pagination', () => {
     // Wait for offers to load
     await expect(page.locator('#offers-grid')).toBeVisible({ timeout: 15000 });
 
-    // Pagination controls should be visible (21 offers > default pageSize=20)
+    // Pagination controls should be visible (11 offers > default pageSize=10)
     await expect(page.locator('#pagination-controls')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#pagination-indicator')).toContainText('Page 1 of 2');
 
