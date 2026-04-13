@@ -40,28 +40,63 @@
   "techStack": {
     "title": "Engineered With",
     "frontendLabel": "Frontend",
-    "frontendItems": ["Astro", "Tailwind CSS", "Supabase Auth", "Cloudflare Pages"],
+    "frontendItems": [
+      "Astro",
+      "Tailwind CSS",
+      "Supabase Auth",
+      "Cloudflare Pages"
+    ],
     "backendLabel": "Backend",
     "backendItems": ["C# ASP.NET Core", "PostgreSQL", "Marten Event Sourcing"],
     "infraLabel": "Infrastructure",
     "infraItems": [
       { "text": "Oracle Cloud VPS" },
       { "text": "Supabase" },
-      { "text": "GitHub Actions", "subItems": ["Build + Test + Deploy", "E2E Tests (Playwright)"] }
+      {
+        "text": "GitHub Actions",
+        "subItems": ["Build + Test + Deploy", "E2E Tests (Playwright)"]
+      }
     ]
   },
   "goals": {
     "title": "Goals & Requirements",
     "items": [
-      { "icon": "person", "title": "Personal Showcase", "description": "Present myself to potential employers and recruiters." },
-      { "icon": "construction", "title": "Skills Demonstration", "description": "Document the building process as part of the showcase — architecture, decisions, and progress." },
-      { "icon": "science", "title": "Technology Playground", "description": "Experiment with new technologies in a real, deployed project.", "subItems": ["Event sourcing", "Free Cloudflare Pages", "Supabase ecosystem", "Temporal"] }
+      {
+        "icon": "person",
+        "title": "Personal Showcase",
+        "description": "Present myself to potential employers and recruiters."
+      },
+      {
+        "icon": "construction",
+        "title": "Skills Demonstration",
+        "description": "Document the building process as part of the showcase — architecture, decisions, and progress."
+      },
+      {
+        "icon": "science",
+        "title": "Technology Playground",
+        "description": "Experiment with new technologies in a real, deployed project.",
+        "subItems": [
+          "Event sourcing",
+          "Free Cloudflare Pages",
+          "Supabase ecosystem",
+          "Temporal"
+        ]
+      }
     ],
     "nfrTitle": "Non-Functional Requirements",
     "nfrItems": [
-      { "label": "Automation", "description": "Minimal manual overhead. Infrastructure as code or GitHub Actions for everything." },
-      { "label": "Reliability", "description": "The site must be up reliably." },
-      { "label": "Cost", "description": "As cheap as possible — preferably free. Backend hosting: Oracle Cloud Always Free (fallback: Hetzner VPS ~€4/month)." }
+      {
+        "label": "Automation",
+        "description": "Minimal manual overhead. Infrastructure as code or GitHub Actions for everything."
+      },
+      {
+        "label": "Reliability",
+        "description": "The site must be up reliably."
+      },
+      {
+        "label": "Cost",
+        "description": "As cheap as possible — preferably free. Backend hosting: Oracle Cloud Always Free (fallback: Hetzner VPS ~€4/month)."
+      }
     ]
   },
   "architectureDiagram": {
@@ -99,10 +134,26 @@
           "Upgrading to PAYG (still free) disables idle reclamation"
         ],
         "risks": [
-          { "risk": "Signup rejection", "details": "Oracle rejects many signups based on region demand and payment method", "mitigation": "Use real credit card, match billing address, pick less popular region" },
-          { "risk": "ARM capacity", "details": "Popular regions often have no A1 capacity available", "mitigation": "Choose EU or less popular region at signup" },
-          { "risk": "Idle reclamation", "details": "Instances with <20% CPU at P95 over 7 days are stopped after 1 week notice", "mitigation": "Real workloads stay above threshold; PAYG disables this entirely" },
-          { "risk": "Account suspension", "details": "Rare reports of accounts suspended without clear reason", "mitigation": "Keep PAYG enabled; maintain real usage" }
+          {
+            "risk": "Signup rejection",
+            "details": "Oracle rejects many signups based on region demand and payment method",
+            "mitigation": "Use real credit card, match billing address, pick less popular region"
+          },
+          {
+            "risk": "ARM capacity",
+            "details": "Popular regions often have no A1 capacity available",
+            "mitigation": "Choose EU or less popular region at signup"
+          },
+          {
+            "risk": "Idle reclamation",
+            "details": "Instances with <20% CPU at P95 over 7 days are stopped after 1 week notice",
+            "mitigation": "Real workloads stay above threshold; PAYG disables this entirely"
+          },
+          {
+            "risk": "Account suspension",
+            "details": "Rare reports of accounts suspended without clear reason",
+            "mitigation": "Keep PAYG enabled; maintain real usage"
+          }
         ],
         "setupNotes": [
           "Oracle Linux 8 aarch64 — ships with Podman out of the box, optimized for Oracle Cloud hardware",
@@ -110,12 +161,30 @@
           "Open ports in both OCI security list and OS firewall"
         ],
         "alternatives": [
-          { "option": "Hetzner VPS (~€4/month)", "reason": "Reliable fallback. Full control, predictable. Will switch here if Oracle causes trouble." },
-          { "option": "Azure App Service Free (F1)", "reason": "60 min CPU/day, no always-on — app sleeps after inactivity." },
-          { "option": "AWS Lambda / Google Cloud Run", "reason": "Serverless — no persistent background process for Temporal workers." },
-          { "option": "Render free tier", "reason": "Spins down after 15 min inactivity. Background workers are paid only." },
-          { "option": "Fly.io", "reason": "Free tier has gotten stingier; likely ends up costing a few dollars anyway." },
-          { "option": "Azure Container Apps", "reason": "Free tier is generous, but self-hosting Temporal would be awkward." }
+          {
+            "option": "Hetzner VPS (~€4/month)",
+            "reason": "Reliable fallback. Full control, predictable. Will switch here if Oracle causes trouble."
+          },
+          {
+            "option": "Azure App Service Free (F1)",
+            "reason": "60 min CPU/day, no always-on — app sleeps after inactivity."
+          },
+          {
+            "option": "AWS Lambda / Google Cloud Run",
+            "reason": "Serverless — no persistent background process for Temporal workers."
+          },
+          {
+            "option": "Render free tier",
+            "reason": "Spins down after 15 min inactivity. Background workers are paid only."
+          },
+          {
+            "option": "Fly.io",
+            "reason": "Free tier has gotten stingier; likely ends up costing a few dollars anyway."
+          },
+          {
+            "option": "Azure Container Apps",
+            "reason": "Free tier is generous, but self-hosting Temporal would be awkward."
+          }
         ]
       },
       {
@@ -132,11 +201,26 @@
           "Cloudflare acquired Astro (Jan 2026) — best-in-class Pages integration"
         ],
         "alternatives": [
-          { "option": "Vue/Nuxt (SSR)", "reason": "Second-best option — hosted preferably as a Cloudflare Worker, or potentially as a Docker image on the VPS. But SSG is simpler and free, so starting with that as long as it works." },
-          { "option": "Vanilla ES6 modules", "reason": "Still needs a Tailwind build step. Would have to manually build routing, i18n, and component system." },
-          { "option": "React/Next.js", "reason": "Ships ~80-120 KB React runtime. JS-first authoring. Next.js is Vercel-aligned, not Cloudflare-aligned." },
-          { "option": "SvelteKit", "reason": "Good framework, but i18n is not built-in. More geared toward interactive apps." },
-          { "option": "Vercel hosting", "reason": "SSR model runs server-side functions — effectively a second backend. Goal is a thin static client with a single ASP.NET Core backend." }
+          {
+            "option": "Vue/Nuxt (SSR)",
+            "reason": "Second-best option — hosted preferably as a Cloudflare Worker, or potentially as a Docker image on the VPS. But SSG is simpler and free, so starting with that as long as it works."
+          },
+          {
+            "option": "Vanilla ES6 modules",
+            "reason": "Still needs a Tailwind build step. Would have to manually build routing, i18n, and component system."
+          },
+          {
+            "option": "React/Next.js",
+            "reason": "Ships ~80-120 KB React runtime. JS-first authoring. Next.js is Vercel-aligned, not Cloudflare-aligned."
+          },
+          {
+            "option": "SvelteKit",
+            "reason": "Good framework, but i18n is not built-in. More geared toward interactive apps."
+          },
+          {
+            "option": "Vercel hosting",
+            "reason": "SSR model runs server-side functions — effectively a second backend. Goal is a thin static client with a single ASP.NET Core backend."
+          }
         ]
       },
       {
@@ -153,8 +237,14 @@
           "Wanted to try Supabase ecosystem — that meant PostgreSQL, and Marten fits naturally"
         ],
         "alternatives": [
-          { "option": "Build it myself on PostgreSQL", "reason": "Easier indexing and concurrency control than Marten. But requires manual schema migrations as the model evolves — Marten stores events as JSON, avoiding this entirely." },
-          { "option": "Build it myself on MongoDB", "reason": "Globally distributed multi-master DB with a free tier on Azure Cosmos DB. But no experience with MongoDB transactions and concurrency control — too much unknown for a first event sourcing implementation." }
+          {
+            "option": "Build it myself on PostgreSQL",
+            "reason": "Easier indexing and concurrency control than Marten. But requires manual schema migrations as the model evolves — Marten stores events as JSON, avoiding this entirely."
+          },
+          {
+            "option": "Build it myself on MongoDB",
+            "reason": "Globally distributed multi-master DB with a free tier on Azure Cosmos DB. But no experience with MongoDB transactions and concurrency control — too much unknown for a first event sourcing implementation."
+          }
         ]
       },
       {
@@ -169,8 +259,14 @@
           "Runs locally in Docker — full auth flow works offline without external dependencies"
         ],
         "alternatives": [
-          { "option": "Custom auth implementation", "reason": "Full control, but building OAuth flows, token management, and security from scratch is complex and error-prone." },
-          { "option": "WorkOS / Clerk / Auth0", "reason": "Mature auth providers, but adds another external dependency and cost. Some don't run locally. Supabase auth is already included — no reason to add a separate service." }
+          {
+            "option": "Custom auth implementation",
+            "reason": "Full control, but building OAuth flows, token management, and security from scratch is complex and error-prone."
+          },
+          {
+            "option": "WorkOS / Clerk / Auth0",
+            "reason": "Mature auth providers, but adds another external dependency and cost. Some don't run locally. Supabase auth is already included — no reason to add a separate service."
+          }
         ]
       },
       {
@@ -212,7 +308,11 @@
         "verdict": "Would probably do it again just for the setup simplicity on personal projects. Not on commercial projects with real budgets.",
         "observations": [
           "Free PostgreSQL is cool and worth it on its own",
-          { "text": "Auth has some rough edges — e.g. email provider issues", "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605", "linkText": "see discussion" },
+          {
+            "text": "Auth has some rough edges — e.g. email provider issues",
+            "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605",
+            "linkText": "see discussion"
+          },
           "File storage is cheap everywhere — S3 or Azure Blobs are just as cheap and I'd trust them more than Supabase Storage",
           "Using Supabase slows down the dev CLI compared to just using a plain PostgreSQL Docker image",
           "There's no real pressure to use the bundled file storage and auth — but you kinda feel like an idiot if you don't, since it's right there"
@@ -271,11 +371,23 @@
         "side": "left",
         "detailsLabel": "What was done",
         "details": [
-          { "author": "pavel", "text": "Set up domain, DNS and Cloudflare Pages hosting" },
-          { "author": "claude", "text": "Designed pages in Google Stitch, built with Astro + Tailwind" },
+          {
+            "author": "pavel",
+            "text": "Set up domain, DNS and Cloudflare Pages hosting"
+          },
+          {
+            "author": "claude",
+            "text": "Designed pages in Google Stitch, built with Astro + Tailwind"
+          },
           { "author": "claude", "text": "GitHub Actions deploy pipeline" },
-          { "author": "claude", "text": "Light and dark theme with system preference detection" },
-          { "author": "claude", "text": "Language picker (English / Czech) with per-page translations" }
+          {
+            "author": "claude",
+            "text": "Light and dark theme with system preference detection"
+          },
+          {
+            "author": "claude",
+            "text": "Language picker (English / Czech) with per-page translations"
+          }
         ]
       },
       {
@@ -290,18 +402,45 @@
         "side": "right",
         "detailsLabel": "What was done",
         "details": [
-          { "author": "pavel", "text": "Supabase project and Google OAuth setup" },
-          { "author": "pavel", "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy" },
-          { "author": "claude", "text": "ASP.NET Core Web API with vertical slices and Marten event sourcing" },
-          { "author": "claude", "text": "Supabase Auth with email/password + Google OAuth, account linking and avatar upload" },
-          { "author": "claude", "text": "Job offer form with file upload, user dashboard and admin view" },
-          { "author": "claude", "text": "Docker setup, CI/CD pipeline to Oracle Cloud with blue/green deployment" },
-          { "author": "claude", "text": "Integration tests (Testcontainers) and E2E tests (Playwright)" },
-          { "author": "claude", "text": "SEO: sitemap, robots.txt, llms.txt, styled 404 page" },
+          {
+            "author": "pavel",
+            "text": "Supabase project and Google OAuth setup"
+          },
+          {
+            "author": "pavel",
+            "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy"
+          },
+          {
+            "author": "claude",
+            "text": "ASP.NET Core Web API with vertical slices and Marten event sourcing"
+          },
+          {
+            "author": "claude",
+            "text": "Supabase Auth with email/password + Google OAuth, account linking and avatar upload"
+          },
+          {
+            "author": "claude",
+            "text": "Job offer form with file upload, user dashboard and admin view"
+          },
+          {
+            "author": "claude",
+            "text": "Docker setup, CI/CD pipeline to Oracle Cloud with blue/green deployment"
+          },
+          {
+            "author": "claude",
+            "text": "Integration tests (Testcontainers) and E2E tests (Playwright)"
+          },
+          {
+            "author": "claude",
+            "text": "SEO: sitemap, robots.txt, llms.txt, styled 404 page"
+          },
           { "author": "pavel", "text": "Optimizing CI/CD pipeline" },
           { "author": "pavel", "text": "Improving run configs for DevX" },
           { "author": "pavel", "text": "Restructuring code a few times" },
-          { "author": "claude", "text": "Cloudflare Turnstile CAPTCHA on job offer submission" }
+          {
+            "author": "claude",
+            "text": "Cloudflare Turnstile CAPTCHA on job offer submission"
+          }
         ]
       },
       {

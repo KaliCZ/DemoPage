@@ -1,23 +1,29 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import enCommon from '../i18n/en/common.json';
+import Layout from "../layouts/Layout.astro";
+import enCommon from "../i18n/en/common.json";
 
 const t = enCommon.notFound;
 ---
 
 <Layout title={t.title} activePage="home">
   <section class="max-w-3xl mx-auto px-8 text-center py-24">
-    <h1 class="font-headline text-8xl md:text-9xl font-extrabold tracking-tighter text-primary mb-6">
+    <h1
+      class="font-headline text-8xl md:text-9xl font-extrabold tracking-tighter text-primary mb-6"
+    >
       {t.heading}
     </h1>
-    <p class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12">
+    <p
+      class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12"
+    >
       {t.message}
     </p>
     <a
       href="/"
       class="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-label text-sm uppercase tracking-widest hover:opacity-90 transition-opacity"
     >
-      <span class="material-symbols-outlined text-base" aria-hidden="true">home</span>
+      <span class="material-symbols-outlined text-base" aria-hidden="true"
+        >home</span
+      >
       {t.goHome}
     </a>
   </section>

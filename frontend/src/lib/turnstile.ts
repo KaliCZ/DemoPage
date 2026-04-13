@@ -20,9 +20,11 @@ declare global {
   }
 }
 
-export type TurnstileAppearance = 'interaction-only' | 'always' | 'execute';
+export type TurnstileAppearance = "interaction-only" | "always" | "execute";
 
-const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
+const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as
+  | string
+  | undefined;
 
 export function turnstileEnabled(): boolean {
   return !!SITE_KEY;
@@ -51,32 +53,38 @@ export function createTurnstile(selector: string): TurnstileWidget {
   let widgetId: string | null = null;
 
   return {
-    render(appearance: TurnstileAppearance = 'interaction-only') {
+    render(appearance: TurnstileAppearance = "interaction-only") {
       if (!window.turnstile || !SITE_KEY) return;
       const el = document.querySelector(selector) as HTMLElement | null;
       if (!el) return;
       if (widgetId !== null) {
-        try { window.turnstile.remove(widgetId); } catch {}
+        try {
+          window.turnstile.remove(widgetId);
+        } catch {}
         widgetId = null;
       }
       widgetId = window.turnstile.render(selector, {
         sitekey: SITE_KEY,
-        theme: 'auto',
+        theme: "auto",
         appearance,
       });
     },
     getToken() {
-      if (widgetId === null || !window.turnstile) return '';
-      return window.turnstile.getResponse(widgetId) || '';
+      if (widgetId === null || !window.turnstile) return "";
+      return window.turnstile.getResponse(widgetId) || "";
     },
     reset() {
       if (widgetId !== null && window.turnstile) {
-        try { window.turnstile.reset(widgetId); } catch {}
+        try {
+          window.turnstile.reset(widgetId);
+        } catch {}
       }
     },
     remove() {
       if (widgetId !== null && window.turnstile) {
-        try { window.turnstile.remove(widgetId); } catch {}
+        try {
+          window.turnstile.remove(widgetId);
+        } catch {}
         widgetId = null;
       }
     },
@@ -86,7 +94,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
 // ---------- localStorage-based failure counter ----------
 // After `threshold` failures within `windowMs`, shouldForceInteractive returns true.
 
-const STORAGE_PREFIX = 'turnstileFail:';
+const STORAGE_PREFIX = "turnstileFail:";
 
 interface FailureRecord {
   count: number;

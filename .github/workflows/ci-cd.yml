@@ -208,6 +208,28 @@ jobs:
       - name: Test
         run: dotnet test --no-build -c Release
 
+  frontend-format:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Check formatting
+        run: npm run format:check
+        working-directory: frontend
+
   frontend-test:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -253,7 +275,7 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [changes, e2e, backend-test, frontend-test]
+    needs: [changes, e2e, backend-test, frontend-format, frontend-test]
     if: |
       always() &&
       (
@@ -262,6 +284,7 @@ jobs:
           needs.changes.outputs.backend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
+          needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success'
         ) ||
         (
@@ -456,7 +479,7 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
+    needs: [changes, e2e, backend-test, frontend-format, frontend-test, backend-deploy]
     if: |
       always() &&
       (
@@ -466,6 +489,7 @@ jobs:
           needs.changes.outputs.frontend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
+          needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success' &&
           (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped')
         )

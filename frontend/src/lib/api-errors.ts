@@ -29,7 +29,10 @@ export async function getApiError(
       for (const field in body.errors) {
         const code = body.errors[field]?.[0];
         const msg = errorMap?.[field]?.[code];
-        if (msg) { message = msg; break; }
+        if (msg) {
+          message = msg;
+          break;
+        }
       }
     }
 
