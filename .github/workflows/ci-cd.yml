@@ -173,12 +173,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ env.SB_SERVICE_ROLE_KEY }}
 
       - name: Upload Playwright traces
-        if: failure()
+        if: '!cancelled()'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: frontend/test-results/
           retention-days: 7
+          if-no-files-found: ignore
 
   backend-test:
     if: github.event_name != 'workflow_dispatch'
