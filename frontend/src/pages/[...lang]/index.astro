@@ -20,7 +20,7 @@ const t = translations[lang];
 
   <!-- Hero -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-24 lg:mb-40">
-    <div class="max-w-3xl">
+    <div class="max-w-4xl">
       <h1 class:list={["font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] mb-8", lang === 'cs' && "whitespace-nowrap"]}>
         {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleName}</span>
       </h1>
@@ -30,7 +30,7 @@ const t = translations[lang];
     </div>
 
     <!-- What's here -->
-    <div class="max-w-2xl mb-16">
+    <div class="max-w-3xl mb-16">
       <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">{t.whatsHere.title}</h2>
       <p class="text-on-surface-variant text-lg leading-relaxed mb-6">
         <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
@@ -41,7 +41,7 @@ const t = translations[lang];
     </div>
 
     <!-- Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
 
       <!-- About Me card -->
       <a href={localePath(lang, 'about')} class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md">
