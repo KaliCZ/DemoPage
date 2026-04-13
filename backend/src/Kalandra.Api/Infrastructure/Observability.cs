@@ -12,6 +12,26 @@ public static class Observability
 
     public static void Add(WebApplicationBuilder builder, BetterStackConfig? config)
     {
+        AddSentry(builder);
+        AddOpenTelemetry(builder, config);
+    }
+
+    private static void AddSentry(WebApplicationBuilder builder)
+    {
+        var dsn = builder.Configuration["Sentry:Dsn"];
+        if (string.IsNullOrEmpty(dsn))
+            return;
+
+        builder.WebHost.UseSentry(options =>
+        {
+            options.Dsn = dsn;
+            options.TracesSampleRate = 1.0;
+            options.Release = AppVersion.InformationalVersion;
+        });
+    }
+
+    private static void AddOpenTelemetry(WebApplicationBuilder builder, BetterStackConfig? config)
+    {
         if (config is null)
         {
             if (builder.Environment.IsProduction())

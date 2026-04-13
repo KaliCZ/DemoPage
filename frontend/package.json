@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
+    "@sentry/browser": "^10.48.0",
     "@supabase/supabase-js": "^2.102.1",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.1.4",
