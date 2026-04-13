@@ -1,731 +1,1042 @@
 ---
-import '../styles/global.css'
-import AuthDialog from '../components/AuthDialog.astro';
-import IconEmail from '../components/icons/IconEmail.astro';
-import IconGitHub from '../components/icons/IconGitHub.astro';
-import IconLinkedIn from '../components/icons/IconLinkedIn.astro';
-import type { Locale } from '../i18n/utils';
-import { localePath, alternateLangUrl } from '../i18n/utils';
-import enCommon from '../i18n/en/common.json';
-import csCommon from '../i18n/cs/common.json';
+import "../styles/global.css";
+import AuthDialog from "../components/AuthDialog.astro";
+import IconEmail from "../components/icons/IconEmail.astro";
+import IconGitHub from "../components/icons/IconGitHub.astro";
+import IconLinkedIn from "../components/icons/IconLinkedIn.astro";
+import csCommon from "../i18n/cs/common.json";
+import enCommon from "../i18n/en/common.json";
+import type { Locale } from "../i18n/utils";
+import { alternateLangUrl, localePath } from "../i18n/utils";
 
 interface Props {
   title: string;
   description?: string;
-  activePage: 'home' | 'about' | 'project' | 'hire-me' | 'job-offers' | 'admin/job-offers' | 'profile' | 'privacy' | 'terms';
+  activePage:
+    | "home"
+    | "about"
+    | "project"
+    | "hire-me"
+    | "job-offers"
+    | "admin/job-offers"
+    | "profile"
+    | "privacy"
+    | "terms";
   lang?: Locale;
 }
 
 const {
   title,
-  description = 'Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public at kalandra.tech.',
+  description = "Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public at kalandra.tech.",
   activePage,
-  lang = 'en',
+  lang = "en",
 } = Astro.props;
 
-const t = lang === 'cs' ? csCommon : enCommon;
+const t = lang === "cs" ? csCommon : enCommon;
 
-const siteUrl = 'https://www.kalandra.tech';
-const enUrl = activePage === 'home' ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
-const csUrl = activePage === 'home' ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
-const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
+const siteUrl = "https://www.kalandra.tech";
+const enUrl =
+  activePage === "home" ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
+const csUrl =
+  activePage === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
+const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang={lang}>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content={description} />
-  <meta name="author" content="Pavel Kalandra" />
-  <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Pavel Kalandra" />
+    <meta name="robots" content="index, follow" />
+    <meta
+      name="theme-color"
+      content="#f5f5f5"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#131313"
+      media="(prefers-color-scheme: dark)"
+    />
 
-  <!-- Canonical & hreflang -->
-  <link rel="canonical" href={canonicalUrl} />
-  <link rel="alternate" hreflang="en" href={enUrl} />
-  <link rel="alternate" hreflang="cs" href={csUrl} />
-  <link rel="alternate" hreflang="x-default" href={enUrl} />
-  <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <!-- Canonical & hreflang -->
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="cs" href={csUrl} />
+    <link rel="alternate" hreflang="x-default" href={enUrl} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="kalandra.tech" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:url" content={canonicalUrl} />
-  <meta property="og:locale" content={lang === 'cs' ? 'cs_CZ' : 'en_US'} />
-  <meta property="og:locale:alternate" content={lang === 'cs' ? 'en_US' : 'cs_CZ'} />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="kalandra.tech" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={lang === "cs" ? "cs_CZ" : "en_US"} />
+    <meta
+      property="og:locale:alternate"
+      content={lang === "cs" ? "en_US" : "cs_CZ"}
+    />
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <title>{title}</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script
+      src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+      async
+      defer></script>
+    <title>{title}</title>
 
-  <script is:inline>
-    (function() {
-      var theme = localStorage.getItem('theme');
-      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      }
-      // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
-      // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
-      // We also extract the user's display name + avatar so the profile chip's width is stable
-      // before the supabase JS module hydrates — otherwise the empty name span grows after first
-      // paint and shifts surrounding header elements.
-      try {
-        var session = null;
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') === k.length - 11) {
-            var v = localStorage.getItem(k);
-            if (v && v.length > 2) { try { session = JSON.parse(v); } catch (_) {} break; }
+    <script is:inline>
+      (function () {
+        var theme = localStorage.getItem("theme");
+        if (
+          theme === "dark" ||
+          (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.classList.add("dark");
+        }
+        // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
+        // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
+        // We also extract the user's display name + avatar so the profile chip's width is stable
+        // before the supabase JS module hydrates — otherwise the empty name span grows after first
+        // paint and shifts surrounding header elements.
+        try {
+          var session = null;
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (
+              k &&
+              k.indexOf("sb-") === 0 &&
+              k.indexOf("-auth-token") === k.length - 11
+            ) {
+              var v = localStorage.getItem(k);
+              if (v && v.length > 2) {
+                try {
+                  session = JSON.parse(v);
+                } catch (_) {}
+                break;
+              }
+            }
           }
+          if (session && session.user) {
+            var u = session.user;
+            var meta = u.user_metadata || {};
+            window.__authPrefill = {
+              name:
+                meta.full_name || (u.email ? u.email.split("@")[0] : "User"),
+              avatar: meta.avatar_url || "",
+              isAdmin: !!(
+                u.app_metadata &&
+                Array.isArray(u.app_metadata.roles) &&
+                u.app_metadata.roles.indexOf("admin") !== -1
+              ),
+            };
+            document.documentElement.classList.add("auth-known-in");
+          } else {
+            document.documentElement.classList.add("auth-known-out");
+          }
+        } catch (e) {
+          document.documentElement.classList.add("auth-known-out");
         }
-        if (session && session.user) {
-          var u = session.user;
-          var meta = u.user_metadata || {};
-          window.__authPrefill = {
-            name: meta.full_name || (u.email ? u.email.split('@')[0] : 'User'),
-            avatar: meta.avatar_url || '',
-            isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf('admin') !== -1),
-          };
-          document.documentElement.classList.add('auth-known-in');
-        } else {
-          document.documentElement.classList.add('auth-known-out');
-        }
-      } catch (e) {
-        document.documentElement.classList.add('auth-known-out');
-      }
-    })();
-  </script>
-  <style is:global>
-    /* Pre-paint auth visibility to prevent header flash before supabase client hydrates.
+      })();
+    </script>
+    <style is:global>
+      /* Pre-paint auth visibility to prevent header flash before supabase client hydrates.
        These !important rules win over Tailwind's `hidden` class. The module script below
        removes the `auth-known-*` class once getSession() resolves, returning control to JS. */
-    html.auth-known-in #auth-sign-in-desktop,
-    html.auth-known-in #auth-sign-in-mobile { display: none !important; }
-    html.auth-known-in #auth-profile-desktop { display: block !important; }
-    html.auth-known-in #auth-profile-mobile { display: block !important; }
-    html.auth-known-out #auth-profile-desktop,
-    html.auth-known-out #auth-profile-mobile { display: none !important; }
+      html.auth-known-in #auth-sign-in-desktop,
+      html.auth-known-in #auth-sign-in-mobile {
+        display: none !important;
+      }
+      html.auth-known-in #auth-profile-desktop {
+        display: block !important;
+      }
+      html.auth-known-in #auth-profile-mobile {
+        display: block !important;
+      }
+      html.auth-known-out #auth-profile-desktop,
+      html.auth-known-out #auth-profile-mobile {
+        display: none !important;
+      }
 
-    /* Generic helpers any page can use to gate content on auth state pre-paint.
+      /* Generic helpers any page can use to gate content on auth state pre-paint.
        Add `signed-in-only` to elements that should only be visible when signed in,
        and `signed-out-only` to elements that should only be visible when signed out. */
-    html.auth-known-in .signed-out-only { display: none !important; }
-    html.auth-known-out .signed-in-only { display: none !important; }
-    html.auth-known-in .signed-in-only { display: block !important; }
+      html.auth-known-in .signed-out-only {
+        display: none !important;
+      }
+      html.auth-known-out .signed-in-only {
+        display: none !important;
+      }
+      html.auth-known-in .signed-in-only {
+        display: block !important;
+      }
 
-    /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
+      /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
        `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
        happened while the end-of-body updateToggleIcons() script had not yet run. */
-    html:not(.dark) .dark-visible { display: none !important; }
-    html.dark .dark-hidden { display: none !important; }
-    html.dark .dark-visible { display: inline-block !important; }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col">
+      html:not(.dark) .dark-visible {
+        display: none !important;
+      }
+      html.dark .dark-hidden {
+        display: none !important;
+      }
+      html.dark .dark-visible {
+        display: inline-block !important;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- Skip to content (accessibility) -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-on-primary focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold"
+    >
+      {t.a11y.skipToContent}
+    </a>
 
-  <!-- Skip to content (accessibility) -->
-  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-on-primary focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold">
-    {t.a11y.skipToContent}
-  </a>
-
-  <!-- Navigation -->
-  <nav class="bg-surface/70 backdrop-blur-xl fixed top-0 w-full z-50 shadow-[0_8px_32px_rgba(0,0,0,0.04)] border-b border-on-surface/5" aria-label={t.a11y.mainNavigation}>
-    <div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-      <a href={localePath(lang, 'home')} class="text-xl font-bold tracking-tighter text-on-surface font-headline">kalandra.tech</a>
-
-      <div class="hidden md:flex items-center gap-8 font-headline tracking-tighter font-bold">
-        <a
-          href={localePath(lang, 'home')}
-          class:list={[
-            activePage === 'home'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'home' ? 'page' : undefined}
-        >{t.nav.home}</a>
-        <a
-          href={localePath(lang, 'about')}
-          class:list={[
-            activePage === 'about'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'about' ? 'page' : undefined}
-        >{t.nav.about}</a>
-        <a
-          href={localePath(lang, 'project')}
-          class:list={[
-            activePage === 'project'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'project' ? 'page' : undefined}
-        >{t.nav.project}</a>
-        <a
-          href={localePath(lang, 'hire-me')}
-          class:list={[
-            activePage === 'hire-me'
-              ? 'text-primary border-b-2 border-primary pb-1'
-              : 'text-on-surface-variant hover:text-on-surface transition-colors',
-          ]}
-          aria-current={activePage === 'hire-me' ? 'page' : undefined}
-        >{t.nav.hireMe}</a>
-      </div>
-
-      <!-- Theme toggle + Language picker + Auth (desktop) -->
-      <div class="hidden md:flex items-center gap-2">
-        <!-- Dark mode toggle -->
-        <button
-          id="theme-toggle"
-          type="button"
-          class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container-high"
-          aria-label={t.a11y.toggleDarkMode}
-          title={t.theme.switchToDark}
-        >
-          <span class="material-symbols-outlined text-xl dark-hidden" aria-hidden="true">dark_mode</span>
-          <span class="material-symbols-outlined text-xl hidden dark-visible" aria-hidden="true">light_mode</span>
-        </button>
-        <!-- Language picker (hover dropdown) -->
-        <div class="relative group">
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
-            aria-haspopup="true"
-            aria-label={t.a11y.changeLanguage}
+    <!-- Navigation -->
+    <nav
+      class="bg-surface/70 backdrop-blur-xl fixed top-0 w-full z-50 shadow-[0_8px_32px_rgba(0,0,0,0.04)] border-b border-on-surface/5"
+      aria-label={t.a11y.mainNavigation}
+    >
+      <div
+        class="flex justify-between items-center px-4 md:px-8 py-2 md:py-4 max-w-7xl mx-auto md:gap-x-6"
+      >
+        <div class="flex justify-between items-center gap-2 w-full md:w-auto">
+          <a
+            href={localePath(lang, "home")}
+            class="text-xl font-bold tracking-tighter text-on-surface font-headline"
+            >kalandra.tech</a
           >
-            <span class:list={["fi fis inline-block w-5 h-3.5 rounded-sm", lang === 'cs' ? "fi-cz" : "fi-us"]} aria-hidden="true"></span>
-            <span class="material-symbols-outlined text-sm transition-transform group-hover:rotate-180" aria-hidden="true">expand_more</span>
-          </button>
-          <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50" role="menu">
-            <a
-              href={alternateLangUrl('en', activePage)}
-              class:list={[
-                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                lang === 'en'
-                  ? 'text-primary font-semibold bg-primary/5'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-              ]}
-              role="menuitem"
-              lang="en"
-              aria-current={lang === 'en' ? 'true' : undefined}
+          <!-- Theme toggle + Language picker + Auth (mobile) -->
+          <div class="flex items-center gap-2 md:hidden">
+            <button
+              id="theme-toggle-mobile"
+              type="button"
+              class="p-1.5 grid place-items-center text-on-surface-variant"
+              aria-label={t.a11y.toggleDarkMode}
+              title={t.theme.switchToDark}
             >
-              <span class="fi fis fi-us inline-block w-5 h-3.5 rounded-sm" aria-hidden="true"></span>
-              <span class="font-label">English</span>
-            </a>
-            <a
-              href={alternateLangUrl('cs', activePage)}
-              class:list={[
-                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                lang === 'cs'
-                  ? 'text-primary font-semibold bg-primary/5'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-              ]}
-              role="menuitem"
-              lang="cs"
-              aria-current={lang === 'cs' ? 'true' : undefined}
+              <span
+                class="material-symbols-outlined text-md dark-hidden"
+                aria-hidden="true">dark_mode</span
+              >
+              <span
+                class="material-symbols-outlined text-md hidden dark-visible"
+                aria-hidden="true">light_mode</span
+              >
+            </button>
+            <!-- Language picker (mobile — hover dropdown) -->
+            <div class="relative group">
+              <button
+                type="button"
+                class="flex items-center gap-1 p-1 cursor-pointer"
+                aria-haspopup="true"
+                aria-label={t.a11y.changeLanguage}
+              >
+                <span
+                  class:list={[
+                    "fi fis inline-block w-4 h-3 rounded-sm",
+                    lang === "cs" ? "fi-cz" : "fi-us",
+                  ]}
+                  aria-hidden="true"></span>
+                <span
+                  class="material-symbols-outlined text-xs text-on-surface-variant transition-transform group-hover:rotate-180"
+                  aria-hidden="true">expand_more</span
+                >
+              </button>
+              <div
+                class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[140px] z-50"
+                role="menu"
+              >
+                <a
+                  href={alternateLangUrl("en", activePage)}
+                  class:list={[
+                    "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                    lang === "en"
+                      ? "text-primary font-semibold bg-primary/5"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+                  ]}
+                  role="menuitem"
+                  lang="en"
+                >
+                  <span
+                    class="fi fis fi-us inline-block w-4 h-3 rounded-sm"
+                    aria-hidden="true"></span>
+                  <span class="font-label text-xs">English</span>
+                </a>
+                <a
+                  href={alternateLangUrl("cs", activePage)}
+                  class:list={[
+                    "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                    lang === "cs"
+                      ? "text-primary font-semibold bg-primary/5"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+                  ]}
+                  role="menuitem"
+                  lang="cs"
+                >
+                  <span
+                    class="fi fis fi-cz inline-block w-4 h-3 rounded-sm"
+                    aria-hidden="true"></span>
+                  <span class="font-label text-xs">Čeština</span>
+                </a>
+              </div>
+            </div>
+            <!-- Auth (mobile) -->
+            <button
+              id="auth-sign-in-mobile"
+              type="button"
+              class="px-3 py-1 rounded-lg text-nowrap text-xs font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
             >
-              <span class="fi fis fi-cz inline-block w-5 h-3.5 rounded-sm" aria-hidden="true"></span>
-              <span class="font-label">Čeština</span>
+              {t.auth.signIn}
+            </button>
+            <a
+              id="auth-profile-mobile"
+              class="hidden"
+              href={localePath(lang, "profile")}
+            >
+              <img
+                id="auth-avatar-mobile"
+                class="w-6 h-6 rounded-full"
+                src=""
+                alt=""
+              />
+              <span
+                class="hidden w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"
+              ></span>
             </a>
           </div>
         </div>
-        <!-- Auth (desktop) -->
-        <div id="auth-container-desktop" class="flex items-center">
-          <button
-            id="auth-sign-in-desktop"
-            type="button"
-            class="px-4 py-1.5 rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+
+        <div
+          class="hidden md:flex pt-1 items-center gap-8 font-headline tracking-tighter font-bold text-nowrap"
+        >
+          <a
+            href={localePath(lang, "home")}
+            class:list={[
+              activePage === "home"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1 hover:text-on-surface transition-colors",
+            ]}
+            aria-current={activePage === "home" ? "page" : undefined}
+            >{t.nav.home}</a
           >
-            {t.auth.signIn}
+          <a
+            href={localePath(lang, "about")}
+            class:list={[
+              activePage === "about"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1 hover:text-on-surface transition-colors",
+            ]}
+            aria-current={activePage === "about" ? "page" : undefined}
+            >{t.nav.about}</a
+          >
+          <a
+            href={localePath(lang, "project")}
+            class:list={[
+              activePage === "project"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1 hover:text-on-surface transition-colors",
+            ]}
+            aria-current={activePage === "project" ? "page" : undefined}
+            >{t.nav.project}</a
+          >
+          <a
+            href={localePath(lang, "hire-me")}
+            class:list={[
+              activePage === "hire-me"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1 hover:text-on-surface transition-colors",
+            ]}
+            aria-current={activePage === "hire-me" ? "page" : undefined}
+            >{t.nav.hireMe}</a
+          >
+        </div>
+
+        <!-- Theme toggle + Language picker + Auth (desktop) -->
+        <div class="hidden md:flex items-center gap-2">
+          <!-- Dark mode toggle -->
+          <button
+            id="theme-toggle"
+            type="button"
+            class="p-1.5 grid place-items-center text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container-high"
+            aria-label={t.a11y.toggleDarkMode}
+            title={t.theme.switchToDark}
+          >
+            <span
+              class="material-symbols-outlined text-xl dark-hidden"
+              aria-hidden="true">dark_mode</span
+            >
+            <span
+              class="material-symbols-outlined text-xl hidden dark-visible"
+              aria-hidden="true">light_mode</span
+            >
           </button>
-          <div id="auth-profile-desktop" class="hidden relative group">
+          <!-- Language picker (hover dropdown) -->
+          <div class="relative group">
             <button
               type="button"
-              class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer"
+              class="flex items-center  gap-1.5 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
               aria-haspopup="true"
+              aria-label={t.a11y.changeLanguage}
             >
-              <img id="auth-avatar-desktop" class="w-7 h-7 rounded-full" src="" alt="" />
-              <span class="hidden w-7 h-7 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"></span>
-              <span id="auth-name-desktop" class="text-sm font-label text-on-surface-variant"></span>
-              <span class="material-symbols-outlined text-sm text-on-surface-variant transition-transform group-hover:rotate-180" aria-hidden="true">expand_more</span>
+              <span
+                class:list={[
+                  "fi fis inline-block w-4 rounded-sm",
+                  lang === "cs" ? "fi-cz" : "fi-us",
+                ]}
+                aria-hidden="true"></span>
+              <span
+                class="material-symbols-outlined text-sm transition-transform group-hover:rotate-180"
+                aria-hidden="true">expand_more</span
+              >
             </button>
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50" role="menu">
+            <div
+              class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50"
+              role="menu"
+            >
               <a
-                href={localePath(lang, 'profile')}
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                href={alternateLangUrl("en", activePage)}
+                class:list={[
+                  "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                  lang === "en"
+                    ? "text-primary font-semibold bg-primary/5"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+                ]}
                 role="menuitem"
+                lang="en"
+                aria-current={lang === "en" ? "true" : undefined}
               >
-                <span class="material-symbols-outlined text-lg" aria-hidden="true">person</span>
-                {t.auth.profile}
+                <span
+                  class="fi fis fi-us inline-block w-5 h-3.5 rounded-sm"
+                  aria-hidden="true"></span>
+                <span class="font-label">English</span>
               </a>
               <a
-                href={localePath(lang, 'job-offers')}
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                href={alternateLangUrl("cs", activePage)}
+                class:list={[
+                  "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                  lang === "cs"
+                    ? "text-primary font-semibold bg-primary/5"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
+                ]}
                 role="menuitem"
+                lang="cs"
+                aria-current={lang === "cs" ? "true" : undefined}
               >
-                <span class="material-symbols-outlined text-lg" aria-hidden="true">description</span>
-                {t.nav.mySubmissions}
+                <span
+                  class="fi fis fi-cz inline-block w-5 h-3.5 rounded-sm"
+                  aria-hidden="true"></span>
+                <span class="font-label">Čeština</span>
               </a>
-              <a
-                id="auth-admin-link-desktop"
-                href={localePath(lang, 'admin/job-offers')}
-                class="hidden flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
-                role="menuitem"
-              >
-                <span class="material-symbols-outlined text-lg" aria-hidden="true">admin_panel_settings</span>
-                {t.nav.admin}
-              </a>
+            </div>
+          </div>
+          <!-- Auth (desktop) -->
+          <div id="auth-container-desktop" class="flex items-center">
+            <button
+              id="auth-sign-in-desktop"
+              type="button"
+              class="px-4 py-1.5 text-nowrap rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              {t.auth.signIn}
+            </button>
+            <div id="auth-profile-desktop" class="hidden relative group">
               <button
-                id="auth-sign-out-desktop"
                 type="button"
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors w-full text-left cursor-pointer"
-                role="menuitem"
+                class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer"
+                aria-haspopup="true"
               >
-                <span class="material-symbols-outlined text-lg" aria-hidden="true">logout</span>
-                {t.auth.signOut}
+                <img
+                  id="auth-avatar-desktop"
+                  class="w-7 h-7 rounded-full"
+                  src=""
+                  alt=""
+                />
+                <span
+                  class="hidden w-7 h-7 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"
+                ></span>
+                <span
+                  id="auth-name-desktop"
+                  class="text-sm font-label text-on-surface-variant"></span>
+                <span
+                  class="material-symbols-outlined text-sm text-on-surface-variant transition-transform group-hover:rotate-180"
+                  aria-hidden="true">expand_more</span
+                >
               </button>
+              <div
+                class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50"
+                role="menu"
+              >
+                <a
+                  href={localePath(lang, "profile")}
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                  role="menuitem"
+                >
+                  <span
+                    class="material-symbols-outlined text-lg"
+                    aria-hidden="true">person</span
+                  >
+                  {t.auth.profile}
+                </a>
+                <a
+                  href={localePath(lang, "job-offers")}
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                  role="menuitem"
+                >
+                  <span
+                    class="material-symbols-outlined text-lg"
+                    aria-hidden="true">description</span
+                  >
+                  {t.nav.mySubmissions}
+                </a>
+                <a
+                  id="auth-admin-link-desktop"
+                  href={localePath(lang, "admin/job-offers")}
+                  class="hidden flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                  role="menuitem"
+                >
+                  <span
+                    class="material-symbols-outlined text-lg"
+                    aria-hidden="true">admin_panel_settings</span
+                  >
+                  {t.nav.admin}
+                </a>
+                <button
+                  id="auth-sign-out-desktop"
+                  type="button"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors w-full text-left cursor-pointer"
+                  role="menuitem"
+                >
+                  <span
+                    class="material-symbols-outlined text-lg"
+                    aria-hidden="true">logout</span
+                  >
+                  {t.auth.signOut}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Mobile nav -->
-    <div class="md:hidden flex items-center gap-6 px-8 pb-3 font-headline tracking-tighter font-bold text-sm">
-      <a
-        href={localePath(lang, 'home')}
-        class:list={[
-          activePage === 'home'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'home' ? 'page' : undefined}
-      >{t.nav.home}</a>
-      <a
-        href={localePath(lang, 'about')}
-        class:list={[
-          activePage === 'about'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'about' ? 'page' : undefined}
-      >{t.nav.about}</a>
-      <a
-        href={localePath(lang, 'project')}
-        class:list={[
-          activePage === 'project'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'project' ? 'page' : undefined}
-      >{t.nav.project}</a>
-      <a
-        href={localePath(lang, 'hire-me')}
-        class:list={[
-          activePage === 'hire-me'
-            ? 'text-primary border-b-2 border-primary pb-1'
-            : 'text-on-surface-variant',
-        ]}
-        aria-current={activePage === 'hire-me' ? 'page' : undefined}
-      >{t.nav.hireMe}</a>
-      <!-- Theme toggle + Language picker + Auth (mobile) -->
-      <div class="flex items-center gap-2 ml-auto">
-        <button
-          id="theme-toggle-mobile"
-          type="button"
-          class="p-1 text-on-surface-variant"
-          aria-label={t.a11y.toggleDarkMode}
-          title={t.theme.switchToDark}
+      <!-- Mobile nav -->
+      <div class="md:hidden flex items-center justify-between">
+        <div
+          class="flex items-center gap-6 px-4 font-headline tracking-tighter font-bold text-sm text-nowrap"
         >
-          <span class="material-symbols-outlined text-lg dark-hidden" aria-hidden="true">dark_mode</span>
-          <span class="material-symbols-outlined text-lg hidden dark-visible" aria-hidden="true">light_mode</span>
-        </button>
-        <!-- Language picker (mobile — hover dropdown) -->
-        <div class="relative group">
-          <button
-            type="button"
-            class="flex items-center gap-1 p-1 cursor-pointer"
-            aria-haspopup="true"
-            aria-label={t.a11y.changeLanguage}
+          <a
+            href={localePath(lang, "home")}
+            class:list={[
+              activePage === "home"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1",
+            ]}
+            aria-current={activePage === "home" ? "page" : undefined}
+            >{t.nav.home}</a
           >
-            <span class:list={["fi fis inline-block w-4 h-3 rounded-sm", lang === 'cs' ? "fi-cz" : "fi-us"]} aria-hidden="true"></span>
-            <span class="material-symbols-outlined text-xs text-on-surface-variant transition-transform group-hover:rotate-180" aria-hidden="true">expand_more</span>
-          </button>
-          <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[140px] z-50" role="menu">
-            <a
-              href={alternateLangUrl('en', activePage)}
-              class:list={[
-                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                lang === 'en'
-                  ? 'text-primary font-semibold bg-primary/5'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-              ]}
-              role="menuitem"
-              lang="en"
-            >
-              <span class="fi fis fi-us inline-block w-4 h-3 rounded-sm" aria-hidden="true"></span>
-              <span class="font-label text-xs">English</span>
-            </a>
-            <a
-              href={alternateLangUrl('cs', activePage)}
-              class:list={[
-                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                lang === 'cs'
-                  ? 'text-primary font-semibold bg-primary/5'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-              ]}
-              role="menuitem"
-              lang="cs"
-            >
-              <span class="fi fis fi-cz inline-block w-4 h-3 rounded-sm" aria-hidden="true"></span>
-              <span class="font-label text-xs">Čeština</span>
-            </a>
-          </div>
+          <a
+            href={localePath(lang, "about")}
+            class:list={[
+              activePage === "about"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1",
+            ]}
+            aria-current={activePage === "about" ? "page" : undefined}
+            >{t.nav.about}</a
+          >
+          <a
+            href={localePath(lang, "project")}
+            class:list={[
+              activePage === "project"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1",
+            ]}
+            aria-current={activePage === "project" ? "page" : undefined}
+            >{t.nav.project}</a
+          >
+          <a
+            href={localePath(lang, "hire-me")}
+            class:list={[
+              activePage === "hire-me"
+                ? "text-primary border-b-2 border-primary pb-1"
+                : "text-on-surface-variant border-b-2 border-transparent pb-1",
+            ]}
+            aria-current={activePage === "hire-me" ? "page" : undefined}
+            >{t.nav.hireMe}</a
+          >
         </div>
-        <!-- Auth (mobile) -->
-        <button
-          id="auth-sign-in-mobile"
-          type="button"
-          class="px-3 py-1 rounded-lg text-xs font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          {t.auth.signIn}
-        </button>
-        <a id="auth-profile-mobile" class="hidden" href={localePath(lang, 'profile')}>
-          <img id="auth-avatar-mobile" class="w-6 h-6 rounded-full" src="" alt="" />
-          <span class="hidden w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"></span>
-        </a>
       </div>
-    </div>
-  </nav>
+    </nav>
 
-  <script is:inline>
-    // Prefill the profile chip from the session we parsed in the head pre-detect script,
-    // so the chip's width is finalized before first paint. Runs synchronously during parse.
-    (function() {
-      var p = window.__authPrefill;
-      if (!p) return;
-      var nameEl = document.getElementById('auth-name-desktop');
-      if (nameEl) nameEl.textContent = p.name;
-      var avatarDesktop = document.getElementById('auth-avatar-desktop');
-      var avatarMobile = document.getElementById('auth-avatar-mobile');
-      function applyAvatar(img) {
-        if (!img) return;
-        if (p.avatar) {
-          img.src = p.avatar;
-          img.alt = p.name;
+    <script is:inline>
+      // Prefill the profile chip from the session we parsed in the head pre-detect script,
+      // so the chip's width is finalized before first paint. Runs synchronously during parse.
+      (function () {
+        var p = window.__authPrefill;
+        if (!p) return;
+        var nameEl = document.getElementById("auth-name-desktop");
+        if (nameEl) nameEl.textContent = p.name;
+        var avatarDesktop = document.getElementById("auth-avatar-desktop");
+        var avatarMobile = document.getElementById("auth-avatar-mobile");
+        function applyAvatar(img) {
+          if (!img) return;
+          if (p.avatar) {
+            img.src = p.avatar;
+            img.alt = p.name;
+          } else {
+            img.style.display = "none";
+            var placeholder = img.nextElementSibling;
+            if (placeholder) {
+              placeholder.classList.remove("hidden");
+              placeholder.textContent = (p.name.charAt(0) || "?").toUpperCase();
+            }
+          }
+        }
+        applyAvatar(avatarDesktop);
+        applyAvatar(avatarMobile);
+        var adminLink = document.getElementById("auth-admin-link-desktop");
+        if (adminLink && p.isAdmin) adminLink.classList.remove("hidden");
+      })();
+    </script>
+
+    <!-- Main content -->
+    <main id="main-content" class="pt-32 pb-24 flex-1">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer
+      class="bg-surface-container-low w-full py-12 border-t border-on-surface/5"
+      role="contentinfo"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6"
+      >
+        <div class="text-lg font-bold text-on-surface font-headline">
+          kalandra.tech
+        </div>
+        <div class="flex items-center gap-6">
+          <a
+            class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label"
+            href={localePath(lang, "privacy")}>{t.footer.privacy}</a
+          >
+          <a
+            class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label"
+            href={localePath(lang, "terms")}>{t.footer.terms}</a
+          >
+        </div>
+        <div class="flex items-center gap-6">
+          <a
+            class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-label"
+            href="mailto:pavel@kalandra.tech"
+            title={t.footer.emailTitle}
+            aria-label={t.footer.emailAriaLabel}
+          >
+            <IconEmail class="w-5 h-5 flex-shrink-0" />
+            <span class="hidden sm:inline">pavel@kalandra.tech</span>
+          </a>
+          <a
+            class="text-on-surface-variant hover:text-primary transition-colors"
+            href="https://www.linkedin.com/in/pavelkalandra/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t.footer.linkedinTitle}
+            aria-label={t.footer.linkedinAriaLabel}
+          >
+            <IconLinkedIn class="w-5 h-5" />
+          </a>
+          <a
+            class="text-on-surface-variant hover:text-primary transition-colors"
+            href="https://github.com/kalicz"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t.footer.githubTitle}
+            aria-label={t.footer.githubAriaLabel}
+          >
+            <IconGitHub class="w-5 h-5" />
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <script is:inline>
+      function updateToggleIcons() {
+        var isDark = document.documentElement.classList.contains("dark");
+        // Icon visibility is handled purely by CSS (html.dark / html:not(.dark) selectors).
+        // Update tooltips
+        var lightTip =
+          document.documentElement.lang === "cs"
+            ? "Přepnout na světlý režim"
+            : "Switch to light mode";
+        var darkTip =
+          document.documentElement.lang === "cs"
+            ? "Přepnout na tmavý režim"
+            : "Switch to dark mode";
+        var tip = isDark ? lightTip : darkTip;
+        var btn = document.getElementById("theme-toggle");
+        var btnM = document.getElementById("theme-toggle-mobile");
+        if (btn) btn.title = tip;
+        if (btnM) btnM.title = tip;
+      }
+
+      function toggleTheme() {
+        document.documentElement.classList.add("no-transitions");
+        var isDark = document.documentElement.classList.toggle("dark");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+        updateToggleIcons();
+        // Force reflow so the no-transitions class takes effect before we remove it
+        document.documentElement.offsetHeight;
+        document.documentElement.classList.remove("no-transitions");
+      }
+
+      document
+        .getElementById("theme-toggle")
+        ?.addEventListener("click", toggleTheme);
+      document
+        .getElementById("theme-toggle-mobile")
+        ?.addEventListener("click", toggleTheme);
+      updateToggleIcons();
+    </script>
+
+    <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
+    <AuthDialog lang={lang} />
+
+    <script>
+      import "../lib/api-errors";
+      import { getSupabaseClient } from "../lib/supabase";
+
+      const supabase = getSupabaseClient();
+
+      function setAvatarOrInitial(
+        imgEl: HTMLImageElement | null,
+        name: string,
+        avatarUrl: string,
+      ) {
+        if (!imgEl) return;
+        if (avatarUrl) {
+          imgEl.src = avatarUrl;
+          imgEl.alt = name;
+          imgEl.style.display = "";
+          imgEl.nextElementSibling?.classList.add("hidden");
         } else {
-          img.style.display = 'none';
-          var placeholder = img.nextElementSibling;
+          imgEl.style.display = "none";
+          const placeholder = imgEl.nextElementSibling;
           if (placeholder) {
-            placeholder.classList.remove('hidden');
-            placeholder.textContent = (p.name.charAt(0) || '?').toUpperCase();
+            placeholder.classList.remove("hidden");
+            placeholder.textContent = (name.charAt(0) || "?").toUpperCase();
           }
         }
       }
-      applyAvatar(avatarDesktop);
-      applyAvatar(avatarMobile);
-      var adminLink = document.getElementById('auth-admin-link-desktop');
-      if (adminLink && p.isAdmin) adminLink.classList.remove('hidden');
-    })();
-  </script>
 
-  <!-- Main content -->
-  <main id="main-content" class="pt-32 pb-24 flex-1">
-    <slot />
-  </main>
+      function updateAuthUI(user: any) {
+        const signInDesktop = document.getElementById("auth-sign-in-desktop");
+        const profileDesktop = document.getElementById("auth-profile-desktop");
+        const avatarDesktop = document.getElementById(
+          "auth-avatar-desktop",
+        ) as HTMLImageElement;
+        const nameDesktop = document.getElementById("auth-name-desktop");
+        const signInMobile = document.getElementById("auth-sign-in-mobile");
+        const profileMobile = document.getElementById("auth-profile-mobile");
+        const avatarMobile = document.getElementById(
+          "auth-avatar-mobile",
+        ) as HTMLImageElement;
+        const adminLinkDesktop = document.getElementById(
+          "auth-admin-link-desktop",
+        );
 
-  <!-- Footer -->
-  <footer class="bg-surface-container-low w-full py-12 border-t border-on-surface/5" role="contentinfo">
-    <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
-      <div class="text-lg font-bold text-on-surface font-headline">kalandra.tech</div>
-      <div class="flex items-center gap-6">
-        <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, 'privacy')}>{t.footer.privacy}</a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, 'terms')}>{t.footer.terms}</a>
-      </div>
-      <div class="flex items-center gap-6">
-        <a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href="mailto:pavel@kalandra.tech" title={t.footer.emailTitle} aria-label={t.footer.emailAriaLabel}>
-          <IconEmail class="w-5 h-5 flex-shrink-0" />
-          <span class="hidden sm:inline">pavel@kalandra.tech</span>
-        </a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="https://www.linkedin.com/in/pavelkalandra/" target="_blank" rel="noopener noreferrer" title={t.footer.linkedinTitle} aria-label={t.footer.linkedinAriaLabel}>
-          <IconLinkedIn class="w-5 h-5" />
-        </a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="https://github.com/kalicz" target="_blank" rel="noopener noreferrer" title={t.footer.githubTitle} aria-label={t.footer.githubAriaLabel}>
-          <IconGitHub class="w-5 h-5" />
-        </a>
-      </div>
-    </div>
-  </footer>
+        if (user) {
+          const name =
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "User";
+          const avatar = user.user_metadata?.avatar_url || "";
+          const isAdmin =
+            Array.isArray(user.app_metadata?.roles) &&
+            user.app_metadata.roles.indexOf("admin") !== -1;
 
-  <script is:inline>
-    function updateToggleIcons() {
-      var isDark = document.documentElement.classList.contains('dark');
-      // Icon visibility is handled purely by CSS (html.dark / html:not(.dark) selectors).
-      // Update tooltips
-      var lightTip = document.documentElement.lang === 'cs' ? 'Přepnout na světlý režim' : 'Switch to light mode';
-      var darkTip = document.documentElement.lang === 'cs' ? 'Přepnout na tmavý režim' : 'Switch to dark mode';
-      var tip = isDark ? lightTip : darkTip;
-      var btn = document.getElementById('theme-toggle');
-      var btnM = document.getElementById('theme-toggle-mobile');
-      if (btn) btn.title = tip;
-      if (btnM) btnM.title = tip;
-    }
+          if (signInDesktop) signInDesktop.classList.add("hidden");
+          if (profileDesktop) {
+            profileDesktop.classList.remove("hidden");
+            setAvatarOrInitial(avatarDesktop, name, avatar);
+            if (nameDesktop) nameDesktop.textContent = name;
+          }
+          if (signInMobile) signInMobile.classList.add("hidden");
+          if (profileMobile) {
+            profileMobile.classList.remove("hidden");
+            setAvatarOrInitial(avatarMobile, name, avatar);
+          }
+          if (adminLinkDesktop)
+            adminLinkDesktop.classList.toggle("hidden", !isAdmin);
 
-    function toggleTheme() {
-      document.documentElement.classList.add('no-transitions');
-      var isDark = document.documentElement.classList.toggle('dark');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      updateToggleIcons();
-      // Force reflow so the no-transitions class takes effect before we remove it
-      document.documentElement.offsetHeight;
-      document.documentElement.classList.remove('no-transitions');
-    }
-
-    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-    document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
-    updateToggleIcons();
-  </script>
-
-  <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
-  <AuthDialog lang={lang} />
-
-  <script>
-    import '../lib/api-errors';
-    import { getSupabaseClient } from '../lib/supabase';
-
-    const supabase = getSupabaseClient();
-
-    function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
-      if (!imgEl) return;
-      if (avatarUrl) {
-        imgEl.src = avatarUrl;
-        imgEl.alt = name;
-        imgEl.style.display = '';
-        imgEl.nextElementSibling?.classList.add('hidden');
-      } else {
-        imgEl.style.display = 'none';
-        const placeholder = imgEl.nextElementSibling;
-        if (placeholder) {
-          placeholder.classList.remove('hidden');
-          placeholder.textContent = (name.charAt(0) || '?').toUpperCase();
-        }
-      }
-    }
-
-    function updateAuthUI(user: any) {
-      const signInDesktop = document.getElementById('auth-sign-in-desktop');
-      const profileDesktop = document.getElementById('auth-profile-desktop');
-      const avatarDesktop = document.getElementById('auth-avatar-desktop') as HTMLImageElement;
-      const nameDesktop = document.getElementById('auth-name-desktop');
-      const signInMobile = document.getElementById('auth-sign-in-mobile');
-      const profileMobile = document.getElementById('auth-profile-mobile');
-      const avatarMobile = document.getElementById('auth-avatar-mobile') as HTMLImageElement;
-      const adminLinkDesktop = document.getElementById('auth-admin-link-desktop');
-
-      if (user) {
-        const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-        const avatar = user.user_metadata?.avatar_url || '';
-        const isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf('admin') !== -1;
-
-        if (signInDesktop) signInDesktop.classList.add('hidden');
-        if (profileDesktop) {
-          profileDesktop.classList.remove('hidden');
-          setAvatarOrInitial(avatarDesktop, name, avatar);
-          if (nameDesktop) nameDesktop.textContent = name;
-        }
-        if (signInMobile) signInMobile.classList.add('hidden');
-        if (profileMobile) {
-          profileMobile.classList.remove('hidden');
-          setAvatarOrInitial(avatarMobile, name, avatar);
-        }
-        if (adminLinkDesktop) adminLinkDesktop.classList.toggle('hidden', !isAdmin);
-
-        window.dispatchEvent(new CustomEvent('auth-change', { detail: { user } }));
-      } else {
-        if (signInDesktop) signInDesktop.classList.remove('hidden');
-        if (profileDesktop) profileDesktop.classList.add('hidden');
-        if (signInMobile) signInMobile.classList.remove('hidden');
-        if (profileMobile) profileMobile.classList.add('hidden');
-        if (adminLinkDesktop) adminLinkDesktop.classList.add('hidden');
-
-        window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: null } }));
-      }
-    }
-
-    async function signOut() {
-      if (!supabase) return;
-      await supabase.auth.signOut();
-      updateAuthUI(null);
-    }
-
-    // Initialize
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        updateAuthUI(session?.user ?? null);
-        // Hand visibility control back to JS now that the real session is known.
-        document.documentElement.classList.remove('auth-known-in', 'auth-known-out');
-      });
-
-      supabase.auth.onAuthStateChange((_event, session) => {
-        updateAuthUI(session?.user ?? null);
-      });
-    }
-
-    const openDialog = () => (window as any).__openAuthDialog?.();
-    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', openDialog);
-    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', openDialog);
-    document.getElementById('auth-sign-out-desktop')?.addEventListener('click', signOut);
-
-    // Expose globals for other pages and E2E tests
-    (window as any).__supabase = supabase;
-    (window as any).__getAccessToken = async () => {
-      if (!supabase) return null;
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token ?? null;
-    };
-    (window as any).__getUser = async () => {
-      if (!supabase) return null;
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.user ?? null;
-    };
-  </script>
-
-  <!-- Global snackbar -->
-  <div id="snackbar" role="status" aria-live="polite"
-    class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 -translate-y-4">
-    <div class="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md">
-      <span id="snackbar-icon" class="material-symbols-outlined text-lg flex-shrink-0" aria-hidden="true"></span>
-      <span id="snackbar-message" class="flex-1"></span>
-      <button id="snackbar-close" type="button" class="hidden material-symbols-outlined text-lg flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" aria-label="Close">close</button>
-    </div>
-  </div>
-
-  <script>
-    window.__showSnackbar = function(message: string, type: 'success' | 'error' | 'info' = 'info', duration = 8000) {
-      const snackbar = document.getElementById('snackbar');
-      const icon = document.getElementById('snackbar-icon');
-      const msg = document.getElementById('snackbar-message');
-      if (!snackbar || !icon || !msg) return;
-
-      const inner = snackbar.firstElementChild as HTMLElement;
-
-      // Reset classes
-      inner.classList.remove('bg-tertiary-container', 'text-on-surface', 'bg-error-container', 'bg-surface-container-high');
-      icon.classList.remove('text-tertiary', 'text-error', 'text-primary');
-
-      if (type === 'success') {
-        inner.classList.add('bg-tertiary-container', 'text-on-surface');
-        icon.classList.add('text-tertiary');
-        icon.textContent = 'check_circle';
-      } else if (type === 'error') {
-        inner.classList.add('bg-error-container', 'text-on-surface');
-        icon.classList.add('text-error');
-        icon.textContent = 'error';
-      } else {
-        inner.classList.add('bg-surface-container-high', 'text-on-surface');
-        icon.classList.add('text-primary');
-        icon.textContent = 'info';
-      }
-
-      msg.textContent = message;
-
-      // Show/hide close button for persistent snackbars
-      const closeBtn = document.getElementById('snackbar-close');
-      if (closeBtn) {
-        if (duration === 0) { closeBtn.classList.remove('hidden'); } else { closeBtn.classList.add('hidden'); }
-      }
-
-      // Show
-      snackbar.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
-      snackbar.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
-
-      // Auto-hide (0 = persistent, dismissed via close button or by next snackbar)
-      clearTimeout((window as any).__snackbarTimer);
-      if (duration > 0) {
-        (window as any).__snackbarTimer = setTimeout(() => {
-          snackbar.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-          snackbar.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
-        }, duration);
-      }
-    };
-
-    document.getElementById('snackbar-close')?.addEventListener('click', () => {
-      const snackbar = document.getElementById('snackbar');
-      if (snackbar) {
-        snackbar.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-        snackbar.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
-      }
-    });
-
-    // Show snackbar from sessionStorage (for cross-page messages like form submission redirects)
-    try {
-      const pending = sessionStorage.getItem('snackbar');
-      if (pending) {
-        sessionStorage.removeItem('snackbar');
-        const { message, type } = JSON.parse(pending);
-        (window as any).__showSnackbar(message, type);
-      }
-    } catch {}
-
-    // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
-    // Sign out any existing session — the person clicking the link is the one who signed up.
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const authError = hashParams.get('error_description');
-    if (authError) {
-      (window as any).__supabase?.auth.signOut();
-      (window as any).__showSnackbar(decodeURIComponent(authError), 'error', 0);
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  </script>
-
-  <script>
-    // Smooth open/close animation for <details> elements
-    document.querySelectorAll('details').forEach((details) => {
-      const content = details.querySelector<HTMLElement>(':scope > :not(summary)');
-      if (!content) return;
-
-      let animation: Animation | null = null;
-
-      details.querySelector('summary')!.addEventListener('click', (e) => {
-        e.preventDefault();
-        animation?.cancel();
-
-        if (details.open) {
-          // Closing: animate from current height to 0
-          const startHeight = details.offsetHeight;
-          const summaryHeight = details.querySelector('summary')!.offsetHeight;
-
-          animation = details.animate(
-            { height: [`${startHeight}px`, `${summaryHeight}px`] },
-            { duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+          window.dispatchEvent(
+            new CustomEvent("auth-change", { detail: { user } }),
           );
-          animation.onfinish = () => {
-            details.open = false;
-            animation = null;
-          };
         } else {
-          // Opening: set open, then animate from summary height to full height
-          details.open = true;
-          const endHeight = details.offsetHeight;
-          const summaryHeight = details.querySelector('summary')!.offsetHeight;
+          if (signInDesktop) signInDesktop.classList.remove("hidden");
+          if (profileDesktop) profileDesktop.classList.add("hidden");
+          if (signInMobile) signInMobile.classList.remove("hidden");
+          if (profileMobile) profileMobile.classList.add("hidden");
+          if (adminLinkDesktop) adminLinkDesktop.classList.add("hidden");
 
-          animation = details.animate(
-            { height: [`${summaryHeight}px`, `${endHeight}px`] },
-            { duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+          window.dispatchEvent(
+            new CustomEvent("auth-change", { detail: { user: null } }),
           );
-          animation.onfinish = () => {
-            details.style.height = '';
-            animation = null;
-          };
         }
-      });
-    });
-  </script>
+      }
 
-</body>
+      async function signOut() {
+        if (!supabase) return;
+        await supabase.auth.signOut();
+        updateAuthUI(null);
+      }
+
+      // Initialize
+      if (supabase) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          updateAuthUI(session?.user ?? null);
+          // Hand visibility control back to JS now that the real session is known.
+          document.documentElement.classList.remove(
+            "auth-known-in",
+            "auth-known-out",
+          );
+        });
+
+        supabase.auth.onAuthStateChange((_event, session) => {
+          updateAuthUI(session?.user ?? null);
+        });
+      }
+
+      const openDialog = () => (window as any).__openAuthDialog?.();
+      document
+        .getElementById("auth-sign-in-desktop")
+        ?.addEventListener("click", openDialog);
+      document
+        .getElementById("auth-sign-in-mobile")
+        ?.addEventListener("click", openDialog);
+      document
+        .getElementById("auth-sign-out-desktop")
+        ?.addEventListener("click", signOut);
+
+      // Expose globals for other pages and E2E tests
+      (window as any).__supabase = supabase;
+      (window as any).__getAccessToken = async () => {
+        if (!supabase) return null;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        return session?.access_token ?? null;
+      };
+      (window as any).__getUser = async () => {
+        if (!supabase) return null;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        return session?.user ?? null;
+      };
+    </script>
+
+    <!-- Global snackbar -->
+    <div
+      id="snackbar"
+      role="status"
+      aria-live="polite"
+      class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 -translate-y-4"
+    >
+      <div
+        class="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md"
+      >
+        <span
+          id="snackbar-icon"
+          class="material-symbols-outlined text-lg flex-shrink-0"
+          aria-hidden="true"></span>
+        <span id="snackbar-message" class="flex-1"></span>
+        <button
+          id="snackbar-close"
+          type="button"
+          class="hidden material-symbols-outlined text-lg flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+          aria-label="Close">close</button
+        >
+      </div>
+    </div>
+
+    <script>
+      window.__showSnackbar = function (
+        message: string,
+        type: "success" | "error" | "info" = "info",
+        duration = 8000,
+      ) {
+        const snackbar = document.getElementById("snackbar");
+        const icon = document.getElementById("snackbar-icon");
+        const msg = document.getElementById("snackbar-message");
+        if (!snackbar || !icon || !msg) return;
+
+        const inner = snackbar.firstElementChild as HTMLElement;
+
+        // Reset classes
+        inner.classList.remove(
+          "bg-tertiary-container",
+          "text-on-surface",
+          "bg-error-container",
+          "bg-surface-container-high",
+        );
+        icon.classList.remove("text-tertiary", "text-error", "text-primary");
+
+        if (type === "success") {
+          inner.classList.add("bg-tertiary-container", "text-on-surface");
+          icon.classList.add("text-tertiary");
+          icon.textContent = "check_circle";
+        } else if (type === "error") {
+          inner.classList.add("bg-error-container", "text-on-surface");
+          icon.classList.add("text-error");
+          icon.textContent = "error";
+        } else {
+          inner.classList.add("bg-surface-container-high", "text-on-surface");
+          icon.classList.add("text-primary");
+          icon.textContent = "info";
+        }
+
+        msg.textContent = message;
+
+        // Show/hide close button for persistent snackbars
+        const closeBtn = document.getElementById("snackbar-close");
+        if (closeBtn) {
+          if (duration === 0) {
+            closeBtn.classList.remove("hidden");
+          } else {
+            closeBtn.classList.add("hidden");
+          }
+        }
+
+        // Show
+        snackbar.classList.remove(
+          "opacity-0",
+          "-translate-y-4",
+          "pointer-events-none",
+        );
+        snackbar.classList.add(
+          "opacity-100",
+          "translate-y-0",
+          "pointer-events-auto",
+        );
+
+        // Auto-hide (0 = persistent, dismissed via close button or by next snackbar)
+        clearTimeout((window as any).__snackbarTimer);
+        if (duration > 0) {
+          (window as any).__snackbarTimer = setTimeout(() => {
+            snackbar.classList.remove(
+              "opacity-100",
+              "translate-y-0",
+              "pointer-events-auto",
+            );
+            snackbar.classList.add(
+              "opacity-0",
+              "-translate-y-4",
+              "pointer-events-none",
+            );
+          }, duration);
+        }
+      };
+
+      document
+        .getElementById("snackbar-close")
+        ?.addEventListener("click", () => {
+          const snackbar = document.getElementById("snackbar");
+          if (snackbar) {
+            snackbar.classList.remove(
+              "opacity-100",
+              "translate-y-0",
+              "pointer-events-auto",
+            );
+            snackbar.classList.add(
+              "opacity-0",
+              "-translate-y-4",
+              "pointer-events-none",
+            );
+          }
+        });
+
+      // Show snackbar from sessionStorage (for cross-page messages like form submission redirects)
+      try {
+        const pending = sessionStorage.getItem("snackbar");
+        if (pending) {
+          sessionStorage.removeItem("snackbar");
+          const { message, type } = JSON.parse(pending);
+          (window as any).__showSnackbar(message, type);
+        }
+      } catch {}
+
+      // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
+      // Sign out any existing session — the person clicking the link is the one who signed up.
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const authError = hashParams.get("error_description");
+      if (authError) {
+        (window as any).__supabase?.auth.signOut();
+        (window as any).__showSnackbar(
+          decodeURIComponent(authError),
+          "error",
+          0,
+        );
+        history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search,
+        );
+      }
+    </script>
+
+    <script>
+      // Smooth open/close animation for <details> elements
+      document.querySelectorAll("details").forEach((details) => {
+        const content = details.querySelector<HTMLElement>(
+          ":scope > :not(summary)",
+        );
+        if (!content) return;
+
+        let animation: Animation | null = null;
+
+        details.querySelector("summary")!.addEventListener("click", (e) => {
+          e.preventDefault();
+          animation?.cancel();
+
+          if (details.open) {
+            // Closing: animate from current height to 0
+            const startHeight = details.offsetHeight;
+            const summaryHeight =
+              details.querySelector("summary")!.offsetHeight;
+
+            animation = details.animate(
+              { height: [`${startHeight}px`, `${summaryHeight}px`] },
+              { duration: 250, easing: "cubic-bezier(0.4, 0, 0.2, 1)" },
+            );
+            animation.onfinish = () => {
+              details.open = false;
+              animation = null;
+            };
+          } else {
+            // Opening: set open, then animate from summary height to full height
+            details.open = true;
+            const endHeight = details.offsetHeight;
+            const summaryHeight =
+              details.querySelector("summary")!.offsetHeight;
+
+            animation = details.animate(
+              { height: [`${summaryHeight}px`, `${endHeight}px`] },
+              { duration: 250, easing: "cubic-bezier(0.4, 0, 0.2, 1)" },
+            );
+            animation.onfinish = () => {
+              details.style.height = "";
+              animation = null;
+            };
+          }
+        });
+      });
+    </script>
+  </body>
 </html>
