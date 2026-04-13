@@ -351,12 +351,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           BETTERSTACK_SOURCE_TOKEN: ${{ secrets.BETTERSTACK_BACKEND_SOURCETOKEN }}
+          SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
           IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,BETTERSTACK_SOURCE_TOKEN,IMAGE
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,BETTERSTACK_SOURCE_TOKEN,SENTRY_DSN,IMAGE
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -387,6 +388,7 @@ jobs:
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             BetterStack__SourceToken=${BETTERSTACK_SOURCE_TOKEN}
+            Sentry__Dsn=${SENTRY_DSN}
             EOF
 
             # Seed an initial Caddyfile if none exists, so the rootless
@@ -528,6 +530,7 @@ jobs:
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
