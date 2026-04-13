@@ -1,0 +1,47 @@
+---
+import IconEmail from './icons/IconEmail.astro';
+import IconGitHub from './icons/IconGitHub.astro';
+import IconLinkedIn from './icons/IconLinkedIn.astro';
+import type { Locale } from '../i18n/utils';
+import { localePath } from '../i18n/utils';
+
+interface Props {
+  lang: Locale;
+  t: {
+    footer: {
+      privacy: string;
+      terms: string;
+      emailTitle: string;
+      emailAriaLabel: string;
+      linkedinTitle: string;
+      linkedinAriaLabel: string;
+      githubTitle: string;
+      githubAriaLabel: string;
+    };
+  };
+}
+
+const { lang, t } = Astro.props;
+---
+
+<footer class="bg-surface-container-low w-full py-12 border-t border-on-surface/5" role="contentinfo">
+  <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
+    <div class="text-lg font-bold text-on-surface font-headline">kalandra.tech</div>
+    <div class="flex items-center gap-6">
+      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, 'privacy')}>{t.footer.privacy}</a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, 'terms')}>{t.footer.terms}</a>
+    </div>
+    <div class="flex items-center gap-6">
+      <a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href="mailto:pavel@kalandra.tech" title={t.footer.emailTitle} aria-label={t.footer.emailAriaLabel}>
+        <IconEmail class="w-5 h-5 flex-shrink-0" />
+        <span class="hidden sm:inline">pavel@kalandra.tech</span>
+      </a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors" href="https://www.linkedin.com/in/pavelkalandra/" target="_blank" rel="noopener noreferrer" title={t.footer.linkedinTitle} aria-label={t.footer.linkedinAriaLabel}>
+        <IconLinkedIn class="w-5 h-5" />
+      </a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors" href="https://github.com/kalicz" target="_blank" rel="noopener noreferrer" title={t.footer.githubTitle} aria-label={t.footer.githubAriaLabel}>
+        <IconGitHub class="w-5 h-5" />
+      </a>
+    </div>
+  </div>
+</footer>

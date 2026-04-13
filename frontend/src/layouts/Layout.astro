@@ -3,11 +3,9 @@ import '../styles/global.css'
 import AuthDialog from '../components/AuthDialog.astro';
 import Navbar from '../components/Navbar.astro';
 import Snackbar from '../components/Snackbar.astro';
-import IconEmail from '../components/icons/IconEmail.astro';
-import IconGitHub from '../components/icons/IconGitHub.astro';
-import IconLinkedIn from '../components/icons/IconLinkedIn.astro';
+import Footer from '../components/Footer.astro';
 import type { Locale } from '../i18n/utils';
-import { localePath, alternateLangUrl } from '../i18n/utils';
+
 import enCommon from '../i18n/en/common.json';
 import csCommon from '../i18n/cs/common.json';
 
@@ -178,56 +176,10 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
     <slot />
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-surface-container-low w-full py-12 border-t border-on-surface/5" role="contentinfo">
-    <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
-      <div class="text-lg font-bold text-on-surface font-headline">kalandra.tech</div>
-      <div class="flex items-center gap-6">
-        <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, 'privacy')}>{t.footer.privacy}</a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, 'terms')}>{t.footer.terms}</a>
-      </div>
-      <div class="flex items-center gap-6">
-        <a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href="mailto:pavel@kalandra.tech" title={t.footer.emailTitle} aria-label={t.footer.emailAriaLabel}>
-          <IconEmail class="w-5 h-5 flex-shrink-0" />
-          <span class="hidden sm:inline">pavel@kalandra.tech</span>
-        </a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="https://www.linkedin.com/in/pavelkalandra/" target="_blank" rel="noopener noreferrer" title={t.footer.linkedinTitle} aria-label={t.footer.linkedinAriaLabel}>
-          <IconLinkedIn class="w-5 h-5" />
-        </a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="https://github.com/kalicz" target="_blank" rel="noopener noreferrer" title={t.footer.githubTitle} aria-label={t.footer.githubAriaLabel}>
-          <IconGitHub class="w-5 h-5" />
-        </a>
-      </div>
-    </div>
-  </footer>
+  <Footer lang={lang} t={t} />
 
-  <script is:inline>
-    function updateToggleIcons() {
-      var isDark = document.documentElement.classList.contains('dark');
-      // Icon visibility is handled purely by CSS (html.dark / html:not(.dark) selectors).
-      // Update tooltips
-      var lightTip = document.documentElement.lang === 'cs' ? 'Přepnout na světlý režim' : 'Switch to light mode';
-      var darkTip = document.documentElement.lang === 'cs' ? 'Přepnout na tmavý režim' : 'Switch to dark mode';
-      var tip = isDark ? lightTip : darkTip;
-      var btn = document.getElementById('theme-toggle');
-      var btnM = document.getElementById('theme-toggle-mobile');
-      if (btn) btn.title = tip;
-      if (btnM) btnM.title = tip;
-    }
-
-    function toggleTheme() {
-      document.documentElement.classList.add('no-transitions');
-      var isDark = document.documentElement.classList.toggle('dark');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      updateToggleIcons();
-      // Force reflow so the no-transitions class takes effect before we remove it
-      document.documentElement.offsetHeight;
-      document.documentElement.classList.remove('no-transitions');
-    }
-
-    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-    document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
-    updateToggleIcons();
+  <script>
+    import '../lib/theme-toggle';
   </script>
 
   <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
@@ -349,47 +301,7 @@ const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
   </script>
 
   <script>
-    // Smooth open/close animation for <details> elements
-    document.querySelectorAll('details').forEach((details) => {
-      const content = details.querySelector<HTMLElement>(':scope > :not(summary)');
-      if (!content) return;
-
-      let animation: Animation | null = null;
-
-      details.querySelector('summary')!.addEventListener('click', (e) => {
-        e.preventDefault();
-        animation?.cancel();
-
-        if (details.open) {
-          // Closing: animate from current height to 0
-          const startHeight = details.offsetHeight;
-          const summaryHeight = details.querySelector('summary')!.offsetHeight;
-
-          animation = details.animate(
-            { height: [`${startHeight}px`, `${summaryHeight}px`] },
-            { duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
-          );
-          animation.onfinish = () => {
-            details.open = false;
-            animation = null;
-          };
-        } else {
-          // Opening: set open, then animate from summary height to full height
-          details.open = true;
-          const endHeight = details.offsetHeight;
-          const summaryHeight = details.querySelector('summary')!.offsetHeight;
-
-          animation = details.animate(
-            { height: [`${summaryHeight}px`, `${endHeight}px`] },
-            { duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
-          );
-          animation.onfinish = () => {
-            details.style.height = '';
-            animation = null;
-          };
-        }
-      });
-    });
+    import '../lib/details-animation';
   </script>
 
 </body>
