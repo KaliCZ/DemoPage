@@ -11,6 +11,7 @@
     "dev:services": "concurrently --kill-others --names backend,frontend --prefix-colors blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend/src/Kalandra.Api && dotnet watch run",
     "dev:frontend": "cd frontend && npm run dev",
+    "dev:frontend:claudePreview": "cd frontend && npm run dev:claudePreview",
     "dev:stop": "cd backend && docker compose down && supabase stop",
     "dev:wipe": "cd backend && docker compose down -v && supabase stop --no-backup",
     "build:frontend": "cd frontend && npm run build",
