@@ -45,15 +45,10 @@ test.describe("Avatar Flow", () => {
         user_metadata: { full_name: testUser.fullName },
       },
     });
-    expect(
-      response.ok(),
-      `Failed to create test user: ${await response.text()}`,
-    ).toBeTruthy();
+    expect(response.ok(), `Failed to create test user: ${await response.text()}`).toBeTruthy();
   });
 
-  test("upload avatar → verify in profile, nav, and comments", async ({
-    page,
-  }) => {
+  test("upload avatar → verify in profile, nav, and comments", async ({ page }) => {
     // 1. Sign in via the profile page
     await page.goto("/profile");
     await page.evaluate(
@@ -78,14 +73,7 @@ test.describe("Avatar Flow", () => {
     await expect(page.locator("#avatar-preview-img")).toBeHidden();
 
     // 2. Upload an avatar (use the existing portrait in public/)
-    const avatarPath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "public",
-      "images",
-      "pavel-portrait-200.webp",
-    );
+    const avatarPath = path.join(__dirname, "..", "..", "public", "images", "pavel-portrait-200.webp");
     await page.locator("#avatar-file-input").setInputFiles(avatarPath);
 
     // Wait for the upload + session refresh to complete
@@ -95,9 +83,7 @@ test.describe("Avatar Flow", () => {
     await expect(page.locator("#avatar-preview-initial")).toBeHidden();
 
     // The img src should point to the avatars storage path
-    const previewSrc = await page
-      .locator("#avatar-preview-img")
-      .getAttribute("src");
+    const previewSrc = await page.locator("#avatar-preview-img").getAttribute("src");
     expect(previewSrc).toContain("/storage/v1/object/public/avatars/");
 
     // 3. Submit a job offer and add a comment via the API
@@ -114,9 +100,7 @@ test.describe("Avatar Flow", () => {
     await page.fill("#jobTitle", "Avatar Engineer");
     await page.fill("#description", "Testing avatars in comments end-to-end.");
     await page.evaluate(() => {
-      let input = document.querySelector<HTMLInputElement>(
-        '[name="cf-turnstile-response"]',
-      );
+      let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
       if (!input) {
         input = document.createElement("input");
         input.type = "hidden";
@@ -139,10 +123,7 @@ test.describe("Avatar Flow", () => {
 
     // 5. Verify the comment appears with the avatar img (not initial)
     const commentList = page.locator("#comments-list");
-    await expect(commentList).toContainText(
-      "This comment should show my avatar",
-      { timeout: 10000 },
-    );
+    await expect(commentList).toContainText("This comment should show my avatar", { timeout: 10000 });
     const commentAvatar = commentList.locator("img").first();
     await expect(commentAvatar).toBeVisible();
     const commentAvatarSrc = await commentAvatar.getAttribute("src");

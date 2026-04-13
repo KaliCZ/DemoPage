@@ -19,23 +19,13 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 ---
 
-<Layout
-  title={t.meta.title}
-  description={t.meta.description}
-  activePage="about"
-  lang={lang}
->
+<Layout title={t.meta.title} description={t.meta.description} activePage="about" lang={lang}>
   <!-- Hero Section -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-24 lg:mb-40">
     <div class="flex flex-col md:flex-row items-end gap-12">
       <div class="w-full md:w-2/3">
-        <h1
-          class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-8"
-        >
-          <span
-            class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
-            >{t.hero.name}</span
-          >
+        <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-8">
+          <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.name}</span>
         </h1>
         <a
           href="https://www.google.com/maps/place/Prague"
@@ -43,15 +33,10 @@ const t = translations[lang];
           rel="noopener noreferrer"
           class="flex items-center gap-2 mb-8 text-on-surface-variant hover:text-primary transition-colors font-label text-md w-fit"
         >
-          <span
-            class="material-symbols-outlined text-tertiary"
-            aria-hidden="true">location_on</span
-          >
+          <span class="material-symbols-outlined text-tertiary" aria-hidden="true">location_on</span>
           {t.hero.location}
         </a>
-        <p
-          class="font-body text-xl md:text-2xl text-on-surface-variant max-w-2xl leading-relaxed mb-10"
-        >
+        <p class="font-body text-xl md:text-2xl text-on-surface-variant max-w-2xl leading-relaxed mb-10">
           {t.hero.subtitle}
         </p>
         <div class="flex gap-6 flex-wrap">
@@ -89,9 +74,7 @@ const t = translations[lang];
         </div>
       </div>
       <!-- Portrait -->
-      <div
-        class="w-full md:w-1/3 aspect-square rounded-xl overflow-hidden border border-outline-variant/20"
-      >
+      <div class="w-full md:w-1/3 aspect-square rounded-xl overflow-hidden border border-outline-variant/20">
         <picture>
           <source
             type="image/webp"
@@ -112,13 +95,8 @@ const t = translations[lang];
   </section>
 
   <!-- Manifesto Section -->
-  <section
-    class="bg-surface-container-low py-24 mb-24 lg:mb-40 relative overflow-hidden border-y border-on-surface/5"
-  >
-    <div
-      class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"
-    >
-    </div>
+  <section class="bg-surface-container-low py-24 mb-24 lg:mb-40 relative overflow-hidden border-y border-on-surface/5">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
     <div class="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <!-- Left Column -->
@@ -133,20 +111,12 @@ const t = translations[lang];
             {
               t.manifesto.pillars.map((pillar) => (
                 <li class="flex gap-4">
-                  <span
-                    class:list={[
-                      "material-symbols-outlined text-3xl",
-                      `text-${pillar.color}`,
-                    ]}
-                    aria-hidden="true"
-                  >
+                  <span class:list={["material-symbols-outlined text-3xl", `text-${pillar.color}`]} aria-hidden="true">
                     {pillar.icon}
                   </span>
                   <div>
                     <h5 class="font-bold text-xl mb-2">{pillar.title}</h5>
-                    <p class="text-on-surface-variant leading-relaxed">
-                      {pillar.description}
-                    </p>
+                    <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
                   </div>
                 </li>
               ))
@@ -166,16 +136,11 @@ const t = translations[lang];
                     ]}
                   >
                     <span>{accordion.title}</span>
-                    <span
-                      class="material-symbols-outlined text-sm transition-transform group-open:rotate-180"
-                      aria-hidden="true"
-                    >
+                    <span class="material-symbols-outlined text-sm transition-transform group-open:rotate-180" aria-hidden="true">
                       expand_more
                     </span>
                   </summary>
-                  <div class="px-6 pb-6 text-on-surface-variant leading-relaxed">
-                    {accordion.content}
-                  </div>
+                  <div class="px-6 pb-6 text-on-surface-variant leading-relaxed">{accordion.content}</div>
                 </details>
               ))
             }
@@ -188,10 +153,7 @@ const t = translations[lang];
   <!-- Career Journey Section -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-40">
     <div class="text-center mb-24">
-      <span
-        class="font-label text-secondary uppercase tracking-widest text-sm mb-4 block"
-        >{t.career.label}</span
-      >
+      <span class="font-label text-secondary uppercase tracking-widest text-sm mb-4 block">{t.career.label}</span>
       <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">
         {t.career.title}
       </h2>
@@ -200,22 +162,15 @@ const t = translations[lang];
     <!-- Timeline -->
     <div class="relative">
       <!-- Vertical Line -->
-      <div
-        class="absolute left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/30 hidden md:block"
-      >
-      </div>
+      <div class="absolute left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/30 hidden md:block"></div>
 
       <div class="space-y-12 md:space-y-0">
         {
           t.career.entries.map((entry, i) => {
             const isRight = entry.side === "right";
             const dotColor = isRight ? "primary" : "tertiary";
-            const borderHover = isRight
-              ? "hover:border-primary/30"
-              : "hover:border-tertiary/30";
-            const dotShadow = isRight
-              ? "shadow-[0_0_15px_rgba(72,88,171,0.3)]"
-              : "shadow-[0_0_15px_rgba(0,106,106,0.2)]";
+            const borderHover = isRight ? "hover:border-primary/30" : "hover:border-tertiary/30";
+            const dotShadow = isRight ? "shadow-[0_0_15px_rgba(72,88,171,0.3)]" : "shadow-[0_0_15px_rgba(0,106,106,0.2)]";
             const hasSubEntries = "subEntries" in entry && entry.subEntries;
 
             return isRight ? (
@@ -235,39 +190,21 @@ const t = translations[lang];
                       borderHover,
                     ]}
                   >
-                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">
-                      {entry.date}
-                    </span>
-                    <h3 class="font-headline text-2xl font-bold mt-2">
-                      {entry.role}
-                    </h3>
-                    {entry.company && (
-                      <p class="font-label text-on-surface-variant mb-4">
-                        {entry.company}
-                      </p>
-                    )}
-                    {hasSubEntries && (
-                      <p class="font-label text-on-surface-variant mb-6">
-                        {entry.yearsLabel}
-                      </p>
-                    )}
+                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
+                    <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
+                    {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
+                    {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
                     {entry.description && !hasSubEntries && (
-                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">
-                        {entry.description}
-                      </p>
+                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>
                     )}
                     {hasSubEntries && (
                       <div class="space-y-6 text-left">
                         {entry.subEntries!.map((sub) => (
                           <div class="border-l-2 border-primary/30 pl-4">
-                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">
-                              {sub.date}
-                            </p>
+                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
                             <p class="font-bold mt-1">{sub.role}</p>
                             {sub.description && (
-                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">
-                                {sub.description}
-                              </p>
+                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
                             )}
                           </div>
                         ))}
@@ -277,59 +214,30 @@ const t = translations[lang];
                 </div>
               </div>
             ) : (
-              <div
-                class:list={[
-                  "md:flex justify-start items-center w-full",
-                  i < t.career.entries.length - 1 && "md:mb-24",
-                ]}
-              >
+              <div class:list={["md:flex justify-start items-center w-full", i < t.career.entries.length - 1 && "md:mb-24"]}>
                 <div class="relative md:w-1/2 md:pr-16 md:text-right">
-                  <div
-                    class:list={[
-                      "absolute -right-2 top-0 w-4 h-4 rounded-full z-10 hidden md:block",
-                      `bg-${dotColor}`,
-                      dotShadow,
-                    ]}
-                  />
+                  <div class:list={["absolute -right-2 top-0 w-4 h-4 rounded-full z-10 hidden md:block", `bg-${dotColor}`, dotShadow]} />
                   <div
                     class:list={[
                       "bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",
                       borderHover,
                     ]}
                   >
-                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">
-                      {entry.date}
-                    </span>
-                    <h3 class="font-headline text-2xl font-bold mt-2">
-                      {entry.role}
-                    </h3>
-                    {entry.company && (
-                      <p class="font-label text-on-surface-variant mb-4">
-                        {entry.company}
-                      </p>
-                    )}
-                    {hasSubEntries && (
-                      <p class="font-label text-on-surface-variant mb-6">
-                        {entry.yearsLabel}
-                      </p>
-                    )}
+                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
+                    <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
+                    {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
+                    {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
                     {entry.description && !hasSubEntries && (
-                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">
-                        {entry.description}
-                      </p>
+                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>
                     )}
                     {hasSubEntries && (
                       <div class="space-y-6 text-left">
                         {entry.subEntries!.map((sub) => (
                           <div class="border-l-2 border-primary/30 pl-4">
-                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">
-                              {sub.date}
-                            </p>
+                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
                             <p class="font-bold mt-1">{sub.role}</p>
                             {sub.description && (
-                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">
-                                {sub.description}
-                              </p>
+                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
                             )}
                           </div>
                         ))}

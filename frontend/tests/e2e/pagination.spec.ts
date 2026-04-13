@@ -25,8 +25,7 @@ async function signIn(page: any) {
   await page.evaluate(
     async ({ email, password }: { email: string; password: string }) => {
       const supabase = (window as any).__supabase;
-      if (!supabase)
-        throw new Error("Supabase client not available on window.__supabase");
+      if (!supabase) throw new Error("Supabase client not available on window.__supabase");
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -44,10 +43,7 @@ async function createOfferViaApi(token: string, suffix: string) {
   form.append("ContactName", "Test User");
   form.append("ContactEmail", "test@pagination.com");
   form.append("JobTitle", `Engineer ${suffix}`);
-  form.append(
-    "Description",
-    "Created by pagination E2E test to verify pagination controls work.",
-  );
+  form.append("Description", "Created by pagination E2E test to verify pagination controls work.");
   form.append("IsRemote", "false");
 
   const res = await fetch(`${API_URL}/api/job-offers`, {
@@ -63,38 +59,29 @@ test.describe("Job Offers Pagination", () => {
 
   test.beforeAll(async ({ request }) => {
     // Create test user via Supabase admin API
-    const createRes = await request.post(
-      `${SUPABASE_URL}/auth/v1/admin/users`,
-      {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          "Content-Type": "application/json",
-        },
-        data: {
-          email: testUser.email,
-          password: testUser.password,
-          email_confirm: true,
-          user_metadata: { full_name: testUser.fullName },
-        },
+    const createRes = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        "Content-Type": "application/json",
       },
-    );
-    expect(
-      createRes.ok(),
-      `Failed to create test user: ${await createRes.text()}`,
-    ).toBeTruthy();
+      data: {
+        email: testUser.email,
+        password: testUser.password,
+        email_confirm: true,
+        user_metadata: { full_name: testUser.fullName },
+      },
+    });
+    expect(createRes.ok(), `Failed to create test user: ${await createRes.text()}`).toBeTruthy();
 
     // Sign in to get access token for seeding offers
-    const signInRes = await request.post(
-      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          "Content-Type": "application/json",
-        },
-        data: { email: testUser.email, password: testUser.password },
+    const signInRes = await request.post(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        "Content-Type": "application/json",
       },
-    );
+      data: { email: testUser.email, password: testUser.password },
+    });
     expect(signInRes.ok()).toBeTruthy();
     const signInData = await signInRes.json();
     accessToken = signInData.access_token;
@@ -107,9 +94,7 @@ test.describe("Job Offers Pagination", () => {
     await Promise.all(promises);
   });
 
-  test("pagination controls appear when results exceed page size", async ({
-    page,
-  }) => {
+  test("pagination controls appear when results exceed page size", async ({ page }) => {
     await page.goto("/job-offers");
     await signIn(page);
 
@@ -120,9 +105,7 @@ test.describe("Job Offers Pagination", () => {
     await expect(page.locator("#pagination-controls")).toBeVisible({
       timeout: 5000,
     });
-    await expect(page.locator("#pagination-indicator")).toContainText(
-      "Page 1 of 2",
-    );
+    await expect(page.locator("#pagination-indicator")).toContainText("Page 1 of 2");
 
     // Previous button should be disabled on first page
     await expect(page.locator("#pagination-prev")).toBeDisabled();
@@ -143,9 +126,7 @@ test.describe("Job Offers Pagination", () => {
     await page.click("#pagination-next");
 
     // Should now be on page 2
-    await expect(page.locator("#pagination-indicator")).toContainText(
-      "Page 2 of 2",
-    );
+    await expect(page.locator("#pagination-indicator")).toContainText("Page 2 of 2");
     await expect(page.locator("#pagination-prev")).toBeEnabled();
     await expect(page.locator("#pagination-next")).toBeDisabled();
 
@@ -156,9 +137,7 @@ test.describe("Job Offers Pagination", () => {
     await page.click("#pagination-prev");
 
     // Should be back on page 1
-    await expect(page.locator("#pagination-indicator")).toContainText(
-      "Page 1 of 2",
-    );
+    await expect(page.locator("#pagination-indicator")).toContainText("Page 1 of 2");
     await expect(page.locator("#pagination-prev")).toBeDisabled();
     await expect(page.locator("#pagination-next")).toBeEnabled();
   });
@@ -174,9 +153,7 @@ test.describe("Job Offers Pagination", () => {
 
     // Go to page 2
     await page.click("#pagination-next");
-    await expect(page.locator("#pagination-indicator")).toContainText(
-      "Page 2 of 2",
-    );
+    await expect(page.locator("#pagination-indicator")).toContainText("Page 2 of 2");
 
     // Apply a status filter — should reset to page 1
     await page.click("#status-filter-toggle");
@@ -187,9 +164,7 @@ test.describe("Job Offers Pagination", () => {
     const controls = page.locator("#pagination-controls");
     const isVisible = await controls.isVisible();
     if (isVisible) {
-      await expect(page.locator("#pagination-indicator")).toContainText(
-        /Page 1 of/,
-      );
+      await expect(page.locator("#pagination-indicator")).toContainText(/Page 1 of/);
     }
   });
 });

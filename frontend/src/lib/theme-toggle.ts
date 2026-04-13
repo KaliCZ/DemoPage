@@ -1,13 +1,7 @@
 function updateToggleIcons() {
   const isDark = document.documentElement.classList.contains("dark");
-  const lightTip =
-    document.documentElement.lang === "cs"
-      ? "Přepnout na světlý režim"
-      : "Switch to light mode";
-  const darkTip =
-    document.documentElement.lang === "cs"
-      ? "Přepnout na tmavý režim"
-      : "Switch to dark mode";
+  const lightTip = document.documentElement.lang === "cs" ? "Přepnout na světlý režim" : "Switch to light mode";
+  const darkTip = document.documentElement.lang === "cs" ? "Přepnout na tmavý režim" : "Switch to dark mode";
   const tip = isDark ? lightTip : darkTip;
   const btn = document.getElementById("theme-toggle");
   const btnM = document.getElementById("theme-toggle-mobile");
@@ -26,7 +20,5 @@ function toggleTheme() {
 }
 
 document.getElementById("theme-toggle")?.addEventListener("click", toggleTheme);
-document
-  .getElementById("theme-toggle-mobile")
-  ?.addEventListener("click", toggleTheme);
+document.getElementById("theme-toggle-mobile")?.addEventListener("click", toggleTheme);
 updateToggleIcons();

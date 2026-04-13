@@ -5,14 +5,9 @@
   aria-live="polite"
   class="fixed top-32 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 -translate-y-4"
 >
-  <div
-    class="flex flex-col gap-1 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md"
-  >
+  <div class="flex flex-col gap-1 px-5 py-3 rounded-2xl shadow-lg border border-outline-variant/10 font-body text-sm max-w-md">
     <div class="flex items-center gap-3">
-      <span
-        id="snackbar-icon"
-        class="material-symbols-outlined text-lg flex-shrink-0"
-        aria-hidden="true"></span>
+      <span id="snackbar-icon" class="material-symbols-outlined text-lg flex-shrink-0" aria-hidden="true"></span>
       <span id="snackbar-message" class="flex-1"></span>
       <button
         id="snackbar-close"
@@ -21,10 +16,7 @@
         aria-label="Close">close</button
       >
     </div>
-    <div
-      id="snackbar-trace"
-      class="hidden flex items-start gap-2 pl-8 text-xs opacity-70"
-    >
+    <div id="snackbar-trace" class="hidden flex items-start gap-2 pl-8 text-xs opacity-70">
       <span id="snackbar-trace-text" class="break-all"></span>
       <button
         id="snackbar-trace-copy"
@@ -37,12 +29,7 @@
 </div>
 
 <script>
-  window.__showSnackbar = function (
-    message: string,
-    type: "success" | "error" | "info" = "info",
-    duration = 8000,
-    traceId?: string,
-  ) {
+  window.__showSnackbar = function (message: string, type: "success" | "error" | "info" = "info", duration = 8000, traceId?: string) {
     const snackbar = document.getElementById("snackbar");
     const icon = document.getElementById("snackbar-icon");
     const msg = document.getElementById("snackbar-message");
@@ -51,12 +38,7 @@
     const inner = snackbar.firstElementChild as HTMLElement;
 
     // Reset classes
-    inner.classList.remove(
-      "bg-tertiary-container",
-      "text-on-surface",
-      "bg-error-container",
-      "bg-surface-container-high",
-    );
+    inner.classList.remove("bg-tertiary-container", "text-on-surface", "bg-error-container", "bg-surface-container-high");
     icon.classList.remove("text-tertiary", "text-error", "text-primary");
 
     if (type === "success") {
@@ -98,61 +80,33 @@
     }
 
     // Show
-    snackbar.classList.remove(
-      "opacity-0",
-      "-translate-y-4",
-      "pointer-events-none",
-    );
-    snackbar.classList.add(
-      "opacity-100",
-      "translate-y-0",
-      "pointer-events-auto",
-    );
+    snackbar.classList.remove("opacity-0", "-translate-y-4", "pointer-events-none");
+    snackbar.classList.add("opacity-100", "translate-y-0", "pointer-events-auto");
 
     // Auto-hide (0 = persistent, dismissed via close button or by next snackbar)
     clearTimeout((window as any).__snackbarTimer);
     if (duration > 0) {
       (window as any).__snackbarTimer = setTimeout(() => {
-        snackbar.classList.remove(
-          "opacity-100",
-          "translate-y-0",
-          "pointer-events-auto",
-        );
-        snackbar.classList.add(
-          "opacity-0",
-          "-translate-y-4",
-          "pointer-events-none",
-        );
+        snackbar.classList.remove("opacity-100", "translate-y-0", "pointer-events-auto");
+        snackbar.classList.add("opacity-0", "-translate-y-4", "pointer-events-none");
       }, duration);
     }
   };
 
   // Copy traceId to clipboard
-  document
-    .getElementById("snackbar-trace-copy")
-    ?.addEventListener("click", () => {
-      const traceText = document.getElementById(
-        "snackbar-trace-text",
-      )?.textContent;
-      if (traceText) {
-        const traceId = traceText.replace(/^Trace:\s*/, "");
-        navigator.clipboard.writeText(traceId);
-      }
-    });
+  document.getElementById("snackbar-trace-copy")?.addEventListener("click", () => {
+    const traceText = document.getElementById("snackbar-trace-text")?.textContent;
+    if (traceText) {
+      const traceId = traceText.replace(/^Trace:\s*/, "");
+      navigator.clipboard.writeText(traceId);
+    }
+  });
 
   document.getElementById("snackbar-close")?.addEventListener("click", () => {
     const snackbar = document.getElementById("snackbar");
     if (snackbar) {
-      snackbar.classList.remove(
-        "opacity-100",
-        "translate-y-0",
-        "pointer-events-auto",
-      );
-      snackbar.classList.add(
-        "opacity-0",
-        "-translate-y-4",
-        "pointer-events-none",
-      );
+      snackbar.classList.remove("opacity-100", "translate-y-0", "pointer-events-auto");
+      snackbar.classList.add("opacity-0", "-translate-y-4", "pointer-events-none");
     }
   });
 

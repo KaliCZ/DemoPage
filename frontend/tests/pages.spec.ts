@@ -14,25 +14,19 @@ test.describe("Page rendering", () => {
     await expect(page.getByRole("link", { name: "Najměte mě" })).toBeVisible();
   });
 
-  test("hire-me page shows login prompt when not authenticated", async ({
-    page,
-  }) => {
+  test("hire-me page shows login prompt when not authenticated", async ({ page }) => {
     await page.goto("/hire-me");
     await expect(page.locator("#login-prompt")).toBeVisible();
     await expect(page.locator("#job-offer-form-section")).toBeHidden();
   });
 
-  test("job-offers page shows login prompt when not authenticated", async ({
-    page,
-  }) => {
+  test("job-offers page shows login prompt when not authenticated", async ({ page }) => {
     await page.goto("/job-offers");
     await expect(page.locator("#login-prompt")).toBeVisible();
     await expect(page.locator("#offers-list-section")).toBeHidden();
   });
 
-  test("admin job-offers page shows access denied when not authenticated", async ({
-    page,
-  }) => {
+  test("admin job-offers page shows access denied when not authenticated", async ({ page }) => {
     await page.goto("/admin/job-offers");
     // Wait for auth check to complete (loading spinner disappears)
     await expect(page.locator("#admin-loading")).toBeHidden({ timeout: 10000 });

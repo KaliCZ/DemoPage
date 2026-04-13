@@ -9,9 +9,7 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("E2E Smoke Tests", () => {
-  test("backend health endpoint is reachable and healthy", async ({
-    request,
-  }) => {
+  test("backend health endpoint is reachable and healthy", async ({ request }) => {
     const response = await request.get("http://localhost:5000/health");
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
@@ -19,22 +17,16 @@ test.describe("E2E Smoke Tests", () => {
     expect(body.entries.version.status).toBe("Healthy");
   });
 
-  test("hire-me page shows login prompt with correct content", async ({
-    page,
-  }) => {
+  test("hire-me page shows login prompt with correct content", async ({ page }) => {
     await page.goto("/hire-me");
     await expect(page.locator("#login-prompt")).toBeVisible();
-    await expect(page.locator("#login-prompt")).toContainText(
-      "Authentication Required",
-    );
+    await expect(page.locator("#login-prompt")).toContainText("Authentication Required");
     await expect(page.locator("#login-prompt button")).toContainText("Sign In");
     // Form should be hidden until authenticated
     await expect(page.locator("#job-offer-form-section")).toBeHidden();
   });
 
-  test("job-offers page shows login prompt with correct content", async ({
-    page,
-  }) => {
+  test("job-offers page shows login prompt with correct content", async ({ page }) => {
     await page.goto("/job-offers");
     await expect(page.locator("#login-prompt")).toBeVisible();
     await expect(page.locator("#login-prompt")).toContainText("Sign In");
@@ -58,9 +50,7 @@ test.describe("E2E Smoke Tests", () => {
     expect(getResponse.status()).toBe(401);
   });
 
-  test("nav sign-in button is visible when not authenticated", async ({
-    page,
-  }) => {
+  test("nav sign-in button is visible when not authenticated", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#auth-sign-in-desktop")).toBeVisible();
     await expect(page.locator("#auth-profile-desktop")).toBeHidden();

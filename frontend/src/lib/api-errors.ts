@@ -15,10 +15,7 @@ export type ApiErrorResult = {
  * Expected response shape (RFC 7807):
  * { "errors": { "fieldName": ["ErrorCode"] }, "traceId": "00-..." }
  */
-export async function getApiError(
-  response: Response,
-  errorMap: ApiErrorMap,
-): Promise<ApiErrorResult | null> {
+export async function getApiError(response: Response, errorMap: ApiErrorMap): Promise<ApiErrorResult | null> {
   if (response.status < 400) return null;
   try {
     const body = await response.json();

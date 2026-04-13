@@ -45,29 +45,21 @@ test.describe("Hire Me Flow", () => {
         user_metadata: { full_name: testUser.fullName },
       },
     });
-    expect(
-      response.ok(),
-      `Failed to create test user: ${await response.text()}`,
-    ).toBeTruthy();
+    expect(response.ok(), `Failed to create test user: ${await response.text()}`).toBeTruthy();
   });
 
-  test("login prompt → sign in → submit form → success → verify in job-offers", async ({
-    page,
-  }) => {
+  test("login prompt → sign in → submit form → success → verify in job-offers", async ({ page }) => {
     // 1. Navigate to hire-me and verify login prompt is shown
     await page.goto("/hire-me");
     await expect(page.locator("#login-prompt")).toBeVisible();
-    await expect(page.locator("#login-prompt")).toContainText(
-      "Authentication Required",
-    );
+    await expect(page.locator("#login-prompt")).toContainText("Authentication Required");
     await expect(page.locator("#job-offer-form-section")).toBeHidden();
 
     // 2. Sign in programmatically via the page's Supabase client
     await page.evaluate(
       async ({ email, password }) => {
         const supabase = (window as any).__supabase;
-        if (!supabase)
-          throw new Error("Supabase client not available on window.__supabase");
+        if (!supabase) throw new Error("Supabase client not available on window.__supabase");
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -94,19 +86,14 @@ test.describe("Hire Me Flow", () => {
     await page.fill("#contactName", "E2E Tester");
     await page.fill("#contactEmail", "tester@e2etest.com");
     await page.fill("#jobTitle", "Senior Engineer");
-    await page.fill(
-      "#description",
-      "This is an automated E2E test submission to verify the full hire-me flow.",
-    );
+    await page.fill("#description", "This is an automated E2E test submission to verify the full hire-me flow.");
     await page.fill("#salaryRange", "$100k - $150k");
     await page.fill("#location", "Remote");
     await page.check("#isRemote");
 
     // 6. Inject Turnstile token (widget doesn't auto-complete in headless CI)
     await page.evaluate(() => {
-      let input = document.querySelector<HTMLInputElement>(
-        '[name="cf-turnstile-response"]',
-      );
+      let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
       if (!input) {
         input = document.createElement("input");
         input.type = "hidden";
@@ -126,21 +113,14 @@ test.describe("Hire Me Flow", () => {
     await expect(page.locator("#offer-detail-section")).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.locator("#offer-detail")).toContainText(
-      "Senior Engineer",
-    );
+    await expect(page.locator("#offer-detail")).toContainText("Senior Engineer");
     await expect(page.locator("#offer-detail")).toContainText("E2E Test Corp");
-    await expect(page.locator("#offer-detail")).toContainText(
-      "tester@e2etest.com",
-    );
+    await expect(page.locator("#offer-detail")).toContainText("tester@e2etest.com");
     // Verify the offer is in "Submitted" status
     await expect(page.locator("#offer-detail")).toContainText("Submitted");
   });
 
-  test("submit with attachment → verify file can be downloaded with matching content", async ({
-    page,
-    request,
-  }) => {
+  test("submit with attachment → verify file can be downloaded with matching content", async ({ page, request }) => {
     // Create a temporary text file with known content
     const fileContent = `E2E attachment test — ${Date.now()}`;
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "e2e-"));
@@ -170,23 +150,16 @@ test.describe("Hire Me Flow", () => {
       await page.fill("#contactName", "File Tester");
       await page.fill("#contactEmail", "file@e2etest.com");
       await page.fill("#jobTitle", "Attachment Engineer");
-      await page.fill(
-        "#description",
-        "Testing that file uploads round-trip correctly.",
-      );
+      await page.fill("#description", "Testing that file uploads round-trip correctly.");
 
       // 3. Attach the file
       const fileInput = page.locator("#attachments");
       await fileInput.setInputFiles(filePath);
-      await expect(page.locator("#file-list")).toContainText(
-        "test-attachment.txt",
-      );
+      await expect(page.locator("#file-list")).toContainText("test-attachment.txt");
 
       // 4. Inject Turnstile token (widget doesn't auto-complete in headless CI)
       await page.evaluate(() => {
-        let input = document.querySelector<HTMLInputElement>(
-          '[name="cf-turnstile-response"]',
-        );
+        let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
         if (!input) {
           input = document.createElement("input");
           input.type = "hidden";
@@ -212,18 +185,13 @@ test.describe("Hire Me Flow", () => {
       });
       expect(listResponse.ok()).toBeTruthy();
       const listData = await listResponse.json();
-      const offer = listData.items.find(
-        (o: any) => o.companyName === "Attachment Test Corp",
-      );
+      const offer = listData.items.find((o: any) => o.companyName === "Attachment Test Corp");
       expect(offer).toBeTruthy();
 
       // 7. Get the offer detail to verify attachment metadata
-      const detailResponse = await request.get(
-        `${API_URL}/api/job-offers/${offer.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const detailResponse = await request.get(`${API_URL}/api/job-offers/${offer.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       expect(detailResponse.ok()).toBeTruthy();
       const detail = await detailResponse.json();
       expect(detail.attachments).toHaveLength(1);
@@ -232,16 +200,10 @@ test.describe("Hire Me Flow", () => {
 
       // 8. Download the file via the API download endpoint
       const encodedName = encodeURIComponent("test-attachment.txt");
-      const downloadResponse = await request.get(
-        `${API_URL}/api/job-offers/${offer.id}/attachments/${encodedName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      expect(
-        downloadResponse.ok(),
-        `Download failed: ${downloadResponse.status()}`,
-      ).toBeTruthy();
+      const downloadResponse = await request.get(`${API_URL}/api/job-offers/${offer.id}/attachments/${encodedName}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(downloadResponse.ok(), `Download failed: ${downloadResponse.status()}`).toBeTruthy();
 
       // 9. Verify the downloaded content matches what we uploaded
       const downloadedContent = await downloadResponse.text();

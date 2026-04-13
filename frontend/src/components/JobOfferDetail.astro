@@ -14,26 +14,15 @@ const { isAdmin, t, f } = Astro.props;
     type="button"
     class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8 cursor-pointer"
   >
-    <span class="material-symbols-outlined text-lg" aria-hidden="true"
-      >arrow_back</span
-    >
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
     {t.list.back}
   </button>
-  <div
-    id="offer-detail"
-    class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"
-  >
-  </div>
+  <div id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"></div>
 
   {
     isAdmin ? (
-      <div
-        id="admin-controls"
-        class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8"
-      >
-        <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-          {t.list.updateStatus}
-        </h3>
+      <div id="admin-controls" class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+        <h3 class="font-headline text-lg font-bold text-on-surface mb-4">{t.list.updateStatus}</h3>
         <div class="flex flex-col sm:flex-row gap-4">
           <select
             id="status-select"
@@ -69,10 +58,7 @@ const { isAdmin, t, f } = Astro.props;
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  for="edit-companyName"
-                  class="block text-sm font-label font-semibold text-on-surface mb-2"
-                >
+                <label for="edit-companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">
                   {f.companyName}
                 </label>
                 <input
@@ -86,10 +72,7 @@ const { isAdmin, t, f } = Astro.props;
                 />
               </div>
               <div>
-                <label
-                  for="edit-contactName"
-                  class="block text-sm font-label font-semibold text-on-surface mb-2"
-                >
+                <label for="edit-contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">
                   {f.contactName}
                 </label>
                 <input
@@ -105,10 +88,7 @@ const { isAdmin, t, f } = Astro.props;
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  for="edit-contactEmail"
-                  class="block text-sm font-label font-semibold text-on-surface mb-2"
-                >
+                <label for="edit-contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">
                   {f.contactEmail}
                 </label>
                 <input
@@ -122,10 +102,7 @@ const { isAdmin, t, f } = Astro.props;
                 />
               </div>
               <div>
-                <label
-                  for="edit-jobTitle"
-                  class="block text-sm font-label font-semibold text-on-surface mb-2"
-                >
+                <label for="edit-jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">
                   {f.jobTitle}
                 </label>
                 <input
@@ -140,10 +117,7 @@ const { isAdmin, t, f } = Astro.props;
               </div>
             </div>
             <div>
-              <label
-                for="edit-description"
-                class="block text-sm font-label font-semibold text-on-surface mb-2"
-              >
+              <label for="edit-description" class="block text-sm font-label font-semibold text-on-surface mb-2">
                 {f.description}
               </label>
               <textarea
@@ -158,10 +132,7 @@ const { isAdmin, t, f } = Astro.props;
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  for="edit-salaryRange"
-                  class="block text-sm font-label font-semibold text-on-surface mb-2"
-                >
+                <label for="edit-salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">
                   {f.salaryRange}
                 </label>
                 <input
@@ -174,10 +145,7 @@ const { isAdmin, t, f } = Astro.props;
                 />
               </div>
               <div>
-                <label
-                  for="edit-location"
-                  class="block text-sm font-label font-semibold text-on-surface mb-2"
-                >
+                <label for="edit-location" class="block text-sm font-label font-semibold text-on-surface mb-2">
                   {f.location}
                 </label>
                 <input
@@ -197,18 +165,12 @@ const { isAdmin, t, f } = Astro.props;
                 name="isRemote"
                 class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary"
               />
-              <label
-                for="edit-isRemote"
-                class="text-sm font-label font-semibold text-on-surface"
-              >
+              <label for="edit-isRemote" class="text-sm font-label font-semibold text-on-surface">
                 {f.isRemote}
               </label>
             </div>
             <div>
-              <label
-                for="edit-additionalNotes"
-                class="block text-sm font-label font-semibold text-on-surface mb-2"
-              >
+              <label for="edit-additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">
                 {f.additionalNotes}
               </label>
               <textarea
@@ -262,16 +224,9 @@ const { isAdmin, t, f } = Astro.props;
           </button>
         </div>
 
-        <div
-          id="cancel-controls"
-          class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8"
-        >
-          <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-            {t.list.cancel}
-          </h3>
-          <p class="text-sm text-on-surface-variant font-body mb-4">
-            {t.list.cancelConfirm}
-          </p>
+        <div id="cancel-controls" class="hidden mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+          <h3 class="font-headline text-lg font-bold text-on-surface mb-4">{t.list.cancel}</h3>
+          <p class="text-sm text-on-surface-variant font-body mb-4">{t.list.cancelConfirm}</p>
           <textarea
             id="cancel-reason"
             rows="2"
@@ -291,15 +246,9 @@ const { isAdmin, t, f } = Astro.props;
   }
 
   <!-- Comments -->
-  <div
-    id="comments-section"
-    class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8"
-  >
+  <div id="comments-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
     <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-      <span
-        class="material-symbols-outlined text-lg align-middle mr-1"
-        aria-hidden="true">chat</span
-      >
+      <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">chat</span>
       {t.list.comments}
     </h3>
     <div id="comments-list" class="space-y-4 mb-4"></div>
@@ -321,15 +270,9 @@ const { isAdmin, t, f } = Astro.props;
   </div>
 
   <!-- Activity log -->
-  <div
-    id="history-section"
-    class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8"
-  >
+  <div id="history-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
     <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-      <span
-        class="material-symbols-outlined text-lg align-middle mr-1"
-        aria-hidden="true">history</span
-      >
+      <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">history</span>
       {t.list.history}
     </h3>
     <div id="history-list" class="space-y-3"></div>

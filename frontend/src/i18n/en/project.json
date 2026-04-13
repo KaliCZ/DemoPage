@@ -40,12 +40,7 @@
   "techStack": {
     "title": "Engineered With",
     "frontendLabel": "Frontend",
-    "frontendItems": [
-      "Astro",
-      "Tailwind CSS",
-      "Supabase Auth",
-      "Cloudflare Pages"
-    ],
+    "frontendItems": ["Astro", "Tailwind CSS", "Supabase Auth", "Cloudflare Pages"],
     "backendLabel": "Backend",
     "backendItems": ["C# ASP.NET Core", "PostgreSQL", "Marten Event Sourcing"],
     "infraLabel": "Infrastructure",
@@ -75,12 +70,7 @@
         "icon": "science",
         "title": "Technology Playground",
         "description": "Experiment with new technologies in a real, deployed project.",
-        "subItems": [
-          "Event sourcing",
-          "Free Cloudflare Pages",
-          "Supabase ecosystem",
-          "Temporal"
-        ]
+        "subItems": ["Event sourcing", "Free Cloudflare Pages", "Supabase ecosystem", "Temporal"]
       }
     ],
     "nfrTitle": "Non-Functional Requirements",

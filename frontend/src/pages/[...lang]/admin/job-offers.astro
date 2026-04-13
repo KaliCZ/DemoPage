@@ -1,12 +1,7 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
 import JobOfferDetail from "../../../components/JobOfferDetail.astro";
-import {
-  locales,
-  defaultLocale,
-  localePath,
-  type Locale,
-} from "../../../i18n/utils";
+import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import enStrings from "../../../i18n/en/admin-job-offers.json";
 import csStrings from "../../../i18n/cs/admin-job-offers.json";
 import enCommon from "../../../i18n/en/common.json";
@@ -26,21 +21,11 @@ const t = translations[lang];
 const c = commonTranslations[lang];
 ---
 
-<Layout
-  title={t.meta.title}
-  description={t.meta.description}
-  activePage="admin/job-offers"
-  lang={lang}
->
+<Layout title={t.meta.title} description={t.meta.description} activePage="admin/job-offers" lang={lang}>
   <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
-    <h1
-      class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6"
-    >
-      <span
-        class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
-        >{t.hero.title}</span
-      >
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
     <p class="text-lg text-on-surface-variant font-body max-w-xl">
       {t.hero.subtitle}
@@ -50,22 +35,14 @@ const c = commonTranslations[lang];
   <!-- Loading (shown until auth check completes) -->
   <section id="admin-loading" class="max-w-5xl mx-auto px-8 mb-16">
     <div class="text-center py-12">
-      <span
-        class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin"
-        aria-hidden="true">progress_activity</span
-      >
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
     </div>
   </section>
 
   <!-- Access denied -->
   <section id="access-denied" class="hidden max-w-5xl mx-auto px-8 mb-16">
-    <div
-      class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center"
-    >
-      <span
-        class="material-symbols-outlined text-5xl text-error mb-4 block"
-        aria-hidden="true">block</span
-      >
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-error mb-4 block" aria-hidden="true">block</span>
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.accessDenied.title}
       </h2>
@@ -92,17 +69,10 @@ const c = commonTranslations[lang];
         aria-haspopup="listbox"
         aria-expanded="false"
       >
-        <span class="material-symbols-outlined text-lg" aria-hidden="true"
-          >filter_list</span
-        >
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_list</span>
         <span id="filter-label">{t.list.filterByStatus}</span>
-        <span
-          id="filter-count"
-          class="hidden px-1.5 py-0.5 rounded-full text-xs bg-primary text-on-primary"
-        ></span>
-        <span class="material-symbols-outlined text-lg ml-1" aria-hidden="true"
-          >expand_more</span
-        >
+        <span id="filter-count" class="hidden px-1.5 py-0.5 rounded-full text-xs bg-primary text-on-primary"></span>
+        <span class="material-symbols-outlined text-lg ml-1" aria-hidden="true">expand_more</span>
       </button>
       <div
         id="status-filter-menu"
@@ -111,88 +81,54 @@ const c = commonTranslations[lang];
         aria-multiselectable="true"
         aria-label={t.list.filterByStatus}
       >
-        <label
-          class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer"
-          role="option"
-        >
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
           <input
             type="checkbox"
             value="Submitted"
             class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
           />
-          <span class="text-sm font-label text-on-surface"
-            >{t.list.submitted}</span
-          >
+          <span class="text-sm font-label text-on-surface">{t.list.submitted}</span>
         </label>
-        <label
-          class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer"
-          role="option"
-        >
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
           <input
             type="checkbox"
             value="InReview"
             class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
           />
-          <span class="text-sm font-label text-on-surface"
-            >{t.list.inReview}</span
-          >
+          <span class="text-sm font-label text-on-surface">{t.list.inReview}</span>
         </label>
-        <label
-          class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer"
-          role="option"
-        >
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
           <input
             type="checkbox"
             value="LetsTalk"
             class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
           />
-          <span class="text-sm font-label text-on-surface"
-            >{t.list.accepted}</span
-          >
+          <span class="text-sm font-label text-on-surface">{t.list.accepted}</span>
         </label>
-        <label
-          class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer"
-          role="option"
-        >
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
           <input
             type="checkbox"
             value="Declined"
             class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
           />
-          <span class="text-sm font-label text-on-surface"
-            >{t.list.declined}</span
-          >
+          <span class="text-sm font-label text-on-surface">{t.list.declined}</span>
         </label>
-        <label
-          class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer"
-          role="option"
-        >
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
           <input
             type="checkbox"
             value="Cancelled"
             class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
           />
-          <span class="text-sm font-label text-on-surface"
-            >{t.list.cancelled}</span
-          >
+          <span class="text-sm font-label text-on-surface">{t.list.cancelled}</span>
         </label>
       </div>
     </div>
 
     <div id="offers-loading" class="text-center py-12">
-      <span
-        class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin"
-        aria-hidden="true">progress_activity</span
-      >
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
     </div>
-    <div
-      id="offers-empty"
-      class="hidden bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center"
-    >
-      <span
-        class="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-4 block"
-        aria-hidden="true">inbox</span
-      >
+    <div id="offers-empty" class="hidden bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-4 block" aria-hidden="true">inbox</span>
       <h2 class="font-headline text-xl font-bold text-on-surface mb-3">
         {t.empty.title}
       </h2>
@@ -200,25 +136,17 @@ const c = commonTranslations[lang];
     </div>
     <div id="offers-grid" class="hidden grid gap-4"></div>
     <!-- Pagination controls -->
-    <nav
-      id="pagination-controls"
-      class="hidden flex items-center justify-center gap-3 mt-8"
-      aria-label="Pagination"
-    >
+    <nav id="pagination-controls" class="hidden flex items-center justify-center gap-3 mt-8" aria-label="Pagination">
       <button
         id="pagination-prev"
         type="button"
         class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         disabled
       >
-        <span class="material-symbols-outlined text-lg" aria-hidden="true"
-          >chevron_left</span
-        >
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
         {t.list.paginationPrev}
       </button>
-      <span
-        id="pagination-indicator"
-        class="text-sm font-label text-on-surface-variant"></span>
+      <span id="pagination-indicator" class="text-sm font-label text-on-surface-variant"></span>
       <button
         id="pagination-next"
         type="button"
@@ -226,9 +154,7 @@ const c = commonTranslations[lang];
         disabled
       >
         {t.list.paginationNext}
-        <span class="material-symbols-outlined text-lg" aria-hidden="true"
-          >chevron_right</span
-        >
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
       </button>
     </nav>
   </section>
@@ -274,13 +200,7 @@ const c = commonTranslations[lang];
     var pageSize = 10;
 
     function showError(status, traceId) {
-      var msg = !status
-        ? errorNetwork
-        : status === 404
-          ? errorNotFound
-          : status >= 500
-            ? errorServer
-            : errorText;
+      var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;
       window.__showSnackbar?.(msg, "error", 8000, traceId);
     }
 
@@ -311,11 +231,7 @@ const c = commonTranslations[lang];
         var now = Date.now();
         var valid = {};
         for (var id in raw) {
-          if (
-            raw[id] &&
-            raw[id]._ts &&
-            now - raw[id]._ts < USER_INFO_CACHE_TTL
-          ) {
+          if (raw[id] && raw[id]._ts && now - raw[id]._ts < USER_INFO_CACHE_TTL) {
             valid[id] = raw[id];
           }
         }
@@ -341,12 +257,9 @@ const c = commonTranslations[lang];
       if (uncached.length > 0) {
         try {
           var token = await window.__getAccessToken?.();
-          var res = await fetch(
-            apiUrl + "/api/users?ids=" + uncached.join("&ids="),
-            {
-              headers: { Authorization: "Bearer " + token },
-            },
-          );
+          var res = await fetch(apiUrl + "/api/users?ids=" + uncached.join("&ids="), {
+            headers: { Authorization: "Bearer " + token },
+          });
           if (res.ok) {
             var data = await res.json();
             var now = Date.now();
@@ -365,8 +278,7 @@ const c = commonTranslations[lang];
       }
       var result = {};
       userIds.forEach(function (id) {
-        if (userInfoCache[id] && userInfoCache[id].displayName)
-          result[id] = userInfoCache[id];
+        if (userInfoCache[id] && userInfoCache[id].displayName) result[id] = userInfoCache[id];
       });
       return result;
     }
@@ -398,9 +310,7 @@ const c = commonTranslations[lang];
         return;
       }
 
-      var isAdmin =
-        Array.isArray(user.app_metadata?.roles) &&
-        user.app_metadata.roles.indexOf("admin") !== -1;
+      var isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
       if (!isAdmin) {
         loadedForUserId = null;
         document.getElementById("access-denied")?.classList.remove("hidden");
@@ -412,9 +322,7 @@ const c = commonTranslations[lang];
       loadedForUserId = user.id;
 
       document.getElementById("access-denied")?.classList.add("hidden");
-      document
-        .getElementById("offers-list-section")
-        ?.classList.remove("hidden");
+      document.getElementById("offers-list-section")?.classList.remove("hidden");
       await loadOffers();
       checkHashOnLoad();
     });
@@ -512,18 +420,14 @@ const c = commonTranslations[lang];
       controls?.classList.remove("hidden");
       prevBtn.disabled = !p.hasPreviousPage;
       nextBtn.disabled = !p.hasNextPage;
-      indicator.textContent = paginationPageLabel
-        .replace("{current}", String(p.page))
-        .replace("{total}", String(p.pageCount));
+      indicator.textContent = paginationPageLabel.replace("{current}", String(p.page)).replace("{total}", String(p.pageCount));
     }
 
     async function showDetail(id, skipHashUpdate) {
       currentOfferId = id;
       if (!skipHashUpdate) history.pushState(null, "", "#" + id);
       document.getElementById("offers-list-section")?.classList.add("hidden");
-      document
-        .getElementById("offer-detail-section")
-        ?.classList.remove("hidden");
+      document.getElementById("offer-detail-section")?.classList.remove("hidden");
 
       var headers = { Authorization: "Bearer " + currentToken };
       var detailRes, historyRes, commentsRes;
@@ -578,9 +482,7 @@ const c = commonTranslations[lang];
         "</p></div>" +
         '<div><p class="text-xs font-label text-on-surface-variant mb-1">Location</p><p class="text-sm font-body text-on-surface">' +
         (offer.location ? esc(offer.location) : "—") +
-        (offer.isRemote
-          ? ' <span class="text-tertiary">(' + remoteLabel + ")</span>"
-          : "") +
+        (offer.isRemote ? ' <span class="text-tertiary">(' + remoteLabel + ")</span>" : "") +
         "</p></div>" +
         (offer.salaryRange
           ? '<div><p class="text-xs font-label text-on-surface-variant mb-1">Salary</p><p class="text-sm font-body text-on-surface">' +
@@ -607,9 +509,7 @@ const c = commonTranslations[lang];
             offer.attachments
               .map(function (att) {
                 var sizeStr =
-                  att.fileSize >= 1024 * 1024
-                    ? (att.fileSize / 1024 / 1024).toFixed(1) + " MB"
-                    : Math.round(att.fileSize / 1024) + " KB";
+                  att.fileSize >= 1024 * 1024 ? (att.fileSize / 1024 / 1024).toFixed(1) + " MB" : Math.round(att.fileSize / 1024) + " KB";
                 return (
                   '<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm">' +
                   '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
@@ -640,50 +540,34 @@ const c = commonTranslations[lang];
           : "");
 
       // Bind download buttons
-      detail
-        .querySelectorAll(".download-attachment-btn")
-        .forEach(function (btn) {
-          btn.addEventListener("click", async function () {
-            var fileName = btn.getAttribute("data-file-name");
-            if (!currentOfferId || !fileName || !currentToken) return;
+      detail.querySelectorAll(".download-attachment-btn").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var fileName = btn.getAttribute("data-file-name");
+          if (!currentOfferId || !fileName || !currentToken) return;
 
-            try {
-              var encodedName = encodeURIComponent(fileName);
-              var response = await fetch(
-                apiUrl +
-                  "/api/job-offers/" +
-                  currentOfferId +
-                  "/attachments/" +
-                  encodedName,
-                {
-                  headers: { Authorization: "Bearer " + currentToken },
-                },
-              );
+          try {
+            var encodedName = encodeURIComponent(fileName);
+            var response = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/attachments/" + encodedName, {
+              headers: { Authorization: "Bearer " + currentToken },
+            });
 
-              if (!response.ok) {
-                window.__showSnackbar?.(
-                  response.status === 404
-                    ? errorDownload
-                    : response.status >= 500
-                      ? errorServer
-                      : errorText,
-                  "error",
-                );
-                return;
-              }
-
-              var blob = await response.blob();
-              var url = URL.createObjectURL(blob);
-              var a = document.createElement("a");
-              a.href = url;
-              a.download = fileName;
-              a.click();
-              URL.revokeObjectURL(url);
-            } catch (e) {
-              showError();
+            if (!response.ok) {
+              window.__showSnackbar?.(response.status === 404 ? errorDownload : response.status >= 500 ? errorServer : errorText, "error");
+              return;
             }
-          });
+
+            var blob = await response.blob();
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            showError();
+          }
         });
+      });
     }
 
     function renderControls(offer) {
@@ -702,8 +586,7 @@ const c = commonTranslations[lang];
 
     function formatFieldValue(val, field) {
       if (val == null || val === "") return "—";
-      if (field === "IsRemote")
-        return val === "true" ? historyFieldYes : historyFieldNo;
+      if (field === "IsRemote") return val === "true" ? historyFieldYes : historyFieldNo;
       return esc(val);
     }
 
@@ -715,8 +598,7 @@ const c = commonTranslations[lang];
         '<ul class="mt-1 space-y-1 list-none pl-0">' +
         changes
           .map(function (c) {
-            var label =
-              (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
+            var label = (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
             if (longTextFields[c.field]) {
               var id = "diff-" + ++diffIdCounter;
               return (
@@ -779,10 +661,7 @@ const c = commonTranslations[lang];
         return e.eventType !== "Comment";
       });
       if (entries.length === 0) {
-        historyList.innerHTML =
-          '<p class="text-sm text-on-surface-variant font-body">' +
-          historyEmptyLabel +
-          "</p>";
+        historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + "</p>";
         return;
       }
       var users = await fetchUserInfo(
@@ -798,22 +677,15 @@ const c = commonTranslations[lang];
         var userInfo = users[entry.actorUserId];
         var actorHtml =
           userInfo && userInfo.avatarUrl
-            ? '<img src="' +
-              esc(userInfo.avatarUrl) +
-              '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+            ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
             : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' +
               icon +
               "</span>";
         var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
         var hasChanges = entry.changes && entry.changes.length > 0;
         var descHtml = hasChanges
-          ? '<p class="font-body text-on-surface">' +
-            esc(entry.description) +
-            "</p>" +
-            renderChanges(entry.changes)
-          : '<p class="font-body text-on-surface">' +
-            esc(entry.description) +
-            "</p>";
+          ? '<p class="font-body text-on-surface">' + esc(entry.description) + "</p>" + renderChanges(entry.changes)
+          : '<p class="font-body text-on-surface">' + esc(entry.description) + "</p>";
         el.innerHTML =
           actorHtml +
           '<div class="flex-1 min-w-0">' +
@@ -835,10 +707,7 @@ const c = commonTranslations[lang];
           if (!panel) return;
           var icon = btn.querySelector(".material-symbols-outlined");
           panel.classList.toggle("hidden");
-          if (icon)
-            icon.style.transform = panel.classList.contains("hidden")
-              ? ""
-              : "rotate(180deg)";
+          if (icon) icon.style.transform = panel.classList.contains("hidden") ? "" : "rotate(180deg)";
         });
       });
     }
@@ -847,10 +716,7 @@ const c = commonTranslations[lang];
       var list = document.getElementById("comments-list");
       if (!list) return;
       if (data.comments.length === 0) {
-        list.innerHTML =
-          '<p class="text-sm text-on-surface-variant font-body">' +
-          commentsEmptyLabel +
-          "</p>";
+        list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + "</p>";
         return;
       }
       var users = await fetchUserInfo(
@@ -866,9 +732,7 @@ const c = commonTranslations[lang];
         var displayName = (userInfo && userInfo.displayName) || c.userName;
         var avatarHtml =
           userInfo && userInfo.avatarUrl
-            ? '<img src="' +
-              esc(userInfo.avatarUrl) +
-              '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+            ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
             : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
               '<span class="text-xs font-bold text-on-primary-container">' +
               esc(displayName.charAt(0).toUpperCase()) +
@@ -894,37 +758,32 @@ const c = commonTranslations[lang];
     }
 
     // Admin status save
-    document
-      .getElementById("save-status")
-      ?.addEventListener("click", async function () {
-        if (!currentOfferId) return;
-        var status = document.getElementById("status-select")?.value;
-        var notes = document.getElementById("admin-notes-input")?.value;
-        try {
-          var res = await fetch(
-            apiUrl + "/api/job-offers/" + currentOfferId + "/status",
-            {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + currentToken,
-              },
-              body: JSON.stringify({
-                status: status,
-                adminNotes: notes || null,
-              }),
-            },
-          );
-        } catch (e) {
-          showError();
-          return;
-        }
-        if (!res.ok) {
-          await showApiError(res);
-          return;
-        }
-        await showDetail(currentOfferId);
-      });
+    document.getElementById("save-status")?.addEventListener("click", async function () {
+      if (!currentOfferId) return;
+      var status = document.getElementById("status-select")?.value;
+      var notes = document.getElementById("admin-notes-input")?.value;
+      try {
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/status", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify({
+            status: status,
+            adminNotes: notes || null,
+          }),
+        });
+      } catch (e) {
+        showError();
+        return;
+      }
+      if (!res.ok) {
+        await showApiError(res);
+        return;
+      }
+      await showDetail(currentOfferId);
+    });
 
     // Send comment
     async function sendComment() {
@@ -933,17 +792,14 @@ const c = commonTranslations[lang];
       if (!content || !currentOfferId) return;
 
       try {
-        var res = await fetch(
-          apiUrl + "/api/job-offers/" + currentOfferId + "/comments",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + currentToken,
-            },
-            body: JSON.stringify({ content: content }),
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
           },
-        );
+          body: JSON.stringify({ content: content }),
+        });
       } catch (e) {
         showError();
         return;
@@ -951,54 +807,40 @@ const c = commonTranslations[lang];
 
       if (res.ok) {
         if (input) input.value = "";
-        var commentsRes = await fetch(
-          apiUrl + "/api/job-offers/" + currentOfferId + "/comments",
-          {
-            headers: { Authorization: "Bearer " + currentToken },
-          },
-        );
+        var commentsRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
+          headers: { Authorization: "Bearer " + currentToken },
+        });
         if (commentsRes.ok) await renderComments(await commentsRes.json());
-        var historyRes = await fetch(
-          apiUrl + "/api/job-offers/" + currentOfferId + "/history",
-          {
-            headers: { Authorization: "Bearer " + currentToken },
-          },
-        );
+        var historyRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/history", {
+          headers: { Authorization: "Bearer " + currentToken },
+        });
         if (historyRes.ok) await renderHistory(await historyRes.json());
       } else {
         await showApiError(res);
       }
     }
 
-    document
-      .getElementById("send-comment")
-      ?.addEventListener("click", sendComment);
+    document.getElementById("send-comment")?.addEventListener("click", sendComment);
 
-    document
-      .getElementById("comment-input")
-      ?.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendComment();
-        }
-      });
+    document.getElementById("comment-input")?.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendComment();
+      }
+    });
 
     // Back to list
     function backToList() {
       currentOfferId = null;
       currentOffer = null;
       document.getElementById("offer-detail-section")?.classList.add("hidden");
-      document
-        .getElementById("offers-list-section")
-        ?.classList.remove("hidden");
+      document.getElementById("offers-list-section")?.classList.remove("hidden");
     }
 
-    document
-      .getElementById("back-to-list")
-      ?.addEventListener("click", function () {
-        history.pushState(null, "", location.pathname + location.search);
-        backToList();
-      });
+    document.getElementById("back-to-list")?.addEventListener("click", function () {
+      history.pushState(null, "", location.pathname + location.search);
+      backToList();
+    });
 
     window.addEventListener("popstate", function () {
       var hash = location.hash.replace("#", "");
@@ -1029,10 +871,7 @@ const c = commonTranslations[lang];
     });
 
     document.addEventListener("click", function (e) {
-      if (
-        !filterToggle?.contains(e.target) &&
-        !filterMenu?.contains(e.target)
-      ) {
+      if (!filterToggle?.contains(e.target) && !filterMenu?.contains(e.target)) {
         filterMenu?.classList.add("hidden");
         filterToggle?.setAttribute("aria-expanded", "false");
       }
@@ -1041,11 +880,9 @@ const c = commonTranslations[lang];
     document.querySelectorAll(".status-checkbox").forEach(function (cb) {
       cb.addEventListener("change", async function () {
         activeStatuses = [];
-        document
-          .querySelectorAll(".status-checkbox:checked")
-          .forEach(function (c) {
-            activeStatuses.push(c.value);
-          });
+        document.querySelectorAll(".status-checkbox:checked").forEach(function (c) {
+          activeStatuses.push(c.value);
+        });
         if (activeStatuses.length > 0) {
           filterCount.textContent = activeStatuses.length;
           filterCount.classList.remove("hidden");
@@ -1063,21 +900,17 @@ const c = commonTranslations[lang];
       });
     });
 
-    document
-      .getElementById("pagination-prev")
-      ?.addEventListener("click", async function () {
-        if (currentPage > 1) {
-          currentPage--;
-          await loadOffers();
-        }
-      });
-
-    document
-      .getElementById("pagination-next")
-      ?.addEventListener("click", async function () {
-        currentPage++;
+    document.getElementById("pagination-prev")?.addEventListener("click", async function () {
+      if (currentPage > 1) {
+        currentPage--;
         await loadOffers();
-      });
+      }
+    });
+
+    document.getElementById("pagination-next")?.addEventListener("click", async function () {
+      currentPage++;
+      await loadOffers();
+    });
 
     function esc(str) {
       if (!str) return "";

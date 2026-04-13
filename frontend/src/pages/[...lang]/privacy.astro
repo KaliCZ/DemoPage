@@ -16,16 +16,9 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 ---
 
-<Layout
-  title={t.meta.title}
-  description={t.meta.description}
-  activePage="privacy"
-  lang={lang}
->
+<Layout title={t.meta.title} description={t.meta.description} activePage="privacy" lang={lang}>
   <section class="max-w-3xl mx-auto px-8 mb-24">
-    <h1
-      class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter mb-4"
-    >
+    <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
       {t.heading}
     </h1>
     <p class="text-on-surface-variant text-sm mb-8">{t.lastUpdated}</p>
@@ -37,12 +30,8 @@ const t = translations[lang];
       {
         t.sections.map((section) => (
           <div>
-            <h2 class="font-headline text-2xl font-bold mb-3">
-              {section.title}
-            </h2>
-            <p class="text-on-surface-variant leading-relaxed">
-              {section.content}
-            </p>
+            <h2 class="font-headline text-2xl font-bold mb-3">{section.title}</h2>
+            <p class="text-on-surface-variant leading-relaxed">{section.content}</p>
             {section.items && (
               <ul class="mt-3 space-y-2 list-disc list-inside text-on-surface-variant">
                 {section.items.map((item) => (

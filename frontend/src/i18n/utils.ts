@@ -14,10 +14,7 @@ export function localePath(lang: Locale, page: string): string {
 /**
  * Returns the alternate-language URL for the language picker.
  */
-export function alternateLangUrl(
-  targetLang: Locale,
-  activePage: string,
-): string {
+export function alternateLangUrl(targetLang: Locale, activePage: string): string {
   const base = targetLang === "cs" ? "/cs" : "";
   return activePage === "home" ? `${base}/` : `${base}/${activePage}`;
 }

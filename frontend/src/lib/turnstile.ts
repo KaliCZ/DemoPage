@@ -22,9 +22,7 @@ declare global {
 
 export type TurnstileAppearance = "interaction-only" | "always" | "execute";
 
-const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as
-  | string
-  | undefined;
+const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
 
 export function turnstileEnabled(): boolean {
   return !!SITE_KEY;
@@ -133,11 +131,7 @@ export function recordSuccess(key: string): void {
   write(key, null);
 }
 
-export function shouldForceInteractive(
-  key: string,
-  threshold = 3,
-  windowMs = 15 * 60 * 1000,
-): boolean {
+export function shouldForceInteractive(key: string, threshold = 3, windowMs = 15 * 60 * 1000): boolean {
   if (!key) return false;
   const rec = read(key);
   if (!rec) return false;

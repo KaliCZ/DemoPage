@@ -40,12 +40,7 @@
   "techStack": {
     "title": "Postaveno na",
     "frontendLabel": "Frontend",
-    "frontendItems": [
-      "Astro",
-      "Tailwind CSS",
-      "Supabase Auth",
-      "Cloudflare Pages"
-    ],
+    "frontendItems": ["Astro", "Tailwind CSS", "Supabase Auth", "Cloudflare Pages"],
     "backendLabel": "Backend",
     "backendItems": ["C# ASP.NET Core", "PostgreSQL", "Marten Event Sourcing"],
     "infraLabel": "Infrastruktura",
@@ -75,12 +70,7 @@
         "icon": "science",
         "title": "Technologické hřiště",
         "description": "Experimentovat s novými technologiemi v reálném, nasazeném projektu.",
-        "subItems": [
-          "Event sourcing",
-          "Cloudflare Pages zdarma",
-          "Ekosystém Supabase",
-          "Temporal"
-        ]
+        "subItems": ["Event sourcing", "Cloudflare Pages zdarma", "Ekosystém Supabase", "Temporal"]
       }
     ],
     "nfrTitle": "Nefunkční požadavky",

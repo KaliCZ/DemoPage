@@ -12,16 +12,7 @@ import csCommon from "../i18n/cs/common.json";
 interface Props {
   title: string;
   description?: string;
-  activePage:
-    | "home"
-    | "about"
-    | "project"
-    | "hire-me"
-    | "job-offers"
-    | "admin/job-offers"
-    | "profile"
-    | "privacy"
-    | "terms";
+  activePage: "home" | "about" | "project" | "hire-me" | "job-offers" | "admin/job-offers" | "profile" | "privacy" | "terms";
   lang?: Locale;
 }
 
@@ -35,10 +26,8 @@ const {
 const t = lang === "cs" ? csCommon : enCommon;
 
 const siteUrl = "https://www.kalandra.tech";
-const enUrl =
-  activePage === "home" ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
-const csUrl =
-  activePage === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
+const enUrl = activePage === "home" ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
+const csUrl = activePage === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
 const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 ---
 
@@ -50,16 +39,8 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta name="description" content={description} />
     <meta name="author" content="Pavel Kalandra" />
     <meta name="robots" content="index, follow" />
-    <meta
-      name="theme-color"
-      content="#f3f1ed"
-      media="(prefers-color-scheme: light)"
-    />
-    <meta
-      name="theme-color"
-      content="#131313"
-      media="(prefers-color-scheme: dark)"
-    />
+    <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
 
     <!-- Canonical & hreflang -->
     <link rel="canonical" href={canonicalUrl} />
@@ -75,30 +56,18 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content={lang === "cs" ? "cs_CZ" : "en_US"} />
-    <meta
-      property="og:locale:alternate"
-      content={lang === "cs" ? "en_US" : "cs_CZ"}
-    />
+    <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
 
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script
-      src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-      async
-      defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <title>{title}</title>
 
     <script is:inline>
       (function () {
         var theme = localStorage.getItem("theme");
-        if (
-          theme === "dark" ||
-          (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-        ) {
+        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
         }
         // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
@@ -110,11 +79,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
           var session = null;
           for (var i = 0; i < localStorage.length; i++) {
             var k = localStorage.key(i);
-            if (
-              k &&
-              k.indexOf("sb-") === 0 &&
-              k.indexOf("-auth-token") === k.length - 11
-            ) {
+            if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
               var v = localStorage.getItem(k);
               if (v && v.length > 2) {
                 try {
@@ -128,14 +93,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             var u = session.user;
             var meta = u.user_metadata || {};
             window.__authPrefill = {
-              name:
-                meta.full_name || (u.email ? u.email.split("@")[0] : "User"),
+              name: meta.full_name || (u.email ? u.email.split("@")[0] : "User"),
               avatar: meta.avatar_url || "",
-              isAdmin: !!(
-                u.app_metadata &&
-                Array.isArray(u.app_metadata.roles) &&
-                u.app_metadata.roles.indexOf("admin") !== -1
-              ),
+              isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf("admin") !== -1),
             };
             document.documentElement.classList.add("auth-known-in");
           } else {
@@ -257,11 +217,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
       const supabase = getSupabaseClient();
 
-      function setAvatarOrInitial(
-        imgEl: HTMLImageElement | null,
-        name: string,
-        avatarUrl: string,
-      ) {
+      function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
         if (!imgEl) return;
         if (avatarUrl) {
           imgEl.src = avatarUrl;
@@ -281,28 +237,17 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       function updateAuthUI(user: any) {
         const signInDesktop = document.getElementById("auth-sign-in-desktop");
         const profileDesktop = document.getElementById("auth-profile-desktop");
-        const avatarDesktop = document.getElementById(
-          "auth-avatar-desktop",
-        ) as HTMLImageElement;
+        const avatarDesktop = document.getElementById("auth-avatar-desktop") as HTMLImageElement;
         const nameDesktop = document.getElementById("auth-name-desktop");
         const signInMobile = document.getElementById("auth-sign-in-mobile");
         const profileMobile = document.getElementById("auth-profile-mobile");
-        const avatarMobile = document.getElementById(
-          "auth-avatar-mobile",
-        ) as HTMLImageElement;
-        const adminLinkDesktop = document.getElementById(
-          "auth-admin-link-desktop",
-        );
+        const avatarMobile = document.getElementById("auth-avatar-mobile") as HTMLImageElement;
+        const adminLinkDesktop = document.getElementById("auth-admin-link-desktop");
 
         if (user) {
-          const name =
-            user.user_metadata?.full_name ||
-            user.email?.split("@")[0] ||
-            "User";
+          const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
           const avatar = user.user_metadata?.avatar_url || "";
-          const isAdmin =
-            Array.isArray(user.app_metadata?.roles) &&
-            user.app_metadata.roles.indexOf("admin") !== -1;
+          const isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
 
           if (signInDesktop) signInDesktop.classList.add("hidden");
           if (profileDesktop) {
@@ -315,12 +260,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             profileMobile.classList.remove("hidden");
             setAvatarOrInitial(avatarMobile, name, avatar);
           }
-          if (adminLinkDesktop)
-            adminLinkDesktop.classList.toggle("hidden", !isAdmin);
+          if (adminLinkDesktop) adminLinkDesktop.classList.toggle("hidden", !isAdmin);
 
-          window.dispatchEvent(
-            new CustomEvent("auth-change", { detail: { user } }),
-          );
+          window.dispatchEvent(new CustomEvent("auth-change", { detail: { user } }));
         } else {
           if (signInDesktop) signInDesktop.classList.remove("hidden");
           if (profileDesktop) profileDesktop.classList.add("hidden");
@@ -328,9 +270,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
           if (profileMobile) profileMobile.classList.add("hidden");
           if (adminLinkDesktop) adminLinkDesktop.classList.add("hidden");
 
-          window.dispatchEvent(
-            new CustomEvent("auth-change", { detail: { user: null } }),
-          );
+          window.dispatchEvent(new CustomEvent("auth-change", { detail: { user: null } }));
         }
       }
 
@@ -345,10 +285,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         supabase.auth.getSession().then(({ data: { session } }) => {
           updateAuthUI(session?.user ?? null);
           // Hand visibility control back to JS now that the real session is known.
-          document.documentElement.classList.remove(
-            "auth-known-in",
-            "auth-known-out",
-          );
+          document.documentElement.classList.remove("auth-known-in", "auth-known-out");
         });
 
         supabase.auth.onAuthStateChange((_event, session) => {
@@ -357,15 +294,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       }
 
       const openDialog = () => (window as any).__openAuthDialog?.();
-      document
-        .getElementById("auth-sign-in-desktop")
-        ?.addEventListener("click", openDialog);
-      document
-        .getElementById("auth-sign-in-mobile")
-        ?.addEventListener("click", openDialog);
-      document
-        .getElementById("auth-sign-out-desktop")
-        ?.addEventListener("click", signOut);
+      document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-out-desktop")?.addEventListener("click", signOut);
 
       // Expose globals for other pages and E2E tests
       (window as any).__supabase = supabase;
@@ -394,16 +325,8 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       const authError = hashParams.get("error_description");
       if (authError) {
         (window as any).__supabase?.auth.signOut();
-        (window as any).__showSnackbar(
-          decodeURIComponent(authError),
-          "error",
-          0,
-        );
-        history.replaceState(
-          null,
-          "",
-          window.location.pathname + window.location.search,
-        );
+        (window as any).__showSnackbar(decodeURIComponent(authError), "error", 0);
+        history.replaceState(null, "", window.location.pathname + window.location.search);
       }
     </script>
 

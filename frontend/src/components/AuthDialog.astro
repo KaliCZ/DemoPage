@@ -29,10 +29,7 @@ const t = lang === "cs" ? csCommon : enCommon;
 >
   <div class="space-y-5">
     <div>
-      <h2
-        id="auth-dialog-title"
-        class="font-headline text-xl font-bold text-on-surface"
-      >
+      <h2 id="auth-dialog-title" class="font-headline text-xl font-bold text-on-surface">
         {t.auth.signIn}
       </h2>
     </div>
@@ -40,11 +37,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     <!-- Email / password form -->
     <div class="space-y-3">
       <div>
-        <label
-          for="auth-email"
-          class="block text-sm font-label font-semibold text-on-surface mb-1.5"
-          >{t.auth.email}</label
-        >
+        <label for="auth-email" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.email}</label>
         <input
           type="email"
           id="auth-email"
@@ -54,11 +47,7 @@ const t = lang === "cs" ? csCommon : enCommon;
         />
       </div>
       <div>
-        <label
-          for="auth-password"
-          class="block text-sm font-label font-semibold text-on-surface mb-1.5"
-          >{t.auth.password}</label
-        >
+        <label for="auth-password" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.password}</label>
         <input
           type="password"
           id="auth-password"
@@ -70,8 +59,7 @@ const t = lang === "cs" ? csCommon : enCommon;
       </div>
     </div>
 
-    <div id="auth-turnstile-container" class="flex justify-center empty:hidden">
-    </div>
+    <div id="auth-turnstile-container" class="flex justify-center empty:hidden"></div>
 
     <p id="auth-dialog-error" class="hidden text-error text-sm font-body"></p>
 
@@ -83,15 +71,9 @@ const t = lang === "cs" ? csCommon : enCommon;
       {t.auth.signIn}
     </button>
 
-    <p
-      id="auth-dialog-toggle"
-      class="text-center text-sm font-body text-on-surface-variant"
-    >
+    <p id="auth-dialog-toggle" class="text-center text-sm font-body text-on-surface-variant">
       {t.auth.noAccount}
-      <button
-        type="button"
-        id="auth-dialog-switch"
-        class="text-primary font-semibold hover:underline cursor-pointer"
+      <button type="button" id="auth-dialog-switch" class="text-primary font-semibold hover:underline cursor-pointer"
         >{t.auth.signUp}</button
       >
     </p>
@@ -99,8 +81,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     <!-- Divider -->
     <div class="flex items-center gap-3">
       <div class="flex-1 border-t border-outline-variant/20"></div>
-      <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span
-      >
+      <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
       <div class="flex-1 border-t border-outline-variant/20"></div>
     </div>
 
@@ -171,9 +152,7 @@ const t = lang === "cs" ? csCommon : enCommon;
 
   function renderAuthTurnstile() {
     if (!turnstileEnabled()) return;
-    const force =
-      shouldForceInteractive(AUTH_FAIL_KEY) ||
-      shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
+    const force = shouldForceInteractive(AUTH_FAIL_KEY) || shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
     authTurnstile.render(force ? "always" : "interaction-only");
   }
 
@@ -215,11 +194,8 @@ const t = lang === "cs" ? csCommon : enCommon;
 
   async function authDialogSubmit() {
     if (!supabase) return;
-    const email = (document.getElementById("auth-email") as HTMLInputElement)
-      ?.value;
-    const password = (
-      document.getElementById("auth-password") as HTMLInputElement
-    )?.value;
+    const email = (document.getElementById("auth-email") as HTMLInputElement)?.value;
+    const password = (document.getElementById("auth-password") as HTMLInputElement)?.value;
     const errorEl = document.getElementById("auth-dialog-error");
     if (errorEl) errorEl.classList.add("hidden");
 
@@ -252,20 +228,11 @@ const t = lang === "cs" ? csCommon : enCommon;
         // Count the signup itself — more than 1 in 4h escalates next attempt.
         recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
         if (!data.session) {
-          (
-            document.getElementById("auth-dialog") as HTMLDialogElement
-          )?.close();
+          (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
           const labels = (window as any).__authDialogLabels;
-          (window as any).__showSnackbar?.(
-            labels?.confirmationSent ||
-              "Check your email to confirm your account.",
-            "info",
-            8000,
-          );
+          (window as any).__showSnackbar?.(labels?.confirmationSent || "Check your email to confirm your account.", "info", 8000);
         } else {
-          (
-            document.getElementById("auth-dialog") as HTMLDialogElement
-          )?.close();
+          (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
         }
       }
     } else {
@@ -294,23 +261,15 @@ const t = lang === "cs" ? csCommon : enCommon;
     });
   }
 
-  document
-    .getElementById("auth-dialog-submit")
-    ?.addEventListener("click", authDialogSubmit);
-  document
-    .getElementById("auth-dialog-google")
-    ?.addEventListener("click", authDialogGoogle);
-  document
-    .getElementById("auth-dialog-switch")
-    ?.addEventListener("click", () => {
-      authDialogMode = authDialogMode === "signin" ? "signup" : "signin";
-      updateAuthDialogMode();
-    });
-  document
-    .getElementById("auth-dialog-close")
-    ?.addEventListener("click", () => {
-      (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
-    });
+  document.getElementById("auth-dialog-submit")?.addEventListener("click", authDialogSubmit);
+  document.getElementById("auth-dialog-google")?.addEventListener("click", authDialogGoogle);
+  document.getElementById("auth-dialog-switch")?.addEventListener("click", () => {
+    authDialogMode = authDialogMode === "signin" ? "signup" : "signin";
+    updateAuthDialogMode();
+  });
+  document.getElementById("auth-dialog-close")?.addEventListener("click", () => {
+    (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
+  });
   // Allow Enter key to submit
   document.getElementById("auth-password")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") authDialogSubmit();

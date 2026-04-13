@@ -17,21 +17,11 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 ---
 
-<Layout
-  title={t.meta.title}
-  description={t.meta.description}
-  activePage="profile"
-  lang={lang}
->
+<Layout title={t.meta.title} description={t.meta.description} activePage="profile" lang={lang}>
   <!-- Hero -->
   <section class="max-w-3xl mx-auto px-8 mb-16">
-    <h1
-      class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6"
-    >
-      <span
-        class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
-        >{t.hero.title}</span
-      >
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
     <p class="text-lg text-on-surface-variant font-body max-w-xl">
       {t.hero.subtitle}
@@ -40,13 +30,8 @@ const t = translations[lang];
 
   <!-- Login prompt (shown when not authenticated) -->
   <section id="login-prompt" class="max-w-3xl mx-auto px-8 mb-16">
-    <div
-      class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center"
-    >
-      <span
-        class="material-symbols-outlined text-5xl text-primary mb-4 block"
-        aria-hidden="true">lock</span
-      >
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.loginPrompt.title}
       </h2>
@@ -64,29 +49,16 @@ const t = translations[lang];
   </section>
 
   <!-- Profile settings (shown when authenticated) -->
-  <section
-    id="profile-section"
-    class="hidden max-w-3xl mx-auto px-8 mb-16 space-y-8"
-  >
+  <section id="profile-section" class="hidden max-w-3xl mx-auto px-8 mb-16 space-y-8">
     <!-- Avatar -->
-    <div
-      class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"
-    >
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">
         {t.avatar.title}
       </h2>
       <div class="flex items-center gap-6">
         <div class="relative">
-          <img
-            id="avatar-preview-img"
-            class="w-16 h-16 rounded-full object-cover hidden"
-            src=""
-            alt=""
-          />
-          <div
-            id="avatar-preview-initial"
-            class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center"
-          >
+          <img id="avatar-preview-img" class="w-16 h-16 rounded-full object-cover hidden" src="" alt="" />
+          <div id="avatar-preview-initial" class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
             <span class="text-xl font-bold text-on-primary-container"></span>
           </div>
         </div>
@@ -105,18 +77,11 @@ const t = translations[lang];
           </p>
         </div>
       </div>
-      <input
-        type="file"
-        id="avatar-file-input"
-        accept="image/jpeg,image/png,image/webp"
-        class="hidden"
-      />
+      <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" class="hidden" />
     </div>
 
     <!-- Provider info -->
-    <div
-      class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"
-    >
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">
         {t.provider.title}
       </h2>
@@ -125,14 +90,8 @@ const t = translations[lang];
     </div>
 
     <!-- Display name -->
-    <div
-      class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"
-    >
-      <label
-        for="display-name"
-        class="block text-sm font-label font-semibold text-on-surface mb-2"
-        >{t.displayName.label}</label
-      >
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
+      <label for="display-name" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.displayName.label}</label>
       <div class="flex gap-3">
         <input
           type="text"
@@ -170,9 +129,7 @@ const t = translations[lang];
       avatarErrorMap: t.avatar.errors,
     }}
   >
-    var googleSvg = document
-      .getElementById("google-icon-template")
-      .innerHTML.trim();
+    var googleSvg = document.getElementById("google-icon-template").innerHTML.trim();
 
     function esc(str) {
       if (!str) return "";
@@ -222,8 +179,7 @@ const t = translations[lang];
       var providerList = document.getElementById("provider-list");
 
       var avatarUrl = user.user_metadata?.avatar_url || "";
-      var displayName =
-        user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+      var displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
       updateAvatarPreview(avatarUrl, displayName);
 
       if (nameInput) nameInput.value = user.user_metadata?.full_name || "";
@@ -247,8 +203,7 @@ const t = translations[lang];
           "w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors";
         var btnClass =
           "px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap";
-        var linkClass =
-          "text-xs font-label font-semibold text-primary hover:text-primary/80 cursor-pointer";
+        var linkClass = "text-xs font-label font-semibold text-primary hover:text-primary/80 cursor-pointer";
 
         // Email & Password
         if (hasEmail) {
@@ -334,11 +289,7 @@ const t = translations[lang];
             '<div class="flex-1"><span class="text-sm font-label text-on-surface">' +
             strings.provider.google +
             "</span>" +
-            (googleEmail
-              ? '<p class="text-xs font-body text-on-surface-variant">' +
-                esc(googleEmail) +
-                "</p>"
-              : "") +
+            (googleEmail ? '<p class="text-xs font-body text-on-surface-variant">' + esc(googleEmail) + "</p>" : "") +
             "</div>";
           if (hasEmail) {
             var unlinkBtn = document.createElement("button");
@@ -374,38 +325,29 @@ const t = translations[lang];
         // Bind toggle and action buttons after DOM insertion
         if (hasEmail) {
           setTimeout(function () {
-            document
-              .getElementById("toggle-change-email")
-              ?.addEventListener("click", function () {
-                var form = document.getElementById("change-email-form");
-                var other = document.getElementById("change-password-form");
-                if (other) other.classList.add("hidden");
-                if (form) form.classList.toggle("hidden");
-              });
-            document
-              .getElementById("toggle-change-password")
-              ?.addEventListener("click", function () {
-                var form = document.getElementById("change-password-form");
-                var other = document.getElementById("change-email-form");
-                if (other) other.classList.add("hidden");
-                if (form) form.classList.toggle("hidden");
-              });
-            document
-              .getElementById("save-email-btn")
-              ?.addEventListener("click", saveEmail);
-            document
-              .getElementById("profile-email")
-              ?.addEventListener("keydown", function (e) {
-                if (e.key === "Enter") saveEmail();
-              });
+            document.getElementById("toggle-change-email")?.addEventListener("click", function () {
+              var form = document.getElementById("change-email-form");
+              var other = document.getElementById("change-password-form");
+              if (other) other.classList.add("hidden");
+              if (form) form.classList.toggle("hidden");
+            });
+            document.getElementById("toggle-change-password")?.addEventListener("click", function () {
+              var form = document.getElementById("change-password-form");
+              var other = document.getElementById("change-email-form");
+              if (other) other.classList.add("hidden");
+              if (form) form.classList.toggle("hidden");
+            });
+            document.getElementById("save-email-btn")?.addEventListener("click", saveEmail);
+            document.getElementById("profile-email")?.addEventListener("keydown", function (e) {
+              if (e.key === "Enter") saveEmail();
+            });
             var pwBtn = document.getElementById("save-password-btn");
             if (pwBtn) {
               pwBtn.disabled = true;
               pwBtn.classList.add("opacity-50");
             }
             function validatePasswordForm() {
-              var cur =
-                document.getElementById("current-password")?.value || "";
+              var cur = document.getElementById("current-password")?.value || "";
               var np = document.getElementById("new-password")?.value || "";
               var cp = document.getElementById("confirm-password")?.value || "";
               var valid = cur.length > 0 && np.length >= 6 && np === cp;
@@ -415,21 +357,13 @@ const t = translations[lang];
                 else pwBtn.classList.add("opacity-50");
               }
             }
-            ["current-password", "new-password", "confirm-password"].forEach(
-              function (id) {
-                document
-                  .getElementById(id)
-                  ?.addEventListener("input", validatePasswordForm);
-              },
-            );
-            document
-              .getElementById("save-password-btn")
-              ?.addEventListener("click", savePassword);
-            document
-              .getElementById("change-password-form")
-              ?.addEventListener("keydown", function (e) {
-                if (e.key === "Enter" && !pwBtn?.disabled) savePassword();
-              });
+            ["current-password", "new-password", "confirm-password"].forEach(function (id) {
+              document.getElementById(id)?.addEventListener("input", validatePasswordForm);
+            });
+            document.getElementById("save-password-btn")?.addEventListener("click", savePassword);
+            document.getElementById("change-password-form")?.addEventListener("keydown", function (e) {
+              if (e.key === "Enter" && !pwBtn?.disabled) savePassword();
+            });
           }, 0);
         }
       }
@@ -460,10 +394,7 @@ const t = translations[lang];
           }),
         );
       } catch (err) {
-        window.__showSnackbar?.(
-          err.message || strings.provider.linkGoogleError,
-          "error",
-        );
+        window.__showSnackbar?.(err.message || strings.provider.linkGoogleError, "error");
       }
     }
 
@@ -482,60 +413,47 @@ const t = translations[lang];
         var { data: userData } = await supabase.auth.getUser();
         if (userData?.user) populateProfile(userData.user);
 
-        window.__showSnackbar?.(
-          strings.provider.unlinkGoogleSuccess,
-          "success",
-        );
+        window.__showSnackbar?.(strings.provider.unlinkGoogleSuccess, "success");
       } catch (err) {
-        window.__showSnackbar?.(
-          err.message || strings.provider.unlinkGoogleError,
-          "error",
-        );
+        window.__showSnackbar?.(err.message || strings.provider.unlinkGoogleError, "error");
       }
     }
 
     // Sign in button
-    document
-      .getElementById("profile-sign-in")
-      ?.addEventListener("click", function () {
-        document.getElementById("auth-sign-in-desktop")?.click();
-      });
+    document.getElementById("profile-sign-in")?.addEventListener("click", function () {
+      document.getElementById("auth-sign-in-desktop")?.click();
+    });
 
     // --- Save display name ---
-    document
-      .getElementById("save-name-btn")
-      ?.addEventListener("click", async function () {
-        var btn = document.getElementById("save-name-btn");
-        var feedback = document.getElementById("name-feedback");
-        var nameInput = document.getElementById("display-name");
-        var newName = nameInput?.value.trim();
+    document.getElementById("save-name-btn")?.addEventListener("click", async function () {
+      var btn = document.getElementById("save-name-btn");
+      var feedback = document.getElementById("name-feedback");
+      var nameInput = document.getElementById("display-name");
+      var newName = nameInput?.value.trim();
 
-        if (!newName) return;
+      if (!newName) return;
 
-        btn.textContent = strings.displayName.saving;
-        btn.disabled = true;
-        feedback.classList.add("hidden");
+      btn.textContent = strings.displayName.saving;
+      btn.disabled = true;
+      feedback.classList.add("hidden");
 
-        try {
-          var supabase = window.__supabase;
-          if (!supabase) throw new Error("No client");
+      try {
+        var supabase = window.__supabase;
+        if (!supabase) throw new Error("No client");
 
-          var result = await supabase.auth.updateUser({
-            data: { full_name: newName },
-          });
-          if (result.error) throw result.error;
+        var result = await supabase.auth.updateUser({
+          data: { full_name: newName },
+        });
+        if (result.error) throw result.error;
 
-          window.__showSnackbar?.(strings.displayName.success, "success");
-        } catch (err) {
-          window.__showSnackbar?.(
-            err.message || strings.displayName.error,
-            "error",
-          );
-        } finally {
-          btn.textContent = strings.displayName.save;
-          btn.disabled = false;
-        }
-      });
+        window.__showSnackbar?.(strings.displayName.success, "success");
+      } catch (err) {
+        window.__showSnackbar?.(err.message || strings.displayName.error, "error");
+      } finally {
+        btn.textContent = strings.displayName.save;
+        btn.disabled = false;
+      }
+    });
 
     // --- Save email ---
     async function saveEmail() {
@@ -631,112 +549,99 @@ const t = translations[lang];
     }
 
     // --- Avatar upload ---
-    document
-      .getElementById("avatar-change-btn")
-      ?.addEventListener("click", function () {
-        document.getElementById("avatar-file-input")?.click();
-      });
+    document.getElementById("avatar-change-btn")?.addEventListener("click", function () {
+      document.getElementById("avatar-file-input")?.click();
+    });
 
-    document
-      .getElementById("avatar-file-input")
-      ?.addEventListener("change", async function (e) {
-        var file = e.target.files?.[0];
-        if (!file) return;
+    document.getElementById("avatar-file-input")?.addEventListener("change", async function (e) {
+      var file = e.target.files?.[0];
+      if (!file) return;
 
-        var allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-        if (!allowedTypes.includes(file.type)) {
-          window.__showSnackbar?.(strings.avatar.invalidType, "error");
-          e.target.value = "";
-          return;
+      var allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        window.__showSnackbar?.(strings.avatar.invalidType, "error");
+        e.target.value = "";
+        return;
+      }
+
+      if (file.size > 1 * 1024 * 1024) {
+        window.__showSnackbar?.(strings.avatar.tooLarge, "error");
+        e.target.value = "";
+        return;
+      }
+
+      var btn = document.getElementById("avatar-change-btn");
+      var originalText = btn?.textContent;
+      if (btn) {
+        btn.textContent = strings.avatar.uploading;
+        btn.disabled = true;
+      }
+
+      try {
+        var supabase = window.__supabase;
+        if (!supabase) throw new Error("Not authenticated");
+
+        // Get current user ID for the storage path
+        var {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
+        if (!currentUser) throw new Error("Not authenticated");
+
+        var storagePath = currentUser.id + "/avatar";
+
+        // Upload directly to Supabase Storage (upsert overwrites existing)
+        var { error: uploadError } = await supabase.storage.from("avatars").upload(storagePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+        if (uploadError) throw uploadError;
+
+        // Build public URL with cache-busting timestamp
+        var { data: urlData } = supabase.storage.from("avatars").getPublicUrl(storagePath);
+        var avatarUrl = urlData.publicUrl + "?t=" + Math.floor(Date.now() / 1000);
+
+        // Update user metadata with new avatar URL
+        var { error: updateError } = await supabase.auth.updateUser({
+          data: { avatar_url: avatarUrl },
+        });
+
+        if (updateError) throw updateError;
+
+        // Update preview immediately — avatarUrl is already confirmed by the
+        // successful upload + metadata update above, so we don't need to wait
+        // for getUser() to reflect it.
+        var displayName = currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "User";
+        updateAvatarPreview(avatarUrl, displayName);
+
+        // Refresh session so future pages see the new avatar URL in the token
+        await supabase.auth.refreshSession();
+        var { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          window.dispatchEvent(
+            new CustomEvent("auth-change", {
+              detail: { user: userData.user },
+            }),
+          );
         }
 
-        if (file.size > 1 * 1024 * 1024) {
-          window.__showSnackbar?.(strings.avatar.tooLarge, "error");
-          e.target.value = "";
-          return;
-        }
-
-        var btn = document.getElementById("avatar-change-btn");
-        var originalText = btn?.textContent;
-        if (btn) {
-          btn.textContent = strings.avatar.uploading;
-          btn.disabled = true;
-        }
-
+        // Invalidate the cached user info so other pages fetch the new avatar
         try {
-          var supabase = window.__supabase;
-          if (!supabase) throw new Error("Not authenticated");
+          var uiCache = JSON.parse(localStorage.getItem("userInfoCache")) || {};
+          delete uiCache[currentUser.id];
+          localStorage.setItem("userInfoCache", JSON.stringify(uiCache));
+        } catch {}
 
-          // Get current user ID for the storage path
-          var {
-            data: { user: currentUser },
-          } = await supabase.auth.getUser();
-          if (!currentUser) throw new Error("Not authenticated");
-
-          var storagePath = currentUser.id + "/avatar";
-
-          // Upload directly to Supabase Storage (upsert overwrites existing)
-          var { error: uploadError } = await supabase.storage
-            .from("avatars")
-            .upload(storagePath, file, {
-              contentType: file.type,
-              upsert: true,
-            });
-
-          if (uploadError) throw uploadError;
-
-          // Build public URL with cache-busting timestamp
-          var { data: urlData } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(storagePath);
-          var avatarUrl =
-            urlData.publicUrl + "?t=" + Math.floor(Date.now() / 1000);
-
-          // Update user metadata with new avatar URL
-          var { error: updateError } = await supabase.auth.updateUser({
-            data: { avatar_url: avatarUrl },
-          });
-
-          if (updateError) throw updateError;
-
-          // Update preview immediately — avatarUrl is already confirmed by the
-          // successful upload + metadata update above, so we don't need to wait
-          // for getUser() to reflect it.
-          var displayName =
-            currentUser.user_metadata?.full_name ||
-            currentUser.email?.split("@")[0] ||
-            "User";
-          updateAvatarPreview(avatarUrl, displayName);
-
-          // Refresh session so future pages see the new avatar URL in the token
-          await supabase.auth.refreshSession();
-          var { data: userData } = await supabase.auth.getUser();
-          if (userData?.user) {
-            window.dispatchEvent(
-              new CustomEvent("auth-change", {
-                detail: { user: userData.user },
-              }),
-            );
-          }
-
-          // Invalidate the cached user info so other pages fetch the new avatar
-          try {
-            var uiCache =
-              JSON.parse(localStorage.getItem("userInfoCache")) || {};
-            delete uiCache[currentUser.id];
-            localStorage.setItem("userInfoCache", JSON.stringify(uiCache));
-          } catch {}
-
-          window.__showSnackbar?.(strings.avatar.success, "success");
-        } catch (err) {
-          window.__showSnackbar?.(err.message || strings.avatar.error, "error");
-        } finally {
-          if (btn) {
-            btn.textContent = originalText;
-            btn.disabled = false;
-          }
-          e.target.value = "";
+        window.__showSnackbar?.(strings.avatar.success, "success");
+      } catch (err) {
+        window.__showSnackbar?.(err.message || strings.avatar.error, "error");
+      } finally {
+        if (btn) {
+          btn.textContent = originalText;
+          btn.disabled = false;
         }
-      });
+        e.target.value = "";
+      }
+    });
   </script>
 </Layout>

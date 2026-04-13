@@ -39,15 +39,10 @@ test.describe("Edit Activity Log", () => {
         user_metadata: { full_name: testUser.fullName },
       },
     });
-    expect(
-      response.ok(),
-      `Failed to create test user: ${await response.text()}`,
-    ).toBeTruthy();
+    expect(response.ok(), `Failed to create test user: ${await response.text()}`).toBeTruthy();
   });
 
-  test("submit → edit 2 fields → activity log shows old and new values", async ({
-    page,
-  }) => {
+  test("submit → edit 2 fields → activity log shows old and new values", async ({ page }) => {
     // --- Step 1: Submit a job offer via the hire-me form ---
     await page.goto("/hire-me");
     await page.evaluate(
@@ -73,9 +68,7 @@ test.describe("Edit Activity Log", () => {
 
     // Inject Turnstile token
     await page.evaluate(() => {
-      let input = document.querySelector<HTMLInputElement>(
-        '[name="cf-turnstile-response"]',
-      );
+      let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
       if (!input) {
         input = document.createElement("input");
         input.type = "hidden";
@@ -103,10 +96,7 @@ test.describe("Edit Activity Log", () => {
     // Change company name, job title, and description
     await page.fill("#edit-companyName", "Updated Corp");
     await page.fill("#edit-jobTitle", "Senior Developer");
-    await page.fill(
-      "#edit-description",
-      "An updated description for the role.",
-    );
+    await page.fill("#edit-description", "An updated description for the role.");
 
     // Submit the edit
     await page.locator('#edit-form button[type="submit"]').click();
@@ -115,9 +105,7 @@ test.describe("Edit Activity Log", () => {
     await expect(page.locator("#offer-detail")).toContainText("Updated Corp", {
       timeout: 10000,
     });
-    await expect(page.locator("#offer-detail")).toContainText(
-      "Senior Developer",
-    );
+    await expect(page.locator("#offer-detail")).toContainText("Senior Developer");
 
     // --- Step 4: Verify the activity log shows structured field changes ---
     const historySection = page.locator("#history-section");
@@ -145,9 +133,7 @@ test.describe("Edit Activity Log", () => {
     await expect(descToggle).toContainText("changed");
 
     // The diff panel should be hidden by default
-    const diffPanel = historyList
-      .locator(".diff-toggle + div", { hasText: "Before" })
-      .first();
+    const diffPanel = historyList.locator(".diff-toggle + div", { hasText: "Before" }).first();
     await expect(diffPanel).toBeHidden();
 
     // Click to expand
@@ -156,9 +142,7 @@ test.describe("Edit Activity Log", () => {
 
     // Verify the old and new description text are shown
     await expect(diffPanel).toContainText("A developer role at Original Corp.");
-    await expect(diffPanel).toContainText(
-      "An updated description for the role.",
-    );
+    await expect(diffPanel).toContainText("An updated description for the role.");
 
     // Click again to collapse
     await descToggle.click();

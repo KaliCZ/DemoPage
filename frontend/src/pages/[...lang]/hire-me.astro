@@ -1,11 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import {
-  locales,
-  defaultLocale,
-  localePath,
-  type Locale,
-} from "../../i18n/utils";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/hire-me.json";
 import csStrings from "../../i18n/cs/hire-me.json";
 
@@ -21,22 +16,12 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 ---
 
-<Layout
-  title={t.meta.title}
-  description={t.meta.description}
-  activePage="hire-me"
-  lang={lang}
->
+<Layout title={t.meta.title} description={t.meta.description} activePage="hire-me" lang={lang}>
   <!-- Hero -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <div class="max-w-3xl">
-      <h1
-        class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6"
-      >
-        <span
-          class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
-          >{t.hero.title}</span
-        >
+      <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+        <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
       </h1>
       <p class="text-lg text-on-surface-variant font-body">{t.hero.subtitle}</p>
       <p class="text-sm text-on-surface-variant font-body mt-3">
@@ -46,17 +31,9 @@ const t = translations[lang];
   </section>
 
   <!-- Login prompt (shown when not authenticated) -->
-  <section
-    id="login-prompt"
-    class="signed-out-only max-w-7xl mx-auto px-4 md:px-8 mb-16"
-  >
-    <div
-      class="max-w-4xl bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-8 md:p-12 text-center"
-    >
-      <span
-        class="material-symbols-outlined text-5xl text-primary mb-4 block"
-        aria-hidden="true">lock</span
-      >
+  <section id="login-prompt" class="signed-out-only max-w-7xl mx-auto px-4 md:px-8 mb-16">
+    <div class="max-w-4xl bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.loginPrompt.title}
       </h2>
@@ -74,10 +51,7 @@ const t = translations[lang];
   </section>
 
   <!-- Form (shown when authenticated, initially with disabled fields) -->
-  <section
-    id="job-offer-form-section"
-    class="signed-in-only hidden max-w-7xl mx-auto px-4 md:px-8 mb-16"
-  >
+  <section id="job-offer-form-section" class="signed-in-only hidden max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <form
       id="job-offer-form"
       novalidate
@@ -85,11 +59,7 @@ const t = translations[lang];
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label
-            for="companyName"
-            class="block text-sm font-label font-semibold text-on-surface mb-2"
-            >{t.form.companyName}</label
-          >
+          <label for="companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.companyName}</label>
           <input
             type="text"
             id="companyName"
@@ -101,11 +71,7 @@ const t = translations[lang];
           />
         </div>
         <div>
-          <label
-            for="contactName"
-            class="block text-sm font-label font-semibold text-on-surface mb-2"
-            >{t.form.contactName}</label
-          >
+          <label for="contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactName}</label>
           <input
             type="text"
             id="contactName"
@@ -120,11 +86,7 @@ const t = translations[lang];
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label
-            for="contactEmail"
-            class="block text-sm font-label font-semibold text-on-surface mb-2"
-            >{t.form.contactEmail}</label
-          >
+          <label for="contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactEmail}</label>
           <input
             type="email"
             id="contactEmail"
@@ -136,11 +98,7 @@ const t = translations[lang];
           />
         </div>
         <div>
-          <label
-            for="jobTitle"
-            class="block text-sm font-label font-semibold text-on-surface mb-2"
-            >{t.form.jobTitle}</label
-          >
+          <label for="jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.jobTitle}</label>
           <input
             type="text"
             id="jobTitle"
@@ -154,11 +112,7 @@ const t = translations[lang];
       </div>
 
       <div>
-        <label
-          for="description"
-          class="block text-sm font-label font-semibold text-on-surface mb-2"
-          >{t.form.description}</label
-        >
+        <label for="description" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.description}</label>
         <textarea
           id="description"
           name="description"
@@ -172,11 +126,7 @@ const t = translations[lang];
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label
-            for="salaryRange"
-            class="block text-sm font-label font-semibold text-on-surface mb-2"
-            >{t.form.salaryRange}</label
-          >
+          <label for="salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.salaryRange}</label>
           <input
             type="text"
             id="salaryRange"
@@ -187,11 +137,7 @@ const t = translations[lang];
           />
         </div>
         <div>
-          <label
-            for="location"
-            class="block text-sm font-label font-semibold text-on-surface mb-2"
-            >{t.form.location}</label
-          >
+          <label for="location" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.location}</label>
           <input
             type="text"
             id="location"
@@ -210,19 +156,11 @@ const t = translations[lang];
           name="isRemote"
           class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary"
         />
-        <label
-          for="isRemote"
-          class="text-sm font-label font-semibold text-on-surface"
-          >{t.form.isRemote}</label
-        >
+        <label for="isRemote" class="text-sm font-label font-semibold text-on-surface">{t.form.isRemote}</label>
       </div>
 
       <div>
-        <label
-          for="additionalNotes"
-          class="block text-sm font-label font-semibold text-on-surface mb-2"
-          >{t.form.additionalNotes}</label
-        >
+        <label for="additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.additionalNotes}</label>
         <textarea
           id="additionalNotes"
           name="additionalNotes"
@@ -234,11 +172,7 @@ const t = translations[lang];
       </div>
 
       <div>
-        <label
-          for="attachments"
-          class="block text-sm font-label font-semibold text-on-surface mb-2"
-          >{t.form.attachments}</label
-        >
+        <label for="attachments" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.attachments}</label>
         <p class="text-xs text-on-surface-variant font-body mb-3">
           {t.form.attachmentsHint}
         </p>
@@ -246,9 +180,7 @@ const t = translations[lang];
           for="attachments"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-label text-sm cursor-pointer hover:border-primary/30 transition-colors"
         >
-          <span class="material-symbols-outlined text-lg" aria-hidden="true"
-            >attach_file</span
-          >
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">attach_file</span>
           {t.form.attachmentsBrowse}
         </label>
         <input
@@ -321,11 +253,9 @@ const t = translations[lang];
     });
 
     // Sign in button on the login prompt
-    document
-      .getElementById("hire-me-sign-in")
-      ?.addEventListener("click", function () {
-        document.getElementById("auth-sign-in-desktop")?.click();
-      });
+    document.getElementById("hire-me-sign-in")?.addEventListener("click", function () {
+      document.getElementById("auth-sign-in-desktop")?.click();
+    });
 
     // Turnstile widget — explicit render so we can switch appearance modes.
     // After hitting the backend rate limit (2 submissions / 30 min), we
@@ -373,15 +303,13 @@ const t = translations[lang];
     var maxTotalBytes = 15 * 1024 * 1024; // 15 MB
     var selectedFiles = [];
 
-    document
-      .getElementById("attachments")
-      ?.addEventListener("change", function (e) {
-        var newFiles = Array.from(e.target.files || []);
-        // Merge with existing, enforcing max count
-        selectedFiles = selectedFiles.concat(newFiles).slice(0, maxFiles);
-        renderFileList();
-        e.target.value = ""; // allow re-selecting same file
-      });
+    document.getElementById("attachments")?.addEventListener("change", function (e) {
+      var newFiles = Array.from(e.target.files || []);
+      // Merge with existing, enforcing max count
+      selectedFiles = selectedFiles.concat(newFiles).slice(0, maxFiles);
+      renderFileList();
+      e.target.value = ""; // allow re-selecting same file
+    });
 
     function renderFileList() {
       var listEl = document.getElementById("file-list");
@@ -389,13 +317,9 @@ const t = translations[lang];
       listEl.innerHTML = "";
       selectedFiles.forEach(function (file, idx) {
         var item = document.createElement("div");
-        item.className =
-          "flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm";
+        item.className = "flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm";
         var sizeKb = (file.size / 1024).toFixed(0);
-        var sizeStr =
-          file.size >= 1024 * 1024
-            ? (file.size / 1024 / 1024).toFixed(1) + " MB"
-            : sizeKb + " KB";
+        var sizeStr = file.size >= 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + " MB" : sizeKb + " KB";
         item.innerHTML =
           '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
           '<span class="flex-1 truncate font-body text-on-surface">' +
@@ -406,10 +330,8 @@ const t = translations[lang];
           "</span>";
         var removeBtn = document.createElement("button");
         removeBtn.type = "button";
-        removeBtn.className =
-          "text-on-surface-variant hover:text-error transition-colors cursor-pointer";
-        removeBtn.innerHTML =
-          '<span class="material-symbols-outlined text-lg">close</span>';
+        removeBtn.className = "text-on-surface-variant hover:text-error transition-colors cursor-pointer";
+        removeBtn.innerHTML = '<span class="material-symbols-outlined text-lg">close</span>';
         removeBtn.addEventListener("click", function () {
           selectedFiles.splice(idx, 1);
           renderFileList();
@@ -493,145 +415,126 @@ const t = translations[lang];
     // Attach blur validation to all form fields
     var formEl = document.getElementById("job-offer-form");
     if (formEl) {
-      formEl
-        .querySelectorAll("input[name], textarea[name]")
-        .forEach(function (field) {
-          if (field.type === "checkbox" || field.type === "file") return;
-          field.addEventListener("blur", function () {
-            validateField(field);
-          });
-          field.addEventListener("input", function () {
-            if (field.parentElement.querySelector(".field-error"))
-              validateField(field);
-          });
+      formEl.querySelectorAll("input[name], textarea[name]").forEach(function (field) {
+        if (field.type === "checkbox" || field.type === "file") return;
+        field.addEventListener("blur", function () {
+          validateField(field);
         });
+        field.addEventListener("input", function () {
+          if (field.parentElement.querySelector(".field-error")) validateField(field);
+        });
+      });
     }
 
     // Form submission
-    document
-      .getElementById("job-offer-form")
-      ?.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        var form = e.target;
-        var submitBtn = document.getElementById("submit-btn");
-        var errorEl = document.getElementById("form-error");
+    document.getElementById("job-offer-form")?.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var form = e.target;
+      var submitBtn = document.getElementById("submit-btn");
+      var errorEl = document.getElementById("form-error");
 
-        if (!validateAllFields(form)) return;
+      if (!validateAllFields(form)) return;
 
-        if (submitBtn) submitBtn.textContent = submittingText;
-        if (submitBtn) submitBtn.disabled = true;
-        if (errorEl) errorEl.classList.add("hidden");
+      if (submitBtn) submitBtn.textContent = submittingText;
+      if (submitBtn) submitBtn.disabled = true;
+      if (errorEl) errorEl.classList.add("hidden");
 
-        try {
-          var token = await window.__getAccessToken?.();
-          if (!token) throw new Error("Not authenticated");
+      try {
+        var token = await window.__getAccessToken?.();
+        if (!token) throw new Error("Not authenticated");
 
-          // Validate file constraints client-side
-          var totalSize = selectedFiles.reduce(function (sum, f) {
-            return sum + f.size;
-          }, 0);
-          if (selectedFiles.length > maxFiles)
-            throw new Error("Too many files");
-          if (totalSize > maxTotalBytes) throw new Error("Files too large");
+        // Validate file constraints client-side
+        var totalSize = selectedFiles.reduce(function (sum, f) {
+          return sum + f.size;
+        }, 0);
+        if (selectedFiles.length > maxFiles) throw new Error("Too many files");
+        if (totalSize > maxTotalBytes) throw new Error("Files too large");
 
-          // Get Turnstile token from the hidden input created by the widget
-          var turnstileResponse = document.querySelector(
-            '[name="cf-turnstile-response"]',
-          )?.value;
-          if (!turnstileResponse) {
-            window.__showSnackbar?.(captchaError, "error");
-            if (submitBtn) {
-              submitBtn.textContent = submitText;
-              submitBtn.disabled = false;
-            }
-            return;
-          }
-
-          var formData = new FormData();
-          formData.append("cf-turnstile-response", turnstileResponse);
-          formData.append("CompanyName", form.companyName.value);
-          formData.append("ContactName", form.contactName.value);
-          formData.append("ContactEmail", form.contactEmail.value);
-          formData.append("JobTitle", form.jobTitle.value);
-          formData.append("Description", form.description.value);
-          if (form.salaryRange.value)
-            formData.append("SalaryRange", form.salaryRange.value);
-          if (form.location.value)
-            formData.append("Location", form.location.value);
-          formData.append("IsRemote", form.isRemote.checked);
-          if (form.additionalNotes.value)
-            formData.append("AdditionalNotes", form.additionalNotes.value);
-
-          for (var i = 0; i < selectedFiles.length; i++) {
-            formData.append("attachments", selectedFiles[i]);
-          }
-
-          var headers = { Authorization: "Bearer " + token };
-          if (interactiveCaptchaMode) headers["X-Interactive-Captcha"] = "1";
-
-          var response = await fetch(apiUrl + "/api/job-offers", {
-            method: "POST",
-            headers: headers,
-            body: formData,
-          });
-
-          if (response.status === 429) {
-            var body = await response
-              .clone()
-              .json()
-              .catch(function () {
-                return {};
-              });
-            if (body && body.error === "captcha_required") {
-              // Rate limit hit — force visible Turnstile checkbox on next attempt.
-              interactiveCaptchaMode = true;
-              renderTurnstile("always");
-              window.__showSnackbar?.(captchaRequiredError, "error");
-              if (submitBtn) {
-                submitBtn.textContent = submitText;
-                submitBtn.disabled = false;
-              }
-              return;
-            }
-          }
-
-          if (!response.ok) {
-            var result = await window.__getApiError?.(response, apiErrorMap);
-            window.__showSnackbar?.(
-              result?.message || errorText,
-              "error",
-              8000,
-              result?.traceId,
-            );
-            if (submitBtn) {
-              submitBtn.textContent = submitText;
-              submitBtn.disabled = false;
-            }
-            return;
-          }
-
-          var offer = await response.json();
-          // Reset back to invisible mode after a successful submission.
-          interactiveCaptchaMode = false;
-          sessionStorage.setItem(
-            "snackbar",
-            JSON.stringify({ message: successText, type: "success" }),
-          );
-          window.location.href = jobOffersPath + "#" + offer.id;
-        } catch (err) {
-          window.__showSnackbar?.(err.message || errorText, "error");
+        // Get Turnstile token from the hidden input created by the widget
+        var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
+        if (!turnstileResponse) {
+          window.__showSnackbar?.(captchaError, "error");
           if (submitBtn) {
             submitBtn.textContent = submitText;
             submitBtn.disabled = false;
           }
-        } finally {
-          // Reset Turnstile widget for next attempt (token is single-use)
-          if (turnstileWidgetId !== null && window.turnstile) {
-            try {
-              window.turnstile.reset(turnstileWidgetId);
-            } catch (e) {}
+          return;
+        }
+
+        var formData = new FormData();
+        formData.append("cf-turnstile-response", turnstileResponse);
+        formData.append("CompanyName", form.companyName.value);
+        formData.append("ContactName", form.contactName.value);
+        formData.append("ContactEmail", form.contactEmail.value);
+        formData.append("JobTitle", form.jobTitle.value);
+        formData.append("Description", form.description.value);
+        if (form.salaryRange.value) formData.append("SalaryRange", form.salaryRange.value);
+        if (form.location.value) formData.append("Location", form.location.value);
+        formData.append("IsRemote", form.isRemote.checked);
+        if (form.additionalNotes.value) formData.append("AdditionalNotes", form.additionalNotes.value);
+
+        for (var i = 0; i < selectedFiles.length; i++) {
+          formData.append("attachments", selectedFiles[i]);
+        }
+
+        var headers = { Authorization: "Bearer " + token };
+        if (interactiveCaptchaMode) headers["X-Interactive-Captcha"] = "1";
+
+        var response = await fetch(apiUrl + "/api/job-offers", {
+          method: "POST",
+          headers: headers,
+          body: formData,
+        });
+
+        if (response.status === 429) {
+          var body = await response
+            .clone()
+            .json()
+            .catch(function () {
+              return {};
+            });
+          if (body && body.error === "captcha_required") {
+            // Rate limit hit — force visible Turnstile checkbox on next attempt.
+            interactiveCaptchaMode = true;
+            renderTurnstile("always");
+            window.__showSnackbar?.(captchaRequiredError, "error");
+            if (submitBtn) {
+              submitBtn.textContent = submitText;
+              submitBtn.disabled = false;
+            }
+            return;
           }
         }
-      });
+
+        if (!response.ok) {
+          var result = await window.__getApiError?.(response, apiErrorMap);
+          window.__showSnackbar?.(result?.message || errorText, "error", 8000, result?.traceId);
+          if (submitBtn) {
+            submitBtn.textContent = submitText;
+            submitBtn.disabled = false;
+          }
+          return;
+        }
+
+        var offer = await response.json();
+        // Reset back to invisible mode after a successful submission.
+        interactiveCaptchaMode = false;
+        sessionStorage.setItem("snackbar", JSON.stringify({ message: successText, type: "success" }));
+        window.location.href = jobOffersPath + "#" + offer.id;
+      } catch (err) {
+        window.__showSnackbar?.(err.message || errorText, "error");
+        if (submitBtn) {
+          submitBtn.textContent = submitText;
+          submitBtn.disabled = false;
+        }
+      } finally {
+        // Reset Turnstile widget for next attempt (token is single-use)
+        if (turnstileWidgetId !== null && window.turnstile) {
+          try {
+            window.turnstile.reset(turnstileWidgetId);
+          } catch (e) {}
+        }
+      }
+    });
   </script>
 </Layout>
