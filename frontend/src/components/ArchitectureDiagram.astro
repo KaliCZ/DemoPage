@@ -25,26 +25,24 @@ const { t, class: className, ...rest } = Astro.props;
 ---
 
 <div class:list={["overflow-x-auto", className]} {...rest}>
-  <svg
-    viewBox="0 0 960 700"
-    xmlns="http://www.w3.org/2000/svg"
-    class="w-full min-w-[640px]"
-    role="img"
-    aria-label="Architecture diagram"
-  >
+  <svg viewBox="0 0 960 700" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[640px]" role="img" aria-label="Architecture diagram">
     <defs>
       <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline)" />
+        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline)"></path>
       </marker>
       <marker id="arrow-muted" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline-variant)" />
+        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline-variant)"></path>
       </marker>
     </defs>
 
     <style>
       @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
       .planned-spinner {
         animation: spin 2s linear infinite;
@@ -55,45 +53,63 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== CLOUDFLARE CONTAINER (top-left) ===== -->
     <g>
-      <rect x="20" y="20" width="260" height="210" rx="12"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-      <rect x="20" y="20" width="260" height="5" rx="2.5"
-        fill="var(--color-primary)" />
-      <text x="150" y="50" text-anchor="middle"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="11" font-weight="700" letter-spacing="1.5">
+      <rect
+        x="20"
+        y="20"
+        width="260"
+        height="210"
+        rx="12"
+        fill="var(--color-surface-container)"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"></rect>
+      <rect x="20" y="20" width="260" height="5" rx="2.5" fill="var(--color-primary)"></rect>
+      <text
+        x="150"
+        y="50"
+        text-anchor="middle"
+        fill="var(--color-on-surface-variant)"
+        font-family="var(--font-label)"
+        font-size="11"
+        font-weight="700"
+        letter-spacing="1.5"
+      >
         CLOUDFLARE
       </text>
 
       <!-- DNS -->
       <g>
-        <rect x="38" y="65" width="224" height="50" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="38" y="65" width="4" height="50" rx="2"
-          fill="var(--color-primary)" />
-        <circle cx="56" cy="85" r="3.5" fill="var(--color-primary)" opacity="0.6" />
-        <text x="66" y="89"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
-          DNS
-        </text>
-        <text x="54" y="106"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <rect
+          x="38"
+          y="65"
+          width="224"
+          height="50"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="38" y="65" width="4" height="50" rx="2" fill="var(--color-primary)"></rect>
+        <circle cx="56" cy="85" r="3.5" fill="var(--color-primary)" opacity="0.6"></circle>
+        <text x="66" y="89" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600"> DNS </text>
+        <text x="54" y="106" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.dns}
         </text>
       </g>
 
       <!-- Static Site -->
       <g>
-        <rect x="38" y="130" width="224" height="50" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="38" y="130" width="4" height="50" rx="2"
-          fill="var(--color-primary)" />
-        <circle cx="56" cy="150" r="3.5" fill="var(--color-primary)" opacity="0.6" />
-        <text x="66" y="154"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
-          Astro
-        </text>
-        <text x="54" y="171"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <rect
+          x="38"
+          y="130"
+          width="224"
+          height="50"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="38" y="130" width="4" height="50" rx="2" fill="var(--color-primary)"></rect>
+        <circle cx="56" cy="150" r="3.5" fill="var(--color-primary)" opacity="0.6"></circle>
+        <text x="66" y="154" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600"> Astro </text>
+        <text x="54" y="171" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.staticSite}
         </text>
       </g>
@@ -101,92 +117,132 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== ORACLE CLOUD CONTAINER (top-right) ===== -->
     <g>
-      <rect x="340" y="20" width="340" height="310" rx="12"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-      <rect x="340" y="20" width="340" height="5" rx="2.5"
-        fill="var(--color-tertiary)" />
-      <text x="510" y="50" text-anchor="middle"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="11" font-weight="700" letter-spacing="1.5">
+      <rect
+        x="340"
+        y="20"
+        width="340"
+        height="310"
+        rx="12"
+        fill="var(--color-surface-container)"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"></rect>
+      <rect x="340" y="20" width="340" height="5" rx="2.5" fill="var(--color-tertiary)"></rect>
+      <text
+        x="510"
+        y="50"
+        text-anchor="middle"
+        fill="var(--color-on-surface-variant)"
+        font-family="var(--font-label)"
+        font-size="11"
+        font-weight="700"
+        letter-spacing="1.5"
+      >
         ORACLE CLOUD VPS
       </text>
 
       <!-- Caddy -->
       <g>
-        <rect x="358" y="62" width="304" height="48" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="358" y="62" width="4" height="48" rx="2"
-          fill="var(--color-outline)" />
-        <circle cx="376" cy="81" r="3.5" fill="var(--color-outline)" opacity="0.6" />
-        <text x="386" y="85"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
-          Caddy
-        </text>
-        <text x="374" y="101"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <rect
+          x="358"
+          y="62"
+          width="304"
+          height="48"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="358" y="62" width="4" height="48" rx="2" fill="var(--color-outline)"></rect>
+        <circle cx="376" cy="81" r="3.5" fill="var(--color-outline)" opacity="0.6"></circle>
+        <text x="386" y="85" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600"> Caddy </text>
+        <text x="374" y="101" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.reverseProxy}
         </text>
       </g>
 
       <!-- Internal arrow: Caddy → API -->
-      <line x1="460" y1="110" x2="460" y2="130"
-        stroke="var(--color-outline)" stroke-width="1" marker-end="url(#arrow)" />
+      <line x1="460" y1="110" x2="460" y2="130" stroke="var(--color-outline)" stroke-width="1" marker-end="url(#arrow)"></line>
 
       <!-- Backend API — Blue/Green overlapping boxes -->
       <g>
         <!-- Shadow/green box (offset behind) -->
-        <rect x="366" y="143" width="220" height="60" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" opacity="0.45" />
-        <rect x="366" y="143" width="4" height="60" rx="2"
-          fill="var(--color-tertiary)" opacity="0.45" />
+        <rect
+          x="366"
+          y="143"
+          width="220"
+          height="60"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"
+          opacity="0.45"></rect>
+        <rect x="366" y="143" width="4" height="60" rx="2" fill="var(--color-tertiary)" opacity="0.45"></rect>
         <!-- Main/blue box (in front) -->
-        <rect x="358" y="136" width="220" height="60" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="358" y="136" width="4" height="60" rx="2"
-          fill="var(--color-tertiary)" />
-        <circle cx="376" cy="154" r="3.5" fill="var(--color-tertiary)" opacity="0.6" />
-        <text x="386" y="158"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+        <rect
+          x="358"
+          y="136"
+          width="220"
+          height="60"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="358" y="136" width="4" height="60" rx="2" fill="var(--color-tertiary)"></rect>
+        <circle cx="376" cy="154" r="3.5" fill="var(--color-tertiary)" opacity="0.6"></circle>
+        <text x="386" y="158" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
           ASP.NET Core
         </text>
-        <text x="374" y="174"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
-          Backend API
-        </text>
+        <text x="374" y="174" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11"> Backend API </text>
         <!-- Blue/Green badge -->
-        <rect x="490" y="152" width="72" height="16" rx="8"
-          fill="var(--color-tertiary)" opacity="0.15" />
-        <text x="526" y="163" text-anchor="middle"
-          fill="var(--color-tertiary)" font-family="var(--font-label)" font-size="9" font-weight="700">
+        <rect x="490" y="152" width="72" height="16" rx="8" fill="var(--color-tertiary)" opacity="0.15"></rect>
+        <text
+          x="526"
+          y="163"
+          text-anchor="middle"
+          fill="var(--color-tertiary)"
+          font-family="var(--font-label)"
+          font-size="9"
+          font-weight="700"
+        >
           {t.blueGreen}
         </text>
       </g>
 
       <!-- Internal arrow: API → Temporal (planned, dashed) -->
-      <line x1="460" y1="203" x2="460" y2="220"
-        stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow-muted)" />
+      <line
+        x1="460"
+        y1="203"
+        x2="460"
+        y2="220"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"
+        stroke-dasharray="3,2"
+        marker-end="url(#arrow-muted)"></line>
 
       <!-- Temporal (planned — same size as API) -->
       <g opacity="0.4">
-        <rect x="358" y="228" width="220" height="60" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <rect x="358" y="228" width="4" height="60" rx="2"
-          fill="var(--color-tertiary)" />
-        <circle cx="376" cy="248" r="3.5" fill="var(--color-tertiary)" opacity="0.6" />
-        <text x="386" y="252"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+        <rect
+          x="358"
+          y="228"
+          width="220"
+          height="60"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"
+          stroke-dasharray="4,3"></rect>
+        <rect x="358" y="228" width="4" height="60" rx="2" fill="var(--color-tertiary)"></rect>
+        <circle cx="376" cy="248" r="3.5" fill="var(--color-tertiary)" opacity="0.6"></circle>
+        <text x="386" y="252" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
           Temporal
         </text>
-        <text x="374" y="268"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <text x="374" y="268" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.backgroundJobs}
         </text>
         <!-- Animated loading spinner -->
         <g transform="translate(556, 252)">
           <g class="planned-spinner">
-            <circle cx="0" cy="0" r="6" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.5" />
-            <path d="M0,-6 A6,6 0 0,1 6,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="0" cy="0" r="6" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.5"></circle>
+            <path d="M0,-6 A6,6 0 0,1 6,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.5" stroke-linecap="round"></path>
           </g>
         </g>
       </g>
@@ -194,62 +250,86 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== SUPABASE CONTAINER (bottom-center) ===== -->
     <g>
-      <rect x="160" y="400" width="340" height="260" rx="12"
-        fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-      <rect x="160" y="400" width="340" height="5" rx="2.5"
-        fill="var(--color-on-surface-variant)" />
-      <text x="330" y="430" text-anchor="middle"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="11" font-weight="700" letter-spacing="1.5">
+      <rect
+        x="160"
+        y="400"
+        width="340"
+        height="260"
+        rx="12"
+        fill="var(--color-surface-container)"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"></rect>
+      <rect x="160" y="400" width="340" height="5" rx="2.5" fill="var(--color-on-surface-variant)"></rect>
+      <text
+        x="330"
+        y="430"
+        text-anchor="middle"
+        fill="var(--color-on-surface-variant)"
+        font-family="var(--font-label)"
+        font-size="11"
+        font-weight="700"
+        letter-spacing="1.5"
+      >
         SUPABASE
       </text>
 
       <!-- PostgreSQL -->
       <g>
-        <rect x="178" y="445" width="304" height="50" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="178" y="445" width="4" height="50" rx="2"
-          fill="var(--color-on-surface-variant)" />
-        <circle cx="196" cy="465" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6" />
-        <text x="206" y="469"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+        <rect
+          x="178"
+          y="445"
+          width="304"
+          height="50"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="178" y="445" width="4" height="50" rx="2" fill="var(--color-on-surface-variant)"></rect>
+        <circle cx="196" cy="465" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6"></circle>
+        <text x="206" y="469" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
           PostgreSQL
         </text>
-        <text x="194" y="486"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <text x="194" y="486" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.database}
         </text>
       </g>
 
       <!-- Auth -->
       <g>
-        <rect x="178" y="510" width="304" height="50" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="178" y="510" width="4" height="50" rx="2"
-          fill="var(--color-on-surface-variant)" />
-        <circle cx="196" cy="530" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6" />
-        <text x="206" y="534"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
-          Auth
-        </text>
-        <text x="194" y="551"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <rect
+          x="178"
+          y="510"
+          width="304"
+          height="50"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="178" y="510" width="4" height="50" rx="2" fill="var(--color-on-surface-variant)"></rect>
+        <circle cx="196" cy="530" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6"></circle>
+        <text x="206" y="534" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600"> Auth </text>
+        <text x="194" y="551" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.authentication} (JWT)
         </text>
       </g>
 
       <!-- File Storage -->
       <g>
-        <rect x="178" y="575" width="304" height="50" rx="8"
-          fill="var(--color-surface-container-high)" stroke="var(--color-outline-variant)" stroke-width="0.5" />
-        <rect x="178" y="575" width="4" height="50" rx="2"
-          fill="var(--color-on-surface-variant)" />
-        <circle cx="196" cy="595" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6" />
-        <text x="206" y="599"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
+        <rect
+          x="178"
+          y="575"
+          width="304"
+          height="50"
+          rx="8"
+          fill="var(--color-surface-container-high)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="0.5"></rect>
+        <rect x="178" y="575" width="4" height="50" rx="2" fill="var(--color-on-surface-variant)"></rect>
+        <circle cx="196" cy="595" r="3.5" fill="var(--color-on-surface-variant)" opacity="0.6"></circle>
+        <text x="206" y="599" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
           File Storage
         </text>
-        <text x="194" y="616"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
+        <text x="194" y="616" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
           {t.fileStorage}
         </text>
       </g>
@@ -258,63 +338,82 @@ const { t, class: className, ...rest } = Astro.props;
     <!-- ===== NODE-TO-NODE ARROWS ===== -->
 
     <!-- Static Site → Backend API (right edge of Astro → left edge of API) -->
-    <path d="M262,155 C310,155 310,160 352,160"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+    <path d="M262,155 C310,155 310,160 352,160" fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)"
+    ></path>
 
     <!-- Static Site → Supabase Auth (Astro bottom → Auth top) -->
-    <path d="M150,180 C150,310 250,380 280,503"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+    <path d="M150,180 C150,310 250,380 280,503" fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)"
+    ></path>
 
     <!-- Backend API → PostgreSQL (API bottom → DB top) -->
-    <path d="M468,203 C468,340 400,400 380,438"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+    <path d="M468,203 C468,340 400,400 380,438" fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)"
+    ></path>
 
     <!-- Backend API → Supabase Auth (JWT validation, dashed) -->
-    <path d="M440,196 C420,320 340,400 330,503"
-      fill="none" stroke="var(--color-outline)" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arrow)" />
+    <path
+      d="M440,196 C420,320 340,400 330,503"
+      fill="none"
+      stroke="var(--color-outline)"
+      stroke-width="1"
+      stroke-dasharray="5,3"
+      marker-end="url(#arrow)"></path>
 
     <!-- Backend API → Supabase Storage (file uploads) -->
-    <path d="M490,203 C500,400 460,530 440,568"
-      fill="none" stroke="var(--color-outline)" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arrow)" />
+    <path
+      d="M490,203 C500,400 460,530 440,568"
+      fill="none"
+      stroke="var(--color-outline)"
+      stroke-width="1"
+      stroke-dasharray="5,3"
+      marker-end="url(#arrow)"></path>
 
     <!-- Supabase Auth → Brevo Email (auth emails) -->
-    <path d="M482,535 C620,535 690,460 723,420"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+    <path d="M482,535 C620,535 690,460 723,420" fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)"
+    ></path>
 
     <!-- ===== CI/CD GROUP ===== -->
     <g>
-      <text x="850" y="48" text-anchor="end"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
+      <text
+        x="850"
+        y="48"
+        text-anchor="end"
+        fill="var(--color-on-surface-variant)"
+        font-family="var(--font-label)"
+        font-size="10"
+        font-weight="600"
+        letter-spacing="1"
+      >
         {t.cicd}
       </text>
 
       <!-- GitHub Actions -->
       <g>
-        <rect x="730" y="58" width="120" height="102" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <circle cx="746" cy="74" r="3" fill="var(--color-outline)" opacity="0.6" />
-        <text x="754" y="78"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+        <rect
+          x="730"
+          y="58"
+          width="120"
+          height="102"
+          rx="8"
+          fill="var(--color-surface-container)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"></rect>
+        <circle cx="746" cy="74" r="3" fill="var(--color-outline)" opacity="0.6"></circle>
+        <text x="754" y="78" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
           GitHub Actions
         </text>
-        <text x="746" y="96"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+        <text x="746" y="96" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
           {t.pipelineBackendTests}
         </text>
-        <text x="746" y="109"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+        <text x="746" y="109" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
           {t.pipelineFrontendTests}
         </text>
-        <text x="746" y="122"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+        <text x="746" y="122" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
           {t.pipelineE2eTests}
         </text>
-        <text x="746" y="135"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+        <text x="746" y="135" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
           {t.pipelineDeployBackend}
         </text>
-        <text x="746" y="148"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
+        <text x="746" y="148" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="9">
           {t.pipelineDeployFrontend}
         </text>
       </g>
@@ -322,61 +421,108 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== OBSERVABILITY GROUP ===== -->
     <g>
-      <text x="850" y="188" text-anchor="end"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
+      <text
+        x="850"
+        y="188"
+        text-anchor="end"
+        fill="var(--color-on-surface-variant)"
+        font-family="var(--font-label)"
+        font-size="10"
+        font-weight="600"
+        letter-spacing="1"
+      >
         {t.observability}
       </text>
 
       <!-- Sentry (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="198" width="120" height="32" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="219" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+        <rect
+          x="730"
+          y="198"
+          width="120"
+          height="32"
+          rx="8"
+          fill="var(--color-surface-container)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"
+          stroke-dasharray="4,3"></rect>
+        <text
+          x="790"
+          y="219"
+          text-anchor="middle"
+          fill="var(--color-on-surface)"
+          font-family="var(--font-body)"
+          font-size="11"
+          font-weight="600"
+        >
           Sentry
         </text>
         <g transform="translate(838, 214)">
           <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+            <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
+            <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
           </g>
         </g>
       </g>
 
       <!-- PostHog (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="240" width="120" height="32" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="261" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+        <rect
+          x="730"
+          y="240"
+          width="120"
+          height="32"
+          rx="8"
+          fill="var(--color-surface-container)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"
+          stroke-dasharray="4,3"></rect>
+        <text
+          x="790"
+          y="261"
+          text-anchor="middle"
+          fill="var(--color-on-surface)"
+          font-family="var(--font-body)"
+          font-size="11"
+          font-weight="600"
+        >
           PostHog
         </text>
         <g transform="translate(838, 256)">
           <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+            <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
+            <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
           </g>
         </g>
       </g>
 
       <!-- BetterStack (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="282" width="120" height="32" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="303" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="11" font-weight="600">
+        <rect
+          x="730"
+          y="282"
+          width="120"
+          height="32"
+          rx="8"
+          fill="var(--color-surface-container)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"
+          stroke-dasharray="4,3"></rect>
+        <text
+          x="790"
+          y="303"
+          text-anchor="middle"
+          fill="var(--color-on-surface)"
+          font-family="var(--font-body)"
+          font-size="11"
+          font-weight="600"
+        >
           BetterStack
         </text>
         <g transform="translate(838, 298)">
           <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+            <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
+            <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
           </g>
         </g>
       </g>
@@ -384,50 +530,88 @@ const { t, class: className, ...rest } = Astro.props;
 
     <!-- ===== NOTIFICATIONS GROUP ===== -->
     <g>
-      <text x="850" y="348" text-anchor="end"
-        fill="var(--color-on-surface-variant)" font-family="var(--font-label)" font-size="10" font-weight="600" letter-spacing="1">
+      <text
+        x="850"
+        y="348"
+        text-anchor="end"
+        fill="var(--color-on-surface-variant)"
+        font-family="var(--font-label)"
+        font-size="10"
+        font-weight="600"
+        letter-spacing="1"
+      >
         {t.notifications}
       </text>
 
       <!-- Slack (planned) -->
       <g opacity="0.4">
-        <rect x="730" y="358" width="120" height="32" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray="4,3" />
-        <text x="790" y="379" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="12" font-weight="600">
+        <rect
+          x="730"
+          y="358"
+          width="120"
+          height="32"
+          rx="8"
+          fill="var(--color-surface-container)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"
+          stroke-dasharray="4,3"></rect>
+        <text
+          x="790"
+          y="379"
+          text-anchor="middle"
+          fill="var(--color-on-surface)"
+          font-family="var(--font-body)"
+          font-size="12"
+          font-weight="600"
+        >
           Slack
         </text>
         <g transform="translate(838, 374)">
           <g class="planned-spinner">
-            <circle cx="0" cy="0" r="5" fill="none"
-              stroke="var(--color-outline-variant)" stroke-width="1.2" />
-            <path d="M0,-5 A5,5 0 0,1 5,0"
-              fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round" />
+            <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
+            <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
           </g>
         </g>
       </g>
 
       <!-- Email -->
       <g>
-        <rect x="730" y="400" width="120" height="44" rx="8"
-          fill="var(--color-surface-container)" stroke="var(--color-outline-variant)" stroke-width="1" />
-        <text x="790" y="419" text-anchor="middle"
-          fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="12" font-weight="600">
+        <rect
+          x="730"
+          y="400"
+          width="120"
+          height="44"
+          rx="8"
+          fill="var(--color-surface-container)"
+          stroke="var(--color-outline-variant)"
+          stroke-width="1"></rect>
+        <text
+          x="790"
+          y="419"
+          text-anchor="middle"
+          fill="var(--color-on-surface)"
+          font-family="var(--font-body)"
+          font-size="12"
+          font-weight="600"
+        >
           Brevo
         </text>
-        <text x="790" y="435" text-anchor="middle"
-          fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
+        <text x="790" y="435" text-anchor="middle" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="10">
           Email (SMTP)
         </text>
       </g>
     </g>
 
     <!-- Arrow: Backend API → Slack (planned, dashed) -->
-    <path d="M578,148 L723,372"
-      fill="none" stroke="var(--color-outline-variant)" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-muted)" />
+    <path
+      d="M578,148 L723,372"
+      fill="none"
+      stroke="var(--color-outline-variant)"
+      stroke-width="1.5"
+      stroke-dasharray="5,3"
+      marker-end="url(#arrow-muted)"></path>
 
     <!-- Arrow: Backend API → Email -->
-    <path d="M578,158 L723,420"
-      fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)" />
+    <path d="M578,158 L723,420" fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)"></path>
   </svg>
 </div>

@@ -1,308 +1,337 @@
 ---
-import '../styles/global.css'
-import AuthDialog from '../components/AuthDialog.astro';
-import Navbar from '../components/Navbar.astro';
-import Snackbar from '../components/Snackbar.astro';
-import Footer from '../components/Footer.astro';
-import type { Locale } from '../i18n/utils';
+import "../styles/global.css";
+import AuthDialog from "../components/AuthDialog.astro";
+import Navbar from "../components/Navbar.astro";
+import Snackbar from "../components/Snackbar.astro";
+import Footer from "../components/Footer.astro";
+import type { Locale } from "../i18n/utils";
 
-import enCommon from '../i18n/en/common.json';
-import csCommon from '../i18n/cs/common.json';
+import enCommon from "../i18n/en/common.json";
+import csCommon from "../i18n/cs/common.json";
 
 interface Props {
   title: string;
   description?: string;
-  activePage: 'home' | 'about' | 'project' | 'hire-me' | 'job-offers' | 'admin/job-offers' | 'profile' | 'privacy' | 'terms';
+  activePage: "home" | "about" | "project" | "hire-me" | "job-offers" | "admin/job-offers" | "profile" | "privacy" | "terms";
   lang?: Locale;
 }
 
 const {
   title,
-  description = 'Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public at kalandra.tech.',
+  description = "Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public at kalandra.tech.",
   activePage,
-  lang = 'en',
+  lang = "en",
 } = Astro.props;
 
-const t = lang === 'cs' ? csCommon : enCommon;
+const t = lang === "cs" ? csCommon : enCommon;
 
-const siteUrl = 'https://www.kalandra.tech';
-const enUrl = activePage === 'home' ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
-const csUrl = activePage === 'home' ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
-const canonicalUrl = lang === 'cs' ? csUrl : enUrl;
+const siteUrl = "https://www.kalandra.tech";
+const enUrl = activePage === "home" ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
+const csUrl = activePage === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
+const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang={lang}>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content={description} />
-  <meta name="author" content="Pavel Kalandra" />
-  <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Pavel Kalandra" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
 
-  <!-- Canonical & hreflang -->
-  <link rel="canonical" href={canonicalUrl} />
-  <link rel="alternate" hreflang="en" href={enUrl} />
-  <link rel="alternate" hreflang="cs" href={csUrl} />
-  <link rel="alternate" hreflang="x-default" href={enUrl} />
-  <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <!-- Canonical & hreflang -->
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="cs" href={csUrl} />
+    <link rel="alternate" hreflang="x-default" href={enUrl} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="kalandra.tech" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:url" content={canonicalUrl} />
-  <meta property="og:locale" content={lang === 'cs' ? 'cs_CZ' : 'en_US'} />
-  <meta property="og:locale:alternate" content={lang === 'cs' ? 'en_US' : 'cs_CZ'} />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="kalandra.tech" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={lang === "cs" ? "cs_CZ" : "en_US"} />
+    <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
 
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <title>{title}</title>
 
-  <script is:inline>
-    (function() {
-      var theme = localStorage.getItem('theme');
-      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      }
-      // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
-      // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
-      // We also extract the user's display name + avatar so the profile chip's width is stable
-      // before the supabase JS module hydrates — otherwise the empty name span grows after first
-      // paint and shifts surrounding header elements.
-      try {
-        var session = null;
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') === k.length - 11) {
-            var v = localStorage.getItem(k);
-            if (v && v.length > 2) { try { session = JSON.parse(v); } catch (_) {} break; }
+    <script is:inline>
+      (function () {
+        var theme = localStorage.getItem("theme");
+        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+        }
+        // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
+        // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
+        // We also extract the user's display name + avatar so the profile chip's width is stable
+        // before the supabase JS module hydrates — otherwise the empty name span grows after first
+        // paint and shifts surrounding header elements.
+        try {
+          var session = null;
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
+              var v = localStorage.getItem(k);
+              if (v && v.length > 2) {
+                try {
+                  session = JSON.parse(v);
+                } catch (_) {}
+                break;
+              }
+            }
           }
+          if (session && session.user) {
+            var u = session.user;
+            var meta = u.user_metadata || {};
+            window.__authPrefill = {
+              name: meta.full_name || (u.email ? u.email.split("@")[0] : "User"),
+              avatar: meta.avatar_url || "",
+              isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf("admin") !== -1),
+            };
+            document.documentElement.classList.add("auth-known-in");
+          } else {
+            document.documentElement.classList.add("auth-known-out");
+          }
+        } catch (e) {
+          document.documentElement.classList.add("auth-known-out");
         }
-        if (session && session.user) {
-          var u = session.user;
-          var meta = u.user_metadata || {};
-          window.__authPrefill = {
-            name: meta.full_name || (u.email ? u.email.split('@')[0] : 'User'),
-            avatar: meta.avatar_url || '',
-            isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf('admin') !== -1),
-          };
-          document.documentElement.classList.add('auth-known-in');
-        } else {
-          document.documentElement.classList.add('auth-known-out');
-        }
-      } catch (e) {
-        document.documentElement.classList.add('auth-known-out');
-      }
-    })();
-  </script>
-  <style is:global>
-    /* Pre-paint auth visibility to prevent header flash before supabase client hydrates.
+      })();
+    </script>
+    <style is:global>
+      /* Pre-paint auth visibility to prevent header flash before supabase client hydrates.
        These !important rules win over Tailwind's `hidden` class. The module script below
        removes the `auth-known-*` class once getSession() resolves, returning control to JS. */
-    html.auth-known-in #auth-sign-in-desktop,
-    html.auth-known-in #auth-sign-in-mobile { display: none !important; }
-    html.auth-known-in #auth-profile-desktop { display: block !important; }
-    html.auth-known-in #auth-profile-mobile { display: block !important; }
-    html.auth-known-out #auth-profile-desktop,
-    html.auth-known-out #auth-profile-mobile { display: none !important; }
+      html.auth-known-in #auth-sign-in-desktop,
+      html.auth-known-in #auth-sign-in-mobile {
+        display: none !important;
+      }
+      html.auth-known-in #auth-profile-desktop {
+        display: block !important;
+      }
+      html.auth-known-in #auth-profile-mobile {
+        display: block !important;
+      }
+      html.auth-known-out #auth-profile-desktop,
+      html.auth-known-out #auth-profile-mobile {
+        display: none !important;
+      }
 
-    /* Generic helpers any page can use to gate content on auth state pre-paint.
+      /* Generic helpers any page can use to gate content on auth state pre-paint.
        Add `signed-in-only` to elements that should only be visible when signed in,
        and `signed-out-only` to elements that should only be visible when signed out. */
-    html.auth-known-in .signed-out-only { display: none !important; }
-    html.auth-known-out .signed-in-only { display: none !important; }
-    html.auth-known-in .signed-in-only { display: block !important; }
+      html.auth-known-in .signed-out-only {
+        display: none !important;
+      }
+      html.auth-known-out .signed-in-only {
+        display: none !important;
+      }
+      html.auth-known-in .signed-in-only {
+        display: block !important;
+      }
 
-    /* Hide Material Symbols icon text until the font loads to prevent FOUT.
+      /* Hide Material Symbols icon text until the font loads to prevent FOUT.
        The `icons-ready` class is added by the inline script below once the font is available. */
-    html:not(.icons-ready) .material-symbols-outlined { visibility: hidden; }
+      html:not(.icons-ready) .material-symbols-outlined {
+        visibility: hidden;
+      }
 
-    /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
+      /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
        `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
        happened while the end-of-body updateToggleIcons() script had not yet run. */
-    html:not(.dark) .dark-visible { display: none !important; }
-    html.dark .dark-hidden { display: none !important; }
-    html.dark .dark-visible { display: inline-block !important; }
-  </style>
-  <script is:inline>
-    document.fonts.ready.then(function() {
-      document.documentElement.classList.add('icons-ready');
-    });
-  </script>
-</head>
-<body class="min-h-screen flex flex-col">
+      html:not(.dark) .dark-visible {
+        display: none !important;
+      }
+      html.dark .dark-hidden {
+        display: none !important;
+      }
+      html.dark .dark-visible {
+        display: inline-block !important;
+      }
+    </style>
+    <script is:inline>
+      document.fonts.ready.then(function () {
+        document.documentElement.classList.add("icons-ready");
+      });
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <Navbar activePage={activePage} lang={lang} t={t} />
 
-  <Navbar activePage={activePage} lang={lang} t={t} />
+    <script is:inline>
+      // Prefill the profile chip from the session we parsed in the head pre-detect script,
+      // so the chip's width is finalized before first paint. Runs synchronously during parse.
+      (function () {
+        var p = window.__authPrefill;
+        if (!p) return;
+        var nameEl = document.getElementById("auth-name-desktop");
+        if (nameEl) nameEl.textContent = p.name;
+        var avatarDesktop = document.getElementById("auth-avatar-desktop");
+        var avatarMobile = document.getElementById("auth-avatar-mobile");
+        function applyAvatar(img) {
+          if (!img) return;
+          if (p.avatar) {
+            img.src = p.avatar;
+            img.alt = p.name;
+          } else {
+            img.style.display = "none";
+            var placeholder = img.nextElementSibling;
+            if (placeholder) {
+              placeholder.classList.remove("hidden");
+              placeholder.textContent = (p.name.charAt(0) || "?").toUpperCase();
+            }
+          }
+        }
+        applyAvatar(avatarDesktop);
+        applyAvatar(avatarMobile);
+        var adminLink = document.getElementById("auth-admin-link-desktop");
+        if (adminLink && p.isAdmin) adminLink.classList.remove("hidden");
+      })();
+    </script>
 
-  <script is:inline>
-    // Prefill the profile chip from the session we parsed in the head pre-detect script,
-    // so the chip's width is finalized before first paint. Runs synchronously during parse.
-    (function() {
-      var p = window.__authPrefill;
-      if (!p) return;
-      var nameEl = document.getElementById('auth-name-desktop');
-      if (nameEl) nameEl.textContent = p.name;
-      var avatarDesktop = document.getElementById('auth-avatar-desktop');
-      var avatarMobile = document.getElementById('auth-avatar-mobile');
-      function applyAvatar(img) {
-        if (!img) return;
-        if (p.avatar) {
-          img.src = p.avatar;
-          img.alt = p.name;
+    <!-- Main content -->
+    <main id="main-content" class="pt-32 pb-24 flex-1">
+      <slot />
+    </main>
+
+    <Footer lang={lang} t={t} />
+
+    <script>
+      import "../lib/theme-toggle";
+    </script>
+
+    <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
+    <AuthDialog lang={lang} />
+
+    <script>
+      import "../lib/api-errors";
+      import { getSupabaseClient } from "../lib/supabase";
+
+      const supabase = getSupabaseClient();
+
+      function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
+        if (!imgEl) return;
+        if (avatarUrl) {
+          imgEl.src = avatarUrl;
+          imgEl.alt = name;
+          imgEl.style.display = "";
+          imgEl.nextElementSibling?.classList.add("hidden");
         } else {
-          img.style.display = 'none';
-          var placeholder = img.nextElementSibling;
+          imgEl.style.display = "none";
+          const placeholder = imgEl.nextElementSibling;
           if (placeholder) {
-            placeholder.classList.remove('hidden');
-            placeholder.textContent = (p.name.charAt(0) || '?').toUpperCase();
+            placeholder.classList.remove("hidden");
+            placeholder.textContent = (name.charAt(0) || "?").toUpperCase();
           }
         }
       }
-      applyAvatar(avatarDesktop);
-      applyAvatar(avatarMobile);
-      var adminLink = document.getElementById('auth-admin-link-desktop');
-      if (adminLink && p.isAdmin) adminLink.classList.remove('hidden');
-    })();
-  </script>
 
-  <!-- Main content -->
-  <main id="main-content" class="pt-32 pb-24 flex-1">
-    <slot />
-  </main>
+      function updateAuthUI(user: any) {
+        const signInDesktop = document.getElementById("auth-sign-in-desktop");
+        const profileDesktop = document.getElementById("auth-profile-desktop");
+        const avatarDesktop = document.getElementById("auth-avatar-desktop") as HTMLImageElement;
+        const nameDesktop = document.getElementById("auth-name-desktop");
+        const signInMobile = document.getElementById("auth-sign-in-mobile");
+        const profileMobile = document.getElementById("auth-profile-mobile");
+        const avatarMobile = document.getElementById("auth-avatar-mobile") as HTMLImageElement;
+        const adminLinkDesktop = document.getElementById("auth-admin-link-desktop");
 
-  <Footer lang={lang} t={t} />
+        if (user) {
+          const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+          const avatar = user.user_metadata?.avatar_url || "";
+          const isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
 
-  <script>
-    import '../lib/theme-toggle';
-  </script>
+          if (signInDesktop) signInDesktop.classList.add("hidden");
+          if (profileDesktop) {
+            profileDesktop.classList.remove("hidden");
+            setAvatarOrInitial(avatarDesktop, name, avatar);
+            if (nameDesktop) nameDesktop.textContent = name;
+          }
+          if (signInMobile) signInMobile.classList.add("hidden");
+          if (profileMobile) {
+            profileMobile.classList.remove("hidden");
+            setAvatarOrInitial(avatarMobile, name, avatar);
+          }
+          if (adminLinkDesktop) adminLinkDesktop.classList.toggle("hidden", !isAdmin);
 
-  <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
-  <AuthDialog lang={lang} />
+          window.dispatchEvent(new CustomEvent("auth-change", { detail: { user } }));
+        } else {
+          if (signInDesktop) signInDesktop.classList.remove("hidden");
+          if (profileDesktop) profileDesktop.classList.add("hidden");
+          if (signInMobile) signInMobile.classList.remove("hidden");
+          if (profileMobile) profileMobile.classList.add("hidden");
+          if (adminLinkDesktop) adminLinkDesktop.classList.add("hidden");
 
-  <script>
-    import '../lib/api-errors';
-    import { getSupabaseClient } from '../lib/supabase';
-
-    const supabase = getSupabaseClient();
-
-    function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
-      if (!imgEl) return;
-      if (avatarUrl) {
-        imgEl.src = avatarUrl;
-        imgEl.alt = name;
-        imgEl.style.display = '';
-        imgEl.nextElementSibling?.classList.add('hidden');
-      } else {
-        imgEl.style.display = 'none';
-        const placeholder = imgEl.nextElementSibling;
-        if (placeholder) {
-          placeholder.classList.remove('hidden');
-          placeholder.textContent = (name.charAt(0) || '?').toUpperCase();
+          window.dispatchEvent(new CustomEvent("auth-change", { detail: { user: null } }));
         }
       }
-    }
 
-    function updateAuthUI(user: any) {
-      const signInDesktop = document.getElementById('auth-sign-in-desktop');
-      const profileDesktop = document.getElementById('auth-profile-desktop');
-      const avatarDesktop = document.getElementById('auth-avatar-desktop') as HTMLImageElement;
-      const nameDesktop = document.getElementById('auth-name-desktop');
-      const signInMobile = document.getElementById('auth-sign-in-mobile');
-      const profileMobile = document.getElementById('auth-profile-mobile');
-      const avatarMobile = document.getElementById('auth-avatar-mobile') as HTMLImageElement;
-      const adminLinkDesktop = document.getElementById('auth-admin-link-desktop');
-
-      if (user) {
-        const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-        const avatar = user.user_metadata?.avatar_url || '';
-        const isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf('admin') !== -1;
-
-        if (signInDesktop) signInDesktop.classList.add('hidden');
-        if (profileDesktop) {
-          profileDesktop.classList.remove('hidden');
-          setAvatarOrInitial(avatarDesktop, name, avatar);
-          if (nameDesktop) nameDesktop.textContent = name;
-        }
-        if (signInMobile) signInMobile.classList.add('hidden');
-        if (profileMobile) {
-          profileMobile.classList.remove('hidden');
-          setAvatarOrInitial(avatarMobile, name, avatar);
-        }
-        if (adminLinkDesktop) adminLinkDesktop.classList.toggle('hidden', !isAdmin);
-
-        window.dispatchEvent(new CustomEvent('auth-change', { detail: { user } }));
-      } else {
-        if (signInDesktop) signInDesktop.classList.remove('hidden');
-        if (profileDesktop) profileDesktop.classList.add('hidden');
-        if (signInMobile) signInMobile.classList.remove('hidden');
-        if (profileMobile) profileMobile.classList.add('hidden');
-        if (adminLinkDesktop) adminLinkDesktop.classList.add('hidden');
-
-        window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: null } }));
+      async function signOut() {
+        if (!supabase) return;
+        await supabase.auth.signOut();
+        updateAuthUI(null);
       }
-    }
 
-    async function signOut() {
-      if (!supabase) return;
-      await supabase.auth.signOut();
-      updateAuthUI(null);
-    }
+      // Initialize
+      if (supabase) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          updateAuthUI(session?.user ?? null);
+          // Hand visibility control back to JS now that the real session is known.
+          document.documentElement.classList.remove("auth-known-in", "auth-known-out");
+        });
 
-    // Initialize
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        updateAuthUI(session?.user ?? null);
-        // Hand visibility control back to JS now that the real session is known.
-        document.documentElement.classList.remove('auth-known-in', 'auth-known-out');
-      });
+        supabase.auth.onAuthStateChange((_event, session) => {
+          updateAuthUI(session?.user ?? null);
+        });
+      }
 
-      supabase.auth.onAuthStateChange((_event, session) => {
-        updateAuthUI(session?.user ?? null);
-      });
-    }
+      const openDialog = () => (window as any).__openAuthDialog?.();
+      document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-out-desktop")?.addEventListener("click", signOut);
 
-    const openDialog = () => (window as any).__openAuthDialog?.();
-    document.getElementById('auth-sign-in-desktop')?.addEventListener('click', openDialog);
-    document.getElementById('auth-sign-in-mobile')?.addEventListener('click', openDialog);
-    document.getElementById('auth-sign-out-desktop')?.addEventListener('click', signOut);
+      // Expose globals for other pages and E2E tests
+      (window as any).__supabase = supabase;
+      (window as any).__getAccessToken = async () => {
+        if (!supabase) return null;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        return session?.access_token ?? null;
+      };
+      (window as any).__getUser = async () => {
+        if (!supabase) return null;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        return session?.user ?? null;
+      };
+    </script>
 
-    // Expose globals for other pages and E2E tests
-    (window as any).__supabase = supabase;
-    (window as any).__getAccessToken = async () => {
-      if (!supabase) return null;
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token ?? null;
-    };
-    (window as any).__getUser = async () => {
-      if (!supabase) return null;
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.user ?? null;
-    };
-  </script>
+    <Snackbar />
 
-  <Snackbar />
+    <script>
+      // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
+      // Sign out any existing session — the person clicking the link is the one who signed up.
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const authError = hashParams.get("error_description");
+      if (authError) {
+        (window as any).__supabase?.auth.signOut();
+        (window as any).__showSnackbar(decodeURIComponent(authError), "error", 0);
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    </script>
 
-  <script>
-    // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
-    // Sign out any existing session — the person clicking the link is the one who signed up.
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const authError = hashParams.get('error_description');
-    if (authError) {
-      (window as any).__supabase?.auth.signOut();
-      (window as any).__showSnackbar(decodeURIComponent(authError), 'error', 0);
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  </script>
-
-  <script>
-    import '../lib/details-animation';
-  </script>
-
-</body>
+    <script>
+      import "../lib/details-animation";
+    </script>
+  </body>
 </html>

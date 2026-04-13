@@ -14,7 +14,9 @@
     "test": "playwright test",
     "test:install": "playwright install chromium",
     "test:e2e": "playwright test --config playwright.e2e.config.ts",
-    "serve": "serve dist -l 4321"
+    "serve": "serve dist -l 4321",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
@@ -26,6 +28,8 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "cross-env": "^10.1.0",
+    "prettier": "^3.8.2",
+    "prettier-plugin-astro": "^0.14.1",
     "serve": "^14.2.6"
   }
 }

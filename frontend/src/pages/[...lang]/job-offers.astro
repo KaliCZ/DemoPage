@@ -1,20 +1,20 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import JobOfferDetail from '../../components/JobOfferDetail.astro';
-import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
-import enStrings from '../../i18n/en/job-offers.json';
-import csStrings from '../../i18n/cs/job-offers.json';
-import enHireMe from '../../i18n/en/hire-me.json';
-import csHireMe from '../../i18n/cs/hire-me.json';
-import enCommon from '../../i18n/en/common.json';
-import csCommon from '../../i18n/cs/common.json';
+import Layout from "../../layouts/Layout.astro";
+import JobOfferDetail from "../../components/JobOfferDetail.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/job-offers.json";
+import csStrings from "../../i18n/cs/job-offers.json";
+import enHireMe from "../../i18n/en/hire-me.json";
+import csHireMe from "../../i18n/cs/hire-me.json";
+import enCommon from "../../i18n/en/common.json";
+import csCommon from "../../i18n/cs/common.json";
 
 const translations = { en: enStrings, cs: csStrings };
 const formTranslations = { en: enHireMe, cs: csHireMe };
 const commonTranslations = { en: enCommon, cs: csCommon };
 
 export function getStaticPaths() {
-  return locales.map(lang => ({
+  return locales.map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }
@@ -26,13 +26,14 @@ const c = commonTranslations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="job-offers" lang={lang}>
-
   <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
-    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">
+      {t.hero.subtitle}
+    </p>
   </section>
 
   <!-- Loading (shown until auth check completes) -->
@@ -46,10 +47,17 @@ const c = commonTranslations[lang];
   <section id="login-prompt" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
-      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
-      <button id="offers-sign-in" type="button"
-        class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.loginPrompt.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.loginPrompt.description}
+      </p>
+      <button
+        id="offers-sign-in"
+        type="button"
+        class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
         {t.loginPrompt.signInButton}
       </button>
     </div>
@@ -59,33 +67,63 @@ const c = commonTranslations[lang];
   <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <!-- Status filter dropdown -->
     <div id="status-filter" class="relative mb-6">
-      <button id="status-filter-toggle" type="button"
+      <button
+        id="status-filter-toggle"
+        type="button"
         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-sm font-label font-semibold text-on-surface hover:border-primary/30 transition-colors cursor-pointer"
-        aria-haspopup="listbox" aria-expanded="false">
+        aria-haspopup="listbox"
+        aria-expanded="false"
+      >
         <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_list</span>
         <span id="filter-label">{t.list.filterByStatus}</span>
         <span id="filter-count" class="hidden px-1.5 py-0.5 rounded-full text-xs bg-primary text-on-primary"></span>
         <span class="material-symbols-outlined text-lg ml-1" aria-hidden="true">expand_more</span>
       </button>
-      <div id="status-filter-menu" class="hidden absolute left-0 top-full mt-1 z-10 min-w-[200px] bg-surface-container-low rounded-xl border border-outline-variant/20 shadow-lg py-1" role="listbox" aria-multiselectable="true" aria-label={t.list.filterByStatus}>
+      <div
+        id="status-filter-menu"
+        class="hidden absolute left-0 top-full mt-1 z-10 min-w-[200px] bg-surface-container-low rounded-xl border border-outline-variant/20 shadow-lg py-1"
+        role="listbox"
+        aria-multiselectable="true"
+        aria-label={t.list.filterByStatus}
+      >
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="Submitted" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="Submitted"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.submitted}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="InReview" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="InReview"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.inReview}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="LetsTalk" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="LetsTalk"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.accepted}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="Declined" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="Declined"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.declined}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="Cancelled" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="Cancelled"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.cancelled}</span>
         </label>
       </div>
@@ -96,26 +134,38 @@ const c = commonTranslations[lang];
     </div>
     <div id="offers-empty" class="hidden bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-4 block" aria-hidden="true">inbox</span>
-      <h2 class="font-headline text-xl font-bold text-on-surface mb-3">{t.empty.title}</h2>
-      <p class="text-on-surface-variant font-body mb-6">{t.empty.description}</p>
-      <a href={localePath(lang, 'hire-me')}
-        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors">
+      <h2 class="font-headline text-xl font-bold text-on-surface mb-3">
+        {t.empty.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.empty.description}
+      </p>
+      <a
+        href={localePath(lang, "hire-me")}
+        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors"
+      >
         {t.empty.cta}
       </a>
     </div>
     <div id="offers-grid" class="hidden grid gap-4"></div>
     <!-- Pagination controls -->
     <nav id="pagination-controls" class="hidden flex items-center justify-center gap-3 mt-8" aria-label="Pagination">
-      <button id="pagination-prev" type="button"
+      <button
+        id="pagination-prev"
+        type="button"
         class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-        disabled>
+        disabled
+      >
         <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
         {t.list.paginationPrev}
       </button>
       <span id="pagination-indicator" class="text-sm font-label text-on-surface-variant"></span>
-      <button id="pagination-next" type="button"
+      <button
+        id="pagination-next"
+        type="button"
         class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-        disabled>
+        disabled
+      >
         {t.list.paginationNext}
         <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
       </button>
@@ -124,49 +174,61 @@ const c = commonTranslations[lang];
 
   <JobOfferDetail isAdmin={false} t={t} f={f} />
 
-  <script define:vars={{
-    apiUrl: import.meta.env.PUBLIC_API_URL || '',
-    hireMeUrl: localePath(lang, 'hire-me'),
-    filterByStatusLabel: t.list.filterByStatus,
-    statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
-    remoteLabel: t.list.remote,
-    editClearNotAllowedLabel: t.list.editClearNotAllowed,
-    clearFieldLabels: { salaryRange: f.salaryRange, location: f.location, additionalNotes: f.additionalNotes },
-    historyFieldLabels: t.list.fieldLabels,
-    historyFieldChanged: t.list.fieldChanged,
-    historyFieldBefore: t.list.fieldBefore,
-    historyFieldAfter: t.list.fieldAfter,
-    historyFieldYes: t.list.fieldYes,
-    historyFieldNo: t.list.fieldNo,
-    historyEmptyLabel: t.list.historyEmpty,
-    commentsEmptyLabel: t.list.commentsEmpty,
-    errorText: c.errors.generic,
-    errorNotFound: c.errors.notFound,
-    errorDownload: c.errors.downloadFailed,
-    errorServer: c.errors.serverError,
-    errorNetwork: c.errors.networkError,
-    attachmentsLabel: t.list.attachments,
-    downloadLabel: t.list.download,
-    validationStrings: f.validation,
-    apiErrorMap: t.errors,
-    paginationPageLabel: t.list.paginationPage
-  }}>
+  <script
+    define:vars={{
+      apiUrl: import.meta.env.PUBLIC_API_URL || "",
+      hireMeUrl: localePath(lang, "hire-me"),
+      filterByStatusLabel: t.list.filterByStatus,
+      statusLabels: {
+        Submitted: t.list.submitted,
+        InReview: t.list.inReview,
+        LetsTalk: t.list.accepted,
+        Declined: t.list.declined,
+        Cancelled: t.list.cancelled,
+      },
+      remoteLabel: t.list.remote,
+      editClearNotAllowedLabel: t.list.editClearNotAllowed,
+      clearFieldLabels: {
+        salaryRange: f.salaryRange,
+        location: f.location,
+        additionalNotes: f.additionalNotes,
+      },
+      historyFieldLabels: t.list.fieldLabels,
+      historyFieldChanged: t.list.fieldChanged,
+      historyFieldBefore: t.list.fieldBefore,
+      historyFieldAfter: t.list.fieldAfter,
+      historyFieldYes: t.list.fieldYes,
+      historyFieldNo: t.list.fieldNo,
+      historyEmptyLabel: t.list.historyEmpty,
+      commentsEmptyLabel: t.list.commentsEmpty,
+      errorText: c.errors.generic,
+      errorNotFound: c.errors.notFound,
+      errorDownload: c.errors.downloadFailed,
+      errorServer: c.errors.serverError,
+      errorNetwork: c.errors.networkError,
+      attachmentsLabel: t.list.attachments,
+      downloadLabel: t.list.download,
+      validationStrings: f.validation,
+      apiErrorMap: t.errors,
+      paginationPageLabel: t.list.paginationPage,
+    }}
+  >
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
-    fetch(apiUrl + '/health').catch(function() {});
+    fetch(apiUrl + "/health").catch(function () {});
 
     var currentPage = 1;
     var pageSize = 10;
 
     function showError(status, traceId) {
       var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;
-      window.__showSnackbar?.(msg, 'error', 8000, traceId);
+      window.__showSnackbar?.(msg, "error", 8000, traceId);
     }
 
     async function showApiError(res) {
       var result = await window.__getApiError?.(res, apiErrorMap);
       if (result?.message) {
-        window.__showSnackbar?.(result.message, 'error', 8000, result.traceId);
+        window.__showSnackbar?.(result.message, "error", 8000, result.traceId);
         return result.message;
       }
       showError(res.status, result?.traceId);
@@ -181,7 +243,7 @@ const c = commonTranslations[lang];
     // Client-side user info cache: userId → { displayName, avatarUrl, _ts }
     // Persisted in localStorage so it survives page refreshes and works across tabs.
     // Entries expire after 5 minutes to pick up avatar/name changes.
-    var USER_INFO_CACHE_KEY = 'userInfoCache';
+    var USER_INFO_CACHE_KEY = "userInfoCache";
     var USER_INFO_CACHE_TTL = 5 * 60 * 1000;
 
     function loadUserInfoCache() {
@@ -190,28 +252,34 @@ const c = commonTranslations[lang];
         var now = Date.now();
         var valid = {};
         for (var id in raw) {
-          if (raw[id] && raw[id]._ts && (now - raw[id]._ts) < USER_INFO_CACHE_TTL) {
+          if (raw[id] && raw[id]._ts && now - raw[id]._ts < USER_INFO_CACHE_TTL) {
             valid[id] = raw[id];
           }
         }
         return valid;
-      } catch { return {}; }
+      } catch {
+        return {};
+      }
     }
 
     function saveUserInfoCache(cache) {
-      try { localStorage.setItem(USER_INFO_CACHE_KEY, JSON.stringify(cache)); } catch {}
+      try {
+        localStorage.setItem(USER_INFO_CACHE_KEY, JSON.stringify(cache));
+      } catch {}
     }
 
     var userInfoCache = loadUserInfoCache();
 
     async function fetchUserInfo(userIds) {
       if (!userIds || userIds.length === 0) return {};
-      var uncached = userIds.filter(function(id, i, arr) { return !(id in userInfoCache) && arr.indexOf(id) === i; });
+      var uncached = userIds.filter(function (id, i, arr) {
+        return !(id in userInfoCache) && arr.indexOf(id) === i;
+      });
       if (uncached.length > 0) {
         try {
           var token = await window.__getAccessToken?.();
-          var res = await fetch(apiUrl + '/api/users?ids=' + uncached.join('&ids='), {
-            headers: { 'Authorization': 'Bearer ' + token }
+          var res = await fetch(apiUrl + "/api/users?ids=" + uncached.join("&ids="), {
+            headers: { Authorization: "Bearer " + token },
           });
           if (res.ok) {
             var data = await res.json();
@@ -220,58 +288,60 @@ const c = commonTranslations[lang];
               data[id]._ts = now;
               userInfoCache[id] = data[id];
             }
-            uncached.forEach(function(id) {
+            uncached.forEach(function (id) {
               if (!(id in userInfoCache)) userInfoCache[id] = { _ts: now };
             });
             saveUserInfoCache(userInfoCache);
           }
-        } catch (e) { /* user info fetch is best-effort */ }
+        } catch (e) {
+          /* user info fetch is best-effort */
+        }
       }
       var result = {};
-      userIds.forEach(function(id) {
+      userIds.forEach(function (id) {
         if (userInfoCache[id] && userInfoCache[id].displayName) result[id] = userInfoCache[id];
       });
       return result;
     }
 
     var statusColors = {
-      Submitted: 'bg-secondary-container text-on-surface',
-      InReview: 'bg-primary-container text-on-primary-container',
-      LetsTalk: 'bg-tertiary-container text-on-surface',
-      Declined: 'bg-error-container text-on-surface',
-      Cancelled: 'bg-surface-container-high text-on-surface-variant'
+      Submitted: "bg-secondary-container text-on-surface",
+      InReview: "bg-primary-container text-on-primary-container",
+      LetsTalk: "bg-tertiary-container text-on-surface",
+      Declined: "bg-error-container text-on-surface",
+      Cancelled: "bg-surface-container-high text-on-surface-variant",
     };
 
     var eventIcons = {
-      Submitted: 'send',
-      Edited: 'edit',
-      StatusChanged: 'swap_horiz',
-      Cancelled: 'cancel',
-      Comment: 'chat_bubble'
+      Submitted: "send",
+      Edited: "edit",
+      StatusChanged: "swap_horiz",
+      Cancelled: "cancel",
+      Comment: "chat_bubble",
     };
 
-    window.addEventListener('auth-change', async function(e) {
+    window.addEventListener("auth-change", async function (e) {
       var user = e.detail?.user;
-      document.getElementById('auth-loading')?.classList.add('hidden');
+      document.getElementById("auth-loading")?.classList.add("hidden");
       if (user) {
         if (loadedForUserId === user.id) return;
         loadedForUserId = user.id;
-        document.getElementById('login-prompt')?.classList.add('hidden');
-        var hasHash = location.hash.replace('#', '');
+        document.getElementById("login-prompt")?.classList.add("hidden");
+        var hasHash = location.hash.replace("#", "");
         if (!hasHash) {
-          document.getElementById('offers-list-section')?.classList.remove('hidden');
+          document.getElementById("offers-list-section")?.classList.remove("hidden");
         }
         await loadOffers();
         checkHashOnLoad();
       } else {
         loadedForUserId = null;
-        document.getElementById('login-prompt')?.classList.remove('hidden');
-        document.getElementById('offers-list-section')?.classList.add('hidden');
+        document.getElementById("login-prompt")?.classList.remove("hidden");
+        document.getElementById("offers-list-section")?.classList.add("hidden");
       }
     });
 
-    document.getElementById('offers-sign-in')?.addEventListener('click', function() {
-      document.getElementById('auth-sign-in-desktop')?.click();
+    document.getElementById("offers-sign-in")?.addEventListener("click", function () {
+      document.getElementById("auth-sign-in-desktop")?.click();
     });
 
     async function loadOffers() {
@@ -280,48 +350,72 @@ const c = commonTranslations[lang];
 
       var response;
       try {
-        var params = ['page=' + currentPage, 'pageSize=' + pageSize];
-        activeStatuses.forEach(function(s) { params.push('status=' + s); });
-        response = await fetch(apiUrl + '/api/job-offers/mine?' + params.join('&'), {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
+        var params = ["page=" + currentPage, "pageSize=" + pageSize];
+        activeStatuses.forEach(function (s) {
+          params.push("status=" + s);
+        });
+        response = await fetch(apiUrl + "/api/job-offers/mine?" + params.join("&"), {
+          headers: { Authorization: "Bearer " + currentToken },
         });
       } catch (e) {
-        document.getElementById('offers-loading')?.classList.add('hidden');
-        showError(); return;
-      }
-
-      document.getElementById('offers-loading')?.classList.add('hidden');
-      if (!response.ok) { await showApiError(response); return; }
-
-      var data = await response.json();
-      if (data.pagination.totalCount === 0) {
-        document.getElementById('offers-empty')?.classList.remove('hidden');
-        document.getElementById('offers-grid')?.classList.add('hidden');
-        document.getElementById('pagination-controls')?.classList.add('hidden');
+        document.getElementById("offers-loading")?.classList.add("hidden");
+        showError();
         return;
       }
 
-      document.getElementById('offers-empty')?.classList.add('hidden');
-      var grid = document.getElementById('offers-grid');
-      if (!grid) return;
-      grid.classList.remove('hidden');
-      grid.innerHTML = '';
+      document.getElementById("offers-loading")?.classList.add("hidden");
+      if (!response.ok) {
+        await showApiError(response);
+        return;
+      }
 
-      data.items.forEach(function(offer) {
-        var card = document.createElement('div');
-        card.className = 'bg-surface-container-low rounded-2xl border border-outline-variant/10 p-6 hover:border-primary/20 transition-colors cursor-pointer';
-        card.innerHTML = '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
+      var data = await response.json();
+      if (data.pagination.totalCount === 0) {
+        document.getElementById("offers-empty")?.classList.remove("hidden");
+        document.getElementById("offers-grid")?.classList.add("hidden");
+        document.getElementById("pagination-controls")?.classList.add("hidden");
+        return;
+      }
+
+      document.getElementById("offers-empty")?.classList.add("hidden");
+      var grid = document.getElementById("offers-grid");
+      if (!grid) return;
+      grid.classList.remove("hidden");
+      grid.innerHTML = "";
+
+      data.items.forEach(function (offer) {
+        var card = document.createElement("div");
+        card.className =
+          "bg-surface-container-low rounded-2xl border border-outline-variant/10 p-6 hover:border-primary/20 transition-colors cursor-pointer";
+        card.innerHTML =
+          '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
           '<div class="flex-1 min-w-0">' +
-            '<h3 class="font-headline text-lg font-bold text-on-surface truncate">' + esc(offer.jobTitle) + '</h3>' +
-            '<p class="text-sm text-on-surface-variant font-body">' + esc(offer.companyName) + '</p>' +
-          '</div>' +
+          '<h3 class="font-headline text-lg font-bold text-on-surface truncate">' +
+          esc(offer.jobTitle) +
+          "</h3>" +
+          '<p class="text-sm text-on-surface-variant font-body">' +
+          esc(offer.companyName) +
+          "</p>" +
+          "</div>" +
           '<div class="flex items-center gap-3 flex-shrink-0">' +
-            (offer.isRemote ? '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold bg-tertiary-container text-on-surface">' + remoteLabel + '</span>' : '') +
-            '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold ' + (statusColors[offer.status] || '') + '">' + (statusLabels[offer.status] || offer.status) + '</span>' +
-            '<span class="text-xs text-on-surface-variant font-label">' + new Date(offer.createdAt).toLocaleDateString() + '</span>' +
-          '</div>' +
-        '</div>';
-        card.addEventListener('click', function() { showDetail(offer.id); });
+          (offer.isRemote
+            ? '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold bg-tertiary-container text-on-surface">' +
+              remoteLabel +
+              "</span>"
+            : "") +
+          '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold ' +
+          (statusColors[offer.status] || "") +
+          '">' +
+          (statusLabels[offer.status] || offer.status) +
+          "</span>" +
+          '<span class="text-xs text-on-surface-variant font-label">' +
+          new Date(offer.createdAt).toLocaleDateString() +
+          "</span>" +
+          "</div>" +
+          "</div>";
+        card.addEventListener("click", function () {
+          showDetail(offer.id);
+        });
         grid.appendChild(card);
       });
 
@@ -329,47 +423,49 @@ const c = commonTranslations[lang];
     }
 
     function renderPagination(data) {
-      var controls = document.getElementById('pagination-controls');
-      var prevBtn = document.getElementById('pagination-prev');
-      var nextBtn = document.getElementById('pagination-next');
-      var indicator = document.getElementById('pagination-indicator');
+      var controls = document.getElementById("pagination-controls");
+      var prevBtn = document.getElementById("pagination-prev");
+      var nextBtn = document.getElementById("pagination-next");
+      var indicator = document.getElementById("pagination-indicator");
       var p = data.pagination;
 
       if (p.pageCount <= 1) {
-        controls?.classList.add('hidden');
+        controls?.classList.add("hidden");
         return;
       }
 
-      controls?.classList.remove('hidden');
+      controls?.classList.remove("hidden");
       prevBtn.disabled = !p.hasPreviousPage;
       nextBtn.disabled = !p.hasNextPage;
-      indicator.textContent = paginationPageLabel
-        .replace('{current}', String(p.page))
-        .replace('{total}', String(p.pageCount));
+      indicator.textContent = paginationPageLabel.replace("{current}", String(p.page)).replace("{total}", String(p.pageCount));
     }
 
     async function showDetail(id, skipHashUpdate) {
       currentOfferId = id;
-      if (!skipHashUpdate) history.pushState(null, '', '#' + id);
-      document.getElementById('offers-list-section')?.classList.add('hidden');
-      document.getElementById('offer-detail-section')?.classList.remove('hidden');
-      document.getElementById('offer-detail')?.classList.remove('hidden');
-      document.getElementById('edit-form-section')?.classList.add('hidden');
-      document.getElementById('cancel-controls')?.classList.add('hidden');
+      if (!skipHashUpdate) history.pushState(null, "", "#" + id);
+      document.getElementById("offers-list-section")?.classList.add("hidden");
+      document.getElementById("offer-detail-section")?.classList.remove("hidden");
+      document.getElementById("offer-detail")?.classList.remove("hidden");
+      document.getElementById("edit-form-section")?.classList.add("hidden");
+      document.getElementById("cancel-controls")?.classList.add("hidden");
 
-      var headers = { 'Authorization': 'Bearer ' + currentToken };
+      var headers = { Authorization: "Bearer " + currentToken };
       var detailRes, historyRes, commentsRes;
       try {
         [detailRes, historyRes, commentsRes] = await Promise.all([
-          fetch(apiUrl + '/api/job-offers/' + id, { headers }),
-          fetch(apiUrl + '/api/job-offers/' + id + '/history', { headers }),
-          fetch(apiUrl + '/api/job-offers/' + id + '/comments', { headers })
+          fetch(apiUrl + "/api/job-offers/" + id, { headers }),
+          fetch(apiUrl + "/api/job-offers/" + id + "/history", { headers }),
+          fetch(apiUrl + "/api/job-offers/" + id + "/comments", { headers }),
         ]);
       } catch (e) {
-        showError(); return;
+        showError();
+        return;
       }
 
-      if (!detailRes.ok) { await showApiError(detailRes); return; }
+      if (!detailRes.ok) {
+        await showApiError(detailRes);
+        return;
+      }
       var offer = await detailRes.json();
       currentOffer = offer;
 
@@ -380,62 +476,102 @@ const c = commonTranslations[lang];
     }
 
     function renderDetail(offer) {
-      var detail = document.getElementById('offer-detail');
+      var detail = document.getElementById("offer-detail");
       if (!detail) return;
       detail.innerHTML =
         '<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">' +
-          '<div>' +
-            '<h2 class="font-headline text-2xl font-bold text-on-surface mb-1">' + esc(offer.jobTitle) + '</h2>' +
-            '<p class="text-on-surface-variant font-body">' + esc(offer.companyName) + '</p>' +
-          '</div>' +
-          '<span class="px-4 py-1.5 rounded-full text-sm font-label font-semibold ' + (statusColors[offer.status] || '') + ' self-start">' + (statusLabels[offer.status] || offer.status) + '</span>' +
-        '</div>' +
+        "<div>" +
+        '<h2 class="font-headline text-2xl font-bold text-on-surface mb-1">' +
+        esc(offer.jobTitle) +
+        "</h2>" +
+        '<p class="text-on-surface-variant font-body">' +
+        esc(offer.companyName) +
+        "</p>" +
+        "</div>" +
+        '<span class="px-4 py-1.5 rounded-full text-sm font-label font-semibold ' +
+        (statusColors[offer.status] || "") +
+        ' self-start">' +
+        (statusLabels[offer.status] || offer.status) +
+        "</span>" +
+        "</div>" +
         '<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">' +
-          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Contact</p><p class="text-sm font-body text-on-surface">' + esc(offer.contactName) + '</p><p class="text-sm font-body text-on-surface-variant">' + esc(offer.contactEmail) + '</p></div>' +
-          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Location</p><p class="text-sm font-body text-on-surface">' + (offer.location ? esc(offer.location) : '—') + (offer.isRemote ? ' <span class="text-tertiary">(' + remoteLabel + ')</span>' : '') + '</p></div>' +
-          (offer.salaryRange ? '<div><p class="text-xs font-label text-on-surface-variant mb-1">Salary</p><p class="text-sm font-body text-on-surface">' + esc(offer.salaryRange) + '</p></div>' : '') +
-          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Submitted</p><p class="text-sm font-body text-on-surface">' + new Date(offer.createdAt).toLocaleString() + '</p></div>' +
-        '</div>' +
-        '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Description</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + esc(offer.description) + '</p></div>' +
-        (offer.additionalNotes ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Additional Notes</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + esc(offer.additionalNotes) + '</p></div>' : '') +
-        (offer.attachments && offer.attachments.length > 0 ?
-          '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">' + attachmentsLabel + '</p>' +
-          '<div class="space-y-2">' +
-          offer.attachments.map(function(att) {
-            var sizeStr = att.fileSize >= 1024 * 1024
-              ? (att.fileSize / 1024 / 1024).toFixed(1) + ' MB'
-              : Math.round(att.fileSize / 1024) + ' KB';
-            return '<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm">' +
-              '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
-              '<span class="flex-1 truncate font-body text-on-surface">' + esc(att.fileName) + '</span>' +
-              '<span class="text-xs text-on-surface-variant font-label">' + sizeStr + '</span>' +
-              '<button type="button" data-file-name="' + esc(att.fileName) + '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
-                '<span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>' + downloadLabel +
-              '</button>' +
-            '</div>';
-          }).join('') +
-          '</div></div>' : '');
+        '<div><p class="text-xs font-label text-on-surface-variant mb-1">Contact</p><p class="text-sm font-body text-on-surface">' +
+        esc(offer.contactName) +
+        '</p><p class="text-sm font-body text-on-surface-variant">' +
+        esc(offer.contactEmail) +
+        "</p></div>" +
+        '<div><p class="text-xs font-label text-on-surface-variant mb-1">Location</p><p class="text-sm font-body text-on-surface">' +
+        (offer.location ? esc(offer.location) : "—") +
+        (offer.isRemote ? ' <span class="text-tertiary">(' + remoteLabel + ")</span>" : "") +
+        "</p></div>" +
+        (offer.salaryRange
+          ? '<div><p class="text-xs font-label text-on-surface-variant mb-1">Salary</p><p class="text-sm font-body text-on-surface">' +
+            esc(offer.salaryRange) +
+            "</p></div>"
+          : "") +
+        '<div><p class="text-xs font-label text-on-surface-variant mb-1">Submitted</p><p class="text-sm font-body text-on-surface">' +
+        new Date(offer.createdAt).toLocaleString() +
+        "</p></div>" +
+        "</div>" +
+        '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Description</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' +
+        esc(offer.description) +
+        "</p></div>" +
+        (offer.additionalNotes
+          ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Additional Notes</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' +
+            esc(offer.additionalNotes) +
+            "</p></div>"
+          : "") +
+        (offer.attachments && offer.attachments.length > 0
+          ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">' +
+            attachmentsLabel +
+            "</p>" +
+            '<div class="space-y-2">' +
+            offer.attachments
+              .map(function (att) {
+                var sizeStr =
+                  att.fileSize >= 1024 * 1024 ? (att.fileSize / 1024 / 1024).toFixed(1) + " MB" : Math.round(att.fileSize / 1024) + " KB";
+                return (
+                  '<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm">' +
+                  '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
+                  '<span class="flex-1 truncate font-body text-on-surface">' +
+                  esc(att.fileName) +
+                  "</span>" +
+                  '<span class="text-xs text-on-surface-variant font-label">' +
+                  sizeStr +
+                  "</span>" +
+                  '<button type="button" data-file-name="' +
+                  esc(att.fileName) +
+                  '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
+                  '<span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>' +
+                  downloadLabel +
+                  "</button>" +
+                  "</div>"
+                );
+              })
+              .join("") +
+            "</div></div>"
+          : "");
 
       // Bind download buttons
-      detail.querySelectorAll('.download-attachment-btn').forEach(function(btn) {
-        btn.addEventListener('click', async function() {
-          var fileName = btn.getAttribute('data-file-name');
+      detail.querySelectorAll(".download-attachment-btn").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var fileName = btn.getAttribute("data-file-name");
           if (!currentOfferId || !fileName || !currentToken) return;
 
           try {
             var encodedName = encodeURIComponent(fileName);
-            var response = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/attachments/' + encodedName, {
-              headers: { 'Authorization': 'Bearer ' + currentToken }
+            var response = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/attachments/" + encodedName, {
+              headers: { Authorization: "Bearer " + currentToken },
             });
 
             if (!response.ok) {
-              window.__showSnackbar?.(response.status === 404 ? errorDownload : response.status >= 500 ? errorServer : errorText, 'error');
+              window.__showSnackbar?.(response.status === 404 ? errorDownload : response.status >= 500 ? errorServer : errorText, "error");
               return;
             }
 
             var blob = await response.blob();
             var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
+            var a = document.createElement("a");
             a.href = url;
             a.download = fileName;
             a.click();
@@ -448,160 +584,216 @@ const c = commonTranslations[lang];
     }
 
     function renderControls(offer) {
-      var canEdit = offer.status === 'Submitted';
-      var canCancel = offer.status === 'Submitted' || offer.status === 'InReview';
+      var canEdit = offer.status === "Submitted";
+      var canCancel = offer.status === "Submitted" || offer.status === "InReview";
 
-      var actionsEl = document.getElementById('user-actions');
-      var editBtn = document.getElementById('edit-btn');
-      var cancelBtn = document.getElementById('cancel-btn');
-      if (actionsEl) actionsEl.classList.toggle('hidden', !canEdit && !canCancel);
-      if (editBtn) editBtn.classList.toggle('hidden', !canEdit);
-      if (cancelBtn) cancelBtn.classList.toggle('hidden', !canCancel);
+      var actionsEl = document.getElementById("user-actions");
+      var editBtn = document.getElementById("edit-btn");
+      var cancelBtn = document.getElementById("cancel-btn");
+      if (actionsEl) actionsEl.classList.toggle("hidden", !canEdit && !canCancel);
+      if (editBtn) editBtn.classList.toggle("hidden", !canEdit);
+      if (cancelBtn) cancelBtn.classList.toggle("hidden", !canCancel);
     }
 
     var longTextFields = { Description: true, AdditionalNotes: true };
 
     function formatFieldValue(val, field) {
-      if (val == null || val === '') return '—';
-      if (field === 'IsRemote') return val === 'true' ? historyFieldYes : historyFieldNo;
+      if (val == null || val === "") return "—";
+      if (field === "IsRemote") return val === "true" ? historyFieldYes : historyFieldNo;
       return esc(val);
     }
 
     var diffIdCounter = 0;
 
     function renderChanges(changes) {
-      if (!changes || changes.length === 0) return '';
-      return '<ul class="mt-1 space-y-1 list-none pl-0">' +
-        changes.map(function(c) {
-          var label = (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
-          if (longTextFields[c.field]) {
-            var id = 'diff-' + (++diffIdCounter);
-            return '<li class="text-on-surface-variant">' +
-              '<button type="button" data-diff-toggle="' + id + '" class="group diff-toggle inline-flex items-center gap-1 font-semibold text-primary cursor-pointer bg-transparent border-none p-0 text-sm">' +
-                '<span class="group-hover:underline">' + esc(label) + ' ' + historyFieldChanged + '</span>' +
+      if (!changes || changes.length === 0) return "";
+      return (
+        '<ul class="mt-1 space-y-1 list-none pl-0">' +
+        changes
+          .map(function (c) {
+            var label = (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
+            if (longTextFields[c.field]) {
+              var id = "diff-" + ++diffIdCounter;
+              return (
+                '<li class="text-on-surface-variant">' +
+                '<button type="button" data-diff-toggle="' +
+                id +
+                '" class="group diff-toggle inline-flex items-center gap-1 font-semibold text-primary cursor-pointer bg-transparent border-none p-0 text-sm">' +
+                '<span class="group-hover:underline">' +
+                esc(label) +
+                " " +
+                historyFieldChanged +
+                "</span>" +
                 ' <span class="material-symbols-outlined text-sm transition-transform" aria-hidden="true">expand_more</span>' +
-              '</button>' +
-              '<div id="' + id + '" class="hidden mt-2 rounded-lg border border-outline-variant/20 overflow-hidden text-xs">' +
+                "</button>" +
+                '<div id="' +
+                id +
+                '" class="hidden mt-2 rounded-lg border border-outline-variant/20 overflow-hidden text-xs">' +
                 '<div class="px-3 py-2 bg-error-container/30">' +
-                  '<p class="font-label font-semibold text-on-surface-variant mb-1">' + historyFieldBefore + '</p>' +
-                  '<p class="font-body text-on-surface whitespace-pre-line">' + esc(c.oldValue || '—') + '</p>' +
-                '</div>' +
+                '<p class="font-label font-semibold text-on-surface-variant mb-1">' +
+                historyFieldBefore +
+                "</p>" +
+                '<p class="font-body text-on-surface whitespace-pre-line">' +
+                esc(c.oldValue || "—") +
+                "</p>" +
+                "</div>" +
                 '<div class="px-3 py-2 bg-tertiary-container/30">' +
-                  '<p class="font-label font-semibold text-on-surface-variant mb-1">' + historyFieldAfter + '</p>' +
-                  '<p class="font-body text-on-surface whitespace-pre-line">' + esc(c.newValue || '—') + '</p>' +
-                '</div>' +
-              '</div>' +
-            '</li>';
-          }
-          return '<li class="text-on-surface-variant"><span class="font-semibold">' + esc(label) + ':</span> ' +
-            '<span class="line-through opacity-60">' + formatFieldValue(c.oldValue, c.field) + '</span>' +
-            ' → ' +
-            '<span>' + formatFieldValue(c.newValue, c.field) + '</span></li>';
-        }).join('') +
-      '</ul>';
+                '<p class="font-label font-semibold text-on-surface-variant mb-1">' +
+                historyFieldAfter +
+                "</p>" +
+                '<p class="font-body text-on-surface whitespace-pre-line">' +
+                esc(c.newValue || "—") +
+                "</p>" +
+                "</div>" +
+                "</div>" +
+                "</li>"
+              );
+            }
+            return (
+              '<li class="text-on-surface-variant"><span class="font-semibold">' +
+              esc(label) +
+              ":</span> " +
+              '<span class="line-through opacity-60">' +
+              formatFieldValue(c.oldValue, c.field) +
+              "</span>" +
+              " → " +
+              "<span>" +
+              formatFieldValue(c.newValue, c.field) +
+              "</span></li>"
+            );
+          })
+          .join("") +
+        "</ul>"
+      );
     }
 
     async function renderHistory(history) {
-      var historyList = document.getElementById('history-list');
+      var historyList = document.getElementById("history-list");
       if (!historyList) return;
       // Filter out Comment events — those are shown in the comments section
-      var entries = history.entries.filter(function(e) { return e.eventType !== 'Comment'; });
+      var entries = history.entries.filter(function (e) {
+        return e.eventType !== "Comment";
+      });
       if (entries.length === 0) {
-        historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + '</p>';
+        historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + "</p>";
         return;
       }
-      var users = await fetchUserInfo(entries.map(function(e) { return e.actorUserId; }));
-      historyList.innerHTML = '';
-      entries.forEach(function(entry) {
-        var icon = eventIcons[entry.eventType] || 'info';
-        var el = document.createElement('div');
-        el.className = 'flex items-start gap-3 text-sm';
+      var users = await fetchUserInfo(
+        entries.map(function (e) {
+          return e.actorUserId;
+        }),
+      );
+      historyList.innerHTML = "";
+      entries.forEach(function (entry) {
+        var icon = eventIcons[entry.eventType] || "info";
+        var el = document.createElement("div");
+        el.className = "flex items-start gap-3 text-sm";
         var userInfo = users[entry.actorUserId];
-        var actorHtml = userInfo && userInfo.avatarUrl
-          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
-          : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
+        var actorHtml =
+          userInfo && userInfo.avatarUrl
+            ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+            : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' +
+              icon +
+              "</span>";
         var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
         var hasChanges = entry.changes && entry.changes.length > 0;
         var descHtml = hasChanges
-          ? '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' + renderChanges(entry.changes)
-          : '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>';
+          ? '<p class="font-body text-on-surface">' + esc(entry.description) + "</p>" + renderChanges(entry.changes)
+          : '<p class="font-body text-on-surface">' + esc(entry.description) + "</p>";
         el.innerHTML =
           actorHtml +
           '<div class="flex-1 min-w-0">' +
-            descHtml +
-            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(actorName) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
-          '</div>';
+          descHtml +
+          '<p class="text-xs font-label text-on-surface-variant mt-0.5">' +
+          esc(actorName) +
+          " · " +
+          new Date(entry.timestamp).toLocaleString() +
+          "</p>" +
+          "</div>";
         historyList.appendChild(el);
       });
 
       // Bind expand/collapse toggles for long-text diffs
-      historyList.querySelectorAll('.diff-toggle').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          var id = btn.getAttribute('data-diff-toggle');
+      historyList.querySelectorAll(".diff-toggle").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-diff-toggle");
           var panel = document.getElementById(id);
           if (!panel) return;
-          var icon = btn.querySelector('.material-symbols-outlined');
-          panel.classList.toggle('hidden');
-          if (icon) icon.style.transform = panel.classList.contains('hidden') ? '' : 'rotate(180deg)';
+          var icon = btn.querySelector(".material-symbols-outlined");
+          panel.classList.toggle("hidden");
+          if (icon) icon.style.transform = panel.classList.contains("hidden") ? "" : "rotate(180deg)";
         });
       });
     }
 
     async function renderComments(data) {
-      var list = document.getElementById('comments-list');
+      var list = document.getElementById("comments-list");
       if (!list) return;
       if (data.comments.length === 0) {
-        list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + '</p>';
+        list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + "</p>";
         return;
       }
-      var users = await fetchUserInfo(data.comments.map(function(c) { return c.userId; }));
-      list.innerHTML = '';
-      data.comments.forEach(function(c) {
-        var el = document.createElement('div');
-        el.className = 'flex gap-3';
+      var users = await fetchUserInfo(
+        data.comments.map(function (c) {
+          return c.userId;
+        }),
+      );
+      list.innerHTML = "";
+      data.comments.forEach(function (c) {
+        var el = document.createElement("div");
+        el.className = "flex gap-3";
         var userInfo = users[c.userId];
         var displayName = (userInfo && userInfo.displayName) || c.userName;
-        var avatarHtml = userInfo && userInfo.avatarUrl
-          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
-          : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
-              '<span class="text-xs font-bold text-on-primary-container">' + esc(displayName.charAt(0).toUpperCase()) + '</span>' +
-            '</div>';
+        var avatarHtml =
+          userInfo && userInfo.avatarUrl
+            ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+            : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
+              '<span class="text-xs font-bold text-on-primary-container">' +
+              esc(displayName.charAt(0).toUpperCase()) +
+              "</span>" +
+              "</div>";
         el.innerHTML =
           avatarHtml +
           '<div class="flex-1 min-w-0">' +
-            '<div class="flex items-baseline gap-2">' +
-              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(displayName) + '</span>' +
-              '<span class="text-xs font-label text-on-surface-variant">' + new Date(c.createdAt).toLocaleString() + '</span>' +
-            '</div>' +
-            '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' + esc(c.content) + '</p>' +
-          '</div>';
+          '<div class="flex items-baseline gap-2">' +
+          '<span class="text-sm font-label font-semibold text-on-surface">' +
+          esc(displayName) +
+          "</span>" +
+          '<span class="text-xs font-label text-on-surface-variant">' +
+          new Date(c.createdAt).toLocaleString() +
+          "</span>" +
+          "</div>" +
+          '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' +
+          esc(c.content) +
+          "</p>" +
+          "</div>";
         list.appendChild(el);
       });
     }
 
     // Edit button
-    document.getElementById('edit-btn')?.addEventListener('click', function() {
+    document.getElementById("edit-btn")?.addEventListener("click", function () {
       if (!currentOffer) return;
       var o = currentOffer;
-      document.getElementById('edit-companyName').value = o.companyName;
-      document.getElementById('edit-contactName').value = o.contactName;
-      document.getElementById('edit-contactEmail').value = o.contactEmail;
-      document.getElementById('edit-jobTitle').value = o.jobTitle;
-      document.getElementById('edit-description').value = o.description;
-      document.getElementById('edit-salaryRange').value = o.salaryRange || '';
-      document.getElementById('edit-location').value = o.location || '';
-      document.getElementById('edit-isRemote').checked = o.isRemote;
-      document.getElementById('edit-additionalNotes').value = o.additionalNotes || '';
+      document.getElementById("edit-companyName").value = o.companyName;
+      document.getElementById("edit-contactName").value = o.contactName;
+      document.getElementById("edit-contactEmail").value = o.contactEmail;
+      document.getElementById("edit-jobTitle").value = o.jobTitle;
+      document.getElementById("edit-description").value = o.description;
+      document.getElementById("edit-salaryRange").value = o.salaryRange || "";
+      document.getElementById("edit-location").value = o.location || "";
+      document.getElementById("edit-isRemote").checked = o.isRemote;
+      document.getElementById("edit-additionalNotes").value = o.additionalNotes || "";
 
-      document.getElementById('offer-detail')?.classList.add('hidden');
-      document.getElementById('user-actions')?.classList.add('hidden');
-      document.getElementById('edit-form-section')?.classList.remove('hidden');
+      document.getElementById("offer-detail")?.classList.add("hidden");
+      document.getElementById("user-actions")?.classList.add("hidden");
+      document.getElementById("edit-form-section")?.classList.remove("hidden");
     });
 
-    document.getElementById('edit-discard')?.addEventListener('click', function() {
-      document.getElementById('edit-form-section')?.classList.add('hidden');
-      document.getElementById('offer-detail')?.classList.remove('hidden');
-      document.getElementById('user-actions')?.classList.remove('hidden');
+    document.getElementById("edit-discard")?.addEventListener("click", function () {
+      document.getElementById("edit-form-section")?.classList.add("hidden");
+      document.getElementById("offer-detail")?.classList.remove("hidden");
+      document.getElementById("user-actions")?.classList.remove("hidden");
     });
 
     // --- Inline validation (shared with hire-me) ---
@@ -610,29 +802,29 @@ const c = commonTranslations[lang];
     function getFieldError(field) {
       var value = field.value.trim();
       var name = field.name;
-      if (field.hasAttribute('required') && !value) return validationStrings.required;
-      if (name === 'contactEmail' && value && !emailRegex.test(value)) return validationStrings.emailInvalid;
-      if (name === 'description' && value && value.length < 20) return validationStrings.descriptionMinLength.replace('{min}', '20');
-      var ml = field.getAttribute('maxlength');
-      if (ml && value.length > parseInt(ml, 10)) return validationStrings.maxLength.replace('{max}', ml);
-      return '';
+      if (field.hasAttribute("required") && !value) return validationStrings.required;
+      if (name === "contactEmail" && value && !emailRegex.test(value)) return validationStrings.emailInvalid;
+      if (name === "description" && value && value.length < 20) return validationStrings.descriptionMinLength.replace("{min}", "20");
+      var ml = field.getAttribute("maxlength");
+      if (ml && value.length > parseInt(ml, 10)) return validationStrings.maxLength.replace("{max}", ml);
+      return "";
     }
 
     function showFieldError(field, message) {
       clearFieldError(field);
       if (!message) return;
-      field.classList.add('border-error');
-      field.classList.remove('border-outline-variant/20');
-      var errorSpan = document.createElement('p');
-      errorSpan.className = 'field-error text-error text-xs font-body mt-1';
+      field.classList.add("border-error");
+      field.classList.remove("border-outline-variant/20");
+      var errorSpan = document.createElement("p");
+      errorSpan.className = "field-error text-error text-xs font-body mt-1";
       errorSpan.textContent = message;
       field.parentElement.appendChild(errorSpan);
     }
 
     function clearFieldError(field) {
-      field.classList.remove('border-error');
-      field.classList.add('border-outline-variant/20');
-      var existing = field.parentElement.querySelector('.field-error');
+      field.classList.remove("border-error");
+      field.classList.add("border-outline-variant/20");
+      var existing = field.parentElement.querySelector(".field-error");
       if (existing) existing.remove();
     }
 
@@ -645,31 +837,36 @@ const c = commonTranslations[lang];
     function validateAllFields(form) {
       var valid = true;
       var firstInvalid = null;
-      form.querySelectorAll('input[name], textarea[name]').forEach(function(field) {
-        if (field.type === 'checkbox' || field.type === 'file') return;
-        if (!validateField(field)) { if (!firstInvalid) firstInvalid = field; valid = false; }
+      form.querySelectorAll("input[name], textarea[name]").forEach(function (field) {
+        if (field.type === "checkbox" || field.type === "file") return;
+        if (!validateField(field)) {
+          if (!firstInvalid) firstInvalid = field;
+          valid = false;
+        }
       });
       if (firstInvalid) firstInvalid.focus();
       return valid;
     }
 
     // Attach blur/input validation to edit form fields
-    var editFormEl = document.getElementById('edit-form');
+    var editFormEl = document.getElementById("edit-form");
     if (editFormEl) {
-      editFormEl.querySelectorAll('input[name], textarea[name]').forEach(function(field) {
-        if (field.type === 'checkbox' || field.type === 'file') return;
-        field.addEventListener('blur', function() { validateField(field); });
-        field.addEventListener('input', function() {
-          if (field.parentElement.querySelector('.field-error')) validateField(field);
+      editFormEl.querySelectorAll("input[name], textarea[name]").forEach(function (field) {
+        if (field.type === "checkbox" || field.type === "file") return;
+        field.addEventListener("blur", function () {
+          validateField(field);
+        });
+        field.addEventListener("input", function () {
+          if (field.parentElement.querySelector(".field-error")) validateField(field);
         });
       });
     }
 
-    document.getElementById('edit-form')?.addEventListener('submit', async function(e) {
+    document.getElementById("edit-form")?.addEventListener("submit", async function (e) {
       e.preventDefault();
       var form = e.target;
-      var errEl = document.getElementById('edit-error');
-      if (errEl) errEl.classList.add('hidden');
+      var errEl = document.getElementById("edit-error");
+      if (errEl) errEl.classList.add("hidden");
 
       if (!validateAllFields(form)) return;
 
@@ -685,8 +882,8 @@ const c = commonTranslations[lang];
       if (o.additionalNotes && !form.additionalNotes.value.trim()) cleared.push(clearFieldLabels.additionalNotes);
       if (cleared.length > 0) {
         if (errEl) {
-          errEl.textContent = editClearNotAllowedLabel + cleared.join(', ');
-          errEl.classList.remove('hidden');
+          errEl.textContent = editClearNotAllowedLabel + cleared.join(", ");
+          errEl.classList.remove("hidden");
         }
         return;
       }
@@ -700,47 +897,61 @@ const c = commonTranslations[lang];
         salaryRange: form.salaryRange.value || null,
         location: form.location.value || null,
         isRemote: form.isRemote.checked,
-        additionalNotes: form.additionalNotes.value || null
+        additionalNotes: form.additionalNotes.value || null,
       };
 
       try {
-        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify(body)
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify(body),
         });
       } catch (e) {
-        if (errEl) { errEl.textContent = errorNetwork; errEl.classList.remove('hidden'); }
-        showError(); return;
+        if (errEl) {
+          errEl.textContent = errorNetwork;
+          errEl.classList.remove("hidden");
+        }
+        showError();
+        return;
       }
 
       if (res.ok) {
         await showDetail(currentOfferId);
       } else {
         var apiMsg = await showApiError(res);
-        if (errEl) { errEl.textContent = apiMsg || errorText; errEl.classList.remove('hidden'); }
+        if (errEl) {
+          errEl.textContent = apiMsg || errorText;
+          errEl.classList.remove("hidden");
+        }
       }
     });
 
     // Cancel button
-    document.getElementById('cancel-btn')?.addEventListener('click', function() {
-      document.getElementById('cancel-controls')?.classList.remove('hidden');
+    document.getElementById("cancel-btn")?.addEventListener("click", function () {
+      document.getElementById("cancel-controls")?.classList.remove("hidden");
     });
 
-    document.getElementById('confirm-cancel')?.addEventListener('click', async function() {
+    document.getElementById("confirm-cancel")?.addEventListener("click", async function () {
       if (!currentOfferId) return;
-      var reason = document.getElementById('cancel-reason')?.value || null;
+      var reason = document.getElementById("cancel-reason")?.value || null;
       try {
-        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/cancel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify({ reason: reason })
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/cancel", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify({ reason: reason }),
         });
       } catch (e) {
-        showError(); return;
+        showError();
+        return;
       }
       if (res.ok) {
-        history.pushState(null, '', location.pathname + location.search);
+        history.pushState(null, "", location.pathname + location.search);
         backToList();
         await loadOffers();
       } else {
@@ -750,30 +961,34 @@ const c = commonTranslations[lang];
 
     // Send comment
     async function sendComment() {
-      var input = document.getElementById('comment-input');
+      var input = document.getElementById("comment-input");
       var content = input?.value?.trim();
       if (!content || !currentOfferId) return;
 
       try {
-        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify({ content: content })
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify({ content: content }),
         });
       } catch (e) {
-        showError(); return;
+        showError();
+        return;
       }
 
       if (res.ok) {
-        if (input) input.value = '';
+        if (input) input.value = "";
         // Reload comments
-        var commentsRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
+        var commentsRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
+          headers: { Authorization: "Bearer " + currentToken },
         });
         if (commentsRes.ok) await renderComments(await commentsRes.json());
         // Reload history too
-        var historyRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/history', {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
+        var historyRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/history", {
+          headers: { Authorization: "Bearer " + currentToken },
         });
         if (historyRes.ok) await renderHistory(await historyRes.json());
       } else {
@@ -781,10 +996,10 @@ const c = commonTranslations[lang];
       }
     }
 
-    document.getElementById('send-comment')?.addEventListener('click', sendComment);
+    document.getElementById("send-comment")?.addEventListener("click", sendComment);
 
-    document.getElementById('comment-input')?.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+    document.getElementById("comment-input")?.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         sendComment();
       }
@@ -794,18 +1009,18 @@ const c = commonTranslations[lang];
     function backToList() {
       currentOfferId = null;
       currentOffer = null;
-      document.getElementById('offer-detail-section')?.classList.add('hidden');
-      document.getElementById('offers-list-section')?.classList.remove('hidden');
+      document.getElementById("offer-detail-section")?.classList.add("hidden");
+      document.getElementById("offers-list-section")?.classList.remove("hidden");
     }
 
-    document.getElementById('back-to-list')?.addEventListener('click', function() {
-      history.pushState(null, '', location.pathname + location.search);
+    document.getElementById("back-to-list")?.addEventListener("click", function () {
+      history.pushState(null, "", location.pathname + location.search);
       backToList();
     });
 
     // Handle browser back/forward
-    window.addEventListener('popstate', function() {
-      var hash = location.hash.replace('#', '');
+    window.addEventListener("popstate", function () {
+      var hash = location.hash.replace("#", "");
       if (hash && currentToken) {
         showDetail(hash, true);
       } else {
@@ -815,43 +1030,47 @@ const c = commonTranslations[lang];
 
     // Open offer from URL hash after auth
     function checkHashOnLoad() {
-      var hash = location.hash.replace('#', '');
+      var hash = location.hash.replace("#", "");
       if (hash && currentToken) {
         showDetail(hash, true);
       }
     }
 
     // Status filter dropdown
-    var filterToggle = document.getElementById('status-filter-toggle');
-    var filterMenu = document.getElementById('status-filter-menu');
-    var filterLabel = document.getElementById('filter-label');
-    var filterCount = document.getElementById('filter-count');
+    var filterToggle = document.getElementById("status-filter-toggle");
+    var filterMenu = document.getElementById("status-filter-menu");
+    var filterLabel = document.getElementById("filter-label");
+    var filterCount = document.getElementById("filter-count");
 
-    filterToggle?.addEventListener('click', function() {
-      var open = !filterMenu.classList.contains('hidden');
-      filterMenu.classList.toggle('hidden', open);
-      filterToggle.setAttribute('aria-expanded', String(!open));
+    filterToggle?.addEventListener("click", function () {
+      var open = !filterMenu.classList.contains("hidden");
+      filterMenu.classList.toggle("hidden", open);
+      filterToggle.setAttribute("aria-expanded", String(!open));
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener("click", function (e) {
       if (!filterToggle?.contains(e.target) && !filterMenu?.contains(e.target)) {
-        filterMenu?.classList.add('hidden');
-        filterToggle?.setAttribute('aria-expanded', 'false');
+        filterMenu?.classList.add("hidden");
+        filterToggle?.setAttribute("aria-expanded", "false");
       }
     });
 
-    document.querySelectorAll('.status-checkbox').forEach(function(cb) {
-      cb.addEventListener('change', async function() {
+    document.querySelectorAll(".status-checkbox").forEach(function (cb) {
+      cb.addEventListener("change", async function () {
         activeStatuses = [];
-        document.querySelectorAll('.status-checkbox:checked').forEach(function(c) {
+        document.querySelectorAll(".status-checkbox:checked").forEach(function (c) {
           activeStatuses.push(c.value);
         });
         if (activeStatuses.length > 0) {
           filterCount.textContent = activeStatuses.length;
-          filterCount.classList.remove('hidden');
-          filterLabel.textContent = activeStatuses.map(function(s) { return statusLabels[s] || s; }).join(', ');
+          filterCount.classList.remove("hidden");
+          filterLabel.textContent = activeStatuses
+            .map(function (s) {
+              return statusLabels[s] || s;
+            })
+            .join(", ");
         } else {
-          filterCount.classList.add('hidden');
+          filterCount.classList.add("hidden");
           filterLabel.textContent = filterByStatusLabel;
         }
         currentPage = 1;
@@ -859,24 +1078,23 @@ const c = commonTranslations[lang];
       });
     });
 
-    document.getElementById('pagination-prev')?.addEventListener('click', async function() {
+    document.getElementById("pagination-prev")?.addEventListener("click", async function () {
       if (currentPage > 1) {
         currentPage--;
         await loadOffers();
       }
     });
 
-    document.getElementById('pagination-next')?.addEventListener('click', async function() {
+    document.getElementById("pagination-next")?.addEventListener("click", async function () {
       currentPage++;
       await loadOffers();
     });
 
     function esc(str) {
-      if (!str) return '';
-      var div = document.createElement('div');
+      if (!str) return "";
+      var div = document.createElement("div");
       div.textContent = str;
       return div.innerHTML;
     }
   </script>
-
 </Layout>

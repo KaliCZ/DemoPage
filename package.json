@@ -4,6 +4,7 @@
   "description": "kalandra.tech — monorepo task runner",
   "scripts": {
     "postinstall": "cd frontend && npm install",
+    "prepare": "git config core.hooksPath frontend/.githooks",
     "dev": "npm run dev:db && npm run dev:supabase && npm run dev:services",
     "dev:infra": "npm run dev:db && npm run dev:supabase",
     "dev:db": "cd backend && docker compose up db -d --wait",

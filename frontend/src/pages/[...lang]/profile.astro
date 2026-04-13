@@ -1,14 +1,14 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import IconGoogle from '../../components/icons/IconGoogle.astro';
-import { locales, defaultLocale, type Locale } from '../../i18n/utils';
-import enStrings from '../../i18n/en/profile.json';
-import csStrings from '../../i18n/cs/profile.json';
+import Layout from "../../layouts/Layout.astro";
+import IconGoogle from "../../components/icons/IconGoogle.astro";
+import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/profile.json";
+import csStrings from "../../i18n/cs/profile.json";
 
 const translations = { en: enStrings, cs: csStrings };
 
 export function getStaticPaths() {
-  return locales.map(lang => ({
+  return locales.map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }
@@ -18,21 +18,26 @@ const t = translations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="profile" lang={lang}>
-
   <!-- Hero -->
   <section class="max-w-3xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
-    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">
+      {t.hero.subtitle}
+    </p>
   </section>
 
   <!-- Login prompt (shown when not authenticated) -->
   <section id="login-prompt" class="max-w-3xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
-      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.loginPrompt.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.loginPrompt.description}
+      </p>
       <button
         id="profile-sign-in"
         type="button"
@@ -45,10 +50,11 @@ const t = translations[lang];
 
   <!-- Profile settings (shown when authenticated) -->
   <section id="profile-section" class="hidden max-w-3xl mx-auto px-8 mb-16 space-y-8">
-
     <!-- Avatar -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
-      <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.avatar.title}</h2>
+      <h2 class="font-headline text-lg font-bold text-on-surface mb-4">
+        {t.avatar.title}
+      </h2>
       <div class="flex items-center gap-6">
         <div class="relative">
           <img id="avatar-preview-img" class="w-16 h-16 rounded-full object-cover hidden" src="" alt="" />
@@ -58,12 +64,17 @@ const t = translations[lang];
         </div>
         <div class="flex flex-col gap-2">
           <div class="flex gap-3">
-            <button type="button" id="avatar-change-btn"
-              class="px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+            <button
+              type="button"
+              id="avatar-change-btn"
+              class="px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+            >
               {t.avatar.change}
             </button>
           </div>
-          <p class="text-xs font-body text-on-surface-variant">{t.avatar.maxSize}</p>
+          <p class="text-xs font-body text-on-surface-variant">
+            {t.avatar.maxSize}
+          </p>
         </div>
       </div>
       <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" class="hidden" />
@@ -71,7 +82,9 @@ const t = translations[lang];
 
     <!-- Provider info -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
-      <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.provider.title}</h2>
+      <h2 class="font-headline text-lg font-bold text-on-surface mb-4">
+        {t.provider.title}
+      </h2>
       <div id="provider-list" class="flex flex-col gap-3"></div>
       <p id="provider-feedback" class="hidden text-sm font-body mt-3"></p>
     </div>
@@ -80,222 +93,318 @@ const t = translations[lang];
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <label for="display-name" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.displayName.label}</label>
       <div class="flex gap-3">
-        <input type="text" id="display-name" maxlength="100"
+        <input
+          type="text"
+          id="display-name"
+          maxlength="100"
           placeholder={t.displayName.placeholder}
-          class="flex-1 px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
-        <button type="button" id="save-name-btn"
-          class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer">
+          class="flex-1 px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        />
+        <button
+          type="button"
+          id="save-name-btn"
+          class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+        >
           {t.displayName.save}
         </button>
       </div>
       <p id="name-feedback" class="hidden text-sm font-body mt-2"></p>
     </div>
-
-
-
-
   </section>
 
   <template id="google-icon-template">
     <IconGoogle class="w-5 h-5 flex-shrink-0" />
   </template>
 
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || '', strings: { avatar: t.avatar, displayName: t.displayName, email: t.email, password: t.password, provider: t.provider }, avatarErrorMap: t.avatar.errors }}>
-    var googleSvg = document.getElementById('google-icon-template').innerHTML.trim();
+  <script
+    define:vars={{
+      apiUrl: import.meta.env.PUBLIC_API_URL || "",
+      strings: {
+        avatar: t.avatar,
+        displayName: t.displayName,
+        email: t.email,
+        password: t.password,
+        provider: t.provider,
+      },
+      avatarErrorMap: t.avatar.errors,
+    }}
+  >
+    var googleSvg = document.getElementById("google-icon-template").innerHTML.trim();
 
     function esc(str) {
-      if (!str) return '';
-      var div = document.createElement('div');
+      if (!str) return "";
+      var div = document.createElement("div");
       div.textContent = str;
       return div.innerHTML;
     }
 
-    window.addEventListener('auth-change', function(e) {
+    window.addEventListener("auth-change", function (e) {
       var user = e.detail?.user;
-      var loginPrompt = document.getElementById('login-prompt');
-      var profileSection = document.getElementById('profile-section');
+      var loginPrompt = document.getElementById("login-prompt");
+      var profileSection = document.getElementById("profile-section");
 
       if (user) {
-        if (loginPrompt) loginPrompt.classList.add('hidden');
-        if (profileSection) profileSection.classList.remove('hidden');
+        if (loginPrompt) loginPrompt.classList.add("hidden");
+        if (profileSection) profileSection.classList.remove("hidden");
         populateProfile(user);
       } else {
-        if (loginPrompt) loginPrompt.classList.remove('hidden');
-        if (profileSection) profileSection.classList.add('hidden');
+        if (loginPrompt) loginPrompt.classList.remove("hidden");
+        if (profileSection) profileSection.classList.add("hidden");
       }
     });
 
     function updateAvatarPreview(avatarUrl, name) {
-      var img = document.getElementById('avatar-preview-img');
-      var initial = document.getElementById('avatar-preview-initial');
+      var img = document.getElementById("avatar-preview-img");
+      var initial = document.getElementById("avatar-preview-initial");
       if (avatarUrl) {
-        if (img) { img.src = avatarUrl; img.alt = name; img.classList.remove('hidden'); }
-        if (initial) initial.classList.add('hidden');
+        if (img) {
+          img.src = avatarUrl;
+          img.alt = name;
+          img.classList.remove("hidden");
+        }
+        if (initial) initial.classList.add("hidden");
       } else {
-        if (img) img.classList.add('hidden');
+        if (img) img.classList.add("hidden");
         if (initial) {
-          initial.classList.remove('hidden');
-          var span = initial.querySelector('span');
-          if (span) span.textContent = (name.charAt(0) || '?').toUpperCase();
+          initial.classList.remove("hidden");
+          var span = initial.querySelector("span");
+          if (span) span.textContent = (name.charAt(0) || "?").toUpperCase();
         }
       }
     }
 
     function populateProfile(user) {
-      var nameInput = document.getElementById('display-name');
-      var emailInput = document.getElementById('profile-email');
-      var providerList = document.getElementById('provider-list');
+      var nameInput = document.getElementById("display-name");
+      var emailInput = document.getElementById("profile-email");
+      var providerList = document.getElementById("provider-list");
 
-      var avatarUrl = user.user_metadata?.avatar_url || '';
-      var displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+      var avatarUrl = user.user_metadata?.avatar_url || "";
+      var displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
       updateAvatarPreview(avatarUrl, displayName);
 
-      if (nameInput) nameInput.value = user.user_metadata?.full_name || '';
-      if (emailInput) emailInput.value = user.email || '';
+      if (nameInput) nameInput.value = user.user_metadata?.full_name || "";
+      if (emailInput) emailInput.value = user.email || "";
 
       // Determine linked providers from identities
       var identities = user.identities || [];
-      var hasEmail = identities.some(function(i) { return i.provider === 'email'; });
-      var hasGoogle = identities.some(function(i) { return i.provider === 'google'; });
+      var hasEmail = identities.some(function (i) {
+        return i.provider === "email";
+      });
+      var hasGoogle = identities.some(function (i) {
+        return i.provider === "google";
+      });
 
       // Render provider list — linked methods first, then unlinked
       if (providerList) {
-        providerList.innerHTML = '';
+        providerList.innerHTML = "";
         var linked = [];
         var unlinked = [];
-        var inputClass = 'w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors';
-        var btnClass = 'px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap';
-        var linkClass = 'text-xs font-label font-semibold text-primary hover:text-primary/80 cursor-pointer';
+        var inputClass =
+          "w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors";
+        var btnClass =
+          "px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap";
+        var linkClass = "text-xs font-label font-semibold text-primary hover:text-primary/80 cursor-pointer";
 
         // Email & Password
         if (hasEmail) {
-          var emailBlock = document.createElement('div');
-          emailBlock.className = 'flex flex-col gap-3';
+          var emailBlock = document.createElement("div");
+          emailBlock.className = "flex flex-col gap-3";
           emailBlock.innerHTML =
             '<div class="flex items-center gap-3">' +
-              '<span class="material-symbols-outlined text-xl text-on-surface-variant" aria-hidden="true">mail</span>' +
-              '<div class="flex-1"><span class="text-sm font-label text-on-surface">' + strings.provider.emailPassword + '</span>' +
-              '<p class="text-xs font-body text-on-surface-variant">' + esc(user.email) + '</p></div>' +
-              '<div class="flex gap-3">' +
-                '<button type="button" id="toggle-change-email" class="' + linkClass + '">' + strings.provider.changeEmail + '</button>' +
-                '<button type="button" id="toggle-change-password" class="' + linkClass + '">' + strings.provider.changePassword + '</button>' +
-              '</div>' +
-            '</div>' +
+            '<span class="material-symbols-outlined text-xl text-on-surface-variant" aria-hidden="true">mail</span>' +
+            '<div class="flex-1"><span class="text-sm font-label text-on-surface">' +
+            strings.provider.emailPassword +
+            "</span>" +
+            '<p class="text-xs font-body text-on-surface-variant">' +
+            esc(user.email) +
+            "</p></div>" +
+            '<div class="flex gap-3">' +
+            '<button type="button" id="toggle-change-email" class="' +
+            linkClass +
+            '">' +
+            strings.provider.changeEmail +
+            "</button>" +
+            '<button type="button" id="toggle-change-password" class="' +
+            linkClass +
+            '">' +
+            strings.provider.changePassword +
+            "</button>" +
+            "</div>" +
+            "</div>" +
             // Change email form (hidden by default)
             '<div id="change-email-form" class="hidden ml-8 space-y-3">' +
-              '<div class="flex flex-col sm:flex-row gap-3">' +
-                '<input type="email" id="profile-email" autocomplete="email" maxlength="255" placeholder="' + esc(strings.email.placeholder) + '" value="' + esc(user.email) + '" class="flex-1 ' + inputClass + '" />' +
-                '<button type="button" id="save-email-btn" class="' + btnClass + '">' + strings.email.save + '</button>' +
-              '</div>' +
-              '<p id="email-feedback" class="hidden text-sm font-body"></p>' +
-            '</div>' +
+            '<div class="flex flex-col sm:flex-row gap-3">' +
+            '<input type="email" id="profile-email" autocomplete="email" maxlength="255" placeholder="' +
+            esc(strings.email.placeholder) +
+            '" value="' +
+            esc(user.email) +
+            '" class="flex-1 ' +
+            inputClass +
+            '" />' +
+            '<button type="button" id="save-email-btn" class="' +
+            btnClass +
+            '">' +
+            strings.email.save +
+            "</button>" +
+            "</div>" +
+            '<p id="email-feedback" class="hidden text-sm font-body"></p>' +
+            "</div>" +
             // Change password form (hidden by default)
             '<div id="change-password-form" class="hidden ml-8 space-y-3">' +
-              '<input type="password" id="current-password" autocomplete="current-password" minlength="6" placeholder="' + esc(strings.password.currentPasswordPlaceholder) + '" class="' + inputClass + '" />' +
-              '<input type="password" id="new-password" autocomplete="new-password" minlength="6" placeholder="' + esc(strings.password.newPasswordPlaceholder) + '" class="' + inputClass + '" />' +
-              '<input type="password" id="confirm-password" autocomplete="new-password" minlength="6" placeholder="' + esc(strings.password.confirmPasswordPlaceholder) + '" class="' + inputClass + '" />' +
-              '<button type="button" id="save-password-btn" class="' + btnClass + '">' + strings.password.save + '</button>' +
-              '<p id="password-feedback" class="hidden text-sm font-body"></p>' +
-            '</div>';
+            '<input type="password" id="current-password" autocomplete="current-password" minlength="6" placeholder="' +
+            esc(strings.password.currentPasswordPlaceholder) +
+            '" class="' +
+            inputClass +
+            '" />' +
+            '<input type="password" id="new-password" autocomplete="new-password" minlength="6" placeholder="' +
+            esc(strings.password.newPasswordPlaceholder) +
+            '" class="' +
+            inputClass +
+            '" />' +
+            '<input type="password" id="confirm-password" autocomplete="new-password" minlength="6" placeholder="' +
+            esc(strings.password.confirmPasswordPlaceholder) +
+            '" class="' +
+            inputClass +
+            '" />' +
+            '<button type="button" id="save-password-btn" class="' +
+            btnClass +
+            '">' +
+            strings.password.save +
+            "</button>" +
+            '<p id="password-feedback" class="hidden text-sm font-body"></p>' +
+            "</div>";
           linked.push(emailBlock);
         }
 
         // Google
         if (hasGoogle) {
-          var googleIdentity = identities.find(function(i) { return i.provider === 'google'; });
-          var googleEmail = googleIdentity?.identity_data?.email || '';
-          var googleBadge = document.createElement('div');
-          googleBadge.className = 'flex items-center gap-3';
+          var googleIdentity = identities.find(function (i) {
+            return i.provider === "google";
+          });
+          var googleEmail = googleIdentity?.identity_data?.email || "";
+          var googleBadge = document.createElement("div");
+          googleBadge.className = "flex items-center gap-3";
           googleBadge.innerHTML =
             googleSvg +
-            '<div class="flex-1"><span class="text-sm font-label text-on-surface">' + strings.provider.google + '</span>' +
-            (googleEmail ? '<p class="text-xs font-body text-on-surface-variant">' + esc(googleEmail) + '</p>' : '') + '</div>';
+            '<div class="flex-1"><span class="text-sm font-label text-on-surface">' +
+            strings.provider.google +
+            "</span>" +
+            (googleEmail ? '<p class="text-xs font-body text-on-surface-variant">' + esc(googleEmail) + "</p>" : "") +
+            "</div>";
           if (hasEmail) {
-            var unlinkBtn = document.createElement('button');
-            unlinkBtn.type = 'button';
+            var unlinkBtn = document.createElement("button");
+            unlinkBtn.type = "button";
             unlinkBtn.textContent = strings.provider.unlinkGoogle;
-            unlinkBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-label font-semibold text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors cursor-pointer';
-            unlinkBtn.addEventListener('click', function() { unlinkGoogle(googleIdentity); });
+            unlinkBtn.className =
+              "px-3 py-1.5 rounded-lg text-xs font-label font-semibold text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors cursor-pointer";
+            unlinkBtn.addEventListener("click", function () {
+              unlinkGoogle(googleIdentity);
+            });
             googleBadge.appendChild(unlinkBtn);
           }
           linked.push(googleBadge);
         } else {
-          var linkBtn = document.createElement('button');
-          linkBtn.type = 'button';
-          linkBtn.id = 'link-google-btn';
-          linkBtn.className = 'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer mt-1';
+          var linkBtn = document.createElement("button");
+          linkBtn.type = "button";
+          linkBtn.id = "link-google-btn";
+          linkBtn.className =
+            "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer mt-1";
           linkBtn.innerHTML = googleSvg + strings.provider.linkGoogle;
-          linkBtn.addEventListener('click', linkGoogle);
+          linkBtn.addEventListener("click", linkGoogle);
           unlinked.push(linkBtn);
         }
 
         // Append linked first, then unlinked
-        linked.forEach(function(el) { providerList.appendChild(el); });
-        unlinked.forEach(function(el) { providerList.appendChild(el); });
+        linked.forEach(function (el) {
+          providerList.appendChild(el);
+        });
+        unlinked.forEach(function (el) {
+          providerList.appendChild(el);
+        });
 
         // Bind toggle and action buttons after DOM insertion
         if (hasEmail) {
-          setTimeout(function() {
-            document.getElementById('toggle-change-email')?.addEventListener('click', function() {
-              var form = document.getElementById('change-email-form');
-              var other = document.getElementById('change-password-form');
-              if (other) other.classList.add('hidden');
-              if (form) form.classList.toggle('hidden');
+          setTimeout(function () {
+            document.getElementById("toggle-change-email")?.addEventListener("click", function () {
+              var form = document.getElementById("change-email-form");
+              var other = document.getElementById("change-password-form");
+              if (other) other.classList.add("hidden");
+              if (form) form.classList.toggle("hidden");
             });
-            document.getElementById('toggle-change-password')?.addEventListener('click', function() {
-              var form = document.getElementById('change-password-form');
-              var other = document.getElementById('change-email-form');
-              if (other) other.classList.add('hidden');
-              if (form) form.classList.toggle('hidden');
+            document.getElementById("toggle-change-password")?.addEventListener("click", function () {
+              var form = document.getElementById("change-password-form");
+              var other = document.getElementById("change-email-form");
+              if (other) other.classList.add("hidden");
+              if (form) form.classList.toggle("hidden");
             });
-            document.getElementById('save-email-btn')?.addEventListener('click', saveEmail);
-            document.getElementById('profile-email')?.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveEmail(); });
-            var pwBtn = document.getElementById('save-password-btn');
-            if (pwBtn) { pwBtn.disabled = true; pwBtn.classList.add('opacity-50'); }
-            function validatePasswordForm() {
-              var cur = document.getElementById('current-password')?.value || '';
-              var np = document.getElementById('new-password')?.value || '';
-              var cp = document.getElementById('confirm-password')?.value || '';
-              var valid = cur.length > 0 && np.length >= 6 && np === cp;
-              if (pwBtn) { pwBtn.disabled = !valid; if (valid) pwBtn.classList.remove('opacity-50'); else pwBtn.classList.add('opacity-50'); }
+            document.getElementById("save-email-btn")?.addEventListener("click", saveEmail);
+            document.getElementById("profile-email")?.addEventListener("keydown", function (e) {
+              if (e.key === "Enter") saveEmail();
+            });
+            var pwBtn = document.getElementById("save-password-btn");
+            if (pwBtn) {
+              pwBtn.disabled = true;
+              pwBtn.classList.add("opacity-50");
             }
-            ['current-password', 'new-password', 'confirm-password'].forEach(function(id) {
-              document.getElementById(id)?.addEventListener('input', validatePasswordForm);
+            function validatePasswordForm() {
+              var cur = document.getElementById("current-password")?.value || "";
+              var np = document.getElementById("new-password")?.value || "";
+              var cp = document.getElementById("confirm-password")?.value || "";
+              var valid = cur.length > 0 && np.length >= 6 && np === cp;
+              if (pwBtn) {
+                pwBtn.disabled = !valid;
+                if (valid) pwBtn.classList.remove("opacity-50");
+                else pwBtn.classList.add("opacity-50");
+              }
+            }
+            ["current-password", "new-password", "confirm-password"].forEach(function (id) {
+              document.getElementById(id)?.addEventListener("input", validatePasswordForm);
             });
-            document.getElementById('save-password-btn')?.addEventListener('click', savePassword);
-            document.getElementById('change-password-form')?.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !pwBtn?.disabled) savePassword(); });
+            document.getElementById("save-password-btn")?.addEventListener("click", savePassword);
+            document.getElementById("change-password-form")?.addEventListener("keydown", function (e) {
+              if (e.key === "Enter" && !pwBtn?.disabled) savePassword();
+            });
           }, 0);
         }
       }
     }
 
     async function linkGoogle() {
-      var feedback = document.getElementById('provider-feedback');
-      if (feedback) feedback.classList.add('hidden');
+      var feedback = document.getElementById("provider-feedback");
+      if (feedback) feedback.classList.add("hidden");
 
       try {
         var supabase = window.__supabase;
-        if (!supabase) throw new Error('No client');
+        if (!supabase) throw new Error("No client");
 
         var result = await supabase.auth.linkIdentity({
-          provider: 'google',
-          options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account' } }
+          provider: "google",
+          options: {
+            redirectTo: window.location.origin + window.location.pathname,
+            queryParams: { prompt: "select_account" },
+          },
         });
         if (result.error) throw result.error;
         // OAuth flow redirects — store success message for when user returns
-        sessionStorage.setItem('snackbar', JSON.stringify({ message: strings.provider.linkGoogleSuccess, type: 'success' }));
+        sessionStorage.setItem(
+          "snackbar",
+          JSON.stringify({
+            message: strings.provider.linkGoogleSuccess,
+            type: "success",
+          }),
+        );
       } catch (err) {
-        window.__showSnackbar?.(err.message || strings.provider.linkGoogleError, 'error');
+        window.__showSnackbar?.(err.message || strings.provider.linkGoogleError, "error");
       }
     }
 
     async function unlinkGoogle(identity) {
-      var feedback = document.getElementById('provider-feedback');
-      if (feedback) feedback.classList.add('hidden');
+      var feedback = document.getElementById("provider-feedback");
+      if (feedback) feedback.classList.add("hidden");
 
       try {
         var supabase = window.__supabase;
-        if (!supabase) throw new Error('No client');
+        if (!supabase) throw new Error("No client");
 
         var result = await supabase.auth.unlinkIdentity(identity);
         if (result.error) throw result.error;
@@ -304,40 +413,42 @@ const t = translations[lang];
         var { data: userData } = await supabase.auth.getUser();
         if (userData?.user) populateProfile(userData.user);
 
-        window.__showSnackbar?.(strings.provider.unlinkGoogleSuccess, 'success');
+        window.__showSnackbar?.(strings.provider.unlinkGoogleSuccess, "success");
       } catch (err) {
-        window.__showSnackbar?.(err.message || strings.provider.unlinkGoogleError, 'error');
+        window.__showSnackbar?.(err.message || strings.provider.unlinkGoogleError, "error");
       }
     }
 
     // Sign in button
-    document.getElementById('profile-sign-in')?.addEventListener('click', function() {
-      document.getElementById('auth-sign-in-desktop')?.click();
+    document.getElementById("profile-sign-in")?.addEventListener("click", function () {
+      document.getElementById("auth-sign-in-desktop")?.click();
     });
 
     // --- Save display name ---
-    document.getElementById('save-name-btn')?.addEventListener('click', async function() {
-      var btn = document.getElementById('save-name-btn');
-      var feedback = document.getElementById('name-feedback');
-      var nameInput = document.getElementById('display-name');
+    document.getElementById("save-name-btn")?.addEventListener("click", async function () {
+      var btn = document.getElementById("save-name-btn");
+      var feedback = document.getElementById("name-feedback");
+      var nameInput = document.getElementById("display-name");
       var newName = nameInput?.value.trim();
 
       if (!newName) return;
 
       btn.textContent = strings.displayName.saving;
       btn.disabled = true;
-      feedback.classList.add('hidden');
+      feedback.classList.add("hidden");
 
       try {
         var supabase = window.__supabase;
-        if (!supabase) throw new Error('No client');
+        if (!supabase) throw new Error("No client");
 
-        var result = await supabase.auth.updateUser({ data: { full_name: newName } });
+        var result = await supabase.auth.updateUser({
+          data: { full_name: newName },
+        });
         if (result.error) throw result.error;
 
-        window.__showSnackbar?.(strings.displayName.success, 'success');
+        window.__showSnackbar?.(strings.displayName.success, "success");
       } catch (err) {
-        window.__showSnackbar?.(err.message || strings.displayName.error, 'error');
+        window.__showSnackbar?.(err.message || strings.displayName.error, "error");
       } finally {
         btn.textContent = strings.displayName.save;
         btn.disabled = false;
@@ -346,54 +457,66 @@ const t = translations[lang];
 
     // --- Save email ---
     async function saveEmail() {
-      var btn = document.getElementById('save-email-btn');
-      var feedback = document.getElementById('email-feedback');
-      var emailInput = document.getElementById('profile-email');
+      var btn = document.getElementById("save-email-btn");
+      var feedback = document.getElementById("email-feedback");
+      var emailInput = document.getElementById("profile-email");
       var newEmail = emailInput?.value.trim();
 
       if (!newEmail) return;
-      if (feedback) feedback.classList.add('hidden');
+      if (feedback) feedback.classList.add("hidden");
 
       btn.textContent = strings.email.saving;
       btn.disabled = true;
 
       try {
         var supabase = window.__supabase;
-        if (!supabase) throw new Error('No client');
+        if (!supabase) throw new Error("No client");
 
         var result = await supabase.auth.updateUser({ email: newEmail });
         if (result.error) throw result.error;
 
-        window.__showSnackbar?.(strings.email.success, 'success');
+        window.__showSnackbar?.(strings.email.success, "success");
       } catch (err) {
-        window.__showSnackbar?.(err.message || strings.email.error, 'error');
+        window.__showSnackbar?.(err.message || strings.email.error, "error");
       } finally {
-        if (btn) { btn.textContent = strings.email.save; btn.disabled = false; }
+        if (btn) {
+          btn.textContent = strings.email.save;
+          btn.disabled = false;
+        }
       }
     }
 
     // --- Change password ---
     async function savePassword() {
-      var btn = document.getElementById('save-password-btn');
-      var feedback = document.getElementById('password-feedback');
-      var currentPw = document.getElementById('current-password')?.value;
-      var newPw = document.getElementById('new-password')?.value;
-      var confirmPw = document.getElementById('confirm-password')?.value;
+      var btn = document.getElementById("save-password-btn");
+      var feedback = document.getElementById("password-feedback");
+      var currentPw = document.getElementById("current-password")?.value;
+      var newPw = document.getElementById("new-password")?.value;
+      var confirmPw = document.getElementById("confirm-password")?.value;
 
-      if (feedback) feedback.classList.add('hidden');
+      if (feedback) feedback.classList.add("hidden");
 
       if (!currentPw) {
-        if (feedback) { feedback.textContent = strings.password.currentRequired; feedback.className = 'text-sm font-body text-error'; }
+        if (feedback) {
+          feedback.textContent = strings.password.currentRequired;
+          feedback.className = "text-sm font-body text-error";
+        }
         return;
       }
 
       if (!newPw || newPw.length < 6) {
-        if (feedback) { feedback.textContent = strings.password.tooShort; feedback.className = 'text-sm font-body text-error'; }
+        if (feedback) {
+          feedback.textContent = strings.password.tooShort;
+          feedback.className = "text-sm font-body text-error";
+        }
         return;
       }
 
       if (newPw !== confirmPw) {
-        if (feedback) { feedback.textContent = strings.password.mismatch; feedback.className = 'text-sm font-body text-error'; }
+        if (feedback) {
+          feedback.textContent = strings.password.mismatch;
+          feedback.className = "text-sm font-body text-error";
+        }
         return;
       }
 
@@ -402,73 +525,85 @@ const t = translations[lang];
 
       try {
         var supabase = window.__supabase;
-        if (!supabase) throw new Error('No client');
+        if (!supabase) throw new Error("No client");
 
-        var result = await supabase.auth.updateUser({ password: newPw, current_password: currentPw });
+        var result = await supabase.auth.updateUser({
+          password: newPw,
+          current_password: currentPw,
+        });
         if (result.error) throw result.error;
 
-        window.__showSnackbar?.(strings.password.success, 'success');
+        window.__showSnackbar?.(strings.password.success, "success");
 
-        document.getElementById('current-password').value = '';
-        document.getElementById('new-password').value = '';
-        document.getElementById('confirm-password').value = '';
+        document.getElementById("current-password").value = "";
+        document.getElementById("new-password").value = "";
+        document.getElementById("confirm-password").value = "";
       } catch (err) {
-        window.__showSnackbar?.(err.message || strings.password.error, 'error');
+        window.__showSnackbar?.(err.message || strings.password.error, "error");
       } finally {
-        if (btn) { btn.textContent = strings.password.save; btn.disabled = false; }
+        if (btn) {
+          btn.textContent = strings.password.save;
+          btn.disabled = false;
+        }
       }
     }
 
     // --- Avatar upload ---
-    document.getElementById('avatar-change-btn')?.addEventListener('click', function() {
-      document.getElementById('avatar-file-input')?.click();
+    document.getElementById("avatar-change-btn")?.addEventListener("click", function () {
+      document.getElementById("avatar-file-input")?.click();
     });
 
-    document.getElementById('avatar-file-input')?.addEventListener('change', async function(e) {
+    document.getElementById("avatar-file-input")?.addEventListener("change", async function (e) {
       var file = e.target.files?.[0];
       if (!file) return;
 
-      var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      var allowedTypes = ["image/jpeg", "image/png", "image/webp"];
       if (!allowedTypes.includes(file.type)) {
-        window.__showSnackbar?.(strings.avatar.invalidType, 'error');
-        e.target.value = '';
+        window.__showSnackbar?.(strings.avatar.invalidType, "error");
+        e.target.value = "";
         return;
       }
 
       if (file.size > 1 * 1024 * 1024) {
-        window.__showSnackbar?.(strings.avatar.tooLarge, 'error');
-        e.target.value = '';
+        window.__showSnackbar?.(strings.avatar.tooLarge, "error");
+        e.target.value = "";
         return;
       }
 
-      var btn = document.getElementById('avatar-change-btn');
+      var btn = document.getElementById("avatar-change-btn");
       var originalText = btn?.textContent;
-      if (btn) { btn.textContent = strings.avatar.uploading; btn.disabled = true; }
+      if (btn) {
+        btn.textContent = strings.avatar.uploading;
+        btn.disabled = true;
+      }
 
       try {
         var supabase = window.__supabase;
-        if (!supabase) throw new Error('Not authenticated');
+        if (!supabase) throw new Error("Not authenticated");
 
         // Get current user ID for the storage path
-        var { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (!currentUser) throw new Error('Not authenticated');
+        var {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
+        if (!currentUser) throw new Error("Not authenticated");
 
-        var storagePath = currentUser.id + '/avatar';
+        var storagePath = currentUser.id + "/avatar";
 
         // Upload directly to Supabase Storage (upsert overwrites existing)
-        var { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(storagePath, file, { contentType: file.type, upsert: true });
+        var { error: uploadError } = await supabase.storage.from("avatars").upload(storagePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
 
         if (uploadError) throw uploadError;
 
         // Build public URL with cache-busting timestamp
-        var { data: urlData } = supabase.storage.from('avatars').getPublicUrl(storagePath);
-        var avatarUrl = urlData.publicUrl + '?t=' + Math.floor(Date.now() / 1000);
+        var { data: urlData } = supabase.storage.from("avatars").getPublicUrl(storagePath);
+        var avatarUrl = urlData.publicUrl + "?t=" + Math.floor(Date.now() / 1000);
 
         // Update user metadata with new avatar URL
         var { error: updateError } = await supabase.auth.updateUser({
-          data: { avatar_url: avatarUrl }
+          data: { avatar_url: avatarUrl },
         });
 
         if (updateError) throw updateError;
@@ -476,32 +611,37 @@ const t = translations[lang];
         // Update preview immediately — avatarUrl is already confirmed by the
         // successful upload + metadata update above, so we don't need to wait
         // for getUser() to reflect it.
-        var displayName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+        var displayName = currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "User";
         updateAvatarPreview(avatarUrl, displayName);
 
         // Refresh session so future pages see the new avatar URL in the token
         await supabase.auth.refreshSession();
         var { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
-          window.dispatchEvent(new CustomEvent('auth-change', { detail: { user: userData.user } }));
+          window.dispatchEvent(
+            new CustomEvent("auth-change", {
+              detail: { user: userData.user },
+            }),
+          );
         }
 
         // Invalidate the cached user info so other pages fetch the new avatar
         try {
-          var uiCache = JSON.parse(localStorage.getItem('userInfoCache')) || {};
+          var uiCache = JSON.parse(localStorage.getItem("userInfoCache")) || {};
           delete uiCache[currentUser.id];
-          localStorage.setItem('userInfoCache', JSON.stringify(uiCache));
+          localStorage.setItem("userInfoCache", JSON.stringify(uiCache));
         } catch {}
 
-        window.__showSnackbar?.(strings.avatar.success, 'success');
+        window.__showSnackbar?.(strings.avatar.success, "success");
       } catch (err) {
-        window.__showSnackbar?.(err.message || strings.avatar.error, 'error');
+        window.__showSnackbar?.(err.message || strings.avatar.error, "error");
       } finally {
-        if (btn) { btn.textContent = originalText; btn.disabled = false; }
-        e.target.value = '';
+        if (btn) {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
+        e.target.value = "";
       }
     });
-
   </script>
-
 </Layout>

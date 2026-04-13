@@ -1,16 +1,16 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import IconEmail from '../../components/icons/IconEmail.astro';
-import IconGitHub from '../../components/icons/IconGitHub.astro';
-import IconLinkedIn from '../../components/icons/IconLinkedIn.astro';
-import { locales, defaultLocale, type Locale } from '../../i18n/utils';
-import enStrings from '../../i18n/en/about.json';
-import csStrings from '../../i18n/cs/about.json';
+import Layout from "../../layouts/Layout.astro";
+import IconEmail from "../../components/icons/IconEmail.astro";
+import IconGitHub from "../../components/icons/IconGitHub.astro";
+import IconLinkedIn from "../../components/icons/IconLinkedIn.astro";
+import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/about.json";
+import csStrings from "../../i18n/cs/about.json";
 
 const translations = { en: enStrings, cs: csStrings };
 
 export function getStaticPaths() {
-  return locales.map(lang => ({
+  return locales.map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }
@@ -20,7 +20,6 @@ const t = translations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="about" lang={lang}>
-
   <!-- Hero Section -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-24 lg:mb-40">
     <div class="flex flex-col md:flex-row items-end gap-12">
@@ -28,7 +27,12 @@ const t = translations[lang];
         <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-8">
           <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.name}</span>
         </h1>
-        <a href="https://www.google.com/maps/place/Prague" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 mb-8 text-on-surface-variant hover:text-primary transition-colors font-label text-md w-fit">
+        <a
+          href="https://www.google.com/maps/place/Prague"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-2 mb-8 text-on-surface-variant hover:text-primary transition-colors font-label text-md w-fit"
+        >
           <span class="material-symbols-outlined text-tertiary" aria-hidden="true">location_on</span>
           {t.hero.location}
         </a>
@@ -97,36 +101,49 @@ const t = translations[lang];
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <!-- Left Column -->
         <div>
-          <h2 class="font-headline text-4xl font-extrabold mb-8 tracking-tight">{t.manifesto.title}</h2>
+          <h2 class="font-headline text-4xl font-extrabold mb-8 tracking-tight">
+            {t.manifesto.title}
+          </h2>
           <p class="text-on-surface-variant text-lg leading-relaxed mb-12">
             {t.manifesto.subtitle}
           </p>
           <ul class="space-y-8">
-            {t.manifesto.pillars.map((pillar) => (
-              <li class="flex gap-4">
-                <span class:list={["material-symbols-outlined text-3xl", `text-${pillar.color}`]} aria-hidden="true">{pillar.icon}</span>
-                <div>
-                  <h5 class="font-bold text-xl mb-2">{pillar.title}</h5>
-                  <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
-                </div>
-              </li>
-            ))}
+            {
+              t.manifesto.pillars.map((pillar) => (
+                <li class="flex gap-4">
+                  <span class:list={["material-symbols-outlined text-3xl", `text-${pillar.color}`]} aria-hidden="true">
+                    {pillar.icon}
+                  </span>
+                  <div>
+                    <h5 class="font-bold text-xl mb-2">{pillar.title}</h5>
+                    <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
+                  </div>
+                </li>
+              ))
+            }
           </ul>
         </div>
         <!-- Right Column (Expandable sections) -->
         <div class="flex flex-col justify-center">
           <div class="space-y-4">
-            {t.manifesto.accordions.map((accordion) => (
-              <details class="group bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
-                <summary class:list={["p-6 cursor-pointer font-label text-base flex justify-between items-center select-none", `text-${accordion.color}`]}>
-                  <span>{accordion.title}</span>
-                  <span class="material-symbols-outlined text-sm transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
-                </summary>
-                <div class="px-6 pb-6 text-on-surface-variant leading-relaxed">
-                  {accordion.content}
-                </div>
-              </details>
-            ))}
+            {
+              t.manifesto.accordions.map((accordion) => (
+                <details class="group bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
+                  <summary
+                    class:list={[
+                      "p-6 cursor-pointer font-label text-base flex justify-between items-center select-none",
+                      `text-${accordion.color}`,
+                    ]}
+                  >
+                    <span>{accordion.title}</span>
+                    <span class="material-symbols-outlined text-sm transition-transform group-open:rotate-180" aria-hidden="true">
+                      expand_more
+                    </span>
+                  </summary>
+                  <div class="px-6 pb-6 text-on-surface-variant leading-relaxed">{accordion.content}</div>
+                </details>
+              ))
+            }
           </div>
         </div>
       </div>
@@ -137,7 +154,9 @@ const t = translations[lang];
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-40">
     <div class="text-center mb-24">
       <span class="font-label text-secondary uppercase tracking-widest text-sm mb-4 block">{t.career.label}</span>
-      <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">{t.career.title}</h2>
+      <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">
+        {t.career.title}
+      </h2>
     </div>
 
     <!-- Timeline -->
@@ -146,69 +165,92 @@ const t = translations[lang];
       <div class="absolute left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/30 hidden md:block"></div>
 
       <div class="space-y-12 md:space-y-0">
-        {t.career.entries.map((entry, i) => {
-          const isRight = entry.side === 'right';
-          const dotColor = isRight ? 'primary' : 'tertiary';
-          const borderHover = isRight ? 'hover:border-primary/30' : 'hover:border-tertiary/30';
-          const dotShadow = isRight
-            ? 'shadow-[0_0_15px_rgba(72,88,171,0.3)]'
-            : 'shadow-[0_0_15px_rgba(0,106,106,0.2)]';
-          const hasSubEntries = 'subEntries' in entry && entry.subEntries;
+        {
+          t.career.entries.map((entry, i) => {
+            const isRight = entry.side === "right";
+            const dotColor = isRight ? "primary" : "tertiary";
+            const borderHover = isRight ? "hover:border-primary/30" : "hover:border-tertiary/30";
+            const dotShadow = isRight ? "shadow-[0_0_15px_rgba(72,88,171,0.3)]" : "shadow-[0_0_15px_rgba(0,106,106,0.2)]";
+            const hasSubEntries = "subEntries" in entry && entry.subEntries;
 
-          return isRight ? (
-            <div class="md:flex justify-end items-center w-full md:mb-24">
-              <div class="hidden md:block w-1/2"></div>
-              <div class="relative md:w-1/2 md:pl-16">
-                <div class:list={["absolute -left-2 md:-left-1.5 top-0 w-4 h-4 rounded-full z-10 hidden md:block", `bg-${dotColor}`, dotShadow]}></div>
-                <div class:list={["bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md", borderHover]}>
-                  <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
-                  <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
-                  {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
-                  {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
-                  {entry.description && !hasSubEntries && <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>}
-                  {hasSubEntries && (
-                    <div class="space-y-6 text-left">
-                      {entry.subEntries!.map((sub) => (
-                        <div class="border-l-2 border-primary/30 pl-4">
-                          <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
-                          <p class="font-bold mt-1">{sub.role}</p>
-                          {sub.description && <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            return isRight ? (
+              <div class="md:flex justify-end items-center w-full md:mb-24">
+                <div class="hidden md:block w-1/2" />
+                <div class="relative md:w-1/2 md:pl-16">
+                  <div
+                    class:list={[
+                      "absolute -left-2 md:-left-1.5 top-0 w-4 h-4 rounded-full z-10 hidden md:block",
+                      `bg-${dotColor}`,
+                      dotShadow,
+                    ]}
+                  />
+                  <div
+                    class:list={[
+                      "bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",
+                      borderHover,
+                    ]}
+                  >
+                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
+                    <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
+                    {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
+                    {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
+                    {entry.description && !hasSubEntries && (
+                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>
+                    )}
+                    {hasSubEntries && (
+                      <div class="space-y-6 text-left">
+                        {entry.subEntries!.map((sub) => (
+                          <div class="border-l-2 border-primary/30 pl-4">
+                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
+                            <p class="font-bold mt-1">{sub.role}</p>
+                            {sub.description && (
+                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div class:list={["md:flex justify-start items-center w-full", i < t.career.entries.length - 1 && "md:mb-24"]}>
-              <div class="relative md:w-1/2 md:pr-16 md:text-right">
-                <div class:list={["absolute -right-2 top-0 w-4 h-4 rounded-full z-10 hidden md:block", `bg-${dotColor}`, dotShadow]}></div>
-                <div class:list={["bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md", borderHover]}>
-                  <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
-                  <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
-                  {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
-                  {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
-                  {entry.description && !hasSubEntries && <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>}
-                  {hasSubEntries && (
-                    <div class="space-y-6 text-left">
-                      {entry.subEntries!.map((sub) => (
-                        <div class="border-l-2 border-primary/30 pl-4">
-                          <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
-                          <p class="font-bold mt-1">{sub.role}</p>
-                          {sub.description && <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            ) : (
+              <div class:list={["md:flex justify-start items-center w-full", i < t.career.entries.length - 1 && "md:mb-24"]}>
+                <div class="relative md:w-1/2 md:pr-16 md:text-right">
+                  <div class:list={["absolute -right-2 top-0 w-4 h-4 rounded-full z-10 hidden md:block", `bg-${dotColor}`, dotShadow]} />
+                  <div
+                    class:list={[
+                      "bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",
+                      borderHover,
+                    ]}
+                  >
+                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
+                    <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
+                    {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
+                    {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
+                    {entry.description && !hasSubEntries && (
+                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>
+                    )}
+                    {hasSubEntries && (
+                      <div class="space-y-6 text-left">
+                        {entry.subEntries!.map((sub) => (
+                          <div class="border-l-2 border-primary/30 pl-4">
+                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
+                            <p class="font-bold mt-1">{sub.role}</p>
+                            {sub.description && (
+                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+                <div class="hidden md:block w-1/2" />
               </div>
-              <div class="hidden md:block w-1/2"></div>
-            </div>
-          );
-        })}
+            );
+          })
+        }
       </div>
     </div>
   </section>
-
 </Layout>

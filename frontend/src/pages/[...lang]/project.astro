@@ -1,481 +1,674 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import IconGitHub from '../../components/icons/IconGitHub.astro';
-import ArchitectureDiagram from '../../components/ArchitectureDiagram.astro';
-import { locales, defaultLocale, type Locale } from '../../i18n/utils';
-import enStrings from '../../i18n/en/project.json';
-import csStrings from '../../i18n/cs/project.json';
+import Layout from "../../layouts/Layout.astro";
+import IconGitHub from "../../components/icons/IconGitHub.astro";
+import ArchitectureDiagram from "../../components/ArchitectureDiagram.astro";
+import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/project.json";
+import csStrings from "../../i18n/cs/project.json";
 
 const translations = { en: enStrings, cs: csStrings };
 
 export function getStaticPaths() {
-  return locales.map(lang => ({
+  return locales.map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
-
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="project" lang={lang}>
-
-<div class="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12 max-w-7xl mx-auto px-4 md:px-8 relative">
-  <div>
-
-  <!-- Hero / Intro Section -->
-  <section id="hero" class="mb-24">
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
-      <div class="md:col-span-8">
-        <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
-          {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-primary-container">{t.hero.titleHighlight}</span>{t.hero.titleSuffix}
-        </h1>
-        <p class="font-body text-xl text-on-surface-variant max-w-2xl leading-relaxed">
-          {t.hero.description}
-        </p>
-      </div>
-      <div class="md:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
-        <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
-          <span class="material-symbols-outlined text-tertiary" aria-hidden="true">bolt</span>
-          {t.quickStats.title}
-        </h3>
-        <div class="space-y-6">
-          <div>
-            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.statusLabel}</div>
-            <a href="#v2" class="font-body font-semibold text-primary hover:underline">{t.quickStats.statusValue}</a>
+  <div class="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12 max-w-7xl mx-auto px-4 md:px-8 relative">
+    <div>
+      <!-- Hero / Intro Section -->
+      <section id="hero" class="mb-24">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+          <div class="md:col-span-8">
+            <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
+              {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-primary-container"
+                >{t.hero.titleHighlight}</span
+              >{t.hero.titleSuffix}
+            </h1>
+            <p class="font-body text-xl text-on-surface-variant max-w-2xl leading-relaxed">
+              {t.hero.description}
+            </p>
           </div>
-          <div>
-            <div class="font-label text-xs text-on-surface-variant uppercase mb-1 flex items-center gap-1">
-              {t.quickStats.timeLabel}
-              <span class="relative group cursor-help">
-                <span class="material-symbols-outlined text-[14px] text-on-surface-variant/50" aria-hidden="true">info</span>
-                <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-container-highest text-on-surface text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center normal-case tracking-normal font-normal" role="tooltip">{t.quickStats.timeTooltip}</span>
-              </span>
-            </div>
-            <a href="#roadmap" class="font-body font-semibold text-primary hover:underline">{t.quickStats.timeValue}</a>
-            <div class="font-body text-xs text-on-surface-variant/60 italic mt-1">{t.quickStats.timeNote}</div>
-          </div>
-          <div>
-            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.costOneTimeLabel}</div>
-            <div class="font-body font-semibold text-on-surface">{t.quickStats.costOneTimeValue}</div>
-          </div>
-          <div>
-            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.costRecurringLabel}</div>
-            <div class="font-body font-semibold text-on-surface">{t.quickStats.costRecurringValue}</div>
-          </div>
-          <div>
-            <div class="font-label text-xs text-on-surface-variant uppercase mb-1">{t.quickStats.sourceLabel}</div>
-            <a href="https://github.com/kalicz/DemoPage" target="_blank" rel="noopener noreferrer" class="font-body font-semibold text-tertiary hover:underline flex items-center gap-1.5">
-              <IconGitHub class="w-4 h-4" />
-              {t.quickStats.sourceValue}
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Tech Stack -->
-  <section id="tech-stack" class="mb-32">
-    <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.techStack.title}</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-        <h3 class="font-label text-sm uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">monitor</span>
-          {t.techStack.frontendLabel}
-        </h3>
-        <ul class="space-y-3">
-          {t.techStack.frontendItems.map((item) => (
-            <li class="font-body text-on-surface-variant flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-        <h3 class="font-label text-sm uppercase tracking-widest text-tertiary mb-6 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dns</span>
-          {t.techStack.backendLabel}
-        </h3>
-        <ul class="space-y-3">
-          {t.techStack.backendItems.map((item) => (
-            <li class="font-body text-on-surface-variant flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0"></span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-        <h3 class="font-label text-sm uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">settings</span>
-          {t.techStack.infraLabel}
-        </h3>
-        <ul class="space-y-3">
-          {t.techStack.infraItems.map((item) => (
-            <li class="font-body text-on-surface-variant">
-              <div class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>
-                {item.text}
+          <div class="md:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
+            <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
+              <span class="material-symbols-outlined text-tertiary" aria-hidden="true">bolt</span>
+              {t.quickStats.title}
+            </h3>
+            <div class="space-y-6">
+              <div>
+                <div class="font-label text-xs text-on-surface-variant uppercase mb-1">
+                  {t.quickStats.statusLabel}
+                </div>
+                <a href="#v2" class="font-body font-semibold text-primary hover:underline">{t.quickStats.statusValue}</a>
               </div>
-              {item.subItems && (
-                <ul class="ml-5 mt-2 space-y-2">
-                  {item.subItems.map((sub) => (
-                    <li class="flex items-center gap-2 text-sm">
-                      <span class="w-1 h-1 rounded-full bg-outline/60 shrink-0"></span>
-                      {sub}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- Goals & Requirements -->
-  <section id="goals" class="mb-32">
-    <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.goals.title}</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      {t.goals.items.map((item) => (
-        <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-          <span class="material-symbols-outlined text-primary text-3xl mb-4 block" aria-hidden="true">{item.icon}</span>
-          <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{item.title}</h3>
-          <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
-          {item.subItems && (
-            <ul class="mt-3 space-y-1">
-              {item.subItems.map((sub: string) => (
-                <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
-                  <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5"></span>
-                  {sub}
-                </li>
-              ))}
-            </ul>
-          )}
+              <div>
+                <div class="font-label text-xs text-on-surface-variant uppercase mb-1 flex items-center gap-1">
+                  {t.quickStats.timeLabel}
+                  <span class="relative group cursor-help">
+                    <span class="material-symbols-outlined text-[14px] text-on-surface-variant/50" aria-hidden="true">info</span>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-container-highest text-on-surface text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center normal-case tracking-normal font-normal"
+                      role="tooltip">{t.quickStats.timeTooltip}</span
+                    >
+                  </span>
+                </div>
+                <a href="#roadmap" class="font-body font-semibold text-primary hover:underline">{t.quickStats.timeValue}</a>
+                <div class="font-body text-xs text-on-surface-variant/60 italic mt-1">
+                  {t.quickStats.timeNote}
+                </div>
+              </div>
+              <div>
+                <div class="font-label text-xs text-on-surface-variant uppercase mb-1">
+                  {t.quickStats.costOneTimeLabel}
+                </div>
+                <div class="font-body font-semibold text-on-surface">
+                  {t.quickStats.costOneTimeValue}
+                </div>
+              </div>
+              <div>
+                <div class="font-label text-xs text-on-surface-variant uppercase mb-1">
+                  {t.quickStats.costRecurringLabel}
+                </div>
+                <div class="font-body font-semibold text-on-surface">
+                  {t.quickStats.costRecurringValue}
+                </div>
+              </div>
+              <div>
+                <div class="font-label text-xs text-on-surface-variant uppercase mb-1">
+                  {t.quickStats.sourceLabel}
+                </div>
+                <a
+                  href="https://github.com/kalicz/DemoPage"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-body font-semibold text-tertiary hover:underline flex items-center gap-1.5"
+                >
+                  <IconGitHub class="w-4 h-4" />
+                  {t.quickStats.sourceValue}
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
-    <h3 class="font-headline text-xl font-bold mb-6 text-on-surface">{t.goals.nfrTitle}</h3>
-    <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
-      <table class="w-full font-body text-on-surface-variant text-sm">
-        <tbody>
-          {t.goals.nfrItems.map((nfr) => (
-            <tr class="border-b border-outline-variant/20 last:border-b-0">
-              <td class="p-4 font-label font-semibold text-on-surface w-40">{nfr.label}</td>
-              <td class="p-4">{nfr.description}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </section>
+      </section>
 
-  <!-- Architecture Diagram -->
-  <section id="architecture" class="mb-32">
-    <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.architectureDiagram.title}</h2>
-    <ArchitectureDiagram t={t.architectureDiagram} class="w-full max-w-6xl mx-auto" />
-  </section>
-
-  <!-- Architecture Decisions -->
-  <section id="decisions" class="mb-32">
-    <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.decisions.title}</h2>
-    <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.decisions.subtitle}</p>
-    <div class="space-y-4">
-      {t.decisions.adrs.map((adr) => (
-        <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
-          <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
-            <div>
-              <h3 class="font-headline font-bold text-on-surface">{adr.title}</h3>
-              <p class="font-body text-sm text-on-surface-variant mt-1">{adr.summary}</p>
-            </div>
-            <span class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4" aria-hidden="true">expand_more</span>
-          </summary>
-          <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
-            <div>
-              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Context</h4>
-              <p class="font-body text-sm text-on-surface-variant">{adr.context}</p>
-            </div>
-            <div>
-              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Decision</h4>
-              <p class="font-body text-sm text-on-surface-variant">{adr.decision}</p>
-            </div>
-            <div>
-              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Why</h4>
-              <ul class="space-y-1">
-                {adr.why.map((reason) => (
-                  <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5"></span>
-                    {reason}
+      <!-- Tech Stack -->
+      <section id="tech-stack" class="mb-32">
+        <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
+          {t.techStack.title}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+            <h3 class="font-label text-sm uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">monitor</span>
+              {t.techStack.frontendLabel}
+            </h3>
+            <ul class="space-y-3">
+              {
+                t.techStack.frontendItems.map((item) => (
+                  <li class="font-body text-on-surface-variant flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    {item}
                   </li>
-                ))}
-              </ul>
-            </div>
-            {'risks' in adr && adr.risks && (
-              <div>
-                <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Known Risks</h4>
-                <div class="bg-surface-container-high rounded-lg overflow-hidden overflow-x-auto">
-                  <table class="w-full font-body text-sm text-on-surface-variant">
-                    <thead><tr class="font-label text-xs uppercase tracking-wider text-left">
-                      <th class="p-3">Risk</th><th class="p-3">Details</th><th class="p-3">Mitigation</th>
-                    </tr></thead>
-                    <tbody>
-                      {adr.risks.map((r) => (
-                        <tr class="border-t border-outline-variant/20">
-                          <td class="p-3 font-semibold">{r.risk}</td>
-                          <td class="p-3">{r.details}</td>
-                          <td class="p-3">{r.mitigation}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-            {'setupNotes' in adr && adr.setupNotes && (
-              <div>
-                <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Setup Notes</h4>
-                <ul class="space-y-1">
-                  {adr.setupNotes.map((note) => (
-                    <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
-                      <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5"></span>
-                      {note}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {'alternatives' in adr && adr.alternatives && (
-              <div>
-                <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Alternatives Considered</h4>
-                <div class="space-y-2">
-                  {adr.alternatives.map((alt) => (
-                    <div class="flex items-start gap-2 font-body text-sm text-on-surface-variant">
-                      <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0 mt-1.5"></span>
-                      <span><strong>{alt.option}</strong> — {alt.reason}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                ))
+              }
+            </ul>
           </div>
-        </details>
-      ))}
-    </div>
-  </section>
+          <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+            <h3 class="font-label text-sm uppercase tracking-widest text-tertiary mb-6 flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dns</span>
+              {t.techStack.backendLabel}
+            </h3>
+            <ul class="space-y-3">
+              {
+                t.techStack.backendItems.map((item) => (
+                  <li class="font-body text-on-surface-variant flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0" />
+                    {item}
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+          <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+            <h3 class="font-label text-sm uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">settings</span>
+              {t.techStack.infraLabel}
+            </h3>
+            <ul class="space-y-3">
+              {
+                t.techStack.infraItems.map((item) => (
+                  <li class="font-body text-on-surface-variant">
+                    <div class="flex items-center gap-2">
+                      <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0" />
+                      {item.text}
+                    </div>
+                    {item.subItems && (
+                      <ul class="ml-5 mt-2 space-y-2">
+                        {item.subItems.map((sub) => (
+                          <li class="flex items-center gap-2 text-sm">
+                            <span class="w-1 h-1 rounded-full bg-outline/60 shrink-0" />
+                            {sub}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+      </section>
 
-  <!-- Roadmap Section -->
-  <section id="roadmap">
-    <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-4">
-      <div>
-        <span class="font-label text-tertiary uppercase tracking-widest text-sm mb-4 block">{t.roadmap.timelineLabel}</span>
-        <h2 class="font-headline text-4xl font-extrabold tracking-tight text-on-surface">{t.roadmap.title}</h2>
-      </div>
-      <p class="font-body text-on-surface-variant max-w-sm text-right">
-        {t.roadmap.subtitle}
-      </p>
-    </div>
-
-    <div class="relative">
-      <!-- Vertical Line -->
-      <div class="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-outline-variant/30 -translate-x-1/2 hidden md:block"></div>
-
-      <div class="space-y-24">
-        {t.roadmap.versions.map((version) => {
-          const isLeft = version.side === 'left';
-          const isFaded = 'faded' in version && version.faded;
-          const hasPricing = 'pricingTable' in version && version.pricingTable;
-          const hasDetails = 'details' in version && version.details;
-          const hasDates = 'dates' in version && version.dates;
-
-          const versionContent = (
-            <div id={`v${version.number}`}>
-              <div class:list={["font-label text-primary mb-2 text-sm uppercase", version.done && `flex items-center gap-1.5 ${isLeft ? 'md:justify-end' : ''}`]}>
-                {`Version ${version.number}`}
-                {version.done && (
-                  <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check_circle</span>
-                )}
-              </div>
-              <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>{version.title}</h3>
-              {'time' in version && version.time && (
-                <p class:list={["font-label text-xs text-on-surface-variant", 'nextTime' in version && version.nextTime ? "mb-1" : "mb-4"]}>
-                  {version.time}
-                  {hasDates && <span class="text-on-surface-variant/60"> · {version.dates}</span>}
-                </p>
-              )}
-              {'nextTime' in version && version.nextTime && <p class:list={["font-label text-xs text-on-surface-variant/60 italic", 'timeNote' in version && version.timeNote ? "mb-1" : "mb-4"]}>{version.nextTime}</p>}
-              {'timeNote' in version && version.timeNote && <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.timeNote}</p>}
-              <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>{version.description}</p>
-              {hasDetails && (
-                <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
-                  <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
-                    <span class="material-symbols-outlined text-[16px] text-primary transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
-                    {version.detailsLabel}
-                  </summary>
-                  <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
-                    {version.details!.map((item) => (
-                      <li class="flex items-center gap-2">
-                        {item.author === 'claude' ? (
-                          <img src="/images/claude-icon.svg" alt="Claude" class="w-4 h-4 rounded-full" />
-                        ) : (
-                          <img src="/images/pavel-portrait-200.webp" alt="Pavel" class="w-4 h-4 rounded-full object-cover" width="16" height="16" />
-                        )}
-                        <span>{item.text}</span>
+      <!-- Goals & Requirements -->
+      <section id="goals" class="mb-32">
+        <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
+          {t.goals.title}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {
+            t.goals.items.map((item) => (
+              <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+                <span class="material-symbols-outlined text-primary text-3xl mb-4 block" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{item.title}</h3>
+                <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
+                {item.subItems && (
+                  <ul class="mt-3 space-y-1">
+                    {item.subItems.map((sub: string) => (
+                      <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
+                        {sub}
                       </li>
                     ))}
                   </ul>
-                </details>
-              )}
-              {hasPricing && (
-                <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-sm">
-                  <table class="w-full font-body text-on-surface-variant">
-                    <thead>
-                      <tr class="text-left font-label text-xs uppercase tracking-wider">
-                        {version.pricingTable!.headers.map((h) => <th scope="col" class="pb-2">{h}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody class="text-sm">
-                      {version.pricingTable!.rows.map((row) => (
-                        <tr>
-                          {row.map((cell) => <td class="py-1">{cell}</td>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          );
+                )}
+              </div>
+            ))
+          }
+        </div>
+        <h3 class="font-headline text-xl font-bold mb-6 text-on-surface">
+          {t.goals.nfrTitle}
+        </h3>
+        <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+          <table class="w-full font-body text-on-surface-variant text-sm">
+            <tbody>
+              {
+                t.goals.nfrItems.map((nfr) => (
+                  <tr class="border-b border-outline-variant/20 last:border-b-0">
+                    <td class="p-4 font-label font-semibold text-on-surface w-40">{nfr.label}</td>
+                    <td class="p-4">{nfr.description}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-          const timelineDot = version.done ? (
-            <div class="absolute top-5 left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
-              <span class="material-symbols-outlined text-white text-[14px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">check</span>
-            </div>
-          ) : (
-            <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block"></div>
-          );
+      <!-- Architecture Diagram -->
+      <section id="architecture" class="mb-32">
+        <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
+          {t.architectureDiagram.title}
+        </h2>
+        <ArchitectureDiagram t={t.architectureDiagram} class="w-full max-w-6xl mx-auto" />
+      </section>
 
-          return (
-            <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-start", isFaded && "opacity-60"]}>
-              {isLeft ? (
-                <>
-                  <div class="md:text-right md:pr-16">{versionContent}</div>
-                  {timelineDot}
-                  <div></div>
-                </>
-              ) : (
-                <>
-                  <div></div>
-                  {timelineDot}
-                  <div class="md:pl-16">{versionContent}</div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  </section>
-
-  <!-- Lessons Learned -->
-  <section id="lessons-learned" class="mt-32 mb-32">
-    <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.lessonsLearned.title}</h2>
-    <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.lessonsLearned.subtitle}</p>
-    <div class="space-y-4">
-      {t.lessonsLearned.items.map((item) => (
-        <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
-          <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
-            <div class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-tertiary text-2xl" aria-hidden="true">{item.icon}</span>
-              <h3 class="font-headline font-bold text-on-surface">{item.title}</h3>
-            </div>
-            <span class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4" aria-hidden="true">expand_more</span>
-          </summary>
-          <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
-            <div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-tertiary">
-              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Verdict</h4>
-              <p class="font-body text-sm text-on-surface font-medium">{item.verdict}</p>
-            </div>
-            <div>
-              <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Observations</h4>
-              <ul class="space-y-2">
-                {item.observations.map((obs) => (
-                  <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5"></span>
-                    {typeof obs === 'string' ? obs : (
-                      <span>{obs.text} (<a href={obs.link} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">{obs.linkText}</a>)</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </details>
-      ))}
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="mt-32">
-    <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
-      <div class="relative z-10 flex flex-col items-center text-center">
-        <h2 class="font-headline text-3xl md:text-5xl font-extrabold mb-6 tracking-tight text-on-surface">{t.cta.title}</h2>
-        <p class="font-body text-on-surface-variant max-w-xl mb-10 text-lg">
-          {t.cta.description}
+      <!-- Architecture Decisions -->
+      <section id="decisions" class="mb-32">
+        <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+          {t.decisions.title}
+        </h2>
+        <p class="font-body text-on-surface-variant mb-12 max-w-2xl">
+          {t.decisions.subtitle}
         </p>
-        <a
-          href="https://github.com/kalicz/DemoPage"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="bg-primary text-on-primary px-8 py-4 font-headline font-bold rounded-lg shadow-md hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95"
+        <div class="space-y-4">
+          {
+            t.decisions.adrs.map((adr) => (
+              <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
+                <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
+                  <div>
+                    <h3 class="font-headline font-bold text-on-surface">{adr.title}</h3>
+                    <p class="font-body text-sm text-on-surface-variant mt-1">{adr.summary}</p>
+                  </div>
+                  <span
+                    class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4"
+                    aria-hidden="true"
+                  >
+                    expand_more
+                  </span>
+                </summary>
+                <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
+                  <div>
+                    <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Context</h4>
+                    <p class="font-body text-sm text-on-surface-variant">{adr.context}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Decision</h4>
+                    <p class="font-body text-sm text-on-surface-variant">{adr.decision}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Why</h4>
+                    <ul class="space-y-1">
+                      {adr.why.map((reason) => (
+                        <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
+                          {reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {"risks" in adr && adr.risks && (
+                    <div>
+                      <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Known Risks</h4>
+                      <div class="bg-surface-container-high rounded-lg overflow-hidden overflow-x-auto">
+                        <table class="w-full font-body text-sm text-on-surface-variant">
+                          <thead>
+                            <tr class="font-label text-xs uppercase tracking-wider text-left">
+                              <th class="p-3">Risk</th>
+                              <th class="p-3">Details</th>
+                              <th class="p-3">Mitigation</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {adr.risks.map((r) => (
+                              <tr class="border-t border-outline-variant/20">
+                                <td class="p-3 font-semibold">{r.risk}</td>
+                                <td class="p-3">{r.details}</td>
+                                <td class="p-3">{r.mitigation}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {"setupNotes" in adr && adr.setupNotes && (
+                    <div>
+                      <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Setup Notes</h4>
+                      <ul class="space-y-1">
+                        {adr.setupNotes.map((note) => (
+                          <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5" />
+                            {note}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {"alternatives" in adr && adr.alternatives && (
+                    <div>
+                      <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Alternatives Considered</h4>
+                      <div class="space-y-2">
+                        {adr.alternatives.map((alt) => (
+                          <div class="flex items-start gap-2 font-body text-sm text-on-surface-variant">
+                            <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0 mt-1.5" />
+                            <span>
+                              <strong>{alt.option}</strong> — {alt.reason}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </details>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- Roadmap Section -->
+      <section id="roadmap">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-4">
+          <div>
+            <span class="font-label text-tertiary uppercase tracking-widest text-sm mb-4 block">{t.roadmap.timelineLabel}</span>
+            <h2 class="font-headline text-4xl font-extrabold tracking-tight text-on-surface">
+              {t.roadmap.title}
+            </h2>
+          </div>
+          <p class="font-body text-on-surface-variant max-w-sm text-right">
+            {t.roadmap.subtitle}
+          </p>
+        </div>
+
+        <div class="relative">
+          <!-- Vertical Line -->
+          <div class="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-outline-variant/30 -translate-x-1/2 hidden md:block"></div>
+
+          <div class="space-y-24">
+            {
+              t.roadmap.versions.map((version) => {
+                const isLeft = version.side === "left";
+                const isFaded = "faded" in version && version.faded;
+                const hasPricing = "pricingTable" in version && version.pricingTable;
+                const hasDetails = "details" in version && version.details;
+                const hasDates = "dates" in version && version.dates;
+
+                const versionContent = (
+                  <div id={`v${version.number}`}>
+                    <div
+                      class:list={[
+                        "font-label text-primary mb-2 text-sm uppercase",
+                        version.done && `flex items-center gap-1.5 ${isLeft ? "md:justify-end" : ""}`,
+                      ]}
+                    >
+                      {`Version ${version.number}`}
+                      {version.done && (
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">
+                          check_circle
+                        </span>
+                      )}
+                    </div>
+                    <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>
+                      {version.title}
+                    </h3>
+                    {"time" in version && version.time && (
+                      <p
+                        class:list={[
+                          "font-label text-xs text-on-surface-variant",
+                          "nextTime" in version && version.nextTime ? "mb-1" : "mb-4",
+                        ]}
+                      >
+                        {version.time}
+                        {hasDates && <span class="text-on-surface-variant/60"> · {version.dates}</span>}
+                      </p>
+                    )}
+                    {"nextTime" in version && version.nextTime && (
+                      <p
+                        class:list={[
+                          "font-label text-xs text-on-surface-variant/60 italic",
+                          "timeNote" in version && version.timeNote ? "mb-1" : "mb-4",
+                        ]}
+                      >
+                        {version.nextTime}
+                      </p>
+                    )}
+                    {"timeNote" in version && version.timeNote && (
+                      <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.timeNote}</p>
+                    )}
+                    <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>
+                      {version.description}
+                    </p>
+                    {hasDetails && (
+                      <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
+                        <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
+                          <span
+                            class="material-symbols-outlined text-[16px] text-primary transition-transform group-open:rotate-180"
+                            aria-hidden="true"
+                          >
+                            expand_more
+                          </span>
+                          {version.detailsLabel}
+                        </summary>
+                        <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
+                          {version.details!.map((item) => (
+                            <li class="flex items-center gap-2">
+                              {item.author === "claude" ? (
+                                <img src="/images/claude-icon.svg" alt="Claude" class="w-4 h-4 rounded-full" />
+                              ) : (
+                                <img
+                                  src="/images/pavel-portrait-200.webp"
+                                  alt="Pavel"
+                                  class="w-4 h-4 rounded-full object-cover"
+                                  width="16"
+                                  height="16"
+                                />
+                              )}
+                              <span>{item.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                    {hasPricing && (
+                      <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-sm">
+                        <table class="w-full font-body text-on-surface-variant">
+                          <thead>
+                            <tr class="text-left font-label text-xs uppercase tracking-wider">
+                              {version.pricingTable!.headers.map((h) => (
+                                <th scope="col" class="pb-2">
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody class="text-sm">
+                            {version.pricingTable!.rows.map((row) => (
+                              <tr>
+                                {row.map((cell) => (
+                                  <td class="py-1">{cell}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+
+                const timelineDot = version.done ? (
+                  <div class="absolute top-5 left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
+                    <span
+                      class="material-symbols-outlined text-white text-[14px]"
+                      style="font-variation-settings: 'FILL' 1;"
+                      aria-hidden="true"
+                    >
+                      check
+                    </span>
+                  </div>
+                ) : (
+                  <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block" />
+                );
+
+                return (
+                  <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-start", isFaded && "opacity-60"]}>
+                    {isLeft ? (
+                      <>
+                        <div class="md:text-right md:pr-16">{versionContent}</div>
+                        {timelineDot}
+                        <div />
+                      </>
+                    ) : (
+                      <>
+                        <div />
+                        {timelineDot}
+                        <div class="md:pl-16">{versionContent}</div>
+                      </>
+                    )}
+                  </div>
+                );
+              })
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Lessons Learned -->
+      <section id="lessons-learned" class="mt-32 mb-32">
+        <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+          {t.lessonsLearned.title}
+        </h2>
+        <p class="font-body text-on-surface-variant mb-12 max-w-2xl">
+          {t.lessonsLearned.subtitle}
+        </p>
+        <div class="space-y-4">
+          {
+            t.lessonsLearned.items.map((item) => (
+              <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
+                <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
+                  <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-tertiary text-2xl" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                    <h3 class="font-headline font-bold text-on-surface">{item.title}</h3>
+                  </div>
+                  <span
+                    class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4"
+                    aria-hidden="true"
+                  >
+                    expand_more
+                  </span>
+                </summary>
+                <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
+                  <div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-tertiary">
+                    <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Verdict</h4>
+                    <p class="font-body text-sm text-on-surface font-medium">{item.verdict}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Observations</h4>
+                    <ul class="space-y-2">
+                      {item.observations.map((obs) => (
+                        <li class="font-body text-sm text-on-surface-variant flex items-start gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0 mt-1.5" />
+                          {typeof obs === "string" ? (
+                            obs
+                          ) : (
+                            <span>
+                              {obs.text} (
+                              <a href={obs.link} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                                {obs.linkText}
+                              </a>
+                              )
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </details>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- CTA Section -->
+      <section class="mt-32">
+        <div
+          class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg"
         >
-          {t.cta.button}
-        </a>
+          <div class="relative z-10 flex flex-col items-center text-center">
+            <h2 class="font-headline text-3xl md:text-5xl font-extrabold mb-6 tracking-tight text-on-surface">
+              {t.cta.title}
+            </h2>
+            <p class="font-body text-on-surface-variant max-w-xl mb-10 text-lg">
+              {t.cta.description}
+            </p>
+            <a
+              href="https://github.com/kalicz/DemoPage"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="bg-primary text-on-primary px-8 py-4 font-headline font-bold rounded-lg shadow-md hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95"
+            >
+              {t.cta.button}
+            </a>
+          </div>
+          <!-- Abstract visual element -->
+          <div class="absolute -right-24 -bottom-24 w-96 h-96 bg-tertiary/10 blur-[100px] rounded-full"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Mobile TOC — Sticky Bottom Tab Bar -->
+    <nav
+      id="toc-bar"
+      class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+      aria-label={t.toc.title}
+    >
+      <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
+        <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant/60 pr-1">{t.toc.title}</span>
+        <span class="shrink-0 w-px h-4 bg-outline-variant/40" aria-hidden="true"></span>
+        <a
+          href="#hero"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="hero">{t.toc.overview}</a
+        >
+        <a
+          href="#tech-stack"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="tech-stack">{t.toc.techStack}</a
+        >
+        <a
+          href="#goals"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="goals">{t.toc.goals}</a
+        >
+        <a
+          href="#architecture"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="architecture">{t.toc.architecture}</a
+        >
+        <a
+          href="#decisions"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="decisions">{t.toc.decisions}</a
+        >
+        <a
+          href="#roadmap"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="roadmap">{t.toc.roadmap}</a
+        >
+        <a
+          href="#lessons-learned"
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target="lessons-learned">{t.toc.lessonsLearned}</a
+        >
       </div>
-      <!-- Abstract visual element -->
-      <div class="absolute -right-24 -bottom-24 w-96 h-96 bg-tertiary/10 blur-[100px] rounded-full"></div>
-    </div>
-  </section>
-
-  </div>
-
-  <!-- Mobile TOC — Sticky Bottom Tab Bar -->
-  <nav
-    id="toc-bar"
-    class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
-    aria-label={t.toc.title}
-  >
-    <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
-      <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant/60 pr-1">{t.toc.title}</span>
-      <span class="shrink-0 w-px h-4 bg-outline-variant/40" aria-hidden="true"></span>
-      <a href="#hero" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="hero">{t.toc.overview}</a>
-      <a href="#tech-stack" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="tech-stack">{t.toc.techStack}</a>
-      <a href="#goals" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="goals">{t.toc.goals}</a>
-      <a href="#architecture" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="architecture">{t.toc.architecture}</a>
-      <a href="#decisions" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="decisions">{t.toc.decisions}</a>
-      <a href="#roadmap" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="roadmap">{t.toc.roadmap}</a>
-      <a href="#lessons-learned" class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap" data-toc-target="lessons-learned">{t.toc.lessonsLearned}</a>
-    </div>
-  </nav>
-
-  <!-- TOC Rail (desktop only) -->
-  <aside class="hidden lg:block">
-    <nav class="sticky top-24 space-y-3" aria-label="Table of contents">
-      <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-4">{t.toc.title}</h4>
-      <a href="#hero" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="hero">{t.toc.overview}</a>
-      <a href="#tech-stack" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="tech-stack">{t.toc.techStack}</a>
-      <a href="#goals" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="goals">{t.toc.goals}</a>
-      <a href="#architecture" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="architecture">{t.toc.architecture}</a>
-      <a href="#decisions" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="decisions">{t.toc.decisions}</a>
-      <a href="#roadmap" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="roadmap">{t.toc.roadmap}</a>
-      <a href="#lessons-learned" class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors" data-toc-target="lessons-learned">{t.toc.lessonsLearned}</a>
     </nav>
-  </aside>
-</div>
 
+    <!-- TOC Rail (desktop only) -->
+    <aside class="hidden lg:block">
+      <nav class="sticky top-24 space-y-3" aria-label="Table of contents">
+        <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-4">
+          {t.toc.title}
+        </h4>
+        <a
+          href="#hero"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="hero">{t.toc.overview}</a
+        >
+        <a
+          href="#tech-stack"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="tech-stack">{t.toc.techStack}</a
+        >
+        <a
+          href="#goals"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="goals">{t.toc.goals}</a
+        >
+        <a
+          href="#architecture"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="architecture">{t.toc.architecture}</a
+        >
+        <a
+          href="#decisions"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="decisions">{t.toc.decisions}</a
+        >
+        <a
+          href="#roadmap"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="roadmap">{t.toc.roadmap}</a
+        >
+        <a
+          href="#lessons-learned"
+          class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
+          data-toc-target="lessons-learned">{t.toc.lessonsLearned}</a
+        >
+      </nav>
+    </aside>
+  </div>
 </Layout>
 
 <style>
@@ -508,9 +701,9 @@ const t = translations[lang];
 </style>
 
 <script>
-  const sections = document.querySelectorAll('section[id]');
-  const tocLinks = document.querySelectorAll('.toc-link');
-  const tocPills = document.querySelectorAll('.toc-pill');
+  const sections = document.querySelectorAll("section[id]");
+  const tocLinks = document.querySelectorAll(".toc-link");
+  const tocPills = document.querySelectorAll(".toc-pill");
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -519,21 +712,25 @@ const t = translations[lang];
           const id = entry.target.id;
 
           // Desktop rail
-          tocLinks.forEach((link) => link.classList.remove('toc-link-active'));
+          tocLinks.forEach((link) => link.classList.remove("toc-link-active"));
           const activeDesktop = document.querySelector(`.toc-link[data-toc-target="${id}"]`);
-          if (activeDesktop) activeDesktop.classList.add('toc-link-active');
+          if (activeDesktop) activeDesktop.classList.add("toc-link-active");
 
           // Mobile pill bar
-          tocPills.forEach((l) => l.classList.remove('toc-pill-active'));
+          tocPills.forEach((l) => l.classList.remove("toc-pill-active"));
           const activePill = document.querySelector(`.toc-pill[data-toc-target="${id}"]`);
           if (activePill) {
-            activePill.classList.add('toc-pill-active');
-            activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            activePill.classList.add("toc-pill-active");
+            activePill.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+              inline: "center",
+            });
           }
         }
       });
     },
-    { rootMargin: '-20% 0px -70% 0px' }
+    { rootMargin: "-20% 0px -70% 0px" },
   );
 
   sections.forEach((section) => observer.observe(section));
