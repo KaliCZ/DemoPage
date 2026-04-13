@@ -10,21 +10,20 @@ public static class Observability
 {
     private const string ServiceName = "kalandra-api";
 
-    public static void Add(WebApplicationBuilder builder, BetterStackConfig? config)
+    public static void Add(WebApplicationBuilder builder, BetterStackConfig? betterStackConfig, SentryConfig? sentryConfig)
     {
-        AddSentry(builder);
-        AddOpenTelemetry(builder, config);
+        AddSentry(builder, sentryConfig);
+        AddOpenTelemetry(builder, betterStackConfig);
     }
 
-    private static void AddSentry(WebApplicationBuilder builder)
+    private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config)
     {
-        var dsn = builder.Configuration["Sentry:Dsn"];
-        if (string.IsNullOrEmpty(dsn))
+        if (config is null)
             return;
 
         builder.WebHost.UseSentry(options =>
         {
-            options.Dsn = dsn;
+            options.Dsn = config.Dsn.Value;
             options.TracesSampleRate = 1.0;
             options.Release = AppVersion.InformationalVersion;
         });
