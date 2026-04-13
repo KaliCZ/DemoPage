@@ -15,8 +15,8 @@
   "buttons": {
     "throwError": "Vyvolat výjimku",
     "throwErrorDescription": "Volá POST /api/test-errors/throw — server okamžitě vyhodí výjimku.",
-    "crashAfterData": "Pád po načtení dat",
-    "crashAfterDataDescription": "Volá GET /api/test-errors/crash-after-data — načte jednu stránku nabídek, poté vyhodí výjimku."
+    "crashAfterData": "Chyba klienta po API volání",
+    "crashAfterDataDescription": "Načte GET /api/job-offers?pageSize=1, poté vyhodí JavaScript chybu na straně klienta."
   },
   "results": {
     "triggered": "Chyba vyvolána — zkontrolujte dashboard sledování.",

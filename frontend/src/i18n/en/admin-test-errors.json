@@ -15,8 +15,8 @@
   "buttons": {
     "throwError": "Throw Exception",
     "throwErrorDescription": "Calls POST /api/test-errors/throw — the server throws immediately.",
-    "crashAfterData": "Crash After Data Fetch",
-    "crashAfterDataDescription": "Calls GET /api/test-errors/crash-after-data — fetches one page of job offers, then throws."
+    "crashAfterData": "Client Error After API Call",
+    "crashAfterDataDescription": "Fetches GET /api/job-offers?pageSize=1, then throws a client-side JavaScript error."
   },
   "results": {
     "triggered": "Error triggered — check your observability dashboard.",

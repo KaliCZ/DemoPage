@@ -111,31 +111,37 @@ const t = translations[lang];
     }
   });
 
-  async function triggerError(method, path) {
+  async function callApi(method, path) {
     const token = await window.__getAccessToken?.();
-    if (!token) return;
+    if (!token) return null;
 
+    return fetch(`/api${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  document.getElementById("btn-throw")?.addEventListener("click", async () => {
     try {
-      const res = await fetch(`/api${path}`, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        window.__showSnackbar?.(unexpectedMsg, "warning");
-      } else {
-        window.__showSnackbar?.(triggeredMsg, "success");
-      }
+      const res = await callApi("POST", "/test-errors/throw");
+      if (!res) return;
+      // Server returns 500 — that's the expected outcome
+      window.__showSnackbar?.(triggeredMsg, "success");
     } catch {
       window.__showSnackbar?.(triggeredMsg, "success");
     }
-  }
-
-  document.getElementById("btn-throw")?.addEventListener("click", () => {
-    triggerError("POST", "/test-errors/throw");
   });
 
-  document.getElementById("btn-crash-after-data")?.addEventListener("click", () => {
-    triggerError("GET", "/test-errors/crash-after-data");
+  document.getElementById("btn-crash-after-data")?.addEventListener("click", async () => {
+    try {
+      const res = await callApi("GET", "/job-offers?page=1&pageSize=1");
+      if (!res) return;
+      const data = await res.json();
+      // Data fetched successfully — now crash on the client side
+      throw new Error("Test client-side error after fetching " + data.items?.length + " job offer(s).");
+    } catch (err) {
+      window.__showSnackbar?.(triggeredMsg, "success");
+      if (err instanceof Error && err.message.startsWith("Test client-side")) throw err;
+    }
   });
 </script>
