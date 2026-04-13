@@ -10,9 +10,9 @@ public static class RateLimitPolicies
 
 public static class RateLimits
 {
-    public static void Add(IServiceCollection services, IConfiguration configuration)
+    public static void Add(IServiceCollection services, IHostEnvironment environment)
     {
-        var permitLimit = configuration.GetValue("RateLimit:HireMePermitLimit", defaultValue: 2);
+        var permitLimit = environment.IsDevelopment() ? 50 : 2;
 
         // Hire-me submissions: N per 4 hours per authenticated user. When the
         // limit is hit, the client must re-render Turnstile in interactive mode
