@@ -24,28 +24,50 @@
         </style>
       </head>
       <body>
-        <h1>XML Sitemap</h1>
-        <p class="meta">
-          <xsl:value-of select="count(s:urlset/s:url)"/> URLs. This file is for search engines; the styling is just for human readability.
-        </p>
-        <table>
-          <thead>
-            <tr><th>URL</th><th>Last modified</th><th>Alternates</th></tr>
-          </thead>
-          <tbody>
-            <xsl:for-each select="s:urlset/s:url">
-              <tr>
-                <td><a href="{s:loc}"><xsl:value-of select="s:loc"/></a></td>
-                <td><xsl:value-of select="s:lastmod"/></td>
-                <td class="alt">
-                  <xsl:for-each select="xhtml:link">
-                    <xsl:value-of select="@hreflang"/>: <a href="{@href}"><xsl:value-of select="@href"/></a><br/>
-                  </xsl:for-each>
-                </td>
-              </tr>
-            </xsl:for-each>
-          </tbody>
-        </table>
+        <xsl:choose>
+          <xsl:when test="s:sitemapindex">
+            <h1>XML Sitemap Index</h1>
+            <p class="meta">
+              <xsl:value-of select="count(s:sitemapindex/s:sitemap)"/> sitemap(s). This file is for search engines; the styling is just for human readability.
+            </p>
+            <table>
+              <thead>
+                <tr><th>Sitemap</th></tr>
+              </thead>
+              <tbody>
+                <xsl:for-each select="s:sitemapindex/s:sitemap">
+                  <tr>
+                    <td><a href="{s:loc}"><xsl:value-of select="s:loc"/></a></td>
+                  </tr>
+                </xsl:for-each>
+              </tbody>
+            </table>
+          </xsl:when>
+          <xsl:otherwise>
+            <h1>XML Sitemap</h1>
+            <p class="meta">
+              <xsl:value-of select="count(s:urlset/s:url)"/> URLs. This file is for search engines; the styling is just for human readability.
+            </p>
+            <table>
+              <thead>
+                <tr><th>URL</th><th>Last modified</th><th>Alternates</th></tr>
+              </thead>
+              <tbody>
+                <xsl:for-each select="s:urlset/s:url">
+                  <tr>
+                    <td><a href="{s:loc}"><xsl:value-of select="s:loc"/></a></td>
+                    <td><xsl:value-of select="s:lastmod"/></td>
+                    <td class="alt">
+                      <xsl:for-each select="xhtml:link">
+                        <xsl:value-of select="@hreflang"/>: <a href="{@href}"><xsl:value-of select="@href"/></a><br/>
+                      </xsl:for-each>
+                    </td>
+                  </tr>
+                </xsl:for-each>
+              </tbody>
+            </table>
+          </xsl:otherwise>
+        </xsl:choose>
       </body>
     </html>
   </xsl:template>
