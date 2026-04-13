@@ -10,8 +10,11 @@ public static class Observability
 {
     private const string ServiceName = "kalandra-api";
 
-    public static void Add(WebApplicationBuilder builder, BetterStackConfig? betterStackConfig, SentryConfig? sentryConfig)
+    public static void Add(WebApplicationBuilder builder)
     {
+        var sentryConfig = SentryConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
+        var betterStackConfig = BetterStackConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
+
         AddSentry(builder, sentryConfig);
         AddOpenTelemetry(builder, betterStackConfig);
     }

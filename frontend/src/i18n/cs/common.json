@@ -5,7 +5,8 @@
     "project": "Projekt",
     "hireMe": "Najměte mě",
     "mySubmissions": "Mé nabídky",
-    "admin": "Administrace"
+    "admin": "Administrace",
+    "adminTestErrors": "Testování chyb"
   },
   "auth": {
     "signIn": "Přihlásit se",

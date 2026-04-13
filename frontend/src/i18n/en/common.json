@@ -5,7 +5,8 @@
     "project": "Project",
     "hireMe": "Hire Me",
     "mySubmissions": "My Submissions",
-    "admin": "Admin"
+    "admin": "Admin",
+    "adminTestErrors": "Test Errors"
   },
   "auth": {
     "signIn": "Sign In",

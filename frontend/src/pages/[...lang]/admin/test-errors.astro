@@ -1,0 +1,141 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
+import enStrings from "../../../i18n/en/admin-test-errors.json";
+import csStrings from "../../../i18n/cs/admin-test-errors.json";
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="admin/test-errors" lang={lang}>
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-8 mb-16">
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+    </h1>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">
+      {t.hero.subtitle}
+    </p>
+  </section>
+
+  <!-- Loading (shown until auth check completes) -->
+  <section id="admin-loading" class="max-w-5xl mx-auto px-8 mb-16">
+    <div class="text-center py-12">
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true"
+        >progress_activity</span
+      >
+    </div>
+  </section>
+
+  <!-- Access denied -->
+  <section id="access-denied" class="hidden max-w-5xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-error mb-4 block" aria-hidden="true">block</span>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.accessDenied.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.accessDenied.description}
+      </p>
+      <a
+        href={localePath(lang, "")}
+        class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-body font-medium hover:bg-primary/90 transition-colors"
+      >
+        {t.accessDenied.backToHome}
+      </a>
+    </div>
+  </section>
+
+  <!-- Admin content -->
+  <section id="admin-content" class="hidden max-w-5xl mx-auto px-8 mb-16">
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-2xl text-error" aria-hidden="true">error</span>
+          <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.throwError}</h2>
+        </div>
+        <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.throwErrorDescription}</p>
+        <button
+          id="btn-throw"
+          type="button"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
+        >
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">bolt</span>
+          {t.buttons.throwError}
+        </button>
+      </div>
+
+      <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-2xl text-error" aria-hidden="true">database</span>
+          <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.crashAfterData}</h2>
+        </div>
+        <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.crashAfterDataDescription}</p>
+        <button
+          id="btn-crash-after-data"
+          type="button"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
+        >
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">bolt</span>
+          {t.buttons.crashAfterData}
+        </button>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script define:vars={{ triggeredMsg: t.results.triggered, unexpectedMsg: t.results.unexpectedSuccess }}>
+  // Auth gate — show content only for admins
+  window.addEventListener("auth-change", (e) => {
+    const user = e.detail?.user;
+    const isAdmin =
+      user && Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
+
+    document.getElementById("admin-loading")?.classList.add("hidden");
+
+    if (isAdmin) {
+      document.getElementById("admin-content")?.classList.remove("hidden");
+      document.getElementById("access-denied")?.classList.add("hidden");
+    } else {
+      document.getElementById("admin-content")?.classList.add("hidden");
+      document.getElementById("access-denied")?.classList.remove("hidden");
+    }
+  });
+
+  async function triggerError(method, path) {
+    const token = await window.__getAccessToken?.();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`/api${path}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        window.__showSnackbar?.(unexpectedMsg, "warning");
+      } else {
+        window.__showSnackbar?.(triggeredMsg, "success");
+      }
+    } catch {
+      window.__showSnackbar?.(triggeredMsg, "success");
+    }
+  }
+
+  document.getElementById("btn-throw")?.addEventListener("click", () => {
+    triggerError("POST", "/test-errors/throw");
+  });
+
+  document.getElementById("btn-crash-after-data")?.addEventListener("click", () => {
+    triggerError("GET", "/test-errors/crash-after-data");
+  });
+</script>

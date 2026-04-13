@@ -8,9 +8,7 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var betterStackConfig = BetterStackConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
-var sentryConfig = SentryConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
-Observability.Add(builder, betterStackConfig, sentryConfig);
+Observability.Add(builder);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()

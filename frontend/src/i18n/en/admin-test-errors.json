@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "title": "Admin — Test Errors — kalandra.tech",
+    "description": "Trigger test errors to verify observability pipelines."
+  },
+  "hero": {
+    "title": "Test Errors",
+    "subtitle": "Trigger server errors to verify Sentry and Better Stack capture them."
+  },
+  "accessDenied": {
+    "title": "Access Denied",
+    "description": "You need admin privileges to view this page.",
+    "backToHome": "Back to Home"
+  },
+  "buttons": {
+    "throwError": "Throw Exception",
+    "throwErrorDescription": "Calls POST /api/test-errors/throw — the server throws immediately.",
+    "crashAfterData": "Crash After Data Fetch",
+    "crashAfterDataDescription": "Calls GET /api/test-errors/crash-after-data — fetches one page of job offers, then throws."
+  },
+  "results": {
+    "triggered": "Error triggered — check your observability dashboard.",
+    "unexpectedSuccess": "Unexpected success — the endpoint should have returned an error."
+  }
+}

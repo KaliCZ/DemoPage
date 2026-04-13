@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "title": "Admin — Testování chyb — kalandra.tech",
+    "description": "Vyvolání testovacích chyb pro ověření sledování aplikace."
+  },
+  "hero": {
+    "title": "Testování chyb",
+    "subtitle": "Vyvolejte serverové chyby a ověřte, že je Sentry a Better Stack zachytí."
+  },
+  "accessDenied": {
+    "title": "Přístup odepřen",
+    "description": "Pro zobrazení této stránky potřebujete oprávnění správce.",
+    "backToHome": "Zpět na hlavní stránku"
+  },
+  "buttons": {
+    "throwError": "Vyvolat výjimku",
+    "throwErrorDescription": "Volá POST /api/test-errors/throw — server okamžitě vyhodí výjimku.",
+    "crashAfterData": "Pád po načtení dat",
+    "crashAfterDataDescription": "Volá GET /api/test-errors/crash-after-data — načte jednu stránku nabídek, poté vyhodí výjimku."
+  },
+  "results": {
+    "triggered": "Chyba vyvolána — zkontrolujte dashboard sledování.",
+    "unexpectedSuccess": "Neočekávaný úspěch — endpoint měl vrátit chybu."
+  }
+}
