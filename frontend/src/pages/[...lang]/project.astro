@@ -21,11 +21,11 @@ const t = translations[lang];
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="project" lang={lang}>
 
-<div class="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12 max-w-[1400px] mx-auto relative">
+<div class="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12 max-w-7xl mx-auto px-4 md:px-8 relative">
   <div>
 
   <!-- Hero / Intro Section -->
-  <section id="hero" class="max-w-7xl mx-auto px-4 md:px-8 mb-24">
+  <section id="hero" class="mb-24">
     <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
       <div class="md:col-span-8">
         <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
@@ -77,7 +77,7 @@ const t = translations[lang];
   </section>
 
   <!-- Tech Stack -->
-  <section id="tech-stack" class="max-w-7xl mx-auto px-4 md:px-8 mb-32">
+  <section id="tech-stack" class="mb-32">
     <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.techStack.title}</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
@@ -138,7 +138,7 @@ const t = translations[lang];
   </section>
 
   <!-- Goals & Requirements -->
-  <section id="goals" class="max-w-7xl mx-auto px-4 md:px-8 mb-32">
+  <section id="goals" class="mb-32">
     <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.goals.title}</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
       {t.goals.items.map((item) => (
@@ -175,13 +175,13 @@ const t = translations[lang];
   </section>
 
   <!-- Architecture Diagram -->
-  <section id="architecture" class="max-w-7xl mx-auto px-4 md:px-8 mb-32">
+  <section id="architecture" class="mb-32">
     <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.architectureDiagram.title}</h2>
     <ArchitectureDiagram t={t.architectureDiagram} class="w-full max-w-6xl mx-auto" />
   </section>
 
   <!-- Architecture Decisions -->
-  <section id="decisions" class="max-w-7xl mx-auto px-4 md:px-8 mb-32">
+  <section id="decisions" class="mb-32">
     <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.decisions.title}</h2>
     <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.decisions.subtitle}</p>
     <div class="space-y-4">
@@ -268,7 +268,7 @@ const t = translations[lang];
   </section>
 
   <!-- Roadmap Section -->
-  <section id="roadmap" class="max-w-7xl mx-auto px-4 md:px-8">
+  <section id="roadmap">
     <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-4">
       <div>
         <span class="font-label text-tertiary uppercase tracking-widest text-sm mb-4 block">{t.roadmap.timelineLabel}</span>
@@ -381,7 +381,7 @@ const t = translations[lang];
   </section>
 
   <!-- Lessons Learned -->
-  <section id="lessons-learned" class="max-w-7xl mx-auto px-4 md:px-8 mt-32 mb-32">
+  <section id="lessons-learned" class="mt-32 mb-32">
     <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.lessonsLearned.title}</h2>
     <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.lessonsLearned.subtitle}</p>
     <div class="space-y-4">
@@ -419,7 +419,7 @@ const t = translations[lang];
   </section>
 
   <!-- CTA Section -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 mt-32">
+  <section class="mt-32">
     <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
       <div class="relative z-10 flex flex-col items-center text-center">
         <h2 class="font-headline text-3xl md:text-5xl font-extrabold mb-6 tracking-tight text-on-surface">{t.cta.title}</h2>

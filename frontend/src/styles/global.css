@@ -5,6 +5,8 @@
 /* Offset anchor scroll for sticky header */
 html {
   scroll-padding-top: 6rem;
+  /* Prevent horizontal page shift when navigating between pages with/without scrollbar */
+  scrollbar-gutter: stable;
 }
 
 /* ============================================
@@ -13,17 +15,17 @@ html {
    ============================================ */
 
 @theme {
-  /* --- Light Mode Colors (default) --- */
-  --color-background: #f5f5f5;
-  --color-surface: #fbf8f8;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f7f7f7;
-  --color-surface-container: #f3f3f3;
-  --color-surface-container-high: #ebe9e8;
-  --color-surface-container-highest: #e5e2e1;
-  --color-surface-variant: #e2e2ec;
-  --color-surface-dim: #ded9d9;
-  --color-surface-bright: #fbf8f8;
+  /* --- Light Mode Colors (default) — warm cream palette --- */
+  --color-background: #f3f1ed;
+  --color-surface: #f9f7f3;
+  --color-surface-container-lowest: #fdfcf9;
+  --color-surface-container-low: #f5f3ef;
+  --color-surface-container: #efede9;
+  --color-surface-container-high: #e7e5e0;
+  --color-surface-container-highest: #dfdcd7;
+  --color-surface-variant: #e0dfe8;
+  --color-surface-dim: #dbd7d3;
+  --color-surface-bright: #f9f7f3;
 
   --color-on-surface: #1a1a1a;
   --color-on-surface-variant: #45464f;
@@ -47,7 +49,7 @@ html {
   --color-tertiary-fixed-dim: #76d6d5;
 
   --color-outline: #767680;
-  --color-outline-variant: #c5c5d4;
+  --color-outline-variant: #b0b0be;
 
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
