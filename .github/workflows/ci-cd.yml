@@ -387,7 +387,6 @@ jobs:
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             BetterStack__SourceToken=${BETTERSTACK_SOURCE_TOKEN}
-            BetterStack__OtlpEndpoint=https://s2357890.eu-fsn-3.betterstackdata.com/
             EOF
 
             # Seed an initial Caddyfile if none exists, so the rootless
