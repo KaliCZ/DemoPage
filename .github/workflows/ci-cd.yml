@@ -350,12 +350,13 @@ jobs:
           SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          BETTERSTACK_SOURCE_TOKEN: ${{ secrets.BETTERSTACK_BACKEND_SOURCETOKEN }}
           IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,IMAGE
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,BETTERSTACK_SOURCE_TOKEN,IMAGE
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -385,6 +386,8 @@ jobs:
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
+            BetterStack__SourceToken=${BETTERSTACK_SOURCE_TOKEN}
+            BetterStack__OtlpEndpoint=https://s2357890.eu-fsn-3.betterstackdata.com
             EOF
 
             # Seed an initial Caddyfile if none exists, so the rootless

@@ -8,6 +8,9 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var betterStackConfig = BetterStackConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
+Observability.Add(builder, betterStackConfig);
+
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -42,7 +45,6 @@ builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 RateLimits.Add(builder.Services, builder.Environment);
-Observability.Add(builder);
 
 builder.Services.AddResponseCompression(options =>
 {

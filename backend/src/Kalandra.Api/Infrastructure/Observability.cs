@@ -1,4 +1,3 @@
-using System.Reflection;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -11,26 +10,28 @@ public static class Observability
 {
     private const string ServiceName = "kalandra-api";
 
-    public static void Add(WebApplicationBuilder builder)
+    public static void Add(WebApplicationBuilder builder, BetterStackConfig? config)
     {
-        var sourceToken = builder.Configuration["BetterStack:SourceToken"];
+        if (config is null)
+        {
+            if (builder.Environment.IsProduction())
+                throw new InvalidOperationException("BetterStack:SourceToken and BetterStack:OtlpEndpoint must be configured in production.");
 
-        if (string.IsNullOrEmpty(sourceToken))
             return;
+        }
 
-        var endpoint = new Uri("https://in-otel.logs.betterstack.com");
-        var headers = $"Authorization=Bearer {sourceToken}";
+        var endpoint = new Uri(config.OtlpEndpoint.Value);
+        var headers = config.AuthorizationHeader;
 
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(
                     serviceName: ServiceName,
-                    serviceVersion: typeof(Observability).Assembly
-                        .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
-                        ?.InformationalVersion ?? "unknown"))
+                    serviceVersion: AppVersion.InformationalVersion))
             .WithTracing(tracing => tracing
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
+                .AddSource("Marten")
                 .AddOtlpExporter(otlp =>
                 {
                     otlp.Endpoint = endpoint;
@@ -41,6 +42,7 @@ public static class Observability
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()
+                .AddMeter("Marten")
                 .AddOtlpExporter(otlp =>
                 {
                     otlp.Endpoint = endpoint;
