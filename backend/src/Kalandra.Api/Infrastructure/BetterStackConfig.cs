@@ -2,7 +2,7 @@ namespace Kalandra.Api.Infrastructure;
 
 public record BetterStackConfig(
     NonEmptyString SourceToken,
-    NonEmptyString OtlpEndpoint)
+    Uri OtlpEndpoint)
 {
     public string AuthorizationHeader => $"Authorization=Bearer {SourceToken}";
 
@@ -18,7 +18,7 @@ public record BetterStackConfig(
             return null;
         }
 
-        var config = new BetterStackConfig(SourceToken: sourceToken, OtlpEndpoint: otlpEndpoint);
+        var config = new BetterStackConfig(SourceToken: sourceToken, OtlpEndpoint: new Uri(otlpEndpoint.Value));
 
         services.AddSingleton(config);
 

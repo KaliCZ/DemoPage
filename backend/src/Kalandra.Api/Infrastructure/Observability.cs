@@ -20,9 +20,6 @@ public static class Observability
             return;
         }
 
-        var endpoint = new Uri(config.OtlpEndpoint.Value);
-        var headers = config.AuthorizationHeader;
-
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(
@@ -34,8 +31,8 @@ public static class Observability
                 .AddSource("Marten")
                 .AddOtlpExporter(otlp =>
                 {
-                    otlp.Endpoint = endpoint;
-                    otlp.Headers = headers;
+                    otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/traces");
+                    otlp.Headers = config.AuthorizationHeader;
                     otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                 }))
             .WithMetrics(metrics => metrics
@@ -45,8 +42,8 @@ public static class Observability
                 .AddMeter("Marten")
                 .AddOtlpExporter(otlp =>
                 {
-                    otlp.Endpoint = endpoint;
-                    otlp.Headers = headers;
+                    otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/metrics");
+                    otlp.Headers = config.AuthorizationHeader;
                     otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                 }));
 
@@ -56,8 +53,8 @@ public static class Observability
             logging.IncludeFormattedMessage = true;
             logging.AddOtlpExporter(otlp =>
             {
-                otlp.Endpoint = endpoint;
-                otlp.Headers = headers;
+                otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/logs");
+                otlp.Headers = config.AuthorizationHeader;
                 otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
             });
         });
