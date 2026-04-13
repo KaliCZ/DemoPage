@@ -3,6 +3,7 @@ using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,12 +29,11 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<AuthorizeOperationFilter>();
 });
 
-var authConfig = SupabaseAuthConfig.AddSingleton(builder.Services, builder.Configuration);
-SupabaseStorageConfig.AddSingleton(builder.Services, builder.Configuration);
+var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration);
 TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
-Auth.Add(builder.Services, authConfig);
+Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
 builder.Services.AddStorageServices();
@@ -41,8 +41,15 @@ builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
-RateLimits.Add(builder.Services);
+RateLimits.Add(builder.Services, builder.Environment);
 Observability.Add(builder);
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.EnableForHttps = true;
+});
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
@@ -50,12 +57,15 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+app.UseResponseCompression();
+
 // Yes, even for production.
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+RobotsTag.Use(app);
 
 app.UseCors("DefaultPolicy");
 Auth.Use(app);

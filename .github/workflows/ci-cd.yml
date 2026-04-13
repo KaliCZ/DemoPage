@@ -136,9 +136,7 @@ jobs:
           dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 &
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=kalandra;Username=kalandra;Password=kalandra_dev"
-          Auth__SupabaseProjectUrl: "http://127.0.0.1:54321"
-          Storage__SupabaseProjectUrl: "http://127.0.0.1:54321"
-          Storage__ServiceKey: ${{ env.SB_SERVICE_ROLE_KEY }}
+          Supabase__ProjectUrl: "http://127.0.0.1:54321"
           Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
 
@@ -175,12 +173,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ env.SB_SERVICE_ROLE_KEY }}
 
       - name: Upload Playwright traces
-        if: failure()
+        if: '!cancelled()'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: frontend/test-results/
           retention-days: 7
+          if-no-files-found: ignore
 
   backend-test:
     if: github.event_name != 'workflow_dispatch'
@@ -208,6 +207,28 @@ jobs:
 
       - name: Test
         run: dotnet test --no-build -c Release
+
+  frontend-format:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Check formatting
+        run: npm run format:check
+        working-directory: frontend
 
   frontend-test:
     if: github.event_name != 'workflow_dispatch'
@@ -254,7 +275,7 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [changes, e2e, backend-test, frontend-test]
+    needs: [changes, e2e, backend-test, frontend-format, frontend-test]
     if: |
       always() &&
       (
@@ -263,6 +284,7 @@ jobs:
           needs.changes.outputs.backend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
+          needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success'
         ) ||
         (
@@ -361,9 +383,7 @@ jobs:
             umask 077
             cat > "$HOME/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
-            Auth__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
-            Storage__SupabaseProjectUrl=${SUPABASE_PROJECT_URL}
-            Storage__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
+            Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             EOF
 
@@ -459,7 +479,7 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: [changes, e2e, backend-test, frontend-test, backend-deploy]
+    needs: [changes, e2e, backend-test, frontend-format, frontend-test, backend-deploy]
     if: |
       always() &&
       (
@@ -469,6 +489,7 @@ jobs:
           needs.changes.outputs.frontend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
+          needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success' &&
           (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped')
         )

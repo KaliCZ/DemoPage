@@ -107,7 +107,7 @@ PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
 
 The committed `.env` uses Cloudflare's [always-pass test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) so the form works locally without a real Turnstile widget. The backend `appsettings.json` uses the matching always-pass test secret (`1x0000000000000000000000000000000AA`).
 
-To test with a real widget locally, override in `.env.local` (frontend) and `appsettings.Development.json` or user-secrets (backend):
+To test with a real widget locally, override in `.env.local` (frontend) and user-secrets (backend):
 ```
 # frontend/.env.local
 PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key

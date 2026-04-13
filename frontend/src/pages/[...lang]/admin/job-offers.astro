@@ -1,17 +1,17 @@
 ---
-import Layout from '../../../layouts/Layout.astro';
-import JobOfferDetail from '../../../components/JobOfferDetail.astro';
-import { locales, defaultLocale, localePath, type Locale } from '../../../i18n/utils';
-import enStrings from '../../../i18n/en/admin-job-offers.json';
-import csStrings from '../../../i18n/cs/admin-job-offers.json';
-import enCommon from '../../../i18n/en/common.json';
-import csCommon from '../../../i18n/cs/common.json';
+import Layout from "../../../layouts/Layout.astro";
+import JobOfferDetail from "../../../components/JobOfferDetail.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
+import enStrings from "../../../i18n/en/admin-job-offers.json";
+import csStrings from "../../../i18n/cs/admin-job-offers.json";
+import enCommon from "../../../i18n/en/common.json";
+import csCommon from "../../../i18n/cs/common.json";
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
 
 export function getStaticPaths() {
-  return locales.map(lang => ({
+  return locales.map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }
@@ -22,13 +22,14 @@ const c = commonTranslations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="admin/job-offers" lang={lang}>
-
   <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
-    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">
+      {t.hero.subtitle}
+    </p>
   </section>
 
   <!-- Loading (shown until auth check completes) -->
@@ -42,10 +43,16 @@ const c = commonTranslations[lang];
   <section id="access-denied" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-error mb-4 block" aria-hidden="true">block</span>
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.accessDenied.title}</h2>
-      <p class="text-on-surface-variant font-body mb-6">{t.accessDenied.description}</p>
-      <a href={localePath(lang, 'home')}
-        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors">
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.accessDenied.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.accessDenied.description}
+      </p>
+      <a
+        href={localePath(lang, "home")}
+        class="inline-block px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors"
+      >
         {t.accessDenied.backToHome}
       </a>
     </div>
@@ -55,33 +62,63 @@ const c = commonTranslations[lang];
   <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <!-- Status filter dropdown -->
     <div id="status-filter" class="relative mb-6">
-      <button id="status-filter-toggle" type="button"
+      <button
+        id="status-filter-toggle"
+        type="button"
         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-sm font-label font-semibold text-on-surface hover:border-primary/30 transition-colors cursor-pointer"
-        aria-haspopup="listbox" aria-expanded="false">
+        aria-haspopup="listbox"
+        aria-expanded="false"
+      >
         <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_list</span>
         <span id="filter-label">{t.list.filterByStatus}</span>
         <span id="filter-count" class="hidden px-1.5 py-0.5 rounded-full text-xs bg-primary text-on-primary"></span>
         <span class="material-symbols-outlined text-lg ml-1" aria-hidden="true">expand_more</span>
       </button>
-      <div id="status-filter-menu" class="hidden absolute left-0 top-full mt-1 z-10 min-w-[200px] bg-surface-container-low rounded-xl border border-outline-variant/20 shadow-lg py-1" role="listbox" aria-multiselectable="true" aria-label={t.list.filterByStatus}>
+      <div
+        id="status-filter-menu"
+        class="hidden absolute left-0 top-full mt-1 z-10 min-w-[200px] bg-surface-container-low rounded-xl border border-outline-variant/20 shadow-lg py-1"
+        role="listbox"
+        aria-multiselectable="true"
+        aria-label={t.list.filterByStatus}
+      >
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="Submitted" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="Submitted"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.submitted}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="InReview" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="InReview"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.inReview}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="LetsTalk" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="LetsTalk"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.accepted}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="Declined" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="Declined"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.declined}</span>
         </label>
         <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors cursor-pointer" role="option">
-          <input type="checkbox" value="Cancelled" class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary" />
+          <input
+            type="checkbox"
+            value="Cancelled"
+            class="status-checkbox w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary/30 accent-primary"
+          />
           <span class="text-sm font-label text-on-surface">{t.list.cancelled}</span>
         </label>
       </div>
@@ -92,47 +129,88 @@ const c = commonTranslations[lang];
     </div>
     <div id="offers-empty" class="hidden bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-4 block" aria-hidden="true">inbox</span>
-      <h2 class="font-headline text-xl font-bold text-on-surface mb-3">{t.empty.title}</h2>
+      <h2 class="font-headline text-xl font-bold text-on-surface mb-3">
+        {t.empty.title}
+      </h2>
       <p class="text-on-surface-variant font-body">{t.empty.description}</p>
     </div>
     <div id="offers-grid" class="hidden grid gap-4"></div>
+    <!-- Pagination controls -->
+    <nav id="pagination-controls" class="hidden flex items-center justify-center gap-3 mt-8" aria-label="Pagination">
+      <button
+        id="pagination-prev"
+        type="button"
+        class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled
+      >
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
+        {t.list.paginationPrev}
+      </button>
+      <span id="pagination-indicator" class="text-sm font-label text-on-surface-variant"></span>
+      <button
+        id="pagination-next"
+        type="button"
+        class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled
+      >
+        {t.list.paginationNext}
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
+      </button>
+    </nav>
   </section>
 
   <JobOfferDetail isAdmin={true} t={t} />
 
-  <script define:vars={{
-    apiUrl: import.meta.env.PUBLIC_API_URL || '',
-    filterByStatusLabel: t.list.filterByStatus,
-    statusLabels: { Submitted: t.list.submitted, InReview: t.list.inReview, LetsTalk: t.list.accepted, Declined: t.list.declined, Cancelled: t.list.cancelled },
-    remoteLabel: t.list.remote,
-    submittedByLabel: t.list.submittedBy,
-    adminNotesLabel: t.list.adminNotes,
-    historyEmptyLabel: t.list.historyEmpty,
-    commentsEmptyLabel: t.list.commentsEmpty,
-    errorText: c.errors.generic,
-    errorNotFound: c.errors.notFound,
-    errorDownload: c.errors.downloadFailed,
-    errorServer: c.errors.serverError,
-    errorNetwork: c.errors.networkError,
-    attachmentsLabel: t.list.attachments,
-    downloadLabel: t.list.download,
-    apiErrorMap: t.errors
-  }}>
+  <script
+    define:vars={{
+      apiUrl: import.meta.env.PUBLIC_API_URL || "",
+      filterByStatusLabel: t.list.filterByStatus,
+      statusLabels: {
+        Submitted: t.list.submitted,
+        InReview: t.list.inReview,
+        LetsTalk: t.list.accepted,
+        Declined: t.list.declined,
+        Cancelled: t.list.cancelled,
+      },
+      remoteLabel: t.list.remote,
+      submittedByLabel: t.list.submittedBy,
+      historyFieldLabels: t.list.fieldLabels,
+      historyFieldChanged: t.list.fieldChanged,
+      historyFieldBefore: t.list.fieldBefore,
+      historyFieldAfter: t.list.fieldAfter,
+      historyFieldYes: t.list.fieldYes,
+      historyFieldNo: t.list.fieldNo,
+      historyEmptyLabel: t.list.historyEmpty,
+      commentsEmptyLabel: t.list.commentsEmpty,
+      errorText: c.errors.generic,
+      errorNotFound: c.errors.notFound,
+      errorDownload: c.errors.downloadFailed,
+      errorServer: c.errors.serverError,
+      errorNetwork: c.errors.networkError,
+      attachmentsLabel: t.list.attachments,
+      downloadLabel: t.list.download,
+      apiErrorMap: t.errors,
+      paginationPageLabel: t.list.paginationPage,
+    }}
+  >
     // Wake up the database
-    fetch(apiUrl + '/health').catch(function() {});
+    fetch(apiUrl + "/health").catch(function () {});
 
-    function showError(status) {
+    var currentPage = 1;
+    var pageSize = 10;
+
+    function showError(status, traceId) {
       var msg = !status ? errorNetwork : status === 404 ? errorNotFound : status >= 500 ? errorServer : errorText;
-      window.__showSnackbar?.(msg, 'error');
+      window.__showSnackbar?.(msg, "error", 8000, traceId);
     }
 
     async function showApiError(res) {
-      var msg = await window.__getApiError?.(res, apiErrorMap);
-      if (msg) {
-        window.__showSnackbar?.(msg, 'error');
-        return msg;
+      var result = await window.__getApiError?.(res, apiErrorMap);
+      if (result?.message) {
+        window.__showSnackbar?.(result.message, "error", 8000, result.traceId);
+        return result.message;
       }
-      showError(res.status);
+      showError(res.status, result?.traceId);
     }
 
     var currentOfferId = null;
@@ -144,7 +222,7 @@ const c = commonTranslations[lang];
     // Client-side user info cache: userId → { displayName, avatarUrl, _ts }
     // Persisted in localStorage so it survives page refreshes and works across tabs.
     // Entries expire after 5 minutes to pick up avatar/name changes.
-    var USER_INFO_CACHE_KEY = 'userInfoCache';
+    var USER_INFO_CACHE_KEY = "userInfoCache";
     var USER_INFO_CACHE_TTL = 5 * 60 * 1000;
 
     function loadUserInfoCache() {
@@ -153,28 +231,34 @@ const c = commonTranslations[lang];
         var now = Date.now();
         var valid = {};
         for (var id in raw) {
-          if (raw[id] && raw[id]._ts && (now - raw[id]._ts) < USER_INFO_CACHE_TTL) {
+          if (raw[id] && raw[id]._ts && now - raw[id]._ts < USER_INFO_CACHE_TTL) {
             valid[id] = raw[id];
           }
         }
         return valid;
-      } catch { return {}; }
+      } catch {
+        return {};
+      }
     }
 
     function saveUserInfoCache(cache) {
-      try { localStorage.setItem(USER_INFO_CACHE_KEY, JSON.stringify(cache)); } catch {}
+      try {
+        localStorage.setItem(USER_INFO_CACHE_KEY, JSON.stringify(cache));
+      } catch {}
     }
 
     var userInfoCache = loadUserInfoCache();
 
     async function fetchUserInfo(userIds) {
       if (!userIds || userIds.length === 0) return {};
-      var uncached = userIds.filter(function(id, i, arr) { return !(id in userInfoCache) && arr.indexOf(id) === i; });
+      var uncached = userIds.filter(function (id, i, arr) {
+        return !(id in userInfoCache) && arr.indexOf(id) === i;
+      });
       if (uncached.length > 0) {
         try {
           var token = await window.__getAccessToken?.();
-          var res = await fetch(apiUrl + '/api/users?ids=' + uncached.join('&ids='), {
-            headers: { 'Authorization': 'Bearer ' + token }
+          var res = await fetch(apiUrl + "/api/users?ids=" + uncached.join("&ids="), {
+            headers: { Authorization: "Bearer " + token },
           });
           if (res.ok) {
             var data = await res.json();
@@ -183,60 +267,62 @@ const c = commonTranslations[lang];
               data[id]._ts = now;
               userInfoCache[id] = data[id];
             }
-            uncached.forEach(function(id) {
+            uncached.forEach(function (id) {
               if (!(id in userInfoCache)) userInfoCache[id] = { _ts: now };
             });
             saveUserInfoCache(userInfoCache);
           }
-        } catch (e) { /* user info fetch is best-effort */ }
+        } catch (e) {
+          /* user info fetch is best-effort */
+        }
       }
       var result = {};
-      userIds.forEach(function(id) {
+      userIds.forEach(function (id) {
         if (userInfoCache[id] && userInfoCache[id].displayName) result[id] = userInfoCache[id];
       });
       return result;
     }
 
     var statusColors = {
-      Submitted: 'bg-secondary-container text-on-surface',
-      InReview: 'bg-primary-container text-on-primary-container',
-      LetsTalk: 'bg-tertiary-container text-on-surface',
-      Declined: 'bg-error-container text-on-surface',
-      Cancelled: 'bg-surface-container-high text-on-surface-variant'
+      Submitted: "bg-secondary-container text-on-surface",
+      InReview: "bg-primary-container text-on-primary-container",
+      LetsTalk: "bg-tertiary-container text-on-surface",
+      Declined: "bg-error-container text-on-surface",
+      Cancelled: "bg-surface-container-high text-on-surface-variant",
     };
 
     var eventIcons = {
-      Submitted: 'send',
-      Edited: 'edit',
-      StatusChanged: 'swap_horiz',
-      Cancelled: 'cancel',
-      Comment: 'chat_bubble'
+      Submitted: "send",
+      Edited: "edit",
+      StatusChanged: "swap_horiz",
+      Cancelled: "cancel",
+      Comment: "chat_bubble",
     };
 
-    window.addEventListener('auth-change', async function(e) {
+    window.addEventListener("auth-change", async function (e) {
       var user = e.detail?.user;
-      document.getElementById('admin-loading')?.classList.add('hidden');
+      document.getElementById("admin-loading")?.classList.add("hidden");
 
       if (!user) {
         loadedForUserId = null;
-        document.getElementById('access-denied')?.classList.remove('hidden');
-        document.getElementById('offers-list-section')?.classList.add('hidden');
+        document.getElementById("access-denied")?.classList.remove("hidden");
+        document.getElementById("offers-list-section")?.classList.add("hidden");
         return;
       }
 
-      var isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf('admin') !== -1;
+      var isAdmin = Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
       if (!isAdmin) {
         loadedForUserId = null;
-        document.getElementById('access-denied')?.classList.remove('hidden');
-        document.getElementById('offers-list-section')?.classList.add('hidden');
+        document.getElementById("access-denied")?.classList.remove("hidden");
+        document.getElementById("offers-list-section")?.classList.add("hidden");
         return;
       }
 
       if (loadedForUserId === user.id) return;
       loadedForUserId = user.id;
 
-      document.getElementById('access-denied')?.classList.add('hidden');
-      document.getElementById('offers-list-section')?.classList.remove('hidden');
+      document.getElementById("access-denied")?.classList.add("hidden");
+      document.getElementById("offers-list-section")?.classList.remove("hidden");
       await loadOffers();
       checkHashOnLoad();
     });
@@ -247,69 +333,119 @@ const c = commonTranslations[lang];
 
       var response;
       try {
-        var statusParam = activeStatuses.length > 0 ? '?' + activeStatuses.map(function(s) { return 'status=' + s; }).join('&') : '';
-        response = await fetch(apiUrl + '/api/job-offers' + statusParam, {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
+        var params = ["page=" + currentPage, "pageSize=" + pageSize];
+        activeStatuses.forEach(function (s) {
+          params.push("status=" + s);
+        });
+        response = await fetch(apiUrl + "/api/job-offers?" + params.join("&"), {
+          headers: { Authorization: "Bearer " + currentToken },
         });
       } catch (e) {
-        document.getElementById('offers-loading')?.classList.add('hidden');
-        showError(); return;
-      }
-
-      document.getElementById('offers-loading')?.classList.add('hidden');
-      if (!response.ok) { showError(response.status); return; }
-
-      var data = await response.json();
-      if (data.items.length === 0) {
-        document.getElementById('offers-empty')?.classList.remove('hidden');
-        document.getElementById('offers-grid')?.classList.add('hidden');
+        document.getElementById("offers-loading")?.classList.add("hidden");
+        showError();
         return;
       }
 
-      document.getElementById('offers-empty')?.classList.add('hidden');
-      var grid = document.getElementById('offers-grid');
-      if (!grid) return;
-      grid.classList.remove('hidden');
-      grid.innerHTML = '';
+      document.getElementById("offers-loading")?.classList.add("hidden");
+      if (!response.ok) {
+        await showApiError(response);
+        return;
+      }
 
-      data.items.forEach(function(offer) {
-        var card = document.createElement('div');
-        card.className = 'bg-surface-container-low rounded-2xl border border-outline-variant/10 p-6 hover:border-primary/20 transition-colors cursor-pointer';
-        card.innerHTML = '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
+      var data = await response.json();
+      if (data.pagination.totalCount === 0) {
+        document.getElementById("offers-empty")?.classList.remove("hidden");
+        document.getElementById("offers-grid")?.classList.add("hidden");
+        document.getElementById("pagination-controls")?.classList.add("hidden");
+        return;
+      }
+
+      document.getElementById("offers-empty")?.classList.add("hidden");
+      var grid = document.getElementById("offers-grid");
+      if (!grid) return;
+      grid.classList.remove("hidden");
+      grid.innerHTML = "";
+
+      data.items.forEach(function (offer) {
+        var card = document.createElement("div");
+        card.className =
+          "bg-surface-container-low rounded-2xl border border-outline-variant/10 p-6 hover:border-primary/20 transition-colors cursor-pointer";
+        card.innerHTML =
+          '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
           '<div class="flex-1 min-w-0">' +
-            '<h3 class="font-headline text-lg font-bold text-on-surface truncate">' + esc(offer.jobTitle) + '</h3>' +
-            '<p class="text-sm text-on-surface-variant font-body">' + esc(offer.companyName) + '</p>' +
-          '</div>' +
+          '<h3 class="font-headline text-lg font-bold text-on-surface truncate">' +
+          esc(offer.jobTitle) +
+          "</h3>" +
+          '<p class="text-sm text-on-surface-variant font-body">' +
+          esc(offer.companyName) +
+          "</p>" +
+          "</div>" +
           '<div class="flex items-center gap-3 flex-shrink-0">' +
-            (offer.isRemote ? '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold bg-tertiary-container text-on-surface">' + remoteLabel + '</span>' : '') +
-            '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold ' + (statusColors[offer.status] || '') + '">' + (statusLabels[offer.status] || offer.status) + '</span>' +
-            '<span class="text-xs text-on-surface-variant font-label">' + new Date(offer.createdAt).toLocaleDateString() + '</span>' +
-          '</div>' +
-        '</div>';
-        card.addEventListener('click', function() { showDetail(offer.id); });
+          (offer.isRemote
+            ? '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold bg-tertiary-container text-on-surface">' +
+              remoteLabel +
+              "</span>"
+            : "") +
+          '<span class="px-3 py-1 rounded-full text-xs font-label font-semibold ' +
+          (statusColors[offer.status] || "") +
+          '">' +
+          (statusLabels[offer.status] || offer.status) +
+          "</span>" +
+          '<span class="text-xs text-on-surface-variant font-label">' +
+          new Date(offer.createdAt).toLocaleDateString() +
+          "</span>" +
+          "</div>" +
+          "</div>";
+        card.addEventListener("click", function () {
+          showDetail(offer.id);
+        });
         grid.appendChild(card);
       });
+
+      renderPagination(data);
+    }
+
+    function renderPagination(data) {
+      var controls = document.getElementById("pagination-controls");
+      var prevBtn = document.getElementById("pagination-prev");
+      var nextBtn = document.getElementById("pagination-next");
+      var indicator = document.getElementById("pagination-indicator");
+      var p = data.pagination;
+
+      if (p.pageCount <= 1) {
+        controls?.classList.add("hidden");
+        return;
+      }
+
+      controls?.classList.remove("hidden");
+      prevBtn.disabled = !p.hasPreviousPage;
+      nextBtn.disabled = !p.hasNextPage;
+      indicator.textContent = paginationPageLabel.replace("{current}", String(p.page)).replace("{total}", String(p.pageCount));
     }
 
     async function showDetail(id, skipHashUpdate) {
       currentOfferId = id;
-      if (!skipHashUpdate) history.pushState(null, '', '#' + id);
-      document.getElementById('offers-list-section')?.classList.add('hidden');
-      document.getElementById('offer-detail-section')?.classList.remove('hidden');
+      if (!skipHashUpdate) history.pushState(null, "", "#" + id);
+      document.getElementById("offers-list-section")?.classList.add("hidden");
+      document.getElementById("offer-detail-section")?.classList.remove("hidden");
 
-      var headers = { 'Authorization': 'Bearer ' + currentToken };
+      var headers = { Authorization: "Bearer " + currentToken };
       var detailRes, historyRes, commentsRes;
       try {
         [detailRes, historyRes, commentsRes] = await Promise.all([
-          fetch(apiUrl + '/api/job-offers/' + id, { headers }),
-          fetch(apiUrl + '/api/job-offers/' + id + '/history', { headers }),
-          fetch(apiUrl + '/api/job-offers/' + id + '/comments', { headers })
+          fetch(apiUrl + "/api/job-offers/" + id, { headers }),
+          fetch(apiUrl + "/api/job-offers/" + id + "/history", { headers }),
+          fetch(apiUrl + "/api/job-offers/" + id + "/comments", { headers }),
         ]);
       } catch (e) {
-        showError(); return;
+        showError();
+        return;
       }
 
-      if (!detailRes.ok) { showError(detailRes.status); return; }
+      if (!detailRes.ok) {
+        await showApiError(detailRes);
+        return;
+      }
       var offer = await detailRes.json();
       currentOffer = offer;
 
@@ -320,64 +456,109 @@ const c = commonTranslations[lang];
     }
 
     function renderDetail(offer) {
-      var detail = document.getElementById('offer-detail');
+      var detail = document.getElementById("offer-detail");
       if (!detail) return;
       detail.innerHTML =
         '<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">' +
-          '<div>' +
-            '<h2 class="font-headline text-2xl font-bold text-on-surface mb-1">' + esc(offer.jobTitle) + '</h2>' +
-            '<p class="text-on-surface-variant font-body">' + esc(offer.companyName) + '</p>' +
-          '</div>' +
-          '<span class="px-4 py-1.5 rounded-full text-sm font-label font-semibold ' + (statusColors[offer.status] || '') + ' self-start">' + (statusLabels[offer.status] || offer.status) + '</span>' +
-        '</div>' +
+        "<div>" +
+        '<h2 class="font-headline text-2xl font-bold text-on-surface mb-1">' +
+        esc(offer.jobTitle) +
+        "</h2>" +
+        '<p class="text-on-surface-variant font-body">' +
+        esc(offer.companyName) +
+        "</p>" +
+        "</div>" +
+        '<span class="px-4 py-1.5 rounded-full text-sm font-label font-semibold ' +
+        (statusColors[offer.status] || "") +
+        ' self-start">' +
+        (statusLabels[offer.status] || offer.status) +
+        "</span>" +
+        "</div>" +
         '<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">' +
-          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Contact</p><p class="text-sm font-body text-on-surface">' + esc(offer.contactName) + '</p><p class="text-sm font-body text-on-surface-variant">' + esc(offer.contactEmail) + '</p></div>' +
-          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Location</p><p class="text-sm font-body text-on-surface">' + (offer.location ? esc(offer.location) : '—') + (offer.isRemote ? ' <span class="text-tertiary">(' + remoteLabel + ')</span>' : '') + '</p></div>' +
-          (offer.salaryRange ? '<div><p class="text-xs font-label text-on-surface-variant mb-1">Salary</p><p class="text-sm font-body text-on-surface">' + esc(offer.salaryRange) + '</p></div>' : '') +
-          '<div><p class="text-xs font-label text-on-surface-variant mb-1">Submitted</p><p class="text-sm font-body text-on-surface">' + new Date(offer.createdAt).toLocaleString() + '</p></div>' +
-        '</div>' +
-        '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Description</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + esc(offer.description) + '</p></div>' +
-        (offer.additionalNotes ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Additional Notes</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' + esc(offer.additionalNotes) + '</p></div>' : '') +
-        (offer.attachments && offer.attachments.length > 0 ?
-          '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">' + attachmentsLabel + '</p>' +
-          '<div class="space-y-2">' +
-          offer.attachments.map(function(att) {
-            var sizeStr = att.fileSize >= 1024 * 1024
-              ? (att.fileSize / 1024 / 1024).toFixed(1) + ' MB'
-              : Math.round(att.fileSize / 1024) + ' KB';
-            return '<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm">' +
-              '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
-              '<span class="flex-1 truncate font-body text-on-surface">' + esc(att.fileName) + '</span>' +
-              '<span class="text-xs text-on-surface-variant font-label">' + sizeStr + '</span>' +
-              '<button type="button" data-file-name="' + esc(att.fileName) + '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
-                '<span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>' + downloadLabel +
-              '</button>' +
-            '</div>';
-          }).join('') +
-          '</div></div>' : '') +
-        (offer.userEmail ? '<div class="pt-4 border-t border-outline-variant/10"><p class="text-xs font-label text-on-surface-variant">' + submittedByLabel + ': ' + esc(offer.userEmail) + '</p></div>' : '') +
-        (offer.adminNotes ? '<div class="mt-4"><p class="text-xs font-label text-on-surface-variant mb-1">' + adminNotesLabel + '</p><p class="text-sm font-body text-on-surface-variant italic">' + esc(offer.adminNotes) + '</p></div>' : '');
+        '<div><p class="text-xs font-label text-on-surface-variant mb-1">Contact</p><p class="text-sm font-body text-on-surface">' +
+        esc(offer.contactName) +
+        '</p><p class="text-sm font-body text-on-surface-variant">' +
+        esc(offer.contactEmail) +
+        "</p></div>" +
+        '<div><p class="text-xs font-label text-on-surface-variant mb-1">Location</p><p class="text-sm font-body text-on-surface">' +
+        (offer.location ? esc(offer.location) : "—") +
+        (offer.isRemote ? ' <span class="text-tertiary">(' + remoteLabel + ")</span>" : "") +
+        "</p></div>" +
+        (offer.salaryRange
+          ? '<div><p class="text-xs font-label text-on-surface-variant mb-1">Salary</p><p class="text-sm font-body text-on-surface">' +
+            esc(offer.salaryRange) +
+            "</p></div>"
+          : "") +
+        '<div><p class="text-xs font-label text-on-surface-variant mb-1">Submitted</p><p class="text-sm font-body text-on-surface">' +
+        new Date(offer.createdAt).toLocaleString() +
+        "</p></div>" +
+        "</div>" +
+        '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Description</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' +
+        esc(offer.description) +
+        "</p></div>" +
+        (offer.additionalNotes
+          ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">Additional Notes</p><p class="text-sm font-body text-on-surface whitespace-pre-line">' +
+            esc(offer.additionalNotes) +
+            "</p></div>"
+          : "") +
+        (offer.attachments && offer.attachments.length > 0
+          ? '<div class="mb-6"><p class="text-xs font-label text-on-surface-variant mb-2">' +
+            attachmentsLabel +
+            "</p>" +
+            '<div class="space-y-2">' +
+            offer.attachments
+              .map(function (att) {
+                var sizeStr =
+                  att.fileSize >= 1024 * 1024 ? (att.fileSize / 1024 / 1024).toFixed(1) + " MB" : Math.round(att.fileSize / 1024) + " KB";
+                return (
+                  '<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm">' +
+                  '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
+                  '<span class="flex-1 truncate font-body text-on-surface">' +
+                  esc(att.fileName) +
+                  "</span>" +
+                  '<span class="text-xs text-on-surface-variant font-label">' +
+                  sizeStr +
+                  "</span>" +
+                  '<button type="button" data-file-name="' +
+                  esc(att.fileName) +
+                  '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
+                  '<span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>' +
+                  downloadLabel +
+                  "</button>" +
+                  "</div>"
+                );
+              })
+              .join("") +
+            "</div></div>"
+          : "") +
+        (offer.userEmail
+          ? '<div class="pt-4 border-t border-outline-variant/10"><p class="text-xs font-label text-on-surface-variant">' +
+            submittedByLabel +
+            ": " +
+            esc(offer.userEmail) +
+            "</p></div>"
+          : "");
 
       // Bind download buttons
-      detail.querySelectorAll('.download-attachment-btn').forEach(function(btn) {
-        btn.addEventListener('click', async function() {
-          var fileName = btn.getAttribute('data-file-name');
+      detail.querySelectorAll(".download-attachment-btn").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var fileName = btn.getAttribute("data-file-name");
           if (!currentOfferId || !fileName || !currentToken) return;
 
           try {
             var encodedName = encodeURIComponent(fileName);
-            var response = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/attachments/' + encodedName, {
-              headers: { 'Authorization': 'Bearer ' + currentToken }
+            var response = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/attachments/" + encodedName, {
+              headers: { Authorization: "Bearer " + currentToken },
             });
 
             if (!response.ok) {
-              window.__showSnackbar?.(response.status === 404 ? errorDownload : response.status >= 500 ? errorServer : errorText, 'error');
+              window.__showSnackbar?.(response.status === 404 ? errorDownload : response.status >= 500 ? errorServer : errorText, "error");
               return;
             }
 
             var blob = await response.blob();
             var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
+            var a = document.createElement("a");
             a.href = url;
             a.download = fileName;
             a.click();
@@ -390,120 +571,248 @@ const c = commonTranslations[lang];
     }
 
     function renderControls(offer) {
-      if (offer.status !== 'Cancelled') {
-        document.getElementById('admin-controls')?.classList.remove('hidden');
-        var select = document.getElementById('status-select');
+      if (offer.status !== "Cancelled") {
+        document.getElementById("admin-controls")?.classList.remove("hidden");
+        var select = document.getElementById("status-select");
         if (select) select.value = offer.status;
-        var notes = document.getElementById('admin-notes-input');
-        if (notes) notes.value = offer.adminNotes || '';
+        var notes = document.getElementById("admin-notes-input");
+        if (notes) notes.value = "";
       } else {
-        document.getElementById('admin-controls')?.classList.add('hidden');
+        document.getElementById("admin-controls")?.classList.add("hidden");
       }
     }
 
+    var longTextFields = { Description: true, AdditionalNotes: true };
+
+    function formatFieldValue(val, field) {
+      if (val == null || val === "") return "—";
+      if (field === "IsRemote") return val === "true" ? historyFieldYes : historyFieldNo;
+      return esc(val);
+    }
+
+    var diffIdCounter = 0;
+
+    function renderChanges(changes) {
+      if (!changes || changes.length === 0) return "";
+      return (
+        '<ul class="mt-1 space-y-1 list-none pl-0">' +
+        changes
+          .map(function (c) {
+            var label = (historyFieldLabels && historyFieldLabels[c.field]) || c.field;
+            if (longTextFields[c.field]) {
+              var id = "diff-" + ++diffIdCounter;
+              return (
+                '<li class="text-on-surface-variant">' +
+                '<button type="button" data-diff-toggle="' +
+                id +
+                '" class="group diff-toggle inline-flex items-center gap-1 font-semibold text-primary cursor-pointer bg-transparent border-none p-0 text-sm">' +
+                '<span class="group-hover:underline">' +
+                esc(label) +
+                " " +
+                historyFieldChanged +
+                "</span>" +
+                ' <span class="material-symbols-outlined text-sm transition-transform" aria-hidden="true">expand_more</span>' +
+                "</button>" +
+                '<div id="' +
+                id +
+                '" class="hidden mt-2 rounded-lg border border-outline-variant/20 overflow-hidden text-xs">' +
+                '<div class="px-3 py-2 bg-error-container/30">' +
+                '<p class="font-label font-semibold text-on-surface-variant mb-1">' +
+                historyFieldBefore +
+                "</p>" +
+                '<p class="font-body text-on-surface whitespace-pre-line">' +
+                esc(c.oldValue || "—") +
+                "</p>" +
+                "</div>" +
+                '<div class="px-3 py-2 bg-tertiary-container/30">' +
+                '<p class="font-label font-semibold text-on-surface-variant mb-1">' +
+                historyFieldAfter +
+                "</p>" +
+                '<p class="font-body text-on-surface whitespace-pre-line">' +
+                esc(c.newValue || "—") +
+                "</p>" +
+                "</div>" +
+                "</div>" +
+                "</li>"
+              );
+            }
+            return (
+              '<li class="text-on-surface-variant"><span class="font-semibold">' +
+              esc(label) +
+              ":</span> " +
+              '<span class="line-through opacity-60">' +
+              formatFieldValue(c.oldValue, c.field) +
+              "</span>" +
+              " → " +
+              "<span>" +
+              formatFieldValue(c.newValue, c.field) +
+              "</span></li>"
+            );
+          })
+          .join("") +
+        "</ul>"
+      );
+    }
+
     async function renderHistory(history) {
-      var historyList = document.getElementById('history-list');
+      var historyList = document.getElementById("history-list");
       if (!historyList) return;
-      var entries = history.entries.filter(function(e) { return e.eventType !== 'Comment'; });
+      var entries = history.entries.filter(function (e) {
+        return e.eventType !== "Comment";
+      });
       if (entries.length === 0) {
-        historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + '</p>';
+        historyList.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + historyEmptyLabel + "</p>";
         return;
       }
-      var users = await fetchUserInfo(entries.map(function(e) { return e.actorUserId; }));
-      historyList.innerHTML = '';
-      entries.forEach(function(entry) {
-        var icon = eventIcons[entry.eventType] || 'info';
-        var el = document.createElement('div');
-        el.className = 'flex items-start gap-3 text-sm';
+      var users = await fetchUserInfo(
+        entries.map(function (e) {
+          return e.actorUserId;
+        }),
+      );
+      historyList.innerHTML = "";
+      entries.forEach(function (entry) {
+        var icon = eventIcons[entry.eventType] || "info";
+        var el = document.createElement("div");
+        el.className = "flex items-start gap-3 text-sm";
         var userInfo = users[entry.actorUserId];
-        var actorHtml = userInfo && userInfo.avatarUrl
-          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
-          : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' + icon + '</span>';
+        var actorHtml =
+          userInfo && userInfo.avatarUrl
+            ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
+            : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' +
+              icon +
+              "</span>";
         var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
+        var hasChanges = entry.changes && entry.changes.length > 0;
+        var descHtml = hasChanges
+          ? '<p class="font-body text-on-surface">' + esc(entry.description) + "</p>" + renderChanges(entry.changes)
+          : '<p class="font-body text-on-surface">' + esc(entry.description) + "</p>";
         el.innerHTML =
           actorHtml +
           '<div class="flex-1 min-w-0">' +
-            '<p class="font-body text-on-surface">' + esc(entry.description) + '</p>' +
-            '<p class="text-xs font-label text-on-surface-variant mt-0.5">' + esc(actorName) + ' · ' + new Date(entry.timestamp).toLocaleString() + '</p>' +
-          '</div>';
+          descHtml +
+          '<p class="text-xs font-label text-on-surface-variant mt-0.5">' +
+          esc(actorName) +
+          " · " +
+          new Date(entry.timestamp).toLocaleString() +
+          "</p>" +
+          "</div>";
         historyList.appendChild(el);
+      });
+
+      // Bind expand/collapse toggles for long-text diffs
+      historyList.querySelectorAll(".diff-toggle").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-diff-toggle");
+          var panel = document.getElementById(id);
+          if (!panel) return;
+          var icon = btn.querySelector(".material-symbols-outlined");
+          panel.classList.toggle("hidden");
+          if (icon) icon.style.transform = panel.classList.contains("hidden") ? "" : "rotate(180deg)";
+        });
       });
     }
 
     async function renderComments(data) {
-      var list = document.getElementById('comments-list');
+      var list = document.getElementById("comments-list");
       if (!list) return;
       if (data.comments.length === 0) {
-        list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + '</p>';
+        list.innerHTML = '<p class="text-sm text-on-surface-variant font-body">' + commentsEmptyLabel + "</p>";
         return;
       }
-      var users = await fetchUserInfo(data.comments.map(function(c) { return c.userId; }));
-      list.innerHTML = '';
-      data.comments.forEach(function(c) {
-        var el = document.createElement('div');
-        el.className = 'flex gap-3';
+      var users = await fetchUserInfo(
+        data.comments.map(function (c) {
+          return c.userId;
+        }),
+      );
+      list.innerHTML = "";
+      data.comments.forEach(function (c) {
+        var el = document.createElement("div");
+        el.className = "flex gap-3";
         var userInfo = users[c.userId];
         var displayName = (userInfo && userInfo.displayName) || c.userName;
-        var avatarHtml = userInfo && userInfo.avatarUrl
-          ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
-          : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
-              '<span class="text-xs font-bold text-on-primary-container">' + esc(displayName.charAt(0).toUpperCase()) + '</span>' +
-            '</div>';
+        var avatarHtml =
+          userInfo && userInfo.avatarUrl
+            ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />'
+            : '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">' +
+              '<span class="text-xs font-bold text-on-primary-container">' +
+              esc(displayName.charAt(0).toUpperCase()) +
+              "</span>" +
+              "</div>";
         el.innerHTML =
           avatarHtml +
           '<div class="flex-1 min-w-0">' +
-            '<div class="flex items-baseline gap-2">' +
-              '<span class="text-sm font-label font-semibold text-on-surface">' + esc(displayName) + '</span>' +
-              '<span class="text-xs font-label text-on-surface-variant">' + new Date(c.createdAt).toLocaleString() + '</span>' +
-            '</div>' +
-            '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' + esc(c.content) + '</p>' +
-          '</div>';
+          '<div class="flex items-baseline gap-2">' +
+          '<span class="text-sm font-label font-semibold text-on-surface">' +
+          esc(displayName) +
+          "</span>" +
+          '<span class="text-xs font-label text-on-surface-variant">' +
+          new Date(c.createdAt).toLocaleString() +
+          "</span>" +
+          "</div>" +
+          '<p class="text-sm font-body text-on-surface mt-1 whitespace-pre-line">' +
+          esc(c.content) +
+          "</p>" +
+          "</div>";
         list.appendChild(el);
       });
     }
 
     // Admin status save
-    document.getElementById('save-status')?.addEventListener('click', async function() {
+    document.getElementById("save-status")?.addEventListener("click", async function () {
       if (!currentOfferId) return;
-      var status = document.getElementById('status-select')?.value;
-      var notes = document.getElementById('admin-notes-input')?.value;
+      var status = document.getElementById("status-select")?.value;
+      var notes = document.getElementById("admin-notes-input")?.value;
       try {
-        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/status', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify({ status: status, adminNotes: notes || null })
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/status", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify({
+            status: status,
+            adminNotes: notes || null,
+          }),
         });
       } catch (e) {
-        showError(); return;
+        showError();
+        return;
       }
-      if (!res.ok) { await showApiError(res); return; }
+      if (!res.ok) {
+        await showApiError(res);
+        return;
+      }
       await showDetail(currentOfferId);
     });
 
     // Send comment
     async function sendComment() {
-      var input = document.getElementById('comment-input');
+      var input = document.getElementById("comment-input");
       var content = input?.value?.trim();
       if (!content || !currentOfferId) return;
 
       try {
-        var res = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify({ content: content })
+        var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + currentToken,
+          },
+          body: JSON.stringify({ content: content }),
         });
       } catch (e) {
-        showError(); return;
+        showError();
+        return;
       }
 
       if (res.ok) {
-        if (input) input.value = '';
-        var commentsRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/comments', {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
+        if (input) input.value = "";
+        var commentsRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
+          headers: { Authorization: "Bearer " + currentToken },
         });
         if (commentsRes.ok) await renderComments(await commentsRes.json());
-        var historyRes = await fetch(apiUrl + '/api/job-offers/' + currentOfferId + '/history', {
-          headers: { 'Authorization': 'Bearer ' + currentToken }
+        var historyRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/history", {
+          headers: { Authorization: "Bearer " + currentToken },
         });
         if (historyRes.ok) await renderHistory(await historyRes.json());
       } else {
@@ -511,10 +820,10 @@ const c = commonTranslations[lang];
       }
     }
 
-    document.getElementById('send-comment')?.addEventListener('click', sendComment);
+    document.getElementById("send-comment")?.addEventListener("click", sendComment);
 
-    document.getElementById('comment-input')?.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+    document.getElementById("comment-input")?.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         sendComment();
       }
@@ -524,17 +833,17 @@ const c = commonTranslations[lang];
     function backToList() {
       currentOfferId = null;
       currentOffer = null;
-      document.getElementById('offer-detail-section')?.classList.add('hidden');
-      document.getElementById('offers-list-section')?.classList.remove('hidden');
+      document.getElementById("offer-detail-section")?.classList.add("hidden");
+      document.getElementById("offers-list-section")?.classList.remove("hidden");
     }
 
-    document.getElementById('back-to-list')?.addEventListener('click', function() {
-      history.pushState(null, '', location.pathname + location.search);
+    document.getElementById("back-to-list")?.addEventListener("click", function () {
+      history.pushState(null, "", location.pathname + location.search);
       backToList();
     });
 
-    window.addEventListener('popstate', function() {
-      var hash = location.hash.replace('#', '');
+    window.addEventListener("popstate", function () {
+      var hash = location.hash.replace("#", "");
       if (hash && currentToken) {
         showDetail(hash, true);
       } else {
@@ -543,55 +852,71 @@ const c = commonTranslations[lang];
     });
 
     function checkHashOnLoad() {
-      var hash = location.hash.replace('#', '');
+      var hash = location.hash.replace("#", "");
       if (hash && currentToken) {
         showDetail(hash, true);
       }
     }
 
     // Status filter dropdown
-    var filterToggle = document.getElementById('status-filter-toggle');
-    var filterMenu = document.getElementById('status-filter-menu');
-    var filterLabel = document.getElementById('filter-label');
-    var filterCount = document.getElementById('filter-count');
+    var filterToggle = document.getElementById("status-filter-toggle");
+    var filterMenu = document.getElementById("status-filter-menu");
+    var filterLabel = document.getElementById("filter-label");
+    var filterCount = document.getElementById("filter-count");
 
-    filterToggle?.addEventListener('click', function() {
-      var open = !filterMenu.classList.contains('hidden');
-      filterMenu.classList.toggle('hidden', open);
-      filterToggle.setAttribute('aria-expanded', String(!open));
+    filterToggle?.addEventListener("click", function () {
+      var open = !filterMenu.classList.contains("hidden");
+      filterMenu.classList.toggle("hidden", open);
+      filterToggle.setAttribute("aria-expanded", String(!open));
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener("click", function (e) {
       if (!filterToggle?.contains(e.target) && !filterMenu?.contains(e.target)) {
-        filterMenu?.classList.add('hidden');
-        filterToggle?.setAttribute('aria-expanded', 'false');
+        filterMenu?.classList.add("hidden");
+        filterToggle?.setAttribute("aria-expanded", "false");
       }
     });
 
-    document.querySelectorAll('.status-checkbox').forEach(function(cb) {
-      cb.addEventListener('change', async function() {
+    document.querySelectorAll(".status-checkbox").forEach(function (cb) {
+      cb.addEventListener("change", async function () {
         activeStatuses = [];
-        document.querySelectorAll('.status-checkbox:checked').forEach(function(c) {
+        document.querySelectorAll(".status-checkbox:checked").forEach(function (c) {
           activeStatuses.push(c.value);
         });
         if (activeStatuses.length > 0) {
           filterCount.textContent = activeStatuses.length;
-          filterCount.classList.remove('hidden');
-          filterLabel.textContent = activeStatuses.map(function(s) { return statusLabels[s] || s; }).join(', ');
+          filterCount.classList.remove("hidden");
+          filterLabel.textContent = activeStatuses
+            .map(function (s) {
+              return statusLabels[s] || s;
+            })
+            .join(", ");
         } else {
-          filterCount.classList.add('hidden');
+          filterCount.classList.add("hidden");
           filterLabel.textContent = filterByStatusLabel;
         }
+        currentPage = 1;
         await loadOffers();
       });
     });
 
+    document.getElementById("pagination-prev")?.addEventListener("click", async function () {
+      if (currentPage > 1) {
+        currentPage--;
+        await loadOffers();
+      }
+    });
+
+    document.getElementById("pagination-next")?.addEventListener("click", async function () {
+      currentPage++;
+      await loadOffers();
+    });
+
     function esc(str) {
-      if (!str) return '';
-      var div = document.createElement('div');
+      if (!str) return "";
+      var div = document.createElement("div");
       div.textContent = str;
       return div.innerHTML;
     }
   </script>
-
 </Layout>

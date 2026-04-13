@@ -1,13 +1,13 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { locales, defaultLocale, localePath, type Locale } from '../../i18n/utils';
-import enStrings from '../../i18n/en/hire-me.json';
-import csStrings from '../../i18n/cs/hire-me.json';
+import Layout from "../../layouts/Layout.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/hire-me.json";
+import csStrings from "../../i18n/cs/hire-me.json";
 
 const translations = { en: enStrings, cs: csStrings };
 
 export function getStaticPaths() {
-  return locales.map(lang => ({
+  return locales.map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }
@@ -17,22 +17,29 @@ const t = translations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="hire-me" lang={lang}>
-
   <!-- Hero -->
-  <section class="max-w-3xl mx-auto px-8 mb-16">
-    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
-      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
-    </h1>
-    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
-    <p class="text-sm text-on-surface-variant font-body max-w-xl mt-3">{t.hero.subtitleInfo}</p>
+  <section class="max-w-7xl mx-auto px-4 md:px-8 mb-16">
+    <div class="max-w-3xl">
+      <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+        <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+      </h1>
+      <p class="text-lg text-on-surface-variant font-body">{t.hero.subtitle}</p>
+      <p class="text-sm text-on-surface-variant font-body mt-3">
+        {t.hero.subtitleInfo}
+      </p>
+    </div>
   </section>
 
   <!-- Login prompt (shown when not authenticated) -->
-  <section id="login-prompt" class="signed-out-only max-w-3xl mx-auto px-8 mb-16">
-    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+  <section id="login-prompt" class="signed-out-only max-w-7xl mx-auto px-4 md:px-8 mb-16">
+    <div class="max-w-4xl bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-8 md:p-12 text-center">
       <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
-      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.loginPrompt.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.loginPrompt.description}
+      </p>
       <button
         id="hire-me-sign-in"
         type="button"
@@ -44,77 +51,131 @@ const t = translations[lang];
   </section>
 
   <!-- Form (shown when authenticated, initially with disabled fields) -->
-  <section id="job-offer-form-section" class="signed-in-only hidden max-w-3xl mx-auto px-8 mb-16">
-    <form id="job-offer-form" novalidate class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6">
-
+  <section id="job-offer-form-section" class="signed-in-only hidden max-w-7xl mx-auto px-4 md:px-8 mb-16">
+    <form
+      id="job-offer-form"
+      novalidate
+      class="max-w-4xl bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-8 md:p-12 space-y-6"
+    >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label for="companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.companyName}</label>
-          <input type="text" id="companyName" name="companyName" required maxlength="200"
+          <input
+            type="text"
+            id="companyName"
+            name="companyName"
+            required
+            maxlength="200"
             placeholder={t.form.companyNamePlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
         </div>
         <div>
           <label for="contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactName}</label>
-          <input type="text" id="contactName" name="contactName" required maxlength="200"
+          <input
+            type="text"
+            id="contactName"
+            name="contactName"
+            required
+            maxlength="200"
             placeholder={t.form.contactNamePlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label for="contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactEmail}</label>
-          <input type="email" id="contactEmail" name="contactEmail" required maxlength="255"
+          <input
+            type="email"
+            id="contactEmail"
+            name="contactEmail"
+            required
+            maxlength="255"
             placeholder={t.form.contactEmailPlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
         </div>
         <div>
           <label for="jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.jobTitle}</label>
-          <input type="text" id="jobTitle" name="jobTitle" required maxlength="200"
+          <input
+            type="text"
+            id="jobTitle"
+            name="jobTitle"
+            required
+            maxlength="200"
             placeholder={t.form.jobTitlePlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
         </div>
       </div>
 
       <div>
         <label for="description" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.description}</label>
-        <textarea id="description" name="description" required maxlength="5000" rows="5"
+        <textarea
+          id="description"
+          name="description"
+          required
+          maxlength="5000"
+          rows="5"
           placeholder={t.form.descriptionPlaceholder}
-          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"
+        ></textarea>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label for="salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.salaryRange}</label>
-          <input type="text" id="salaryRange" name="salaryRange" maxlength="100"
+          <input
+            type="text"
+            id="salaryRange"
+            name="salaryRange"
+            maxlength="100"
             placeholder={t.form.salaryRangePlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
         </div>
         <div>
           <label for="location" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.location}</label>
-          <input type="text" id="location" name="location" maxlength="200"
+          <input
+            type="text"
+            id="location"
+            name="location"
+            maxlength="200"
             placeholder={t.form.locationPlaceholder}
-            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <input type="checkbox" id="isRemote" name="isRemote"
-          class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary" />
+        <input
+          type="checkbox"
+          id="isRemote"
+          name="isRemote"
+          class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary"
+        />
         <label for="isRemote" class="text-sm font-label font-semibold text-on-surface">{t.form.isRemote}</label>
       </div>
 
       <div>
         <label for="additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.additionalNotes}</label>
-        <textarea id="additionalNotes" name="additionalNotes" maxlength="2000" rows="3"
+        <textarea
+          id="additionalNotes"
+          name="additionalNotes"
+          maxlength="2000"
+          rows="3"
           placeholder={t.form.additionalNotesPlaceholder}
-          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"></textarea>
+          class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"
+        ></textarea>
       </div>
 
       <div>
         <label for="attachments" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.attachments}</label>
-        <p class="text-xs text-on-surface-variant font-body mb-3">{t.form.attachmentsHint}</p>
+        <p class="text-xs text-on-surface-variant font-body mb-3">
+          {t.form.attachmentsHint}
+        </p>
         <label
           for="attachments"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-label text-sm cursor-pointer hover:border-primary/30 transition-colors"
@@ -122,9 +183,14 @@ const t = translations[lang];
           <span class="material-symbols-outlined text-lg" aria-hidden="true">attach_file</span>
           {t.form.attachmentsBrowse}
         </label>
-        <input type="file" id="attachments" name="attachments" multiple
+        <input
+          type="file"
+          id="attachments"
+          name="attachments"
+          multiple
           accept=".pdf,.doc,.docx,.xlsx,.pptx,.txt,.png,.jpg,.jpeg,.webp"
-          class="hidden" />
+          class="hidden"
+        />
         <div id="file-list" class="mt-3 space-y-2"></div>
       </div>
 
@@ -142,32 +208,53 @@ const t = translations[lang];
     </form>
   </section>
 
-
-  <script define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || '', turnstileSiteKey: import.meta.env.PUBLIC_TURNSTILE_SITE_KEY, submitText: t.form.submit, submittingText: t.form.submitting, errorText: t.form.errorMessage, captchaError: t.form.captchaError, captchaRequiredError: t.form.captchaRequiredError, successText: t.form.successTitle, validationStrings: t.form.validation, apiErrorMap: t.form.errors, jobOffersPath: localePath(lang, 'job-offers') }}>
+  <script
+    define:vars={{
+      apiUrl: import.meta.env.PUBLIC_API_URL || "",
+      turnstileSiteKey: import.meta.env.PUBLIC_TURNSTILE_SITE_KEY,
+      submitText: t.form.submit,
+      submittingText: t.form.submitting,
+      errorText: t.form.errorMessage,
+      captchaError: t.form.captchaError,
+      captchaRequiredError: t.form.captchaRequiredError,
+      successText: t.form.successTitle,
+      validationStrings: t.form.validation,
+      apiErrorMap: t.form.errors,
+      jobOffersPath: localePath(lang, "job-offers"),
+    }}
+  >
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database in case the provider suspended it (e.g. Neon free tier).
     // The health endpoint runs a Postgres check, so this warms the connection
     // while the user is filling out the form.
-    fetch(apiUrl + '/health').catch(function() {});
+    fetch(apiUrl + "/health").catch(function () {});
 
     // Listen for auth changes
-    window.addEventListener('auth-change', function(e) {
+    window.addEventListener("auth-change", function (e) {
       var user = e.detail?.user;
-      var loginPrompt = document.getElementById('login-prompt');
-      var formSection = document.getElementById('job-offer-form-section');
+      var loginPrompt = document.getElementById("login-prompt");
+      var formSection = document.getElementById("job-offer-form-section");
 
       if (user) {
-        if (loginPrompt) loginPrompt.classList.add('hidden');
-        if (formSection) formSection.classList.remove('hidden');
+        if (loginPrompt) loginPrompt.classList.add("hidden");
+        if (formSection) formSection.classList.remove("hidden");
+        var nameField = document.getElementById("contactName");
+        if (nameField && !nameField.value && user.user_metadata?.full_name) {
+          nameField.value = user.user_metadata.full_name;
+        }
+        var emailField = document.getElementById("contactEmail");
+        if (emailField && !emailField.value && user.email) {
+          emailField.value = user.email;
+        }
       } else {
-        if (loginPrompt) loginPrompt.classList.remove('hidden');
-        if (formSection) formSection.classList.add('hidden');
+        if (loginPrompt) loginPrompt.classList.remove("hidden");
+        if (formSection) formSection.classList.add("hidden");
       }
     });
 
     // Sign in button on the login prompt
-    document.getElementById('hire-me-sign-in')?.addEventListener('click', function() {
-      document.getElementById('auth-sign-in-desktop')?.click();
+    document.getElementById("hire-me-sign-in")?.addEventListener("click", function () {
+      document.getElementById("auth-sign-in-desktop")?.click();
     });
 
     // Turnstile widget — explicit render so we can switch appearance modes.
@@ -179,59 +266,73 @@ const t = translations[lang];
 
     function renderTurnstile(appearance) {
       if (!window.turnstile || !turnstileSiteKey) return;
-      var container = document.getElementById('turnstile-container');
+      var container = document.getElementById("turnstile-container");
       if (!container) return;
       if (turnstileWidgetId !== null) {
-        try { window.turnstile.remove(turnstileWidgetId); } catch (e) {}
+        try {
+          window.turnstile.remove(turnstileWidgetId);
+        } catch (e) {}
         turnstileWidgetId = null;
       }
-      turnstileWidgetId = window.turnstile.render('#turnstile-container', {
+      turnstileWidgetId = window.turnstile.render("#turnstile-container", {
         sitekey: turnstileSiteKey,
-        theme: 'auto',
-        appearance: appearance || 'interaction-only',
+        theme: "auto",
+        appearance: appearance || "interaction-only",
       });
     }
 
     function whenTurnstileReady(cb) {
-      if (window.turnstile) { cb(); return; }
-      var iv = setInterval(function() {
-        if (window.turnstile) { clearInterval(iv); cb(); }
+      if (window.turnstile) {
+        cb();
+        return;
+      }
+      var iv = setInterval(function () {
+        if (window.turnstile) {
+          clearInterval(iv);
+          cb();
+        }
       }, 100);
     }
 
-    whenTurnstileReady(function() { renderTurnstile('interaction-only'); });
+    whenTurnstileReady(function () {
+      renderTurnstile("interaction-only");
+    });
 
     // File input handling
     var maxFiles = 5;
     var maxTotalBytes = 15 * 1024 * 1024; // 15 MB
     var selectedFiles = [];
 
-    document.getElementById('attachments')?.addEventListener('change', function(e) {
+    document.getElementById("attachments")?.addEventListener("change", function (e) {
       var newFiles = Array.from(e.target.files || []);
       // Merge with existing, enforcing max count
       selectedFiles = selectedFiles.concat(newFiles).slice(0, maxFiles);
       renderFileList();
-      e.target.value = ''; // allow re-selecting same file
+      e.target.value = ""; // allow re-selecting same file
     });
 
     function renderFileList() {
-      var listEl = document.getElementById('file-list');
+      var listEl = document.getElementById("file-list");
       if (!listEl) return;
-      listEl.innerHTML = '';
-      selectedFiles.forEach(function(file, idx) {
-        var item = document.createElement('div');
-        item.className = 'flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm';
+      listEl.innerHTML = "";
+      selectedFiles.forEach(function (file, idx) {
+        var item = document.createElement("div");
+        item.className = "flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm";
         var sizeKb = (file.size / 1024).toFixed(0);
-        var sizeStr = file.size >= 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + ' MB' : sizeKb + ' KB';
+        var sizeStr = file.size >= 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + " MB" : sizeKb + " KB";
         item.innerHTML =
           '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
-          '<span class="flex-1 truncate font-body text-on-surface">' + esc(file.name) + '</span>' +
-          '<span class="text-xs text-on-surface-variant font-label">' + sizeStr + '</span>';
-        var removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'text-on-surface-variant hover:text-error transition-colors cursor-pointer';
+          '<span class="flex-1 truncate font-body text-on-surface">' +
+          esc(file.name) +
+          "</span>" +
+          '<span class="text-xs text-on-surface-variant font-label">' +
+          sizeStr +
+          "</span>";
+        var removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "text-on-surface-variant hover:text-error transition-colors cursor-pointer";
         removeBtn.innerHTML = '<span class="material-symbols-outlined text-lg">close</span>';
-        removeBtn.addEventListener('click', function() {
+        removeBtn.addEventListener("click", function () {
           selectedFiles.splice(idx, 1);
           renderFileList();
         });
@@ -241,8 +342,8 @@ const t = translations[lang];
     }
 
     function esc(str) {
-      if (!str) return '';
-      var div = document.createElement('div');
+      if (!str) return "";
+      var div = document.createElement("div");
       div.textContent = str;
       return div.innerHTML;
     }
@@ -254,37 +355,37 @@ const t = translations[lang];
       var value = field.value.trim();
       var name = field.name;
 
-      if (field.hasAttribute('required') && !value) {
+      if (field.hasAttribute("required") && !value) {
         return validationStrings.required;
       }
-      if (name === 'contactEmail' && value && !emailRegex.test(value)) {
+      if (name === "contactEmail" && value && !emailRegex.test(value)) {
         return validationStrings.emailInvalid;
       }
-      if (name === 'description' && value && value.length < 20) {
-        return validationStrings.descriptionMinLength.replace('{min}', '20');
+      if (name === "description" && value && value.length < 20) {
+        return validationStrings.descriptionMinLength.replace("{min}", "20");
       }
-      var ml = field.getAttribute('maxlength');
+      var ml = field.getAttribute("maxlength");
       if (ml && value.length > parseInt(ml, 10)) {
-        return validationStrings.maxLength.replace('{max}', ml);
+        return validationStrings.maxLength.replace("{max}", ml);
       }
-      return '';
+      return "";
     }
 
     function showFieldError(field, message) {
       clearFieldError(field);
       if (!message) return;
-      field.classList.add('border-error');
-      field.classList.remove('border-outline-variant/20');
-      var errorSpan = document.createElement('p');
-      errorSpan.className = 'field-error text-error text-xs font-body mt-1';
+      field.classList.add("border-error");
+      field.classList.remove("border-outline-variant/20");
+      var errorSpan = document.createElement("p");
+      errorSpan.className = "field-error text-error text-xs font-body mt-1";
       errorSpan.textContent = message;
       field.parentElement.appendChild(errorSpan);
     }
 
     function clearFieldError(field) {
-      field.classList.remove('border-error');
-      field.classList.add('border-outline-variant/20');
-      var existing = field.parentElement.querySelector('.field-error');
+      field.classList.remove("border-error");
+      field.classList.add("border-outline-variant/20");
+      var existing = field.parentElement.querySelector(".field-error");
       if (existing) existing.remove();
     }
 
@@ -296,10 +397,10 @@ const t = translations[lang];
 
     function validateAllFields(form) {
       var valid = true;
-      var fields = form.querySelectorAll('input[name], textarea[name]');
+      var fields = form.querySelectorAll("input[name], textarea[name]");
       var firstInvalid = null;
-      fields.forEach(function(field) {
-        if (field.type === 'checkbox' || field.type === 'file') return;
+      fields.forEach(function (field) {
+        if (field.type === "checkbox" || field.type === "file") return;
         if (!validateField(field) && !firstInvalid) {
           firstInvalid = field;
           valid = false;
@@ -312,104 +413,128 @@ const t = translations[lang];
     }
 
     // Attach blur validation to all form fields
-    var formEl = document.getElementById('job-offer-form');
+    var formEl = document.getElementById("job-offer-form");
     if (formEl) {
-      formEl.querySelectorAll('input[name], textarea[name]').forEach(function(field) {
-        if (field.type === 'checkbox' || field.type === 'file') return;
-        field.addEventListener('blur', function() { validateField(field); });
-        field.addEventListener('input', function() {
-          if (field.parentElement.querySelector('.field-error')) validateField(field);
+      formEl.querySelectorAll("input[name], textarea[name]").forEach(function (field) {
+        if (field.type === "checkbox" || field.type === "file") return;
+        field.addEventListener("blur", function () {
+          validateField(field);
+        });
+        field.addEventListener("input", function () {
+          if (field.parentElement.querySelector(".field-error")) validateField(field);
         });
       });
     }
 
     // Form submission
-    document.getElementById('job-offer-form')?.addEventListener('submit', async function(e) {
+    document.getElementById("job-offer-form")?.addEventListener("submit", async function (e) {
       e.preventDefault();
       var form = e.target;
-      var submitBtn = document.getElementById('submit-btn');
-      var errorEl = document.getElementById('form-error');
+      var submitBtn = document.getElementById("submit-btn");
+      var errorEl = document.getElementById("form-error");
 
       if (!validateAllFields(form)) return;
 
       if (submitBtn) submitBtn.textContent = submittingText;
       if (submitBtn) submitBtn.disabled = true;
-      if (errorEl) errorEl.classList.add('hidden');
+      if (errorEl) errorEl.classList.add("hidden");
 
       try {
         var token = await window.__getAccessToken?.();
-        if (!token) throw new Error('Not authenticated');
+        if (!token) throw new Error("Not authenticated");
 
         // Validate file constraints client-side
-        var totalSize = selectedFiles.reduce(function(sum, f) { return sum + f.size; }, 0);
-        if (selectedFiles.length > maxFiles) throw new Error('Too many files');
-        if (totalSize > maxTotalBytes) throw new Error('Files too large');
+        var totalSize = selectedFiles.reduce(function (sum, f) {
+          return sum + f.size;
+        }, 0);
+        if (selectedFiles.length > maxFiles) throw new Error("Too many files");
+        if (totalSize > maxTotalBytes) throw new Error("Files too large");
 
         // Get Turnstile token from the hidden input created by the widget
         var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
         if (!turnstileResponse) {
-          window.__showSnackbar?.(captchaError, 'error');
-          if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+          window.__showSnackbar?.(captchaError, "error");
+          if (submitBtn) {
+            submitBtn.textContent = submitText;
+            submitBtn.disabled = false;
+          }
           return;
         }
 
         var formData = new FormData();
-        formData.append('cf-turnstile-response', turnstileResponse);
-        formData.append('CompanyName', form.companyName.value);
-        formData.append('ContactName', form.contactName.value);
-        formData.append('ContactEmail', form.contactEmail.value);
-        formData.append('JobTitle', form.jobTitle.value);
-        formData.append('Description', form.description.value);
-        if (form.salaryRange.value) formData.append('SalaryRange', form.salaryRange.value);
-        if (form.location.value) formData.append('Location', form.location.value);
-        formData.append('IsRemote', form.isRemote.checked);
-        if (form.additionalNotes.value) formData.append('AdditionalNotes', form.additionalNotes.value);
+        formData.append("cf-turnstile-response", turnstileResponse);
+        formData.append("CompanyName", form.companyName.value);
+        formData.append("ContactName", form.contactName.value);
+        formData.append("ContactEmail", form.contactEmail.value);
+        formData.append("JobTitle", form.jobTitle.value);
+        formData.append("Description", form.description.value);
+        if (form.salaryRange.value) formData.append("SalaryRange", form.salaryRange.value);
+        if (form.location.value) formData.append("Location", form.location.value);
+        formData.append("IsRemote", form.isRemote.checked);
+        if (form.additionalNotes.value) formData.append("AdditionalNotes", form.additionalNotes.value);
 
         for (var i = 0; i < selectedFiles.length; i++) {
-          formData.append('attachments', selectedFiles[i]);
+          formData.append("attachments", selectedFiles[i]);
         }
 
-        var headers = { 'Authorization': 'Bearer ' + token };
-        if (interactiveCaptchaMode) headers['X-Interactive-Captcha'] = '1';
+        var headers = { Authorization: "Bearer " + token };
+        if (interactiveCaptchaMode) headers["X-Interactive-Captcha"] = "1";
 
-        var response = await fetch(apiUrl + '/api/job-offers', {
-          method: 'POST',
+        var response = await fetch(apiUrl + "/api/job-offers", {
+          method: "POST",
           headers: headers,
-          body: formData
+          body: formData,
         });
 
         if (response.status === 429) {
-          var body = await response.json().catch(function() { return {}; });
-          if (body && body.error === 'captcha_required') {
+          var body = await response
+            .clone()
+            .json()
+            .catch(function () {
+              return {};
+            });
+          if (body && body.error === "captcha_required") {
             // Rate limit hit — force visible Turnstile checkbox on next attempt.
             interactiveCaptchaMode = true;
-            renderTurnstile('always');
-            window.__showSnackbar?.(captchaRequiredError, 'error');
-            if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+            renderTurnstile("always");
+            window.__showSnackbar?.(captchaRequiredError, "error");
+            if (submitBtn) {
+              submitBtn.textContent = submitText;
+              submitBtn.disabled = false;
+            }
             return;
           }
         }
 
         if (!response.ok) {
-          var apiMsg = await window.__getApiError?.(response, apiErrorMap);
-          throw new Error(apiMsg || errorText);
+          var result = await window.__getApiError?.(response, apiErrorMap);
+          window.__showSnackbar?.(result?.message || errorText, "error", 8000, result?.traceId);
+          if (submitBtn) {
+            submitBtn.textContent = submitText;
+            submitBtn.disabled = false;
+          }
+          return;
         }
 
         var offer = await response.json();
         // Reset back to invisible mode after a successful submission.
         interactiveCaptchaMode = false;
-        sessionStorage.setItem('snackbar', JSON.stringify({ message: successText, type: 'success' }));
-        window.location.href = jobOffersPath + '#' + offer.id;
+        sessionStorage.setItem("snackbar", JSON.stringify({ message: successText, type: "success" }));
+        window.location.href = jobOffersPath + "#" + offer.id;
       } catch (err) {
-        window.__showSnackbar?.(err.message || errorText, 'error');
-        if (submitBtn) { submitBtn.textContent = submitText; submitBtn.disabled = false; }
+        window.__showSnackbar?.(err.message || errorText, "error");
+        if (submitBtn) {
+          submitBtn.textContent = submitText;
+          submitBtn.disabled = false;
+        }
       } finally {
         // Reset Turnstile widget for next attempt (token is single-use)
         if (turnstileWidgetId !== null && window.turnstile) {
-          try { window.turnstile.reset(turnstileWidgetId); } catch (e) {}
+          try {
+            window.turnstile.reset(turnstileWidgetId);
+          } catch (e) {}
         }
       }
     });
   </script>
-
 </Layout>

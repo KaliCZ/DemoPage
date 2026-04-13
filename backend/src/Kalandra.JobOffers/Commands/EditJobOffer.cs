@@ -7,14 +7,14 @@ namespace Kalandra.JobOffers.Commands;
 public record EditJobOfferCommand(
     Guid Id,
     CurrentUser User,
-    NonEmptyString CompanyName,
-    NonEmptyString ContactName,
-    NonEmptyString ContactEmail,
-    NonEmptyString JobTitle,
-    NonEmptyString Description,
+    NonEmptyString? CompanyName,
+    NonEmptyString? ContactName,
+    NonEmptyString? ContactEmail,
+    NonEmptyString? JobTitle,
+    NonEmptyString? Description,
     string? SalaryRange,
     string? Location,
-    bool IsRemote,
+    bool? IsRemote,
     string? AdditionalNotes,
     DateTimeOffset Timestamp);
 
@@ -29,11 +29,11 @@ public class EditJobOfferHandler(IDocumentSession session)
 
         var result = offer.Edit(
             user: command.User,
-            companyName: command.CompanyName.Value,
-            contactName: command.ContactName.Value,
-            contactEmail: command.ContactEmail.Value,
-            jobTitle: command.JobTitle.Value,
-            description: command.Description.Value,
+            companyName: command.CompanyName?.Value,
+            contactName: command.ContactName?.Value,
+            contactEmail: command.ContactEmail?.Value,
+            jobTitle: command.JobTitle?.Value,
+            description: command.Description?.Value,
             salaryRange: command.SalaryRange,
             location: command.Location,
             isRemote: command.IsRemote,

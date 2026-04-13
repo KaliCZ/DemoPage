@@ -16,9 +16,9 @@ public static class AuthPolicies
 
 public static class Auth
 {
-    public static void Add(IServiceCollection services, SupabaseAuthConfig authConfig)
+    public static void Add(IServiceCollection services, SupabaseConfig supabaseConfig)
     {
-        var projectUrl = authConfig.ProjectUrl.Value.TrimEnd('/');
+        var projectUrl = supabaseConfig.ProjectUrl.Value.TrimEnd('/');
         var issuer = $"{projectUrl}/auth/v1";
         var metadataAddress = $"{issuer}/.well-known/openid-configuration";
         var requireHttps = projectUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);

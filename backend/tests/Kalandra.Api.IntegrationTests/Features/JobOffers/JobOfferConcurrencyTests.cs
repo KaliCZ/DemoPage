@@ -2,12 +2,12 @@ using JasperFx;
 using Kalandra.JobOffers;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
-using Kalandra.Api.Tests.Helpers;
+using Kalandra.Api.IntegrationTests.Helpers;
 using JasperFx.Events;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Kalandra.Api.Tests.Features.JobOffers;
+namespace Kalandra.Api.IntegrationTests.Features.JobOffers;
 
 public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {

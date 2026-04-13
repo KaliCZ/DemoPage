@@ -10,19 +10,21 @@ public static class RateLimitPolicies
 
 public static class RateLimits
 {
-    // Hire-me submissions: 2 per 4 hours per authenticated user. When the
-    // limit is hit, the client must re-render Turnstile in interactive mode
-    // and resend with the X-Interactive-Captcha header.
-    private static readonly SlidingWindowRateLimiterOptions HireMeLimiterOptions = new()
+    public static void Add(IServiceCollection services, IHostEnvironment environment)
     {
-        PermitLimit = 2,
-        Window = TimeSpan.FromHours(4),
-        SegmentsPerWindow = 24,
-        QueueLimit = 0,
-    };
+        var permitLimit = environment.IsDevelopment() ? 50 : 2;
 
-    public static void Add(IServiceCollection services)
-    {
+        // Hire-me submissions: N per 4 hours per authenticated user. When the
+        // limit is hit, the client must re-render Turnstile in interactive mode
+        // and resend with the X-Interactive-Captcha header.
+        var hireMeLimiterOptions = new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = permitLimit,
+            Window = TimeSpan.FromHours(4),
+            SegmentsPerWindow = 24,
+            QueueLimit = 0,
+        };
+
         services.AddRateLimiter(options =>
         {
             options.AddPolicy(RateLimitPolicies.HireMeCreateUser, httpContext =>
@@ -34,7 +36,7 @@ public static class RateLimits
 
                 return RateLimitPartition.GetSlidingWindowLimiter(
                     partitionKey: "user:" + currentUser.Id,
-                    factory: _ => HireMeLimiterOptions);
+                    factory: _ => hireMeLimiterOptions);
             });
 
             options.OnRejected = async (context, ct) =>

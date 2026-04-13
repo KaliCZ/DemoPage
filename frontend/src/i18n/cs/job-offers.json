@@ -36,10 +36,10 @@
     "remote": "Vzdáleně",
     "viewDetail": "Zobrazit detail",
     "back": "Zpět na seznam",
-    "adminNotes": "Poznámky správce",
     "edit": "Upravit nabídku",
     "editSave": "Uložit změny",
     "editCancel": "Zahodit změny",
+    "editClearNotAllowed": "Vymazání volitelných polí není podporováno. Ponechte prosím původní hodnotu nebo zadejte novou pro: ",
     "cancel": "Zrušit nabídku",
     "cancelConfirm": "Opravdu chcete zrušit tuto nabídku?",
     "cancelReason": "Důvod zrušení (volitelné)",
@@ -51,6 +51,25 @@
     "commentPlaceholder": "Napište komentář...",
     "commentSend": "Odeslat",
     "attachments": "Přílohy",
-    "download": "Stáhnout"
+    "download": "Stáhnout",
+    "fieldLabels": {
+      "CompanyName": "Společnost",
+      "JobTitle": "Pozice",
+      "ContactName": "Kontaktní osoba",
+      "ContactEmail": "Kontaktní e-mail",
+      "Location": "Lokalita",
+      "SalaryRange": "Mzdové rozpětí",
+      "IsRemote": "Vzdáleně",
+      "Description": "Popis",
+      "AdditionalNotes": "Další poznámky"
+    },
+    "fieldChanged": "změněno",
+    "fieldBefore": "Před",
+    "fieldAfter": "Po",
+    "fieldYes": "ano",
+    "fieldNo": "ne",
+    "paginationPrev": "Předchozí",
+    "paginationNext": "Další",
+    "paginationPage": "Stránka {current} z {total}"
   }
 }

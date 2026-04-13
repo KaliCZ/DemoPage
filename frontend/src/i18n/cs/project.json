@@ -34,6 +34,7 @@
     "architecture": "Architektura",
     "decisions": "Architektonická rozhodnutí",
     "roadmap": "Plán vývoje",
+    "lessonsLearned": "Poučení z projektu",
     "openQuestions": "Otevřené otázky"
   },
   "techStack": {
@@ -46,21 +47,46 @@
     "infraItems": [
       { "text": "Oracle Cloud VPS" },
       { "text": "Supabase" },
-      { "text": "GitHub Actions", "subItems": ["Build + Test + Deploy", "E2E testy (Playwright)"] }
+      {
+        "text": "GitHub Actions",
+        "subItems": ["Build + Test + Deploy", "E2E testy (Playwright)"]
+      }
     ]
   },
   "goals": {
     "title": "Cíle a požadavky",
     "items": [
-      { "icon": "person", "title": "Osobní prezentace", "description": "Představit se potenciálním zaměstnavatelům a recruiterům." },
-      { "icon": "construction", "title": "Ukázka dovedností", "description": "Zdokumentovat proces stavby jako součást ukázky — architektura, rozhodnutí a pokrok." },
-      { "icon": "science", "title": "Technologické hřiště", "description": "Experimentovat s novými technologiemi v reálném, nasazeném projektu.", "subItems": ["Event sourcing", "Cloudflare Pages zdarma", "Ekosystém Supabase", "Temporal"] }
+      {
+        "icon": "person",
+        "title": "Osobní prezentace",
+        "description": "Představit se potenciálním zaměstnavatelům a recruiterům."
+      },
+      {
+        "icon": "construction",
+        "title": "Ukázka dovedností",
+        "description": "Zdokumentovat proces stavby jako součást ukázky — architektura, rozhodnutí a pokrok."
+      },
+      {
+        "icon": "science",
+        "title": "Technologické hřiště",
+        "description": "Experimentovat s novými technologiemi v reálném, nasazeném projektu.",
+        "subItems": ["Event sourcing", "Cloudflare Pages zdarma", "Ekosystém Supabase", "Temporal"]
+      }
     ],
     "nfrTitle": "Nefunkční požadavky",
     "nfrItems": [
-      { "label": "Automatizace", "description": "Minimální manuální režie. Infrastructure as code nebo GitHub Actions pro všechno." },
-      { "label": "Spolehlivost", "description": "Web musí být spolehlivě dostupný." },
-      { "label": "Náklady", "description": "Co nejlevněji — nejlépe zdarma. Backend hosting: Oracle Cloud Always Free (záloha: Hetzner VPS ~4 €/měsíc)." }
+      {
+        "label": "Automatizace",
+        "description": "Minimální manuální režie. Infrastructure as code nebo GitHub Actions pro všechno."
+      },
+      {
+        "label": "Spolehlivost",
+        "description": "Web musí být spolehlivě dostupný."
+      },
+      {
+        "label": "Náklady",
+        "description": "Co nejlevněji — nejlépe zdarma. Backend hosting: Oracle Cloud Always Free (záloha: Hetzner VPS ~4 €/měsíc)."
+      }
     ]
   },
   "architectureDiagram": {
@@ -98,10 +124,26 @@
           "Upgrade na PAYG (stále zdarma) vypne recyklaci nečinných instancí"
         ],
         "risks": [
-          { "risk": "Odmítnutí registrace", "details": "Oracle odmítá mnoho registrací podle poptávky v regionu a platební metody", "mitigation": "Použít skutečnou kreditní kartu, odpovídající fakturační adresu, méně populární region" },
-          { "risk": "Kapacita ARM", "details": "Populární regiony často nemají dostupnou A1 kapacitu", "mitigation": "Zvolit EU nebo méně populární region při registraci" },
-          { "risk": "Recyklace nečinných", "details": "Instance s <20% CPU na P95 za 7 dní jsou zastaveny po 1 týdnu upozornění", "mitigation": "Reálné workloady zůstanou nad prahem; PAYG toto zcela vypne" },
-          { "risk": "Pozastavení účtu", "details": "Vzácné hlášení o pozastavení účtů bez jasného důvodu", "mitigation": "Mít PAYG zapnutý; udržovat reálné využití" }
+          {
+            "risk": "Odmítnutí registrace",
+            "details": "Oracle odmítá mnoho registrací podle poptávky v regionu a platební metody",
+            "mitigation": "Použít skutečnou kreditní kartu, odpovídající fakturační adresu, méně populární region"
+          },
+          {
+            "risk": "Kapacita ARM",
+            "details": "Populární regiony často nemají dostupnou A1 kapacitu",
+            "mitigation": "Zvolit EU nebo méně populární region při registraci"
+          },
+          {
+            "risk": "Recyklace nečinných",
+            "details": "Instance s <20% CPU na P95 za 7 dní jsou zastaveny po 1 týdnu upozornění",
+            "mitigation": "Reálné workloady zůstanou nad prahem; PAYG toto zcela vypne"
+          },
+          {
+            "risk": "Pozastavení účtu",
+            "details": "Vzácné hlášení o pozastavení účtů bez jasného důvodu",
+            "mitigation": "Mít PAYG zapnutý; udržovat reálné využití"
+          }
         ],
         "setupNotes": [
           "Oracle Linux 8 aarch64 — Podman funguje rovnou po instalaci, optimalizovaný pro Oracle Cloud hardware",
@@ -109,12 +151,30 @@
           "Otevřít porty v OCI security list i v OS firewallu"
         ],
         "alternatives": [
-          { "option": "Hetzner VPS (~4 €/měsíc)", "reason": "Spolehlivá záloha. Plná kontrola, předvídatelný. Přejdeme sem, pokud Oracle dělá problémy." },
-          { "option": "Azure App Service Free (F1)", "reason": "60 min CPU/den, žádný always-on — aplikace usíná při nečinnosti." },
-          { "option": "AWS Lambda / Google Cloud Run", "reason": "Serverless — žádný trvalý background proces pro Temporal workery." },
-          { "option": "Render free tier", "reason": "Vypíná se po 15 min nečinnosti. Background workery jsou jen placené." },
-          { "option": "Fly.io", "reason": "Free tier se zhoršil; pravděpodobně to stojí pár dolarů." },
-          { "option": "Azure Container Apps", "reason": "Free tier je štědrý, ale self-hosting Temporal by byl nepraktický." }
+          {
+            "option": "Hetzner VPS (~4 €/měsíc)",
+            "reason": "Spolehlivá záloha. Plná kontrola, předvídatelný. Přejdeme sem, pokud Oracle dělá problémy."
+          },
+          {
+            "option": "Azure App Service Free (F1)",
+            "reason": "60 min CPU/den, žádný always-on — aplikace usíná při nečinnosti."
+          },
+          {
+            "option": "AWS Lambda / Google Cloud Run",
+            "reason": "Serverless — žádný trvalý background proces pro Temporal workery."
+          },
+          {
+            "option": "Render free tier",
+            "reason": "Vypíná se po 15 min nečinnosti. Background workery jsou jen placené."
+          },
+          {
+            "option": "Fly.io",
+            "reason": "Free tier se zhoršil; pravděpodobně to stojí pár dolarů."
+          },
+          {
+            "option": "Azure Container Apps",
+            "reason": "Free tier je štědrý, ale self-hosting Temporal by byl nepraktický."
+          }
         ]
       },
       {
@@ -131,11 +191,26 @@
           "Cloudflare koupil Astro (leden 2026) — nejlepší integrace s Pages"
         ],
         "alternatives": [
-          { "option": "Vue/Nuxt (SSR)", "reason": "Druhá nejlepší volba — hostováno ideálně jako Cloudflare Worker, případně jako Docker image na VPS. Ale SSG je jednodušší a zdarma, tak začínám s tím, dokud to stačí." },
-          { "option": "Vanilla ES6 moduly", "reason": "Stále potřebuje Tailwind build krok. Museli bychom ručně stavět routing, i18n a komponentový systém." },
-          { "option": "React/Next.js", "reason": "Posílá ~80-120 KB React runtime. JS-first přístup. Next.js je Vercel-aligned, ne Cloudflare." },
-          { "option": "SvelteKit", "reason": "Dobrý framework, ale i18n stále není vestavěný. Více zaměřený na interaktivní aplikace." },
-          { "option": "Vercel hosting", "reason": "SSR model spouští serverové funkce — fakticky druhý backend. Cíl je tenký statický klient s jedním ASP.NET Core backendem." }
+          {
+            "option": "Vue/Nuxt (SSR)",
+            "reason": "Druhá nejlepší volba — hostováno ideálně jako Cloudflare Worker, případně jako Docker image na VPS. Ale SSG je jednodušší a zdarma, tak začínám s tím, dokud to stačí."
+          },
+          {
+            "option": "Vanilla ES6 moduly",
+            "reason": "Stále potřebuje Tailwind build krok. Museli bychom ručně stavět routing, i18n a komponentový systém."
+          },
+          {
+            "option": "React/Next.js",
+            "reason": "Posílá ~80-120 KB React runtime. JS-first přístup. Next.js je Vercel-aligned, ne Cloudflare."
+          },
+          {
+            "option": "SvelteKit",
+            "reason": "Dobrý framework, ale i18n stále není vestavěný. Více zaměřený na interaktivní aplikace."
+          },
+          {
+            "option": "Vercel hosting",
+            "reason": "SSR model spouští serverové funkce — fakticky druhý backend. Cíl je tenký statický klient s jedním ASP.NET Core backendem."
+          }
         ]
       },
       {
@@ -152,8 +227,14 @@
           "Chtěl jsem vyzkoušet ekosystém Supabase — to znamenalo PostgreSQL, a Marten do toho přirozeně zapadá"
         ],
         "alternatives": [
-          { "option": "Postavit sám na PostgreSQL", "reason": "Jednodušší indexování a řízení souběžnosti než Marten. Ale vyžaduje ruční schema migrace při vývoji modelu — Marten ukládá eventy jako JSON a tomuto se vyhýbá." },
-          { "option": "Postavit sám na MongoDB", "reason": "Globálně distribuovaná multi-master DB s free tierem na Azure Cosmos DB. Ale žádné zkušenosti s MongoDB transakcemi a řízením souběžnosti — příliš mnoho neznámých pro první implementaci event sourcingu." }
+          {
+            "option": "Postavit sám na PostgreSQL",
+            "reason": "Jednodušší indexování a řízení souběžnosti než Marten. Ale vyžaduje ruční schema migrace při vývoji modelu — Marten ukládá eventy jako JSON a tomuto se vyhýbá."
+          },
+          {
+            "option": "Postavit sám na MongoDB",
+            "reason": "Globálně distribuovaná multi-master DB s free tierem na Azure Cosmos DB. Ale žádné zkušenosti s MongoDB transakcemi a řízením souběžnosti — příliš mnoho neznámých pro první implementaci event sourcingu."
+          }
         ]
       },
       {
@@ -168,8 +249,14 @@
           "Běží lokálně v Dockeru — kompletní auth flow funguje offline bez externích závislostí"
         ],
         "alternatives": [
-          { "option": "Vlastní implementace auth", "reason": "Plná kontrola, ale stavba OAuth flow, správy tokenů a zabezpečení od nuly je složitá a náchylná k chybám." },
-          { "option": "WorkOS / Clerk / Auth0", "reason": "Vyspělí poskytovatelé auth, ale přidávají další externí závislost a náklady. Některé neběží lokálně. Supabase auth je už součástí — není důvod přidávat další službu." }
+          {
+            "option": "Vlastní implementace auth",
+            "reason": "Plná kontrola, ale stavba OAuth flow, správy tokenů a zabezpečení od nuly je složitá a náchylná k chybám."
+          },
+          {
+            "option": "WorkOS / Clerk / Auth0",
+            "reason": "Vyspělí poskytovatelé auth, ale přidávají další externí závislost a náklady. Některé neběží lokálně. Supabase auth je už součástí — není důvod přidávat další službu."
+          }
         ]
       },
       {
@@ -196,6 +283,51 @@
           "Frontend page testy: Playwright — builduje statický web, ověřuje renderování, navigaci, i18n a dark mode",
           "E2E testy: Playwright proti celé běžící aplikaci — fungující auth, fungující DB, vše reálné. Pouze externí systémy jako Slack a email nelze ověřit",
           "CI/CD: Všechny tři testovací sady běží paralelně, všechny blokují deployment při selhání"
+        ]
+      }
+    ]
+  },
+  "lessonsLearned": {
+    "title": "Poučení z projektu",
+    "subtitle": "Názory utvořené po stavbě a nasazení s těmito technologiemi.",
+    "items": [
+      {
+        "id": "supabase",
+        "icon": "cloud",
+        "title": "Použití Supabase",
+        "verdict": "Asi bych to udělal znovu pro jednoduchost nastavení u osobních projektů. Ne u komerčních projektů se skutečným rozpočtem.",
+        "observations": [
+          "PostgreSQL zdarma je super a samo o sobě stojí za to",
+          {
+            "text": "Auth má některé hrubé hrany — např. problémy s email providerem",
+            "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605",
+            "linkText": "viz diskuze"
+          },
+          "File storage je levný všude — S3 nebo Azure Blobs jsou stejně levné a věřil bych jim víc než Supabase Storage",
+          "Použití Supabase zpomaluje dev CLI oproti prostému PostgreSQL Docker image",
+          "Není žádný skutečný tlak používat přibalený file storage a auth — ale připadáte si hloupě, když to nepoužijete, když už to tam je"
+        ]
+      },
+      {
+        "id": "event-sourcing",
+        "icon": "history",
+        "title": "Použití Event Sourcingu / Marten",
+        "verdict": "Příště bych asi napsal něco vlastního místo použití Martenu tak jak je.",
+        "observations": [
+          "Nepsal bych 100% čistý event sourcing — místo toho by každý update také uložil záznam o změně obsahující předchozí hodnoty",
+          "Ukládání předchozích hodnot jde proti filozofii ES, ale umožňuje stránkování záznamů historie — což je praktičtější",
+          "Pro projekce bych použil standardní SQL úložiště místo JSONu — to také umožňuje jemnější řízení souběžnosti. Marten nabízí jen dva extrémy: připojit vše bez kontrol, nebo spadnout pokud se cokoliv změnilo. Žádná střední cesta",
+          "Eventy by se ukládaly ve stejné transakci do jiné tabulky, pak přesouvaly do levnějšího úložiště (např. Azure Table Storage) přes outbox pattern, až by velikost SQL začala vadit"
+        ]
+      },
+      {
+        "id": "astro-ssg",
+        "icon": "rocket_launch",
+        "title": "Astro SSG",
+        "verdict": "Příště bych asi zvolil SSR framework.",
+        "observations": [
+          "Už teď byly místa, kde by pomohl router — např. sdílený header, footer a auth status napříč stránkami",
+          "SSG je jednodušší pro nastavení deploye, ale v reálných podmínkách prostě zaplatíte za infrastrukturu a neřešíte to"
         ]
       }
     ]
@@ -229,11 +361,23 @@
         "side": "left",
         "detailsLabel": "Co se udělalo",
         "details": [
-          { "author": "pavel", "text": "Nastavení domény, DNS a hostingu na Cloudflare Pages" },
-          { "author": "claude", "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind" },
+          {
+            "author": "pavel",
+            "text": "Nastavení domény, DNS a hostingu na Cloudflare Pages"
+          },
+          {
+            "author": "claude",
+            "text": "Návrh stránek v Google Stitch, stavba s Astro + Tailwind"
+          },
           { "author": "claude", "text": "Deploy pipeline přes GitHub Actions" },
-          { "author": "claude", "text": "Světlý a tmavý režim s detekcí systémových preferencí" },
-          { "author": "claude", "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady" }
+          {
+            "author": "claude",
+            "text": "Světlý a tmavý režim s detekcí systémových preferencí"
+          },
+          {
+            "author": "claude",
+            "text": "Přepínač jazyků (angličtina / čeština) s per-page překlady"
+          }
         ]
       },
       {
@@ -248,18 +392,45 @@
         "side": "right",
         "detailsLabel": "Co se udělalo",
         "details": [
-          { "author": "pavel", "text": "Supabase projekt a Google OAuth setup" },
-          { "author": "pavel", "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy" },
-          { "author": "claude", "text": "ASP.NET Core Web API s vertical slices a Marten event sourcingem" },
-          { "author": "claude", "text": "Supabase Auth s email/heslo + Google OAuth, propojení účtů a nahrávání avataru" },
-          { "author": "claude", "text": "Formulář nabídek s nahráváním souborů, uživatelský dashboard a admin pohled" },
-          { "author": "claude", "text": "Docker setup, CI/CD pipeline na Oracle Cloud s blue/green deploymentem" },
-          { "author": "claude", "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)" },
-          { "author": "claude", "text": "SEO: sitemap, robots.txt, llms.txt, stylovaná 404 stránka" },
+          {
+            "author": "pavel",
+            "text": "Supabase projekt a Google OAuth setup"
+          },
+          {
+            "author": "pavel",
+            "text": "Oracle Cloud VM, PostgreSQL, Caddy reverse proxy"
+          },
+          {
+            "author": "claude",
+            "text": "ASP.NET Core Web API s vertical slices a Marten event sourcingem"
+          },
+          {
+            "author": "claude",
+            "text": "Supabase Auth s email/heslo + Google OAuth, propojení účtů a nahrávání avataru"
+          },
+          {
+            "author": "claude",
+            "text": "Formulář nabídek s nahráváním souborů, uživatelský dashboard a admin pohled"
+          },
+          {
+            "author": "claude",
+            "text": "Docker setup, CI/CD pipeline na Oracle Cloud s blue/green deploymentem"
+          },
+          {
+            "author": "claude",
+            "text": "Integrační testy (Testcontainers) a E2E testy (Playwright)"
+          },
+          {
+            "author": "claude",
+            "text": "SEO: sitemap, robots.txt, llms.txt, stylovaná 404 stránka"
+          },
           { "author": "pavel", "text": "Optimalizace CI/CD pipeline" },
           { "author": "pavel", "text": "Vylepšení run konfigurací pro DevX" },
           { "author": "pavel", "text": "Několikrát restrukturalizace kódu" },
-          { "author": "claude", "text": "Cloudflare Turnstile CAPTCHA na formuláři pracovních nabídek" }
+          {
+            "author": "claude",
+            "text": "Cloudflare Turnstile CAPTCHA na formuláři pracovních nabídek"
+          }
         ]
       },
       {

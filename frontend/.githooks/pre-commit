@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Auto-format staged frontend files with Prettier before committing.
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Collect staged files that Prettier can format (relative to repo root)
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep '^frontend/' | grep -E '\.(astro|ts|js|json|css|mjs)$')
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+# Run Prettier --write using absolute paths so it works from any CWD
+echo "$STAGED" | sed "s|^|$REPO_ROOT/|" | xargs npx --prefix "$REPO_ROOT/frontend" prettier --write --ignore-unknown
+
+# Re-stage the formatted files
+echo "$STAGED" | xargs git add
+
+exit 0

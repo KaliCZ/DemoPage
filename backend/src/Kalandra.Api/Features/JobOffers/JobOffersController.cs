@@ -95,12 +95,12 @@ public class JobOffersController(
         var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
         var offer = await getDetailHandler.HandleAsync(query, ct);
         return CreatedAtAction(nameof(GetDetail), new { id = streamId },
-            GetJobOfferDetailResponse.Serialize(offer!, AppUser));
+            GetJobOfferDetailResponse.Serialize(offer!));
     }
 
     // ───── Edit ─────
 
-    [HttpPut("{id:guid}")]
+    [HttpPatch("{id:guid}")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -117,11 +117,11 @@ public class JobOffersController(
             var command = new EditJobOfferCommand(
                 Id: id,
                 User: AppUser,
-                CompanyName: request.CompanyName.AsNonEmpty().Get(),
-                ContactName: request.ContactName.AsNonEmpty().Get(),
-                ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
-                JobTitle: request.JobTitle.AsNonEmpty().Get(),
-                Description: request.Description.AsNonEmpty().Get(),
+                CompanyName: request.CompanyName is { } cn ? cn.AsNonEmpty().Get() : null,
+                ContactName: request.ContactName is { } ctn ? ctn.AsNonEmpty().Get() : null,
+                ContactEmail: request.ContactEmail is { } ce ? ce.AsNonEmpty().Get() : null,
+                JobTitle: request.JobTitle is { } jt ? jt.AsNonEmpty().Get() : null,
+                Description: request.Description is { } d ? d.AsNonEmpty().Get() : null,
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
@@ -141,7 +141,7 @@ public class JobOffersController(
             }
 
             var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+            return GetJobOfferDetailResponse.Serialize(offer);
         });
     }
 
@@ -180,7 +180,7 @@ public class JobOffersController(
             }
 
             var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+            return GetJobOfferDetailResponse.Serialize(offer);
         });
     }
 
@@ -221,7 +221,7 @@ public class JobOffersController(
             }
 
             var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+            return GetJobOfferDetailResponse.Serialize(offer);
         });
     }
 
@@ -267,7 +267,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListJobOffersResponse>> ListMine(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await ListOffersAsync(showAll: false, status, page, pageSize, ct);
@@ -281,7 +281,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListJobOffersResponse>> ListAll(
         [FromQuery] JobOfferStatus[]? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await ListOffersAsync(showAll: true, status, page, pageSize, ct);
@@ -299,7 +299,7 @@ public class JobOffersController(
         var offer = await getDetailHandler.HandleAsync(query, ct);
         if (offer == null)
             return NotFound();
-        return GetJobOfferDetailResponse.Serialize(offer, AppUser);
+        return GetJobOfferDetailResponse.Serialize(offer);
     }
 
     // ───── Download Attachment ─────
@@ -320,12 +320,9 @@ public class JobOffersController(
             return NotFound();
 
         var download = await storageService.DownloadAsync(info.StoragePath, ct);
-        if (download == null)
-            return NotFound();
-
         return File(
             fileStream: download.Content,
-            contentType: download.ContentType,
+            contentType: info.Attachment.ContentType,
             fileDownloadName: info.Attachment.FileName,
             enableRangeProcessing: true);
     }
@@ -381,8 +378,8 @@ public class JobOffersController(
         var result = await listHandler.HandleAsync(query, ct);
 
         return new ListJobOffersResponse(
-            result.Items.Select(j => GetJobOfferDetailResponse.Serialize(j, AppUser)).ToList(),
-            result.TotalCount);
+            Items: result.Select(GetJobOfferDetailResponse.Serialize).ToList(),
+            Pagination: PaginationMetadata.FromPagedList(result));
     }
 
     private async Task<ActionResult<T>> WithConcurrencyHandling<T>(Func<Task<ActionResult<T>>> action)

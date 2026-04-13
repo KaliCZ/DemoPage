@@ -3,9 +3,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Kalandra.Api.Tests.Helpers;
+using Kalandra.Api.IntegrationTests.Helpers;
 
-namespace Kalandra.Api.Tests.Features.JobOffers;
+namespace Kalandra.Api.IntegrationTests.Features.JobOffers;
 
 public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
@@ -147,7 +147,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var ownerListRes = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, ownerListRes.StatusCode);
         var ownerList = await ParseJsonAsync(ownerListRes);
-        Assert.True(ownerList.GetProperty("totalCount").GetInt32() >= 1);
+        Assert.True(ownerList.GetProperty("pagination").GetProperty("totalCount").GetInt32() >= 1);
         Assert.Contains(
             ownerList.GetProperty("items").EnumerateArray(),
             item => item.GetProperty("id").GetString() == ownerId);
@@ -182,7 +182,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var json = await ParseJsonAsync(response);
-        Assert.True(json.GetProperty("totalCount").GetInt32() >= 1);
+        Assert.True(json.GetProperty("pagination").GetProperty("totalCount").GetInt32() >= 1);
         var items = json.GetProperty("items");
         Assert.True(items.GetArrayLength() >= 1);
 
@@ -194,6 +194,65 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         AssertValidTimestamp(first, "createdAt");
     }
 
+    [Fact]
+    public async Task ListMine_ReturnsPaginationMetadata()
+    {
+        await CreateOfferAs("paging@test.com");
+
+        var response = await client.GetAsync("/api/job-offers/mine?page=1&pageSize=5", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        var pagination = json.GetProperty("pagination");
+        Assert.Equal(1, pagination.GetProperty("page").GetInt32());
+        Assert.Equal(5, pagination.GetProperty("pageSize").GetInt32());
+        Assert.True(pagination.GetProperty("pageCount").GetInt32() >= 1);
+        Assert.True(pagination.TryGetProperty("hasNextPage", out _));
+        Assert.True(pagination.TryGetProperty("hasPreviousPage", out _));
+        Assert.False(pagination.GetProperty("hasPreviousPage").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ListAll_AsAdmin_ReturnsPaginationMetadata()
+    {
+        await CreateOfferAs("adminpaging@test.com");
+
+        AuthenticateAs(AdminUserId, "admin@test.com", isAdmin: true);
+        var response = await client.GetAsync("/api/job-offers?page=1&pageSize=5", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        var pagination = json.GetProperty("pagination");
+        Assert.Equal(1, pagination.GetProperty("page").GetInt32());
+        Assert.Equal(5, pagination.GetProperty("pageSize").GetInt32());
+        Assert.True(pagination.GetProperty("pageCount").GetInt32() >= 1);
+        Assert.True(pagination.TryGetProperty("hasNextPage", out _));
+        Assert.True(pagination.TryGetProperty("hasPreviousPage", out _));
+        Assert.False(pagination.GetProperty("hasPreviousPage").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ListMine_PageSizeLimitsResults()
+    {
+        // Create 2 offers for the same user
+        var userId = Authenticate("pagelimit@test.com");
+        await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
+        await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
+
+        var page1Res = await client.GetAsync("/api/job-offers/mine?page=1&pageSize=1", Ct);
+        Assert.Equal(HttpStatusCode.OK, page1Res.StatusCode);
+        var page1 = await ParseJsonAsync(page1Res);
+        Assert.Equal(1, page1.GetProperty("items").GetArrayLength());
+        Assert.True(page1.GetProperty("pagination").GetProperty("totalCount").GetInt32() >= 2);
+        Assert.True(page1.GetProperty("pagination").GetProperty("hasNextPage").GetBoolean());
+
+        var page2Res = await client.GetAsync("/api/job-offers/mine?page=2&pageSize=1", Ct);
+        Assert.Equal(HttpStatusCode.OK, page2Res.StatusCode);
+        var page2 = await ParseJsonAsync(page2Res);
+        Assert.Equal(1, page2.GetProperty("items").GetArrayLength());
+        Assert.True(page2.GetProperty("pagination").GetProperty("hasPreviousPage").GetBoolean());
+    }
+
     // ───── Edit ─────
 
     [Fact]
@@ -201,7 +260,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     {
         var (id, _) = await CreateOfferAs("edit@test.com");
 
-        var editRes = await client.PutAsJsonAsync(
+        var editRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}",
             new
             {
@@ -245,12 +304,36 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task Edit_PartialUpdate_OnlyChangesProvidedFields()
+    {
+        var (id, _) = await CreateOfferAs("partialedit@test.com");
+
+        // Send only jobTitle — all other fields should remain unchanged
+        var editRes = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}",
+            new { jobTitle = "Principal Engineer" },
+            Ct);
+        Assert.Equal(HttpStatusCode.OK, editRes.StatusCode);
+
+        var edited = await ParseJsonAsync(editRes);
+        Assert.Equal("Acme Corp", edited.GetProperty("companyName").GetString());
+        Assert.Equal("John Doe", edited.GetProperty("contactName").GetString());
+        Assert.Equal("john@acme.com", edited.GetProperty("contactEmail").GetString());
+        Assert.Equal("Principal Engineer", edited.GetProperty("jobTitle").GetString());
+        Assert.Equal("We are looking for a senior developer to join our team.", edited.GetProperty("description").GetString());
+        Assert.Equal("$120k - $160k", edited.GetProperty("salaryRange").GetString());
+        Assert.Equal("Prague, CZ", edited.GetProperty("location").GetString());
+        Assert.True(edited.GetProperty("isRemote").GetBoolean());
+        Assert.Equal("Submitted", edited.GetProperty("status").GetString());
+    }
+
+    [Fact]
     public async Task Edit_AsOtherUser_Returns403()
     {
         var (id, _) = await CreateOfferAs("editowner@test.com");
 
         Authenticate("editother@test.com");
-        var editRes = await client.PutAsJsonAsync(
+        var editRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}",
             CreateValidEditBody(),
             Ct);
@@ -264,7 +347,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         await client.PostAsJsonAsync($"/api/job-offers/{id}/cancel", new { reason = "" }, Ct);
 
-        var editRes = await client.PutAsJsonAsync($"/api/job-offers/{id}", CreateValidEditBody(), Ct);
+        var editRes = await client.PatchAsJsonAsync($"/api/job-offers/{id}", CreateValidEditBody(), Ct);
         Assert.Equal(HttpStatusCode.BadRequest, editRes.StatusCode);
     }
 

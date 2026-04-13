@@ -1,10 +1,10 @@
 // @ts-check
-import { execSync } from 'node:child_process';
-import { defineConfig } from 'astro/config';
-import sitemap from '@astrojs/sitemap';
-import tailwindcss from '@tailwindcss/vite';
+import { execSync } from "node:child_process";
+import { defineConfig } from "astro/config";
+import sitemap from "@astrojs/sitemap";
+import tailwindcss from "@tailwindcss/vite";
 
-const site = 'https://www.kalandra.tech';
+const site = "https://www.kalandra.tech";
 
 /**
  * Returns the most recent git commit date across the given file paths.
@@ -12,10 +12,9 @@ const site = 'https://www.kalandra.tech';
  */
 function getLastModified(...filePaths) {
   try {
-    const out = execSync(
-      `git log -1 --format=%cI -- ${filePaths.join(' ')}`,
-      { encoding: 'utf-8' },
-    ).trim();
+    const out = execSync(`git log -1 --format=%cI -- ${filePaths.join(" ")}`, {
+      encoding: "utf-8",
+    }).trim();
     return out ? new Date(out) : new Date();
   } catch {
     return new Date();
@@ -32,17 +31,17 @@ function getLastModified(...filePaths) {
 function getPageLastmod(url) {
   const path = new URL(url).pathname;
   // Strip locale prefix and trailing slash to get the page slug
-  const stripped = path.replace(/^\/cs\//, '/').replace(/\/$/, '') || '/';
-  const slug = stripped === '/' ? 'home' : stripped.slice(1); // 'about', 'hire-me', etc.
-  const astroFile = slug === 'home' ? 'index.astro' : `${slug}.astro`;
+  const stripped = path.replace(/^\/cs\//, "/").replace(/\/$/, "") || "/";
+  const slug = stripped === "/" ? "home" : stripped.slice(1); // 'about', 'hire-me', etc.
+  const astroFile = slug === "home" ? "index.astro" : `${slug}.astro`;
 
   const files = [
     `src/pages/[...lang]/${astroFile}`,
     `src/i18n/en/${slug}.json`,
     `src/i18n/cs/${slug}.json`,
-    'src/layouts/Layout.astro',
-    'src/i18n/en/common.json',
-    'src/i18n/cs/common.json',
+    "src/layouts/Layout.astro",
+    "src/i18n/en/common.json",
+    "src/i18n/cs/common.json",
   ];
 
   return getLastModified(...files);
@@ -53,11 +52,11 @@ export default defineConfig({
   site,
   integrations: [
     sitemap({
-      xslURL: '/sitemap.xsl',
-      filter: (page) => !page.includes('/profile') && !page.includes('/admin'),
+      xslURL: "/sitemap.xsl",
+      filter: (page) => !page.includes("/profile") && !page.includes("/admin"),
       i18n: {
-        defaultLocale: 'en',
-        locales: { en: 'en', cs: 'cs' },
+        defaultLocale: "en",
+        locales: { en: "en", cs: "cs" },
       },
       serialize(item) {
         item.lastmod = getPageLastmod(item.url);
@@ -66,8 +65,8 @@ export default defineConfig({
     }),
   ],
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'cs'],
+    defaultLocale: "en",
+    locales: ["en", "cs"],
     routing: {
       prefixDefaultLocale: false,
     },
@@ -75,10 +74,11 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
+      strictPort: !!process.env.VITE_STRICT_PORT,
       proxy: {
-        '/api': 'http://localhost:5000',
-        '/health': 'http://localhost:5000',
+        "/api": "http://localhost:5000",
+        "/health": "http://localhost:5000",
       },
     },
-  }
+  },
 });
