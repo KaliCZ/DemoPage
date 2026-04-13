@@ -519,6 +519,7 @@ const t = translations[lang];
         var offer = await response.json();
         // Reset back to invisible mode after a successful submission.
         interactiveCaptchaMode = false;
+        window.betterstack?.("track", "job-offer-submitted", { offerId: offer.id });
         sessionStorage.setItem("snackbar", JSON.stringify({ message: successText, type: "success" }));
         window.location.href = jobOffersPath + "#" + offer.id;
       } catch (err) {

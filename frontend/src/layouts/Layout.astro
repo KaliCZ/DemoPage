@@ -216,6 +216,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <script>
       import "../lib/api-errors";
+      import { identifyUser } from "../lib/betterstack";
       import { getSupabaseClient } from "../lib/supabase";
 
       const supabase = getSupabaseClient();
@@ -238,6 +239,8 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       }
 
       function updateAuthUI(user: any) {
+        identifyUser(user);
+
         const signInDesktop = document.getElementById("auth-sign-in-desktop");
         const profileDesktop = document.getElementById("auth-profile-desktop");
         const avatarDesktop = document.getElementById("auth-avatar-desktop") as HTMLImageElement;
