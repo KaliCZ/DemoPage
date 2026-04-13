@@ -5,6 +5,8 @@
 /* Offset anchor scroll for sticky header */
 html {
   scroll-padding-top: 6rem;
+  /* Prevent horizontal page shift when navigating between pages with/without scrollbar */
+  scrollbar-gutter: stable;
 }
 
 /* ============================================
