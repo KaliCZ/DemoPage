@@ -531,7 +531,6 @@ jobs:
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_FRONTEND_SENTRY_DSN }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
