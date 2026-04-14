@@ -54,7 +54,9 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
-    .AddCheck<CommitHashHealthCheck>("version");
+    .AddCheck<CommitHashHealthCheck>("version")
+    .AddCheck<SupabaseAuthHealthCheck>("supabase-auth")
+    .AddCheck<SupabaseStorageHealthCheck>("supabase-storage");
 
 var app = builder.Build();
 
