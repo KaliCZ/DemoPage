@@ -176,7 +176,11 @@ const t = translations[lang];
           {
             t.goals.items.map((item) => (
               <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-                <Icon name={`material-symbols:${item.icon.replace(/_/g, '-')}`} class="size-[30px] text-primary mb-4 block" aria-hidden="true" />
+                <Icon
+                  name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
+                  class="size-[30px] text-primary mb-4 block"
+                  aria-hidden="true"
+                />
                 <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{item.title}</h3>
                 <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
                 {item.subItems && (
@@ -237,7 +241,11 @@ const t = translations[lang];
                     <h3 class="font-headline font-bold text-on-surface">{adr.title}</h3>
                     <p class="font-body text-sm text-on-surface-variant mt-1">{adr.summary}</p>
                   </div>
-                  <Icon name="material-symbols:expand-more" class="text-primary transition-transform group-open:rotate-180 shrink-0 ml-4 size-6" aria-hidden="true" />
+                  <Icon
+                    name="material-symbols:expand-more"
+                    class="text-primary transition-transform group-open:rotate-180 shrink-0 ml-4 size-6"
+                    aria-hidden="true"
+                  />
                 </summary>
                 <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
                   <div>
@@ -355,9 +363,7 @@ const t = translations[lang];
                       ]}
                     >
                       {`Version ${version.number}`}
-                      {version.done && (
-                        <Icon name="material-symbols:check-circle" class="size-4" aria-hidden="true" />
-                      )}
+                      {version.done && <Icon name="material-symbols:check-circle" class="size-4" aria-hidden="true" />}
                     </div>
                     <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>
                       {version.title}
@@ -392,7 +398,11 @@ const t = translations[lang];
                     {hasDetails && (
                       <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
                         <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
-                          <Icon name="material-symbols:expand-more" class="size-4 text-primary transition-transform group-open:rotate-180" aria-hidden="true" />
+                          <Icon
+                            name="material-symbols:expand-more"
+                            class="size-4 text-primary transition-transform group-open:rotate-180"
+                            aria-hidden="true"
+                          />
                           {version.detailsLabel}
                         </summary>
                         <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
@@ -487,10 +497,14 @@ const t = translations[lang];
               <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
                 <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
                   <div class="flex items-center gap-3">
-                    <Icon name={`material-symbols:${item.icon.replace(/_/g, '-')}`} class="size-6 text-tertiary" aria-hidden="true" />
+                    <Icon name={`material-symbols:${item.icon.replace(/_/g, "-")}`} class="size-6 text-tertiary" aria-hidden="true" />
                     <h3 class="font-headline font-bold text-on-surface">{item.title}</h3>
                   </div>
-                  <Icon name="material-symbols:expand-more" class="text-primary transition-transform group-open:rotate-180 shrink-0 ml-4 size-6" aria-hidden="true" />
+                  <Icon
+                    name="material-symbols:expand-more"
+                    class="text-primary transition-transform group-open:rotate-180 shrink-0 ml-4 size-6"
+                    aria-hidden="true"
+                  />
                 </summary>
                 <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
                   <div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-tertiary">
