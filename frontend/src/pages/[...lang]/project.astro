@@ -36,10 +36,10 @@ const t = translations[lang];
             </p>
           </div>
           <div class="md:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
-            <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
+            <h2 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
               <Icon name="material-symbols:bolt" class="size-6 text-tertiary" aria-hidden="true" />
               {t.quickStats.title}
-            </h3>
+            </h2>
             <div class="space-y-6">
               <div>
                 <div class="font-label text-xs text-on-surface-variant uppercase mb-1">
@@ -51,7 +51,7 @@ const t = translations[lang];
                 <div class="font-label text-xs text-on-surface-variant uppercase mb-1 flex items-center gap-1">
                   {t.quickStats.timeLabel}
                   <span class="relative group cursor-help">
-                    <Icon name="material-symbols:info" class="size-3.5 text-on-surface-variant/50" aria-hidden="true" />
+                    <Icon name="material-symbols:info" class="size-3.5 text-on-surface-variant" aria-hidden="true" />
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-container-highest text-on-surface text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center normal-case tracking-normal font-normal"
                       role="tooltip">{t.quickStats.timeTooltip}</span
@@ -59,7 +59,7 @@ const t = translations[lang];
                   </span>
                 </div>
                 <a href="#roadmap" class="font-body font-semibold text-primary hover:underline">{t.quickStats.timeValue}</a>
-                <div class="font-body text-xs text-on-surface-variant/60 italic mt-1">
+                <div class="font-body text-xs text-on-surface-variant italic mt-1">
                   {t.quickStats.timeNote}
                 </div>
               </div>
@@ -376,13 +376,13 @@ const t = translations[lang];
                         ]}
                       >
                         {version.time}
-                        {hasDates && <span class="text-on-surface-variant/60"> · {version.dates}</span>}
+                        {hasDates && <span class="text-on-surface-variant"> · {version.dates}</span>}
                       </p>
                     )}
                     {"nextTime" in version && version.nextTime && (
                       <p
                         class:list={[
-                          "font-label text-xs text-on-surface-variant/60 italic",
+                          "font-label text-xs text-on-surface-variant italic",
                           "timeNote" in version && version.timeNote ? "mb-1" : "mb-4",
                         ]}
                       >
@@ -390,7 +390,7 @@ const t = translations[lang];
                       </p>
                     )}
                     {"timeNote" in version && version.timeNote && (
-                      <p class="font-label text-xs text-on-surface-variant/60 italic mb-4">{version.timeNote}</p>
+                      <p class="font-label text-xs text-on-surface-variant italic mb-4">{version.timeNote}</p>
                     )}
                     <p class:list={["font-body text-on-surface-variant leading-relaxed", (hasPricing || hasDetails) && "mb-4"]}>
                       {version.description}
@@ -461,7 +461,7 @@ const t = translations[lang];
                 );
 
                 return (
-                  <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-start", isFaded && "opacity-60"]}>
+                  <div class:list={["relative grid grid-cols-1 md:grid-cols-2 gap-8 items-start", isFaded && "opacity-75"]}>
                     {isLeft ? (
                       <>
                         <div class="md:text-right md:pr-16">{versionContent}</div>
@@ -573,7 +573,7 @@ const t = translations[lang];
       aria-label={t.toc.title}
     >
       <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
-        <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant/60 pr-1">{t.toc.title}</span>
+        <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant pr-1">{t.toc.title}</span>
         <span class="shrink-0 w-px h-4 bg-outline-variant/40" aria-hidden="true"></span>
         <a
           href="#hero"
