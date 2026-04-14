@@ -92,8 +92,17 @@ public static class ServiceCollectionExtensions
         {
             var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseConfig>();
             var projectUrl = config.ProjectUrl.Value.TrimEnd('/');
-            var options = new Supabase.Gotrue.ClientOptions { Url = $"{projectUrl}/auth/v1" };
-            return new Supabase.Gotrue.AdminClient(config.ServiceKey.Value, options);
+            var serviceKey = config.ServiceKey.Value;
+            var options = new Supabase.Gotrue.ClientOptions
+            {
+                Url = $"{projectUrl}/auth/v1",
+                // Supabase's auth gateway requires the `apikey` header on every request.
+                // AdminClient only sends `Authorization: Bearer <serviceKey>` by default,
+                // so we inject apikey here. For `sb_secret_…` keys the Authorization header
+                // is accepted as an opaque token rather than JWT-verified.
+                Headers = { ["apikey"] = serviceKey },
+            };
+            return new Supabase.Gotrue.AdminClient(serviceKey, options);
         });
 
         services.AddSingleton<IStorageService, SupabaseStorageService>();
