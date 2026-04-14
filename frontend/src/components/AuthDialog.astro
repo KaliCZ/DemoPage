@@ -134,8 +134,6 @@ const t = lang === "cs" ? csCommon : enCommon;
     recordSuccess,
   } from "../lib/turnstile";
 
-  const supabase = getSupabaseClient();
-
   let authDialogMode: "signin" | "signup" = "signin";
 
   // Shared Turnstile widget for the auth dialog. Exposed on window so future
@@ -156,7 +154,8 @@ const t = lang === "cs" ? csCommon : enCommon;
     authTurnstile.render(force ? "always" : "interaction-only");
   }
 
-  function openAuthDialog() {
+  async function openAuthDialog() {
+    const supabase = await getSupabaseClient();
     if (!supabase) return;
     authDialogMode = "signin";
     updateAuthDialogMode();
@@ -193,6 +192,7 @@ const t = lang === "cs" ? csCommon : enCommon;
   }
 
   async function authDialogSubmit() {
+    const supabase = await getSupabaseClient();
     if (!supabase) return;
     const email = (document.getElementById("auth-email") as HTMLInputElement)?.value;
     const password = (document.getElementById("auth-password") as HTMLInputElement)?.value;
@@ -251,6 +251,7 @@ const t = lang === "cs" ? csCommon : enCommon;
   }
 
   async function authDialogGoogle() {
+    const supabase = await getSupabaseClient();
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",

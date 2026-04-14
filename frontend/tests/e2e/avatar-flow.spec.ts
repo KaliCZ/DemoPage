@@ -53,7 +53,7 @@ test.describe("Avatar Flow", () => {
     await page.goto("/profile");
     await page.evaluate(
       async ({ email, password }) => {
-        const supabase = (window as any).__supabase;
+        const supabase = await (window as any).__supabaseReady;
         if (!supabase) throw new Error("Supabase client not available");
         const { error } = await supabase.auth.signInWithPassword({
           email,
