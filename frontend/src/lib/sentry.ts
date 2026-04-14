@@ -13,7 +13,8 @@ export function initSentry(dsn: string): void {
     dsn,
     environment: import.meta.env.PROD ? "production" : "development",
     tracesSampleRate: 1.0,
-    integrations: [browserTracingIntegration({ tracePropagationTargets: ["/", "https://api.kalandra.tech"] })],
+    integrations: [browserTracingIntegration()],
+    tracePropagationTargets: ["/", "https://api.kalandra.tech"],
   });
 }
 
