@@ -10,14 +10,14 @@ namespace Kalandra.Api.Infrastructure;
 /// URLs, revoked service keys, and missing buckets at /health rather than on
 /// the first upload attempt.
 /// </summary>
-internal sealed class SupabaseStorageHealthCheck(Supabase.Client supabase) : IHealthCheck
+internal sealed class SupabaseStorageHealthCheck(Supabase.Storage.Client storage) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
         try
         {
             var searchOptions = new SearchOptions { Limit = 1 };
-            await supabase.Storage.From(SupabaseStorageService.BucketName).List(path: "", options: searchOptions);
+            await storage.From(SupabaseStorageService.BucketName).List(path: "", options: searchOptions);
             return HealthCheckResult.Healthy($"Supabase Storage bucket '{SupabaseStorageService.BucketName}' reachable.");
         }
         catch (Exception ex)

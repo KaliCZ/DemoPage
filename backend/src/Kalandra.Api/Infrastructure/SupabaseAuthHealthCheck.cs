@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Supabase;
+using Supabase.Gotrue.Interfaces;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -10,14 +10,12 @@ namespace Kalandra.Api.Infrastructure;
 /// first time a user touches auth-admin functionality.
 /// </summary>
 internal sealed class SupabaseAuthHealthCheck(
-    Client supabase,
-    Kalandra.Infrastructure.Configuration.SupabaseConfig supabaseConfig) : IHealthCheck
+    IGotrueAdminClient<Supabase.Gotrue.User> adminClient) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
         try
         {
-            var adminClient = supabase.AdminAuth(supabaseConfig.ServiceKey.Value);
             // perPage=1 keeps the round-trip minimal; we only need to confirm the key is accepted.
             await adminClient.ListUsers(filter: null, sortBy: null, sortOrder: Supabase.Gotrue.Constants.SortOrder.Descending, page: null, perPage: 1);
             return HealthCheckResult.Healthy("Supabase Auth admin API reachable with the configured service key.");

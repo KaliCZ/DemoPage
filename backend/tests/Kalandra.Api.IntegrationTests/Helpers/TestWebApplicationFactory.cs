@@ -41,6 +41,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.AddSingleton<IUserInfoService, NoOpUserInfoService>();
 
             services.RemoveAll<Supabase.Storage.Client>();
+            services.RemoveAll<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>();
 
             // The Supabase auth/storage health checks depend on the real Supabase.Client,
             // which we removed above. Drop them from the /health endpoint so tests stay green;

@@ -88,8 +88,16 @@ public static class ServiceCollectionExtensions
             return new Supabase.Storage.Client($"{projectUrl}/storage/v1", headers);
         });
 
+        services.AddSingleton<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>(sp =>
+        {
+            var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseConfig>();
+            var projectUrl = config.ProjectUrl.Value.TrimEnd('/');
+            var options = new Supabase.Gotrue.ClientOptions { Url = $"{projectUrl}/auth/v1" };
+            return new Supabase.Gotrue.AdminClient(config.ServiceKey.Value, options);
+        });
+
         services.AddSingleton<IStorageService, SupabaseStorageService>();
-        services.AddHttpClient<IUserInfoService, SupabaseUserInfoService>();
+        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
 
         return services;
     }
