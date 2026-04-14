@@ -37,7 +37,7 @@ public static class Observability
 
             // Logging — only capture warnings and above; info-level goes to BetterStack via OTEL.
             options.EnableLogs = true;
-            options.MinimumEventLevel = Microsoft.Extensions.Logging.LogLevel.Warning;
+            options.MinimumEventLevel = LogLevel.Warning;
 
             options.TracesSampleRate = 1.0;
             options.SampleRate = 1.0f;
@@ -49,7 +49,7 @@ public static class Observability
             options.AddExceptionFilterForType<OperationCanceledException>();
             options.SetBeforeSend((sentryEvent, _) =>
             {
-                if (sentryEvent.Exception is Microsoft.AspNetCore.Http.BadHttpRequestException bre
+                if (sentryEvent.Exception is BadHttpRequestException bre
                     && bre.Message.Contains("Unexpected end of request content"))
                     return null;
 
