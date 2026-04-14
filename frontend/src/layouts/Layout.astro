@@ -58,8 +58,28 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta property="og:locale" content={lang === "cs" ? "cs_CZ" : "en_US"} />
     <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
 
+    <!-- Google Fonts: preconnect to both origins, then load the CSS as a <link> instead
+         of a CSS @import so the browser discovers fonts on the first HTML parse rather than
+         waiting for the main stylesheet to download and parse first. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+    />
+    <!-- Flag icons: loaded non-render-blocking via the media swap trick.
+         The browser fetches the stylesheet at low priority because it thinks it's
+         for print, then the onload handler switches it to `media="all"` so styles
+         apply. The <noscript> fallback ensures it still works without JS. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+    </noscript>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <title>{title}</title>
@@ -204,8 +224,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       import "../lib/api-errors";
       import { getSupabaseClient } from "../lib/supabase";
 
-      const supabase = getSupabaseClient();
-
       function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
         if (!imgEl) return;
         if (avatarUrl) {
@@ -263,14 +281,21 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         }
       }
 
-      async function signOut() {
-        if (!supabase) return;
-        await supabase.auth.signOut();
-        updateAuthUI(null);
-      }
+      // Wire up click handlers immediately — no need to wait for supabase
+      const openDialog = () => (window as any).__openAuthDialog?.();
+      document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
 
-      // Initialize
-      if (supabase) {
+      // Lazy-load supabase client — the inline <head> script already handles
+      // pre-paint auth UI from localStorage, so this can load in the background.
+      getSupabaseClient().then((supabase) => {
+        if (!supabase) return;
+
+        document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
+          await supabase.auth.signOut();
+          updateAuthUI(null);
+        });
+
         supabase.auth.getSession().then(({ data: { session } }) => {
           updateAuthUI(session?.user ?? null);
           // Hand visibility control back to JS now that the real session is known.
@@ -280,16 +305,13 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         supabase.auth.onAuthStateChange((_event, session) => {
           updateAuthUI(session?.user ?? null);
         });
-      }
 
-      const openDialog = () => (window as any).__openAuthDialog?.();
-      document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
-      document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
-      document.getElementById("auth-sign-out-desktop")?.addEventListener("click", signOut);
+        // Expose globals for other pages and E2E tests
+        (window as any).__supabase = supabase;
+      });
 
-      // Expose globals for other pages and E2E tests
-      (window as any).__supabase = supabase;
       (window as any).__getAccessToken = async () => {
+        const supabase = await getSupabaseClient();
         if (!supabase) return null;
         const {
           data: { session },
@@ -297,6 +319,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         return session?.access_token ?? null;
       };
       (window as any).__getUser = async () => {
+        const supabase = await getSupabaseClient();
         if (!supabase) return null;
         const {
           data: { session },
