@@ -58,7 +58,7 @@ test.describe("Hire Me Flow", () => {
     // 2. Sign in programmatically via the page's Supabase client
     await page.evaluate(
       async ({ email, password }) => {
-        const supabase = (window as any).__supabase;
+        const supabase = await (window as any).__supabaseReady;
         if (!supabase) throw new Error("Supabase client not available on window.__supabase");
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -132,7 +132,7 @@ test.describe("Hire Me Flow", () => {
       await page.goto("/hire-me");
       await page.evaluate(
         async ({ email, password }) => {
-          const supabase = (window as any).__supabase;
+          const supabase = await (window as any).__supabaseReady;
           if (!supabase) throw new Error("Supabase client not available");
           const { error } = await supabase.auth.signInWithPassword({
             email,

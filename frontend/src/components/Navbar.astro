@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import type { Locale } from "../i18n/utils";
 import { localePath, alternateLangUrl } from "../i18n/utils";
 
@@ -63,17 +64,18 @@ const navItems = [
         aria-label={t.a11y.toggleDarkMode}
         title={t.theme.switchToDark}
       >
-        <span class="material-symbols-outlined text-lg dark-hidden" aria-hidden="true">dark_mode</span>
-        <span class="material-symbols-outlined text-lg hidden dark-visible" aria-hidden="true">light_mode</span>
+        <Icon name="material-symbols:dark-mode" class="size-[18px] dark-hidden" aria-hidden="true" />
+        <Icon name="material-symbols:light-mode" class="size-[18px] hidden dark-visible" aria-hidden="true" />
       </button>
       <!-- Language picker (mobile — hover dropdown) -->
       <div class="relative group">
         <button type="button" class="flex items-center gap-1 p-1 cursor-pointer" aria-haspopup="true" aria-label={t.a11y.changeLanguage}>
           <span class:list={["fi fis inline-block w-4 h-3 rounded-sm", lang === "cs" ? "fi-cz" : "fi-us"]} aria-hidden="true"></span>
-          <span
-            class="material-symbols-outlined text-xs text-on-surface-variant transition-transform group-hover:rotate-180"
-            aria-hidden="true">expand_more</span
-          >
+          <Icon
+            name="material-symbols:expand-more"
+            class="size-3 text-on-surface-variant transition-transform group-hover:rotate-180"
+            aria-hidden="true"
+          />
         </button>
         <div
           class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[140px] z-50"
@@ -151,8 +153,8 @@ const navItems = [
         aria-label={t.a11y.toggleDarkMode}
         title={t.theme.switchToDark}
       >
-        <span class="material-symbols-outlined text-xl dark-hidden" aria-hidden="true">dark_mode</span>
-        <span class="material-symbols-outlined text-xl hidden dark-visible" aria-hidden="true">light_mode</span>
+        <Icon name="material-symbols:dark-mode" class="size-5 dark-hidden" aria-hidden="true" />
+        <Icon name="material-symbols:light-mode" class="size-5 hidden dark-visible" aria-hidden="true" />
       </button>
       <!-- Language picker (hover dropdown) -->
       <div class="relative group">
@@ -163,7 +165,7 @@ const navItems = [
           aria-label={t.a11y.changeLanguage}
         >
           <span class:list={["fi fis inline-block w-5 h-3.5 rounded-sm", lang === "cs" ? "fi-cz" : "fi-us"]} aria-hidden="true"></span>
-          <span class="material-symbols-outlined text-sm transition-transform group-hover:rotate-180" aria-hidden="true">expand_more</span>
+          <Icon name="material-symbols:expand-more" class="size-3.5 transition-transform group-hover:rotate-180" aria-hidden="true" />
         </button>
         <div
           class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50"
@@ -219,10 +221,11 @@ const navItems = [
             <img id="auth-avatar-desktop" class="w-7 h-7 rounded-full" src="" alt="" />
             <span class="hidden w-7 h-7 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center"></span>
             <span id="auth-name-desktop" class="text-sm font-label text-on-surface-variant"></span>
-            <span
-              class="material-symbols-outlined text-sm text-on-surface-variant transition-transform group-hover:rotate-180"
-              aria-hidden="true">expand_more</span
-            >
+            <Icon
+              name="material-symbols:expand-more"
+              class="size-3.5 text-on-surface-variant transition-transform group-hover:rotate-180"
+              aria-hidden="true"
+            />
           </button>
           <div
             class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-lg py-1 min-w-[160px] z-50"
@@ -233,7 +236,7 @@ const navItems = [
               class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               role="menuitem"
             >
-              <span class="material-symbols-outlined text-lg" aria-hidden="true">person</span>
+              <Icon name="material-symbols:person" class="size-[18px]" aria-hidden="true" />
               {t.auth.profile}
             </a>
             <a
@@ -241,7 +244,7 @@ const navItems = [
               class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               role="menuitem"
             >
-              <span class="material-symbols-outlined text-lg" aria-hidden="true">description</span>
+              <Icon name="material-symbols:description" class="size-[18px]" aria-hidden="true" />
               {t.nav.mySubmissions}
             </a>
             <a
@@ -250,7 +253,7 @@ const navItems = [
               class="hidden flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               role="menuitem"
             >
-              <span class="material-symbols-outlined text-lg" aria-hidden="true">admin_panel_settings</span>
+              <Icon name="material-symbols:admin-panel-settings" class="size-[18px]" aria-hidden="true" />
               {t.nav.admin}
             </a>
             <a
@@ -268,7 +271,7 @@ const navItems = [
               class="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors w-full text-left cursor-pointer"
               role="menuitem"
             >
-              <span class="material-symbols-outlined text-lg" aria-hidden="true">logout</span>
+              <Icon name="material-symbols:logout" class="size-[18px]" aria-hidden="true" />
               {t.auth.signOut}
             </button>
           </div>

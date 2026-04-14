@@ -24,8 +24,8 @@ const testUser = {
 async function signIn(page: any) {
   await page.evaluate(
     async ({ email, password }: { email: string; password: string }) => {
-      const supabase = (window as any).__supabase;
-      if (!supabase) throw new Error("Supabase client not available on window.__supabase");
+      const supabase = await (window as any).__supabaseReady;
+      if (!supabase) throw new Error("Supabase client not available via window.__supabaseReady");
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
