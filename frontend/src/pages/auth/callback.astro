@@ -1,0 +1,128 @@
+---
+/**
+ * OAuth callback landing page.
+ *
+ * Supabase redirects here after a successful OAuth handshake with the URL hash
+ * containing `access_token` and friends. We load the Supabase client eagerly
+ * so `detectSessionInUrl` (default true) parses and persists the session
+ * before any other page-level auth UI tries to read from localStorage — this
+ * avoids the "just signed in but header says signed out" flash that happened
+ * when the redirect landed on a normal page and relied on the lazy-loaded
+ * supabase bundle.
+ *
+ * On success: redirect to `?next=<path>` (or `/`) — the session is already in
+ * localStorage so the destination's pre-paint script picks it up on first
+ * render.
+ * On failure: forward to `/` with an `error_description` in the hash so the
+ * generic handler in Layout.astro surfaces the error snackbar.
+ *
+ * This page is intentionally bare (no Layout) so it renders in a single
+ * paint and processes the hash as fast as possible.
+ */
+import enCommon from "../../i18n/en/common.json";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{enCommon.auth.signingIn}</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #131313;
+        color: #e5e5e5;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      main {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      p {
+        font-size: 1rem;
+        opacity: 0.8;
+      }
+    </style>
+    <script is:inline>
+      // Pre-paint theme so the interstitial doesn't flash white then black.
+      (function () {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || (!t && !window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.style.background = "#f3f1ed";
+          document.documentElement.style.color = "#131313";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <p id="auth-callback-message">{enCommon.auth.signingIn}…</p>
+    </main>
+
+    <script>
+      import { getSupabaseClient } from "../../lib/supabase";
+      import enCommon from "../../i18n/en/common.json";
+      import csCommon from "../../i18n/cs/common.json";
+
+      (async () => {
+        const url = new URL(window.location.href);
+
+        // Only trust `next` if it's a site-relative path — never an absolute
+        // URL (which could point at an attacker-controlled origin).
+        const nextParam = url.searchParams.get("next");
+        const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+
+        const hash = new URLSearchParams(window.location.hash.substring(1));
+        const hashErr = hash.get("error_description");
+        const accessToken = hash.get("access_token");
+
+        // Pick locale from the `next` path so errors show in the user's language.
+        const lang = next.startsWith("/cs") ? "cs" : "en";
+        const t = (lang === "cs" ? csCommon : enCommon).auth;
+
+        const failAndRedirect = (reason: string) => {
+          const target = `${next}#error_description=${encodeURIComponent(reason)}`;
+          window.location.replace(target);
+        };
+
+        if (hashErr) {
+          failAndRedirect(decodeURIComponent(hashErr));
+          return;
+        }
+
+        if (!accessToken) {
+          failAndRedirect(t.callbackError);
+          return;
+        }
+
+        const supabase = await getSupabaseClient();
+        if (!supabase) {
+          failAndRedirect(t.callbackError);
+          return;
+        }
+
+        // `detectSessionInUrl` (default true) runs during createClient and
+        // writes the session to localStorage. Wait a tick for it to settle
+        // before we read it back.
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          failAndRedirect(t.callbackError);
+          return;
+        }
+
+        window.location.replace(next);
+      })();
+    </script>
+  </body>
+</html>

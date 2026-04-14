@@ -26,7 +26,9 @@
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
     "cancel": "Cancel",
-    "confirmationSent": "Check your email to confirm your account."
+    "confirmationSent": "Check your email to confirm your account.",
+    "signingIn": "Finishing sign-in",
+    "callbackError": "Sign-in could not be completed. Please try again."
   },
   "theme": {
     "switchToDark": "Switch to dark mode",

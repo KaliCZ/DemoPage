@@ -26,7 +26,9 @@
     "noAccount": "Nemáte účet?",
     "haveAccount": "Již máte účet?",
     "cancel": "Zrušit",
-    "confirmationSent": "Zkontrolujte svůj e-mail a potvrďte svůj účet."
+    "confirmationSent": "Zkontrolujte svůj e-mail a potvrďte svůj účet.",
+    "signingIn": "Dokončuji přihlášení",
+    "callbackError": "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu."
   },
   "theme": {
     "switchToDark": "Přepnout na tmavý režim",
