@@ -1,4 +1,6 @@
 ---
+import { Icon } from "astro-icon/components";
+
 interface Props {
   isAdmin: boolean;
   t: Record<string, any>;
@@ -14,7 +16,7 @@ const { isAdmin, t, f } = Astro.props;
     type="button"
     class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8 cursor-pointer"
   >
-    <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
+    <Icon name="material-symbols:arrow-back" class="size-[18px]" aria-hidden="true" />
     {t.list.back}
   </button>
   <div id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12"></div>
@@ -207,9 +209,7 @@ const { isAdmin, t, f } = Astro.props;
             type="button"
             class="hidden flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
           >
-            <span class="material-symbols-outlined text-lg" aria-hidden="true">
-              edit
-            </span>
+            <Icon name="material-symbols:edit" class="size-[18px]" aria-hidden="true" />
             {t.list.edit}
           </button>
           <button
@@ -217,9 +217,7 @@ const { isAdmin, t, f } = Astro.props;
             type="button"
             class="hidden flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold font-label bg-error text-on-primary hover:bg-error/90 transition-colors cursor-pointer"
           >
-            <span class="material-symbols-outlined text-lg" aria-hidden="true">
-              cancel
-            </span>
+            <Icon name="material-symbols:cancel" class="size-[18px]" aria-hidden="true" />
             {t.list.cancel}
           </button>
         </div>
@@ -248,7 +246,7 @@ const { isAdmin, t, f } = Astro.props;
   <!-- Comments -->
   <div id="comments-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
     <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-      <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">chat</span>
+      <Icon name="material-symbols:chat" class="size-[18px] inline align-middle mr-1" aria-hidden="true" />
       {t.list.comments}
     </h3>
     <div id="comments-list" class="space-y-4 mb-4"></div>
@@ -272,7 +270,7 @@ const { isAdmin, t, f } = Astro.props;
   <!-- Activity log -->
   <div id="history-section" class="mt-6 bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
     <h3 class="font-headline text-lg font-bold text-on-surface mb-4">
-      <span class="material-symbols-outlined text-lg align-middle mr-1" aria-hidden="true">history</span>
+      <Icon name="material-symbols:history" class="size-[18px] inline align-middle mr-1" aria-hidden="true" />
       {t.list.history}
     </h3>
     <div id="history-list" class="space-y-3"></div>

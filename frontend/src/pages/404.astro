@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import Layout from "../layouts/Layout.astro";
 import enCommon from "../i18n/en/common.json";
 
@@ -17,7 +18,7 @@ const t = enCommon.notFound;
       href="/"
       class="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-label text-sm uppercase tracking-widest hover:opacity-90 transition-opacity"
     >
-      <span class="material-symbols-outlined text-base" aria-hidden="true">home</span>
+      <Icon name="material-symbols:home" class="size-4" aria-hidden="true" />
       {t.goHome}
     </a>
   </section>

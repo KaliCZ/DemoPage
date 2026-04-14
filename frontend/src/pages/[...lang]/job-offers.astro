@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import JobOfferDetail from "../../components/JobOfferDetail.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
@@ -39,14 +40,14 @@ const c = commonTranslations[lang];
   <!-- Loading (shown until auth check completes) -->
   <section id="auth-loading" class="max-w-5xl mx-auto px-8 mb-16">
     <div class="text-center py-12">
-      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
+      <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
     </div>
   </section>
 
   <!-- Login prompt -->
   <section id="login-prompt" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
-      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
+      <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.loginPrompt.title}
       </h2>
@@ -74,10 +75,10 @@ const c = commonTranslations[lang];
         aria-haspopup="listbox"
         aria-expanded="false"
       >
-        <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_list</span>
+        <Icon name="material-symbols:filter-list" class="size-[18px]" aria-hidden="true" />
         <span id="filter-label">{t.list.filterByStatus}</span>
         <span id="filter-count" class="hidden px-1.5 py-0.5 rounded-full text-xs bg-primary text-on-primary"></span>
-        <span class="material-symbols-outlined text-lg ml-1" aria-hidden="true">expand_more</span>
+        <Icon name="material-symbols:expand-more" class="size-[18px] ml-1" aria-hidden="true" />
       </button>
       <div
         id="status-filter-menu"
@@ -130,10 +131,10 @@ const c = commonTranslations[lang];
     </div>
 
     <div id="offers-loading" class="text-center py-12">
-      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
+      <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
     </div>
     <div id="offers-empty" class="hidden bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
-      <span class="material-symbols-outlined text-5xl text-on-surface-variant/50 mb-4 block" aria-hidden="true">inbox</span>
+      <Icon name="material-symbols:inbox" class="size-12 text-on-surface-variant/50 mb-4 mx-auto block" aria-hidden="true" />
       <h2 class="font-headline text-xl font-bold text-on-surface mb-3">
         {t.empty.title}
       </h2>
@@ -156,7 +157,7 @@ const c = commonTranslations[lang];
         class="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-label font-semibold bg-surface-container-low border border-outline-variant/20 text-on-surface hover:border-primary/30 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         disabled
       >
-        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
+        <Icon name="material-symbols:chevron-left" class="size-[18px]" aria-hidden="true" />
         {t.list.paginationPrev}
       </button>
       <span id="pagination-indicator" class="text-sm font-label text-on-surface-variant"></span>
@@ -167,12 +168,23 @@ const c = commonTranslations[lang];
         disabled
       >
         {t.list.paginationNext}
-        <span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
+        <Icon name="material-symbols:chevron-right" class="size-[18px]" aria-hidden="true" />
       </button>
     </nav>
   </section>
 
   <JobOfferDetail isAdmin={false} t={t} f={f} />
+
+  <template id="icon-description"
+    ><Icon name="material-symbols:description" class="size-[18px] text-on-surface-variant shrink-0" aria-hidden="true" /></template
+  >
+  <template id="icon-download"><Icon name="material-symbols:download" class="size-3.5" aria-hidden="true" /></template>
+  <template id="icon-expand-more"
+    ><Icon name="material-symbols:expand-more" class="size-3.5 transition-transform" aria-hidden="true" /></template
+  >
+  <template id="icon-person"
+    ><Icon name="material-symbols:person" class="size-[18px] text-on-surface-variant shrink-0" aria-hidden="true" /></template
+  >
 
   <script
     define:vars={{
@@ -213,6 +225,12 @@ const c = commonTranslations[lang];
       paginationPageLabel: t.list.paginationPage,
     }}
   >
+    // Pre-render icon SVGs from templates for use in dynamic HTML
+    var descriptionIconHtml = document.getElementById("icon-description").innerHTML;
+    var downloadIconHtml = document.getElementById("icon-download").innerHTML;
+    var expandMoreIconHtml = document.getElementById("icon-expand-more").innerHTML;
+    var personIconHtml = document.getElementById("icon-person").innerHTML;
+
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
     // Wake up the database (see hire-me.astro for details).
     fetch(apiUrl + "/health").catch(function () {});
@@ -532,7 +550,7 @@ const c = commonTranslations[lang];
                   att.fileSize >= 1024 * 1024 ? (att.fileSize / 1024 / 1024).toFixed(1) + " MB" : Math.round(att.fileSize / 1024) + " KB";
                 return (
                   '<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-sm">' +
-                  '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
+                  descriptionIconHtml +
                   '<span class="flex-1 truncate font-body text-on-surface">' +
                   esc(att.fileName) +
                   "</span>" +
@@ -542,7 +560,7 @@ const c = commonTranslations[lang];
                   '<button type="button" data-file-name="' +
                   esc(att.fileName) +
                   '" class="download-attachment-btn flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-label font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer">' +
-                  '<span class="material-symbols-outlined text-sm" aria-hidden="true">download</span>' +
+                  downloadIconHtml +
                   downloadLabel +
                   "</button>" +
                   "</div>"
@@ -624,7 +642,8 @@ const c = commonTranslations[lang];
                 " " +
                 historyFieldChanged +
                 "</span>" +
-                ' <span class="material-symbols-outlined text-sm transition-transform" aria-hidden="true">expand_more</span>' +
+                " " +
+                expandMoreIconHtml +
                 "</button>" +
                 '<div id="' +
                 id +
@@ -692,9 +711,7 @@ const c = commonTranslations[lang];
         var actorHtml =
           userInfo && userInfo.avatarUrl
             ? '<img src="' + esc(userInfo.avatarUrl) + '" alt="" class="w-6 h-6 rounded-full object-cover mt-0.5 flex-shrink-0" />'
-            : '<span class="material-symbols-outlined text-lg text-on-surface-variant mt-0.5 flex-shrink-0" aria-hidden="true">' +
-              icon +
-              "</span>";
+            : personIconHtml;
         var actorName = (userInfo && userInfo.displayName) || entry.actorEmail;
         var hasChanges = entry.changes && entry.changes.length > 0;
         var descHtml = hasChanges
@@ -719,9 +736,9 @@ const c = commonTranslations[lang];
           var id = btn.getAttribute("data-diff-toggle");
           var panel = document.getElementById(id);
           if (!panel) return;
-          var icon = btn.querySelector(".material-symbols-outlined");
+          var svgIcon = btn.querySelector("svg");
           panel.classList.toggle("hidden");
-          if (icon) icon.style.transform = panel.classList.contains("hidden") ? "" : "rotate(180deg)";
+          if (svgIcon) svgIcon.style.transform = panel.classList.contains("hidden") ? "" : "rotate(180deg)";
         });
       });
     }

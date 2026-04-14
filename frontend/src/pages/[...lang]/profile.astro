@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import IconGoogle from "../../components/icons/IconGoogle.astro";
 import { locales, defaultLocale, type Locale } from "../../i18n/utils";
@@ -31,7 +32,7 @@ const t = translations[lang];
   <!-- Login prompt (shown when not authenticated) -->
   <section id="login-prompt" class="max-w-3xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
-      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
+      <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.loginPrompt.title}
       </h2>
@@ -115,6 +116,9 @@ const t = translations[lang];
   <template id="google-icon-template">
     <IconGoogle class="w-5 h-5 flex-shrink-0" />
   </template>
+  <template id="icon-mail"
+    ><Icon name="material-symbols:mail" class="size-5 text-on-surface-variant shrink-0" aria-hidden="true" /></template
+  >
 
   <script
     define:vars={{
@@ -130,6 +134,7 @@ const t = translations[lang];
     }}
   >
     var googleSvg = document.getElementById("google-icon-template").innerHTML.trim();
+    var mailIconHtml = document.getElementById("icon-mail").innerHTML;
 
     function esc(str) {
       if (!str) return "";
@@ -211,7 +216,7 @@ const t = translations[lang];
           emailBlock.className = "flex flex-col gap-3";
           emailBlock.innerHTML =
             '<div class="flex items-center gap-3">' +
-            '<span class="material-symbols-outlined text-xl text-on-surface-variant" aria-hidden="true">mail</span>' +
+            mailIconHtml +
             '<div class="flex-1"><span class="text-sm font-label text-on-surface">' +
             strings.provider.emailPassword +
             "</span>" +
