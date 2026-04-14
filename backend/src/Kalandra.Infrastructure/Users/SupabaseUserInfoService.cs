@@ -1,16 +1,22 @@
-using Kalandra.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
-using Supabase;
+using Supabase.Gotrue.Interfaces;
 
 namespace Kalandra.Infrastructure.Users;
 
 public class SupabaseUserInfoService(
-    Client supabase,
-    SupabaseConfig supabaseConfig,
+    IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient,
     ILogger<SupabaseUserInfoService> logger) : IUserInfoService
 {
-    private readonly Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient =
-        supabase.AdminAuth(supabaseConfig.ServiceKey.Value);
+    public async Task PingAsync(CancellationToken ct)
+    {
+        // perPage=1 keeps the round-trip minimal; we only need to confirm the key is accepted.
+        await adminAuthClient.ListUsers(
+            filter: null,
+            sortBy: null,
+            sortOrder: Supabase.Gotrue.Constants.SortOrder.Descending,
+            page: null,
+            perPage: 1);
+    }
 
     public async Task<Dictionary<Guid, UserPublicInfo>> GetUserInfoAsync(
         IEnumerable<Guid> userIds, CancellationToken ct)

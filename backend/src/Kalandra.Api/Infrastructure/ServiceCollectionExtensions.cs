@@ -78,11 +78,22 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(sp =>
         {
             var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseConfig>();
-            var client = new Supabase.Client(
-                config.ProjectUrl.Value,
-                config.ServiceKey.Value);
-            client.InitializeAsync().Wait();
-            return client;
+            var projectUrl = config.ProjectUrl.Value.TrimEnd('/');
+            var serviceKey = config.ServiceKey.Value;
+            var headers = new Dictionary<string, string>
+            {
+                ["apikey"] = serviceKey,
+                ["Authorization"] = $"Bearer {serviceKey}",
+            };
+            return new Supabase.Storage.Client($"{projectUrl}/storage/v1", headers);
+        });
+
+        services.AddSingleton<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>(sp =>
+        {
+            var config = sp.GetRequiredService<Kalandra.Infrastructure.Configuration.SupabaseConfig>();
+            var projectUrl = config.ProjectUrl.Value.TrimEnd('/');
+            var options = new Supabase.Gotrue.ClientOptions { Url = $"{projectUrl}/auth/v1" };
+            return new Supabase.Gotrue.AdminClient(config.ServiceKey.Value, options);
         });
 
         services.AddSingleton<IStorageService, SupabaseStorageService>();

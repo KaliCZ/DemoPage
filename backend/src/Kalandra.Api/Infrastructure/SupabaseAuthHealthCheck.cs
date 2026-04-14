@@ -1,25 +1,23 @@
+using Kalandra.Infrastructure.Users;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Supabase;
 
 namespace Kalandra.Api.Infrastructure;
 
 /// <summary>
 /// Verifies that the Supabase Auth admin API is reachable with the configured
-/// service key by issuing a lightweight ListUsers call (per-page=1). A missing
-/// or revoked service key surfaces as Unhealthy instead of a runtime 401 the
-/// first time a user touches auth-admin functionality.
+/// service key. A missing or revoked service key surfaces as Unhealthy instead
+/// of a runtime 401 the first time a user touches auth-admin functionality.
+///
+/// Exercises the same <see cref="IUserInfoService"/> production uses for
+/// fetching user info, so the health check covers the exact client wiring.
 /// </summary>
-internal sealed class SupabaseAuthHealthCheck(
-    Client supabase,
-    Kalandra.Infrastructure.Configuration.SupabaseConfig supabaseConfig) : IHealthCheck
+internal sealed class SupabaseAuthHealthCheck(IUserInfoService userInfoService) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
         try
         {
-            var adminClient = supabase.AdminAuth(supabaseConfig.ServiceKey.Value);
-            // perPage=1 keeps the round-trip minimal; we only need to confirm the key is accepted.
-            await adminClient.ListUsers(filter: null, sortBy: null, sortOrder: Supabase.Gotrue.Constants.SortOrder.Descending, page: null, perPage: 1);
+            await userInfoService.PingAsync(ct);
             return HealthCheckResult.Healthy("Supabase Auth admin API reachable with the configured service key.");
         }
         catch (Exception ex)

@@ -5,7 +5,7 @@ using Supabase.Storage.Interfaces;
 namespace Kalandra.Infrastructure.Storage;
 
 public class SupabaseStorageService(
-    Supabase.Client supabase,
+    Supabase.Storage.Client storage,
     ILogger<SupabaseStorageService> logger) : IStorageService
 {
     public const string BucketName = "job-offer-attachments";
@@ -15,7 +15,7 @@ public class SupabaseStorageService(
         IReadOnlyList<FileUploadItem> files,
         CancellationToken ct)
     {
-        var bucket = supabase.Storage.From(BucketName);
+        var bucket = storage.From(BucketName);
         var uploaded = new List<StorageFileInfo>(files.Count);
 
         foreach (var file in files)
@@ -29,7 +29,7 @@ public class SupabaseStorageService(
                 await file.Content.CopyToAsync(ms, ct);
 
                 var fileOptions = new Supabase.Storage.FileOptions { ContentType = file.ContentType };
-                await bucket.Upload(ms.ToArray(), storagePath, fileOptions);
+                await bucket.Upload(ms.ToArray(), storagePath, fileOptions, onProgress: null, inferContentType: true, ct);
             }
             catch
             {
@@ -49,9 +49,15 @@ public class SupabaseStorageService(
 
     public async Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct)
     {
-        var bucket = supabase.Storage.From(BucketName);
+        var bucket = storage.From(BucketName);
         var data = await bucket.Download(storagePath, (TransformOptions?)null);
         return new StorageDownloadResult(new MemoryStream(data), data.Length);
+    }
+
+    public async Task PingAsync(CancellationToken ct)
+    {
+        var searchOptions = new SearchOptions { Limit = 1 };
+        await storage.From(BucketName).List(path: "", options: searchOptions);
     }
 
 
