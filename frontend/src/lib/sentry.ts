@@ -14,7 +14,7 @@ export function initSentry(dsn: string): void {
     environment: import.meta.env.PROD ? "production" : "development",
     tracesSampleRate: 1.0,
     integrations: [browserTracingIntegration()],
-    tracePropagationTargets: [/^\//, /kalandra\.tech/],
+    tracePropagationTargets: ["/", "api.kalandra.tech"],
   });
 }
 

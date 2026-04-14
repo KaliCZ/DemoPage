@@ -98,6 +98,7 @@ const c = commons[lang];
 
 <script
   define:vars={{
+    apiUrl: import.meta.env.PUBLIC_API_URL || "",
     triggeredMsg: t.results.triggered,
     unexpectedMsg: t.results.unexpectedSuccess,
     errorServer: c.errors.serverError,
@@ -124,7 +125,7 @@ const c = commons[lang];
     const token = await window.__getAccessToken?.();
     if (!token) return null;
 
-    return fetch(`/api${path}`, {
+    return fetch(`${apiUrl}/api${path}`, {
       method,
       headers: { Authorization: `Bearer ${token}` },
     });
