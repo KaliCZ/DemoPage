@@ -66,7 +66,8 @@ public static class ServiceCollectionExtensions
                 policy
                     .AllowAnyHeader()
                     .AllowAnyMethod()
-                    .AllowCredentials();
+                    .AllowCredentials()
+                    .SetPreflightMaxAge(TimeSpan.FromHours(24));
             });
         });
 
