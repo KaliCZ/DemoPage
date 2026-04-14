@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import Layout from "../../../layouts/Layout.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import enStrings from "../../../i18n/en/admin-test-errors.json";
@@ -30,14 +31,14 @@ const t = translations[lang];
   <!-- Loading (shown until auth check completes) -->
   <section id="admin-loading" class="max-w-5xl mx-auto px-8 mb-16">
     <div class="text-center py-12">
-      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
+      <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
     </div>
   </section>
 
   <!-- Access denied -->
   <section id="access-denied" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
-      <span class="material-symbols-outlined text-5xl text-error mb-4 block" aria-hidden="true">block</span>
+      <Icon name="material-symbols:block" class="size-[48px] text-error mb-4 block" aria-hidden="true" />
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.accessDenied.title}
       </h2>
@@ -58,7 +59,7 @@ const t = translations[lang];
     <div class="grid gap-6 md:grid-cols-2">
       <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
         <div class="flex items-center gap-3 mb-4">
-          <span class="material-symbols-outlined text-2xl text-error" aria-hidden="true">error</span>
+          <Icon name="material-symbols:error" class="size-6 text-error" aria-hidden="true" />
           <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.throwError}</h2>
         </div>
         <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.throwErrorDescription}</p>
@@ -67,14 +68,14 @@ const t = translations[lang];
           type="button"
           class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
         >
-          <span class="material-symbols-outlined text-lg" aria-hidden="true">bolt</span>
+          <Icon name="material-symbols:bolt" class="size-[18px]" aria-hidden="true" />
           {t.buttons.throwError}
         </button>
       </div>
 
       <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
         <div class="flex items-center gap-3 mb-4">
-          <span class="material-symbols-outlined text-2xl text-error" aria-hidden="true">database</span>
+          <Icon name="material-symbols:database" class="size-6 text-error" aria-hidden="true" />
           <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.crashAfterData}</h2>
         </div>
         <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.crashAfterDataDescription}</p>
@@ -83,7 +84,7 @@ const t = translations[lang];
           type="button"
           class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
         >
-          <span class="material-symbols-outlined text-lg" aria-hidden="true">bolt</span>
+          <Icon name="material-symbols:bolt" class="size-[18px]" aria-hidden="true" />
           {t.buttons.crashAfterData}
         </button>
       </div>
