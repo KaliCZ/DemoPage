@@ -54,6 +54,12 @@ public class SupabaseStorageService(
         return new StorageDownloadResult(new MemoryStream(data), data.Length);
     }
 
+    public async Task PingAsync(CancellationToken ct)
+    {
+        var searchOptions = new SearchOptions { Limit = 1 };
+        await storage.From(BucketName).List(path: "", options: searchOptions);
+    }
+
 
     private async Task CleanupAsync(IStorageFileApi<FileObject> bucket, List<StorageFileInfo> uploaded)
     {

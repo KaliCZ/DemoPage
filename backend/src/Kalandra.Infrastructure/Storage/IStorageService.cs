@@ -8,6 +8,12 @@ public interface IStorageService
         CancellationToken ct);
 
     Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct);
+
+    /// <summary>
+    /// Lightweight probe that the backing storage is reachable with the configured
+    /// credentials. Throws if not. Used by the /health endpoint.
+    /// </summary>
+    Task PingAsync(CancellationToken ct);
 }
 
 public record FileUploadItem(

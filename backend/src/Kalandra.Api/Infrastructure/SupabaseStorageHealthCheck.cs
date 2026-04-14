@@ -1,6 +1,5 @@
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Kalandra.Infrastructure.Storage;
-using Supabase.Storage;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -9,21 +8,23 @@ namespace Kalandra.Api.Infrastructure;
 /// reachable with the configured service key. Catches misconfigured project
 /// URLs, revoked service keys, and missing buckets at /health rather than on
 /// the first upload attempt.
+///
+/// Exercises the same <see cref="IStorageService"/> the production upload path
+/// uses, so the health check is guaranteed to cover the exact client wiring.
 /// </summary>
-internal sealed class SupabaseStorageHealthCheck(Supabase.Storage.Client storage) : IHealthCheck
+internal sealed class SupabaseStorageHealthCheck(IStorageService storageService) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
         try
         {
-            var searchOptions = new SearchOptions { Limit = 1 };
-            await storage.From(SupabaseStorageService.BucketName).List(path: "", options: searchOptions);
-            return HealthCheckResult.Healthy($"Supabase Storage bucket '{SupabaseStorageService.BucketName}' reachable.");
+            await storageService.PingAsync(ct);
+            return HealthCheckResult.Healthy("Supabase Storage reachable.");
         }
         catch (Exception ex)
         {
             return HealthCheckResult.Unhealthy(
-                $"Supabase Storage bucket '{SupabaseStorageService.BucketName}' unreachable. Verify Supabase:ProjectUrl, Supabase:ServiceKey, and that the bucket exists.",
+                "Supabase Storage unreachable. Verify Supabase:ProjectUrl, Supabase:ServiceKey, and that the bucket exists.",
                 ex);
         }
     }

@@ -7,6 +7,17 @@ public class SupabaseUserInfoService(
     IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient,
     ILogger<SupabaseUserInfoService> logger) : IUserInfoService
 {
+    public async Task PingAsync(CancellationToken ct)
+    {
+        // perPage=1 keeps the round-trip minimal; we only need to confirm the key is accepted.
+        await adminAuthClient.ListUsers(
+            filter: null,
+            sortBy: null,
+            sortOrder: Supabase.Gotrue.Constants.SortOrder.Descending,
+            page: null,
+            perPage: 1);
+    }
+
     public async Task<Dictionary<Guid, UserPublicInfo>> GetUserInfoAsync(
         IEnumerable<Guid> userIds, CancellationToken ct)
     {

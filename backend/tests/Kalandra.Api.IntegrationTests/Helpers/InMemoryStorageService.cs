@@ -42,6 +42,8 @@ public class InMemoryStorageService : IStorageService
             new StorageDownloadResult(new MemoryStream(stored.Content), stored.Content.Length));
     }
 
+    public Task PingAsync(CancellationToken ct) => Task.CompletedTask;
+
 
     private record StoredFile(byte[] Content);
 }

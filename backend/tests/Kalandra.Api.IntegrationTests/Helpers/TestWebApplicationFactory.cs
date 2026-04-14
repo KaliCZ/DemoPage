@@ -43,15 +43,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<Supabase.Storage.Client>();
             services.RemoveAll<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>();
 
-            // The Supabase auth/storage health checks depend on the real Supabase.Client,
-            // which we removed above. Drop them from the /health endpoint so tests stay green;
-            // production wiring still registers them in Program.cs.
-            services.Configure<HealthCheckServiceOptions>(options =>
-            {
-                options.Registrations.Remove(options.Registrations.Single(r => r.Name == "supabase-auth"));
-                options.Registrations.Remove(options.Registrations.Single(r => r.Name == "supabase-storage"));
-            });
-
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,
                 options =>
