@@ -1,0 +1,162 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../../layouts/Layout.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
+import enStrings from "../../../i18n/en/admin-test-errors.json";
+import csStrings from "../../../i18n/cs/admin-test-errors.json";
+import enCommon from "../../../i18n/en/common.json";
+import csCommon from "../../../i18n/cs/common.json";
+
+const translations = { en: enStrings, cs: csStrings };
+const commons = { en: enCommon, cs: csCommon };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+const c = commons[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="admin/test-errors" lang={lang}>
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-8 mb-16">
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+    </h1>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">
+      {t.hero.subtitle}
+    </p>
+  </section>
+
+  <!-- Loading (shown until auth check completes) -->
+  <section id="admin-loading" class="max-w-5xl mx-auto px-8 mb-16">
+    <div class="text-center py-12">
+      <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
+    </div>
+  </section>
+
+  <!-- Access denied -->
+  <section id="access-denied" class="hidden max-w-5xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <Icon name="material-symbols:block" class="size-[48px] text-error mb-4 block" aria-hidden="true" />
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.accessDenied.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.accessDenied.description}
+      </p>
+      <a
+        href={localePath(lang, "")}
+        class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-body font-medium hover:bg-primary/90 transition-colors"
+      >
+        {t.accessDenied.backToHome}
+      </a>
+    </div>
+  </section>
+
+  <!-- Admin content -->
+  <section id="admin-content" class="hidden max-w-5xl mx-auto px-8 mb-16">
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <Icon name="material-symbols:error-outline" class="size-6 text-error" aria-hidden="true" />
+          <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.throwError}</h2>
+        </div>
+        <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.throwErrorDescription}</p>
+        <button
+          id="btn-throw"
+          type="button"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
+        >
+          <Icon name="material-symbols:bolt" class="size-[18px]" aria-hidden="true" />
+          {t.buttons.throwError}
+        </button>
+      </div>
+
+      <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <Icon name="material-symbols:database" class="size-6 text-error" aria-hidden="true" />
+          <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.crashAfterData}</h2>
+        </div>
+        <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.crashAfterDataDescription}</p>
+        <button
+          id="btn-crash-after-data"
+          type="button"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
+        >
+          <Icon name="material-symbols:bolt" class="size-[18px]" aria-hidden="true" />
+          {t.buttons.crashAfterData}
+        </button>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script
+  define:vars={{
+    triggeredMsg: t.results.triggered,
+    unexpectedMsg: t.results.unexpectedSuccess,
+    errorServer: c.errors.serverError,
+    errorNetwork: c.errors.networkError,
+  }}
+>
+  // Auth gate — show content only for admins
+  window.addEventListener("auth-change", (e) => {
+    const user = e.detail?.user;
+    const isAdmin = user && Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
+
+    document.getElementById("admin-loading")?.classList.add("hidden");
+
+    if (isAdmin) {
+      document.getElementById("admin-content")?.classList.remove("hidden");
+      document.getElementById("access-denied")?.classList.add("hidden");
+    } else {
+      document.getElementById("admin-content")?.classList.add("hidden");
+      document.getElementById("access-denied")?.classList.remove("hidden");
+    }
+  });
+
+  async function callApi(method, path) {
+    const token = await window.__getAccessToken?.();
+    if (!token) return null;
+
+    return fetch(`/api${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  document.getElementById("btn-throw")?.addEventListener("click", async () => {
+    try {
+      const res = await callApi("POST", "/test-errors/throw");
+      if (!res) return;
+      if (res.ok) {
+        window.__showSnackbar?.(unexpectedMsg, "info", 4000);
+        return;
+      }
+      // Server returned an error — show the standard error snackbar with traceId
+      const result = await window.__getApiError?.(res, {});
+      const msg = res.status >= 500 ? errorServer : errorNetwork;
+      window.__showSnackbar?.(result?.message || msg, "error", 8000, result?.traceId);
+    } catch {
+      window.__showSnackbar?.(errorNetwork, "error", 8000);
+    }
+  });
+
+  document.getElementById("btn-crash-after-data")?.addEventListener("click", async () => {
+    try {
+      const res = await callApi("GET", "/job-offers?page=1&pageSize=1");
+      if (!res) return;
+      const data = await res.json();
+      // Data fetched successfully — now crash on the client side
+      throw new Error("Test client-side error after fetching " + data.items?.length + " job offer(s).");
+    } catch (err) {
+      window.__showSnackbar?.(triggeredMsg, "success", 2000);
+      if (err instanceof Error && err.message.startsWith("Test client-side")) throw err;
+    }
+  });
+</script>

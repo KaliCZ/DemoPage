@@ -3,3 +3,5 @@ dist/
 node_modules/
 playwright-report/
 test-results/
+# Third-party BetterStack snippet — minified IIFE breaks prettier-plugin-astro parser
+src/components/BetterStack.astro

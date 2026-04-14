@@ -3,7 +3,17 @@ import { Icon } from "astro-icon/components";
 import type { Locale } from "../i18n/utils";
 import { localePath, alternateLangUrl } from "../i18n/utils";
 
-type ActivePage = "home" | "about" | "project" | "hire-me" | "job-offers" | "admin/job-offers" | "profile" | "privacy" | "terms";
+type ActivePage =
+  | "home"
+  | "about"
+  | "project"
+  | "hire-me"
+  | "job-offers"
+  | "admin/job-offers"
+  | "admin/test-errors"
+  | "profile"
+  | "privacy"
+  | "terms";
 
 interface Props {
   activePage: ActivePage;
@@ -16,6 +26,7 @@ interface Props {
       hireMe: string;
       mySubmissions: string;
       admin: string;
+      adminTestErrors: string;
     };
     auth: { signIn: string; signOut: string; profile: string };
     a11y: {
@@ -254,6 +265,15 @@ const navItems = [
             >
               <Icon name="material-symbols:admin-panel-settings" class="size-[18px]" aria-hidden="true" />
               {t.nav.admin}
+            </a>
+            <a
+              id="auth-admin-test-errors-desktop"
+              href={localePath(lang, "admin/test-errors")}
+              class="hidden flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              role="menuitem"
+            >
+              <Icon name="material-symbols:bug-report" class="size-[18px]" aria-hidden="true" />
+              {t.nav.adminTestErrors}
             </a>
             <button
               id="auth-sign-out-desktop"

@@ -936,6 +936,7 @@ const c = commonTranslations[lang];
       }
 
       if (res.ok) {
+        window.betterstack?.("track", "job-offer-edited", { offerId: currentOfferId });
         await showDetail(currentOfferId);
       } else {
         var apiMsg = await showApiError(res);
@@ -968,6 +969,7 @@ const c = commonTranslations[lang];
         return;
       }
       if (res.ok) {
+        window.betterstack?.("track", "job-offer-cancelled", { offerId: currentOfferId });
         history.pushState(null, "", location.pathname + location.search);
         backToList();
         await loadOffers();

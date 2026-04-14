@@ -83,14 +83,10 @@ import { Icon } from "astro-icon/components";
       }
     }
 
-    // Show/hide close button for persistent snackbars
+    // Always show close button
     const closeBtn = document.getElementById("snackbar-close");
     if (closeBtn) {
-      if (duration === 0) {
-        closeBtn.classList.remove("hidden");
-      } else {
-        closeBtn.classList.add("hidden");
-      }
+      closeBtn.classList.remove("hidden");
     }
 
     // Show

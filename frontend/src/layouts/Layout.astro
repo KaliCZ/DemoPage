@@ -4,6 +4,8 @@ import AuthDialog from "../components/AuthDialog.astro";
 import Navbar from "../components/Navbar.astro";
 import Snackbar from "../components/Snackbar.astro";
 import Footer from "../components/Footer.astro";
+import BetterStack from "../components/BetterStack.astro";
+import Sentry from "../components/Sentry.astro";
 import type { Locale } from "../i18n/utils";
 
 import enCommon from "../i18n/en/common.json";
@@ -12,7 +14,17 @@ import csCommon from "../i18n/cs/common.json";
 interface Props {
   title: string;
   description?: string;
-  activePage: "home" | "about" | "project" | "hire-me" | "job-offers" | "admin/job-offers" | "profile" | "privacy" | "terms";
+  activePage:
+    | "home"
+    | "about"
+    | "project"
+    | "hire-me"
+    | "job-offers"
+    | "admin/job-offers"
+    | "admin/test-errors"
+    | "profile"
+    | "privacy"
+    | "terms";
   lang?: Locale;
 }
 
@@ -89,6 +101,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <title>{title}</title>
+
+    <BetterStack />
+    <Sentry />
 
     <script is:inline>
       (function () {
@@ -209,6 +224,8 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         applyAvatar(avatarMobile);
         var adminLink = document.getElementById("auth-admin-link-desktop");
         if (adminLink && p.isAdmin) adminLink.classList.remove("hidden");
+        var adminTestErrorsLink = document.getElementById("auth-admin-test-errors-desktop");
+        if (adminTestErrorsLink && p.isAdmin) adminTestErrorsLink.classList.remove("hidden");
       })();
     </script>
 
@@ -228,6 +245,8 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <script>
       import "../lib/api-errors";
+      import { identifyUser } from "../lib/betterstack";
+      import { setSentryUser } from "../lib/sentry";
       import { getSupabaseClient } from "../lib/supabase";
 
       function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
@@ -248,6 +267,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       }
 
       function updateAuthUI(user: any) {
+        identifyUser(user);
+        setSentryUser(user);
+
         const signInDesktop = document.getElementById("auth-sign-in-desktop");
         const profileDesktop = document.getElementById("auth-profile-desktop");
         const avatarDesktop = document.getElementById("auth-avatar-desktop") as HTMLImageElement;
@@ -256,6 +278,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         const profileMobile = document.getElementById("auth-profile-mobile");
         const avatarMobile = document.getElementById("auth-avatar-mobile") as HTMLImageElement;
         const adminLinkDesktop = document.getElementById("auth-admin-link-desktop");
+        const adminTestErrorsDesktop = document.getElementById("auth-admin-test-errors-desktop");
 
         if (user) {
           const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
@@ -274,6 +297,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             setAvatarOrInitial(avatarMobile, name, avatar);
           }
           if (adminLinkDesktop) adminLinkDesktop.classList.toggle("hidden", !isAdmin);
+          if (adminTestErrorsDesktop) adminTestErrorsDesktop.classList.toggle("hidden", !isAdmin);
 
           window.dispatchEvent(new CustomEvent("auth-change", { detail: { user } }));
         } else {
@@ -282,6 +306,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
           if (signInMobile) signInMobile.classList.remove("hidden");
           if (profileMobile) profileMobile.classList.add("hidden");
           if (adminLinkDesktop) adminLinkDesktop.classList.add("hidden");
+          if (adminTestErrorsDesktop) adminTestErrorsDesktop.classList.add("hidden");
 
           window.dispatchEvent(new CustomEvent("auth-change", { detail: { user: null } }));
         }
