@@ -17,6 +17,13 @@
         s.src = "https://betterstack.net/b.js?t=" + r;
         (e.head || e.getElementsByTagName("head")[0]).appendChild(s);
       })(window, document, "betterstack", bsToken);
+      // Must call config() before init() — BetterStack merges `sentry` into
+      // the Sentry options it passes to Sentry.init internally.
+      betterstack("config", {
+        sentry: {
+          tracePropagationTargets: ["localhost", /^\/api\//, "https://api.kalandra.tech"],
+        },
+      });
       betterstack("init", { environment: "production" });
     </script>
   )
