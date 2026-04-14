@@ -364,13 +364,26 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <Snackbar />
 
     <script>
+      import enCommonHash from "../i18n/en/common.json";
+      import csCommonHash from "../i18n/cs/common.json";
+
       // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
       // Sign out any existing session — the person clicking the link is the one who signed up.
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const authError = hashParams.get("error_description");
+      const strayAccessToken = hashParams.get("access_token");
       if (authError) {
         (window as any).__supabaseReady?.then((s: any) => s?.auth.signOut());
         (window as any).__showSnackbar(decodeURIComponent(authError), "error", 0);
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      } else if (strayAccessToken) {
+        // In the normal flow OAuth tokens only ever appear at /auth/callback.
+        // Seeing one on any other page means the user opened an old/reused
+        // link — treat it as a failed sign-in and surface an error.
+        (window as any).__supabaseReady?.then((s: any) => s?.auth.signOut());
+        const lang = document.documentElement.lang === "cs" ? "cs" : "en";
+        const msg = (lang === "cs" ? csCommonHash : enCommonHash).auth.callbackError;
+        (window as any).__showSnackbar(msg, "error", 0);
         history.replaceState(null, "", window.location.pathname + window.location.search);
       }
     </script>

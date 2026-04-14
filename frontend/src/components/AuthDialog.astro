@@ -253,10 +253,16 @@ const t = lang === "cs" ? csCommon : enCommon;
   async function authDialogGoogle() {
     const supabase = await getSupabaseClient();
     if (!supabase) return;
+    // Route OAuth returns through a dedicated callback page so the Supabase
+    // client is loaded eagerly and the session is persisted before any UI
+    // tries to read from localStorage. The current path is preserved in
+    // `next` so the user lands back where they started signing in.
+    const next = window.location.pathname + window.location.search;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin + window.location.pathname,
+        redirectTo,
         queryParams: { prompt: "select_account" },
       },
     });
