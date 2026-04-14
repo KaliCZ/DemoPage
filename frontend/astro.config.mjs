@@ -2,6 +2,7 @@
 import { execSync } from "node:child_process";
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
+import icon from "astro-icon";
 import tailwindcss from "@tailwindcss/vite";
 
 const site = "https://www.kalandra.tech";
@@ -51,6 +52,7 @@ function getPageLastmod(url) {
 export default defineConfig({
   site,
   integrations: [
+    icon(),
     sitemap({
       xslURL: "/sitemap.xsl",
       filter: (page) => !page.includes("/profile") && !page.includes("/admin"),

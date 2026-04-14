@@ -138,12 +138,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         display: block !important;
       }
 
-      /* Hide Material Symbols icon text until the font loads to prevent FOUT.
-       The `icons-ready` class is added by the inline script below once the font is available. */
-      html:not(.icons-ready) .material-symbols-outlined {
-        visibility: hidden;
-      }
-
       /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
        `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
        happened while the end-of-body updateToggleIcons() script had not yet run. */
@@ -157,11 +151,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         display: inline-block !important;
       }
     </style>
-    <script is:inline>
-      document.fonts.ready.then(function () {
-        document.documentElement.classList.add("icons-ready");
-      });
-    </script>
   </head>
   <body class="min-h-screen flex flex-col">
     <Navbar activePage={activePage} lang={lang} t={t} />

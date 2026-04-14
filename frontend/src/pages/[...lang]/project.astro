@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
 import ArchitectureDiagram from "../../components/ArchitectureDiagram.astro";
@@ -36,7 +37,7 @@ const t = translations[lang];
           </div>
           <div class="md:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
             <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
-              <span class="material-symbols-outlined text-tertiary" aria-hidden="true">bolt</span>
+              <Icon name="material-symbols:bolt" class="size-6 text-tertiary" aria-hidden="true" />
               {t.quickStats.title}
             </h3>
             <div class="space-y-6">
@@ -50,7 +51,7 @@ const t = translations[lang];
                 <div class="font-label text-xs text-on-surface-variant uppercase mb-1 flex items-center gap-1">
                   {t.quickStats.timeLabel}
                   <span class="relative group cursor-help">
-                    <span class="material-symbols-outlined text-[14px] text-on-surface-variant/50" aria-hidden="true">info</span>
+                    <Icon name="material-symbols:info" class="size-3.5 text-on-surface-variant/50" aria-hidden="true" />
                     <span
                       class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-container-highest text-on-surface text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center normal-case tracking-normal font-normal"
                       role="tooltip">{t.quickStats.timeTooltip}</span
@@ -105,7 +106,7 @@ const t = translations[lang];
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
             <h3 class="font-label text-sm uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">monitor</span>
+              <Icon name="material-symbols:monitor" class="size-[18px]" aria-hidden="true" />
               {t.techStack.frontendLabel}
             </h3>
             <ul class="space-y-3">
@@ -121,7 +122,7 @@ const t = translations[lang];
           </div>
           <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
             <h3 class="font-label text-sm uppercase tracking-widest text-tertiary mb-6 flex items-center gap-2">
-              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">dns</span>
+              <Icon name="material-symbols:dns" class="size-[18px]" aria-hidden="true" />
               {t.techStack.backendLabel}
             </h3>
             <ul class="space-y-3">
@@ -137,7 +138,7 @@ const t = translations[lang];
           </div>
           <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
             <h3 class="font-label text-sm uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2">
-              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">settings</span>
+              <Icon name="material-symbols:settings" class="size-[18px]" aria-hidden="true" />
               {t.techStack.infraLabel}
             </h3>
             <ul class="space-y-3">
@@ -175,9 +176,7 @@ const t = translations[lang];
           {
             t.goals.items.map((item) => (
               <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-                <span class="material-symbols-outlined text-primary text-3xl mb-4 block" aria-hidden="true">
-                  {item.icon}
-                </span>
+                <Icon name={`material-symbols:${item.icon.replace(/_/g, '-')}`} class="size-[30px] text-primary mb-4 block" aria-hidden="true" />
                 <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{item.title}</h3>
                 <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
                 {item.subItems && (
@@ -238,12 +237,7 @@ const t = translations[lang];
                     <h3 class="font-headline font-bold text-on-surface">{adr.title}</h3>
                     <p class="font-body text-sm text-on-surface-variant mt-1">{adr.summary}</p>
                   </div>
-                  <span
-                    class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4"
-                    aria-hidden="true"
-                  >
-                    expand_more
-                  </span>
+                  <Icon name="material-symbols:expand-more" class="text-primary transition-transform group-open:rotate-180 shrink-0 ml-4 size-6" aria-hidden="true" />
                 </summary>
                 <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
                   <div>
@@ -362,9 +356,7 @@ const t = translations[lang];
                     >
                       {`Version ${version.number}`}
                       {version.done && (
-                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">
-                          check_circle
-                        </span>
+                        <Icon name="material-symbols:check-circle" class="size-4" aria-hidden="true" />
                       )}
                     </div>
                     <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>
@@ -400,12 +392,7 @@ const t = translations[lang];
                     {hasDetails && (
                       <details class="group bg-surface-container-high rounded-xl border border-primary/20 text-left shadow-md inline-block">
                         <summary class="p-6 cursor-pointer font-label text-xs uppercase tracking-widest text-on-surface flex items-center gap-2 select-none">
-                          <span
-                            class="material-symbols-outlined text-[16px] text-primary transition-transform group-open:rotate-180"
-                            aria-hidden="true"
-                          >
-                            expand_more
-                          </span>
+                          <Icon name="material-symbols:expand-more" class="size-4 text-primary transition-transform group-open:rotate-180" aria-hidden="true" />
                           {version.detailsLabel}
                         </summary>
                         <ul class="px-6 pb-6 space-y-3 font-body text-sm text-on-surface-variant">
@@ -457,13 +444,7 @@ const t = translations[lang];
 
                 const timelineDot = version.done ? (
                   <div class="absolute top-5 left-4 md:left-1/2 w-8 h-8 rounded-full bg-primary border-4 border-background shadow-[0_0_15px_rgba(72,88,171,0.2)] -translate-x-1/2 z-10 hidden md:flex items-center justify-center">
-                    <span
-                      class="material-symbols-outlined text-white text-[14px]"
-                      style="font-variation-settings: 'FILL' 1;"
-                      aria-hidden="true"
-                    >
-                      check
-                    </span>
+                    <Icon name="material-symbols:check" class="size-3.5 text-white" aria-hidden="true" />
                   </div>
                 ) : (
                   <div class="absolute top-7 left-4 md:left-1/2 w-4 h-4 rounded-full bg-outline border-4 border-background -translate-x-1/2 z-10 hidden md:block" />
@@ -506,17 +487,10 @@ const t = translations[lang];
               <details class="group bg-surface-container rounded-xl border border-outline-variant/40 shadow-sm">
                 <summary class="p-6 cursor-pointer flex items-center justify-between select-none">
                   <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-tertiary text-2xl" aria-hidden="true">
-                      {item.icon}
-                    </span>
+                    <Icon name={`material-symbols:${item.icon.replace(/_/g, '-')}`} class="size-6 text-tertiary" aria-hidden="true" />
                     <h3 class="font-headline font-bold text-on-surface">{item.title}</h3>
                   </div>
-                  <span
-                    class="material-symbols-outlined text-primary transition-transform group-open:rotate-180 shrink-0 ml-4"
-                    aria-hidden="true"
-                  >
-                    expand_more
-                  </span>
+                  <Icon name="material-symbols:expand-more" class="text-primary transition-transform group-open:rotate-180 shrink-0 ml-4 size-6" aria-hidden="true" />
                 </summary>
                 <div class="px-6 pb-6 space-y-4 border-t border-outline-variant/20 pt-4">
                   <div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-tertiary">

@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/hire-me.json";
@@ -33,7 +34,7 @@ const t = translations[lang];
   <!-- Login prompt (shown when not authenticated) -->
   <section id="login-prompt" class="signed-out-only max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <div class="max-w-4xl bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-8 md:p-12 text-center">
-      <span class="material-symbols-outlined text-5xl text-primary mb-4 block" aria-hidden="true">lock</span>
+      <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
         {t.loginPrompt.title}
       </h2>
@@ -180,7 +181,7 @@ const t = translations[lang];
           for="attachments"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-label text-sm cursor-pointer hover:border-primary/30 transition-colors"
         >
-          <span class="material-symbols-outlined text-lg" aria-hidden="true">attach_file</span>
+          <Icon name="material-symbols:attach-file" class="size-[18px]" aria-hidden="true" />
           {t.form.attachmentsBrowse}
         </label>
         <input
@@ -207,6 +208,9 @@ const t = translations[lang];
       </button>
     </form>
   </section>
+
+  <template id="icon-description"><Icon name="material-symbols:description" class="size-[18px] text-on-surface-variant shrink-0" aria-hidden="true" /></template>
+  <template id="icon-close"><Icon name="material-symbols:close" class="size-[18px]" aria-hidden="true" /></template>
 
   <script
     define:vars={{
@@ -302,6 +306,8 @@ const t = translations[lang];
     var maxFiles = 5;
     var maxTotalBytes = 15 * 1024 * 1024; // 15 MB
     var selectedFiles = [];
+    var descriptionIconHtml = document.getElementById("icon-description").innerHTML;
+    var closeIconHtml = document.getElementById("icon-close").innerHTML;
 
     document.getElementById("attachments")?.addEventListener("change", function (e) {
       var newFiles = Array.from(e.target.files || []);
@@ -321,7 +327,7 @@ const t = translations[lang];
         var sizeKb = (file.size / 1024).toFixed(0);
         var sizeStr = file.size >= 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + " MB" : sizeKb + " KB";
         item.innerHTML =
-          '<span class="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">description</span>' +
+          descriptionIconHtml +
           '<span class="flex-1 truncate font-body text-on-surface">' +
           esc(file.name) +
           "</span>" +
@@ -331,7 +337,7 @@ const t = translations[lang];
         var removeBtn = document.createElement("button");
         removeBtn.type = "button";
         removeBtn.className = "text-on-surface-variant hover:text-error transition-colors cursor-pointer";
-        removeBtn.innerHTML = '<span class="material-symbols-outlined text-lg">close</span>';
+        removeBtn.innerHTML = closeIconHtml;
         removeBtn.addEventListener("click", function () {
           selectedFiles.splice(idx, 1);
           renderFileList();
