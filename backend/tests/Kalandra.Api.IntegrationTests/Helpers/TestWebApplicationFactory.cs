@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Testcontainers.PostgreSql;
@@ -40,6 +41,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.AddSingleton<IUserInfoService, NoOpUserInfoService>();
 
             services.RemoveAll<Supabase.Storage.Client>();
+
+            // The Supabase auth/storage health checks depend on the real Supabase.Client,
+            // which we removed above. Drop them from the /health endpoint so tests stay green;
+            // production wiring still registers them in Program.cs.
+            services.Configure<HealthCheckServiceOptions>(options =>
+            {
+                options.Registrations.Remove(options.Registrations.Single(r => r.Name == "supabase-auth"));
+                options.Registrations.Remove(options.Registrations.Single(r => r.Name == "supabase-storage"));
+            });
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,

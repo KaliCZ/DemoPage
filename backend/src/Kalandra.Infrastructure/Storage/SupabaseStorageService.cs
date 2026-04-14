@@ -8,7 +8,7 @@ public class SupabaseStorageService(
     Supabase.Storage.Client storage,
     ILogger<SupabaseStorageService> logger) : IStorageService
 {
-    private const string BucketName = "job-offer-attachments";
+    public const string BucketName = "job-offer-attachments";
 
     public async Task<IReadOnlyList<StorageFileInfo>> UploadAsync(
         string folderPrefix,
