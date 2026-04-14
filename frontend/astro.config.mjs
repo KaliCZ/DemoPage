@@ -51,6 +51,9 @@ function getPageLastmod(url) {
 // https://astro.build/config
 export default defineConfig({
   site,
+  build: {
+    inlineStylesheets: "always",
+  },
   integrations: [
     icon(),
     sitemap({

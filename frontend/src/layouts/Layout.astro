@@ -76,6 +76,15 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {
+      lang !== "en" && (
+        <>
+          <link rel="preload" href="/fonts/inter-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+          <link rel="preload" href="/fonts/manrope-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+          <link rel="preload" href="/fonts/space-grotesk-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+        </>
+      )
+    }
     <!-- Flag icons: loaded non-render-blocking via the media swap trick.
          The browser fetches the stylesheet at low priority because it thinks it's
          for print, then the onload handler switches it to `media="all"` so styles
