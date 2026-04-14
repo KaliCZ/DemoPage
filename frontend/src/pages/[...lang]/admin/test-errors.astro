@@ -30,9 +30,7 @@ const t = translations[lang];
   <!-- Loading (shown until auth check completes) -->
   <section id="admin-loading" class="max-w-5xl mx-auto px-8 mb-16">
     <div class="text-center py-12">
-      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true"
-        >progress_activity</span
-      >
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant animate-spin" aria-hidden="true">progress_activity</span>
     </div>
   </section>
 
@@ -97,8 +95,7 @@ const t = translations[lang];
   // Auth gate — show content only for admins
   window.addEventListener("auth-change", (e) => {
     const user = e.detail?.user;
-    const isAdmin =
-      user && Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
+    const isAdmin = user && Array.isArray(user.app_metadata?.roles) && user.app_metadata.roles.indexOf("admin") !== -1;
 
     document.getElementById("admin-loading")?.classList.add("hidden");
 

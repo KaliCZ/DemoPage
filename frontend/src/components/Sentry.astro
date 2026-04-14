@@ -1,8 +1,7 @@
 {
   import.meta.env.PUBLIC_SENTRY_DSN && (
     <script define:vars={{ sentryDsn: import.meta.env.PUBLIC_SENTRY_DSN }}>
-      import { initSentry } from "../lib/sentry";
-      initSentry(sentryDsn);
+      import {initSentry} from "../lib/sentry"; initSentry(sentryDsn);
     </script>
   )
 }

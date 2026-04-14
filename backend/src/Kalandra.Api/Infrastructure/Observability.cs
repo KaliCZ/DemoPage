@@ -1,4 +1,5 @@
 using OpenTelemetry;
+using Sentry.OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -27,8 +28,33 @@ public static class Observability
         builder.WebHost.UseSentry(options =>
         {
             options.Dsn = config.Dsn.Value;
-            options.TracesSampleRate = 1.0;
             options.Release = AppVersion.InformationalVersion;
+
+            // Bridge with the existing OTEL pipeline so Sentry and OTEL share trace context.
+            options.UseOpenTelemetry();
+            options.DisableDiagnosticSourceIntegration();
+            options.DisableSentryHttpMessageHandler = true;
+
+            // Logging — only capture warnings and above; info-level goes to BetterStack via OTEL.
+            options.EnableLogs = true;
+            options.MinimumEventLevel = Microsoft.Extensions.Logging.LogLevel.Warning;
+
+            options.TracesSampleRate = 1.0;
+            options.SampleRate = 1.0f;
+            options.SendDefaultPii = true;
+            options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Medium;
+            options.CaptureFailedRequests = false;
+
+            // Filter noise — client disconnects and cancelled requests aren't actionable.
+            options.AddExceptionFilterForType<OperationCanceledException>();
+            options.SetBeforeSend((sentryEvent, _) =>
+            {
+                if (sentryEvent.Exception is Microsoft.AspNetCore.Http.BadHttpRequestException bre
+                    && bre.Message.Contains("Unexpected end of request content"))
+                    return null;
+
+                return sentryEvent;
+            });
         });
     }
 
