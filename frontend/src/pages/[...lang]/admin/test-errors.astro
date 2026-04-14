@@ -124,9 +124,9 @@ const t = translations[lang];
       const res = await callApi("POST", "/test-errors/throw");
       if (!res) return;
       // Server returns 500 — that's the expected outcome
-      window.__showSnackbar?.(triggeredMsg, "success");
+      window.__showSnackbar?.(triggeredMsg, "success", 2000);
     } catch {
-      window.__showSnackbar?.(triggeredMsg, "success");
+      window.__showSnackbar?.(triggeredMsg, "success", 2000);
     }
   });
 
@@ -138,7 +138,7 @@ const t = translations[lang];
       // Data fetched successfully — now crash on the client side
       throw new Error("Test client-side error after fetching " + data.items?.length + " job offer(s).");
     } catch (err) {
-      window.__showSnackbar?.(triggeredMsg, "success");
+      window.__showSnackbar?.(triggeredMsg, "success", 2000);
       if (err instanceof Error && err.message.startsWith("Test client-side")) throw err;
     }
   });
