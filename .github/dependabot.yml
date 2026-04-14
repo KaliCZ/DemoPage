@@ -30,3 +30,13 @@ updates:
       npm:
         patterns:
           - "*"
+
+  # Root — npm packages from the repo-root package.json (dev tooling, hooks, etc.).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns:
+          - "*"
