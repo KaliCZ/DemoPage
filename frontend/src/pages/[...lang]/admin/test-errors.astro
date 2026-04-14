@@ -4,8 +4,11 @@ import Layout from "../../../layouts/Layout.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import enStrings from "../../../i18n/en/admin-test-errors.json";
 import csStrings from "../../../i18n/cs/admin-test-errors.json";
+import enCommon from "../../../i18n/en/common.json";
+import csCommon from "../../../i18n/cs/common.json";
 
 const translations = { en: enStrings, cs: csStrings };
+const commons = { en: enCommon, cs: csCommon };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({
@@ -15,6 +18,7 @@ export function getStaticPaths() {
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
+const c = commons[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="admin/test-errors" lang={lang}>
@@ -92,7 +96,14 @@ const t = translations[lang];
   </section>
 </Layout>
 
-<script define:vars={{ triggeredMsg: t.results.triggered, unexpectedMsg: t.results.unexpectedSuccess }}>
+<script
+  define:vars={{
+    triggeredMsg: t.results.triggered,
+    unexpectedMsg: t.results.unexpectedSuccess,
+    errorServer: c.errors.serverError,
+    errorNetwork: c.errors.networkError,
+  }}
+>
   // Auth gate — show content only for admins
   window.addEventListener("auth-change", (e) => {
     const user = e.detail?.user;
@@ -123,10 +134,16 @@ const t = translations[lang];
     try {
       const res = await callApi("POST", "/test-errors/throw");
       if (!res) return;
-      // Server returns 500 — that's the expected outcome
-      window.__showSnackbar?.(triggeredMsg, "success", 2000);
+      if (res.ok) {
+        window.__showSnackbar?.(unexpectedMsg, "info", 4000);
+        return;
+      }
+      // Server returned an error — show the standard error snackbar with traceId
+      const result = await window.__getApiError?.(res, {});
+      const msg = res.status >= 500 ? errorServer : errorNetwork;
+      window.__showSnackbar?.(result?.message || msg, "error", 8000, result?.traceId);
     } catch {
-      window.__showSnackbar?.(triggeredMsg, "success", 2000);
+      window.__showSnackbar?.(errorNetwork, "error", 8000);
     }
   });
 
