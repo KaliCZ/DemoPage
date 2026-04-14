@@ -29,9 +29,7 @@ export function getSupabaseClient(): Promise<SupabaseClient | null> {
     _clientPromise = Promise.resolve(null);
     return _clientPromise;
   }
-  _clientPromise = import("@supabase/supabase-js").then(({ createClient }) =>
-    createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY),
-  );
+  _clientPromise = import("@supabase/supabase-js").then(({ createClient }) => createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY));
   return _clientPromise;
 }
 
