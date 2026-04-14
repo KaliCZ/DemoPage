@@ -39,7 +39,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<IUserInfoService>();
             services.AddSingleton<IUserInfoService, NoOpUserInfoService>();
 
-            services.RemoveAll<Supabase.Client>();
+            services.RemoveAll<Supabase.Storage.Client>();
 
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,
