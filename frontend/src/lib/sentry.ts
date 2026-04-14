@@ -1,6 +1,7 @@
 /** Sentry browser SDK — initialised once from the Sentry.astro component. */
 
 import * as Sentry from "@sentry/browser";
+import { browserTracingIntegration } from "@sentry/browser";
 
 let initialised = false;
 
@@ -12,6 +13,8 @@ export function initSentry(dsn: string): void {
     dsn,
     environment: import.meta.env.PROD ? "production" : "development",
     tracesSampleRate: 1.0,
+    integrations: [browserTracingIntegration()],
+    tracePropagationTargets: [/^\//, /kalandra\.tech/],
   });
 }
 

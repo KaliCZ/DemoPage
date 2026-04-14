@@ -75,7 +75,12 @@ public static class Observability
                     serviceVersion: AppVersion.InformationalVersion))
             .WithTracing(tracing => tracing
                 .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
+                .AddHttpClientInstrumentation(options =>
+                {
+                    options.FilterHttpRequestMessage = request =>
+                        request.RequestUri is not { Host: var host }
+                        || !host.EndsWith("betterstackdata.com", StringComparison.OrdinalIgnoreCase);
+                })
                 .AddSource("Marten")
                 .AddOtlpExporter(otlp =>
                 {
