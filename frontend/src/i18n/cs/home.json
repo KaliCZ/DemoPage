@@ -27,5 +27,9 @@
     "paragraph2prefix": "Další projekty přibudou časem. Zatím je tu jediný projekt — ",
     "paragraph2link": "meta-projekt stavby tohoto webu",
     "paragraph2suffix": ". Sledujte novinky."
+  },
+  "qrCode": {
+    "label": "Naskenuj a sdílej",
+    "ariaLabel": "QR kód s odkazem na www.kalandra.tech"
   }
 }

@@ -1,0 +1,144 @@
+---
+import QRCode from "qrcode";
+
+interface Props {
+  url: string;
+  label: string;
+  ariaLabel: string;
+}
+
+const { url, label, ariaLabel } = Astro.props;
+
+// Error correction level "H" tolerates up to ~30% obscurement, giving us
+// headroom to punch a portrait into the center of the code.
+const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
+const size = qr.modules.size;
+const data = qr.modules.data;
+
+// Radius (in module units) of the circular region we clear for the portrait.
+// 0.18 × size ≈ 10% of the code area — well under the 30% ECC-H allowance.
+const punchRadius = size * 0.18;
+const center = (size - 1) / 2;
+
+const rects: string[] = [];
+for (let y = 0; y < size; y++) {
+  for (let x = 0; x < size; x++) {
+    if (data[y * size + x] !== 1) continue;
+    const dx = x - center;
+    const dy = y - center;
+    if (Math.hypot(dx, dy) <= punchRadius) continue;
+    rects.push(`M${x},${y}h1v1h-1z`);
+  }
+}
+const path = rects.join("");
+---
+
+<figure class="qr-card">
+  <a href={url} aria-label={ariaLabel} class="qr-face">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={`0 0 ${size} ${size}`}
+      preserveAspectRatio="xMidYMid meet"
+      shape-rendering="crispEdges"
+      class="qr-svg"
+      aria-hidden="true"
+    >
+      <path d={path} fill="currentColor"></path>
+    </svg>
+    <img
+      src="/images/pavel-portrait-200.webp"
+      alt=""
+      aria-hidden="true"
+      width="200"
+      height="200"
+      class="qr-portrait"
+      loading="lazy"
+      decoding="async"
+    />
+  </a>
+  <figcaption class="qr-caption">{label}</figcaption>
+</figure>
+
+<style>
+  .qr-card {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--color-surface-container-lowest);
+    border: 1px solid color-mix(in srgb, var(--color-outline-variant) 40%, transparent);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  .qr-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+    box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* The inner face is kept on a fixed light background so the QR always has the
+     high contrast scanners expect, regardless of page theme. The outer card
+     adapts to dark/light, turning the QR into a card-like artifact on the page. */
+  .qr-face {
+    position: relative;
+    display: block;
+    width: clamp(10rem, 18vw, 12rem);
+    aspect-ratio: 1 / 1;
+    padding: 0.75rem;
+    background: #fdfcf9;
+    border-radius: 0.5rem;
+    color: #1a1a1a;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+
+  .qr-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .qr-portrait {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 26%;
+    height: 26%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fdfcf9;
+    /* A light ring replaces the missing modules around the portrait so the face
+       reads as "a QR code with a picture" instead of "a broken QR code". */
+    box-shadow:
+      0 0 0 4px #fdfcf9,
+      0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .qr-caption {
+    font-family: var(--font-label);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-on-surface-variant);
+    text-align: center;
+  }
+
+  :global(.dark) .qr-card {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 0 48px -24px color-mix(in srgb, var(--color-primary) 60%, transparent);
+  }
+
+  :global(.dark) .qr-card:hover {
+    box-shadow:
+      0 8px 24px -12px rgba(0, 0, 0, 0.5),
+      0 0 64px -20px color-mix(in srgb, var(--color-primary) 70%, transparent);
+  }
+</style>

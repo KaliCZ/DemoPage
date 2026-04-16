@@ -1,6 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
+import QrCodeCard from "../../components/QrCodeCard.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/home.json";
 import csStrings from "../../i18n/cs/home.json";
@@ -34,19 +35,22 @@ const t = translations[lang];
       </p>
     </div>
 
-    <!-- What's here -->
-    <div class="max-w-3xl mb-16">
-      <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">
-        {t.whatsHere.title}
-      </h2>
-      <p class="text-on-surface-variant text-lg leading-relaxed mb-6">
-        <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
-      </p>
-      <p class="text-on-surface-variant text-lg leading-relaxed">
-        {t.whatsHere.paragraph2prefix}<a href={localePath(lang, "project")} class="text-primary hover:underline"
-          >{t.whatsHere.paragraph2link}</a
-        >{t.whatsHere.paragraph2suffix}
-      </p>
+    <!-- What's here + QR card -->
+    <div class="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-10 lg:gap-16 items-start mb-16 max-w-5xl">
+      <div>
+        <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">
+          {t.whatsHere.title}
+        </h2>
+        <p class="text-on-surface-variant text-lg leading-relaxed mb-6">
+          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
+        </p>
+        <p class="text-on-surface-variant text-lg leading-relaxed">
+          {t.whatsHere.paragraph2prefix}<a href={localePath(lang, "project")} class="text-primary hover:underline"
+            >{t.whatsHere.paragraph2link}</a
+          >{t.whatsHere.paragraph2suffix}
+        </p>
+      </div>
+      <QrCodeCard url="https://www.kalandra.tech" label={t.qrCode.label} ariaLabel={t.qrCode.ariaLabel} />
     </div>
 
     <!-- Cards -->

@@ -27,5 +27,9 @@
     "paragraph2prefix": "More projects are coming in the future. For now, the only project here is ",
     "paragraph2link": "the meta-project of building this very site",
     "paragraph2suffix": ". Stay tuned."
+  },
+  "qrCode": {
+    "label": "Scan to share",
+    "ariaLabel": "QR code linking to www.kalandra.tech"
   }
 }
