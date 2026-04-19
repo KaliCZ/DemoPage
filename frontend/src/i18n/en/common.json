@@ -28,6 +28,7 @@
     "cancel": "Cancel",
     "confirmationSent": "Check your email to confirm your account.",
     "signingIn": "Finishing sign-in",
+    "verifying": "Verifying…",
     "callbackError": "Sign-in could not be completed. Please try again."
   },
   "theme": {

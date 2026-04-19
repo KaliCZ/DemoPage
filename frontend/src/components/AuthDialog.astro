@@ -112,6 +112,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     authNoAccountLabel: t.auth.noAccount,
     authHaveAccountLabel: t.auth.haveAccount,
     authConfirmationSentLabel: t.auth.confirmationSent,
+    authVerifyingLabel: t.auth.verifying,
   }}
 >
   window.__authDialogLabels = {
@@ -120,6 +121,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     noAccount: authNoAccountLabel,
     haveAccount: authHaveAccountLabel,
     confirmationSent: authConfirmationSentLabel,
+    verifying: authVerifyingLabel,
   };
 </script>
 
@@ -148,10 +150,41 @@ const t = lang === "cs" ? csCommon : enCommon;
   const AUTH_SIGNUP_KEY = "auth-signup";
   const SIGNUP_WINDOW_MS = 4 * 60 * 60 * 1000;
 
+  let turnstileRendered = false;
+
+  /**
+   * Render the Turnstile widget in `execution: "execute"` mode — the
+   * widget sits dormant until we call `execute()` on submit. This gives
+   * us a fresh, per-submission token:
+   *
+   * - It can't go stale between dialog open and click.
+   * - Password manager fill events that happen BEFORE submit don't poison
+   *   a token that was already issued, because no token exists yet.
+   * - If Cloudflare wants an interactive challenge for this session, the
+   *   widget surfaces a visible checkbox on execute (appearance =
+   *   "interaction-only" keeps it hidden when the invisible challenge
+   *   passes, visible only when Cloudflare asks for one).
+   */
   function renderAuthTurnstile() {
     if (!turnstileEnabled()) return;
     const force = shouldForceInteractive(AUTH_FAIL_KEY) || shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
-    authTurnstile.render(force ? "always" : "interaction-only");
+    authTurnstile.render({
+      appearance: force ? "always" : "interaction-only",
+      execution: "execute",
+    });
+    turnstileRendered = true;
+  }
+
+  /**
+   * Make sure the widget exists before we try to pull a token from it.
+   * Covers the case where the user clicks Sign In before the deferred
+   * render in openAuthDialog has fired (slow network, cached script still
+   * resolving, etc.).
+   */
+  async function ensureTurnstileRendered() {
+    if (!turnstileEnabled() || turnstileRendered) return;
+    await whenTurnstileReady();
+    if (!turnstileRendered) renderAuthTurnstile();
   }
 
   async function openAuthDialog() {
@@ -161,7 +194,9 @@ const t = lang === "cs" ? csCommon : enCommon;
     updateAuthDialogMode();
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.showModal();
     if (turnstileEnabled()) {
-      whenTurnstileReady().then(() => renderAuthTurnstile());
+      whenTurnstileReady().then(() => {
+        if (!turnstileRendered) renderAuthTurnstile();
+      });
     }
   }
 
@@ -191,7 +226,56 @@ const t = lang === "cs" ? csCommon : enCommon;
     }
   }
 
+  function setSubmitBusy(busy: boolean) {
+    const submit = document.getElementById("auth-dialog-submit") as HTMLButtonElement | null;
+    if (!submit) return;
+    const labels = (window as any).__authDialogLabels;
+    submit.disabled = busy;
+    submit.classList.toggle("opacity-60", busy);
+    submit.classList.toggle("cursor-not-allowed", busy);
+    if (busy) {
+      submit.dataset.prevText = submit.textContent || "";
+      submit.textContent = labels?.verifying || "Verifying…";
+    } else if (submit.dataset.prevText) {
+      submit.textContent = submit.dataset.prevText;
+      delete submit.dataset.prevText;
+    }
+  }
+
+  /**
+   * Ask Turnstile for a fresh token right now. With the widget rendered
+   * in `execution: "execute"` mode, each call starts a new challenge —
+   * the resulting token is issued AFTER any password-manager fill
+   * events, so it reflects the current session state and can't be stale
+   * by the time it reaches Supabase. If Cloudflare wants a visible
+   * interaction, the widget surfaces the checkbox and waitForToken
+   * keeps waiting until the user completes it.
+   *
+   * Returns "" only if the widget isn't enabled or something goes
+   * catastrophically wrong (Turnstile script never loaded, hostname
+   * blocked, 15s elapsed with no response). Callers should treat "" as
+   * "submit without a token and let the server return the real error".
+   */
+  async function requestFreshCaptchaToken(): Promise<string> {
+    if (!turnstileEnabled()) return "";
+    await ensureTurnstileRendered();
+    authTurnstile.execute();
+    return authTurnstile.waitForToken(15000);
+  }
+
+  let authSubmitInFlight = false;
+
   async function authDialogSubmit() {
+    if (authSubmitInFlight) return;
+    authSubmitInFlight = true;
+    try {
+      await authDialogSubmitInner();
+    } finally {
+      authSubmitInFlight = false;
+    }
+  }
+
+  async function authDialogSubmitInner() {
     const supabase = await getSupabaseClient();
     if (!supabase) return;
     const email = (document.getElementById("auth-email") as HTMLInputElement)?.value;
@@ -199,10 +283,17 @@ const t = lang === "cs" ? csCommon : enCommon;
     const errorEl = document.getElementById("auth-dialog-error");
     if (errorEl) errorEl.classList.add("hidden");
 
-    const captchaToken = turnstileEnabled() ? authTurnstile.getToken() : "";
+    // Flip to busy immediately — we're about to trigger the captcha
+    // challenge and then a network round-trip. If the challenge
+    // escalates to a visible checkbox, the button stays in "Verifying…"
+    // until the user completes it, which is the correct signal that the
+    // sign-in is paused on them.
+    setSubmitBusy(true);
+    const captchaToken = await requestFreshCaptchaToken();
     const authOptions: any = captchaToken ? { captchaToken } : {};
 
     const finishFailure = (message: string) => {
+      setSubmitBusy(false);
       recordFailure(AUTH_FAIL_KEY);
       if (errorEl) {
         errorEl.textContent = message;
@@ -210,7 +301,8 @@ const t = lang === "cs" ? csCommon : enCommon;
       }
       if (turnstileEnabled()) {
         authTurnstile.reset();
-        // Escalate appearance if threshold just crossed.
+        // Device-wide escalation: after repeated failures across
+        // sessions we force the visible widget on next dialog open too.
         if (shouldForceInteractive(AUTH_FAIL_KEY)) renderAuthTurnstile();
       }
     };
@@ -224,6 +316,7 @@ const t = lang === "cs" ? csCommon : enCommon;
       if (signUpError) {
         finishFailure(signUpError.message);
       } else {
+        setSubmitBusy(false);
         recordSuccess(AUTH_FAIL_KEY);
         // Count the signup itself — more than 1 in 4h escalates next attempt.
         recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
@@ -244,6 +337,7 @@ const t = lang === "cs" ? csCommon : enCommon;
       if (signInError) {
         finishFailure(signInError.message);
       } else {
+        setSubmitBusy(false);
         recordSuccess(AUTH_FAIL_KEY);
         (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
       }
