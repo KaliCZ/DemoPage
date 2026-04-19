@@ -78,7 +78,7 @@ export interface TurnstileRenderOptions {
 }
 
 export interface TurnstileWidget {
-  render(options?: TurnstileAppearance | TurnstileRenderOptions): void;
+  render(options?: TurnstileRenderOptions): void;
   /** Trigger the challenge (only meaningful when rendered with `execution: "execute"`). */
   execute(): void;
   getToken(): string;
@@ -91,12 +91,6 @@ export interface TurnstileWidget {
   waitForToken(timeoutMs?: number): Promise<string>;
   reset(): void;
   remove(): void;
-}
-
-function normalizeRenderOptions(opts?: TurnstileAppearance | TurnstileRenderOptions): TurnstileRenderOptions {
-  if (!opts) return {};
-  if (typeof opts === "string") return { appearance: opts };
-  return opts;
 }
 
 export function createTurnstile(selector: string): TurnstileWidget {
@@ -129,7 +123,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
   };
 
   return {
-    render(opts?: TurnstileAppearance | TurnstileRenderOptions) {
+    render({ appearance = "interaction-only", execution = "render" }: TurnstileRenderOptions = {}) {
       if (!window.turnstile || !SITE_KEY) return;
       const el = document.querySelector(selector) as HTMLElement | null;
       if (!el) return;
@@ -140,7 +134,6 @@ export function createTurnstile(selector: string): TurnstileWidget {
         widgetId = null;
       }
       currentToken = "";
-      const { appearance = "interaction-only", execution = "render" } = normalizeRenderOptions(opts);
       widgetId = window.turnstile.render(selector, {
         sitekey: SITE_KEY,
         theme: "auto",

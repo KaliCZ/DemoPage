@@ -230,14 +230,13 @@ const t = lang === "cs" ? csCommon : enCommon;
     const submit = document.getElementById("auth-dialog-submit") as HTMLButtonElement | null;
     if (!submit) return;
     const labels = (window as any).__authDialogLabels;
-    const wasBusy = submit.disabled;
     submit.disabled = busy;
     submit.classList.toggle("opacity-60", busy);
     submit.classList.toggle("cursor-not-allowed", busy);
-    if (busy && !wasBusy) {
+    if (busy) {
       submit.dataset.prevText = submit.textContent || "";
       submit.textContent = labels?.verifying || "Verifying…";
-    } else if (!busy && submit.dataset.prevText) {
+    } else if (submit.dataset.prevText) {
       submit.textContent = submit.dataset.prevText;
       delete submit.dataset.prevText;
     }
