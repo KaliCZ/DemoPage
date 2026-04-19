@@ -152,10 +152,26 @@ const t = lang === "cs" ? csCommon : enCommon;
 
   let turnstileRendered = false;
 
+  /**
+   * Render the Turnstile widget in `execution: "execute"` mode — the
+   * widget sits dormant until we call `execute()` on submit. This gives
+   * us a fresh, per-submission token:
+   *
+   * - It can't go stale between dialog open and click.
+   * - Password manager fill events that happen BEFORE submit don't poison
+   *   a token that was already issued, because no token exists yet.
+   * - If Cloudflare wants an interactive challenge for this session, the
+   *   widget surfaces a visible checkbox on execute (appearance =
+   *   "interaction-only" keeps it hidden when the invisible challenge
+   *   passes, visible only when Cloudflare asks for one).
+   */
   function renderAuthTurnstile() {
     if (!turnstileEnabled()) return;
     const force = shouldForceInteractive(AUTH_FAIL_KEY) || shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
-    authTurnstile.render(force ? "always" : "interaction-only");
+    authTurnstile.render({
+      appearance: force ? "always" : "interaction-only",
+      execution: "execute",
+    });
     turnstileRendered = true;
   }
 
@@ -210,14 +226,6 @@ const t = lang === "cs" ? csCommon : enCommon;
     }
   }
 
-  // Supabase returns errors like "captcha verification process failed" or
-  // "captcha protection: request disallowed" when the token is missing,
-  // stale, or otherwise rejected by the captcha provider. Detect loosely
-  // so we can silently recover without surfacing a cryptic message.
-  function isCaptchaError(message: string | undefined): boolean {
-    return !!message && message.toLowerCase().includes("captcha");
-  }
-
   function setSubmitBusy(busy: boolean) {
     const submit = document.getElementById("auth-dialog-submit") as HTMLButtonElement | null;
     if (!submit) return;
@@ -227,8 +235,6 @@ const t = lang === "cs" ? csCommon : enCommon;
     submit.classList.toggle("opacity-60", busy);
     submit.classList.toggle("cursor-not-allowed", busy);
     if (busy && !wasBusy) {
-      // Stash the real label only once so a nested busy->busy (auto-retry)
-      // doesn't overwrite it with "Verifying…".
       submit.dataset.prevText = submit.textContent || "";
       submit.textContent = labels?.verifying || "Verifying…";
     } else if (!busy && submit.dataset.prevText) {
@@ -238,31 +244,39 @@ const t = lang === "cs" ? csCommon : enCommon;
   }
 
   /**
-   * Fetch a captcha token, waiting briefly for the invisible challenge to
-   * finish if needed. Password managers dispatch synthetic input events
-   * that can invalidate a previously-issued token, so we optionally force
-   * a fresh one before submitting.
+   * Ask Turnstile for a fresh token right now. With the widget rendered
+   * in `execution: "execute"` mode, each call starts a new challenge —
+   * the resulting token is issued AFTER any password-manager fill
+   * events, so it reflects the current session state and can't be stale
+   * by the time it reaches Supabase. If Cloudflare wants a visible
+   * interaction, the widget surfaces the checkbox and waitForToken
+   * keeps waiting until the user completes it.
+   *
+   * Returns "" only if the widget isn't enabled or something goes
+   * catastrophically wrong (Turnstile script never loaded, hostname
+   * blocked, 15s elapsed with no response). Callers should treat "" as
+   * "submit without a token and let the server return the real error".
    */
-  async function getCaptchaToken(forceFresh: boolean, timeoutMs = 3000): Promise<string> {
+  async function requestFreshCaptchaToken(): Promise<string> {
     if (!turnstileEnabled()) return "";
     await ensureTurnstileRendered();
-    if (forceFresh) authTurnstile.reset();
-    return authTurnstile.waitForToken(timeoutMs);
+    authTurnstile.execute();
+    return authTurnstile.waitForToken(15000);
   }
 
   let authSubmitInFlight = false;
 
-  async function authDialogSubmit(isAutoRetry = false) {
-    if (authSubmitInFlight && !isAutoRetry) return;
-    if (!isAutoRetry) authSubmitInFlight = true;
+  async function authDialogSubmit() {
+    if (authSubmitInFlight) return;
+    authSubmitInFlight = true;
     try {
-      await authDialogSubmitInner(isAutoRetry);
+      await authDialogSubmitInner();
     } finally {
-      if (!isAutoRetry) authSubmitInFlight = false;
+      authSubmitInFlight = false;
     }
   }
 
-  async function authDialogSubmitInner(isAutoRetry: boolean) {
+  async function authDialogSubmitInner() {
     const supabase = await getSupabaseClient();
     if (!supabase) return;
     const email = (document.getElementById("auth-email") as HTMLInputElement)?.value;
@@ -270,12 +284,13 @@ const t = lang === "cs" ? csCommon : enCommon;
     const errorEl = document.getElementById("auth-dialog-error");
     if (errorEl) errorEl.classList.add("hidden");
 
+    // Flip to busy immediately — we're about to trigger the captcha
+    // challenge and then a network round-trip. If the challenge
+    // escalates to a visible checkbox, the button stays in "Verifying…"
+    // until the user completes it, which is the correct signal that the
+    // sign-in is paused on them.
     setSubmitBusy(true);
-    // On the first attempt use whatever token the invisible challenge has
-    // already produced; on the auto-retry after a captcha error, force a
-    // fresh one (the previous token was likely invalidated by 1Password's
-    // synthetic input events).
-    const captchaToken = await getCaptchaToken(isAutoRetry, isAutoRetry ? 5000 : 3000);
+    const captchaToken = await requestFreshCaptchaToken();
     const authOptions: any = captchaToken ? { captchaToken } : {};
 
     const finishFailure = (message: string) => {
@@ -287,20 +302,10 @@ const t = lang === "cs" ? csCommon : enCommon;
       }
       if (turnstileEnabled()) {
         authTurnstile.reset();
-        // Escalate appearance if threshold just crossed.
+        // Device-wide escalation: after repeated failures across
+        // sessions we force the visible widget on next dialog open too.
         if (shouldForceInteractive(AUTH_FAIL_KEY)) renderAuthTurnstile();
       }
-    };
-
-    // If the server rejects with a captcha error and this was the first
-    // attempt, silently reset the widget and retry once with a fresh token.
-    // This hides the common failure mode where a password manager's
-    // synthetic events invalidated the invisible token between render and
-    // click — the user sees a longer "Verifying…" but no error.
-    const maybeRetryCaptcha = async (message: string | undefined): Promise<boolean> => {
-      if (isAutoRetry || !isCaptchaError(message) || !turnstileEnabled()) return false;
-      await authDialogSubmit(true);
-      return true;
     };
 
     if (authDialogMode === "signup") {
@@ -310,7 +315,6 @@ const t = lang === "cs" ? csCommon : enCommon;
         options: { ...authOptions, data: { full_name: email.split("@")[0] } },
       });
       if (signUpError) {
-        if (await maybeRetryCaptcha(signUpError.message)) return;
         finishFailure(signUpError.message);
       } else {
         setSubmitBusy(false);
@@ -332,7 +336,6 @@ const t = lang === "cs" ? csCommon : enCommon;
         options: authOptions,
       });
       if (signInError) {
-        if (await maybeRetryCaptcha(signInError.message)) return;
         finishFailure(signInError.message);
       } else {
         setSubmitBusy(false);
