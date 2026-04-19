@@ -12,7 +12,7 @@
 declare global {
   interface Window {
     turnstile?: {
-      render: (selector: string | HTMLElement, opts: any) => string;
+      render: (selector: string | HTMLElement, opts: Record<string, unknown>) => string;
       remove: (id: string) => void;
       reset: (id: string) => void;
       getResponse: (id: string) => string | undefined;
@@ -43,12 +43,34 @@ export function whenTurnstileReady(): Promise<void> {
 export interface TurnstileWidget {
   render(appearance?: TurnstileAppearance): void;
   getToken(): string;
+  /**
+   * Resolve with the current token, waiting up to `timeoutMs` if the
+   * invisible challenge hasn't finished yet (or was invalidated by
+   * programmatic form fill, e.g. a password manager). Resolves with "" on
+   * timeout so callers can escalate to a visible challenge.
+   */
+  waitForToken(timeoutMs?: number): Promise<string>;
   reset(): void;
   remove(): void;
 }
 
 export function createTurnstile(selector: string): TurnstileWidget {
   let widgetId: string | null = null;
+  // Last token produced by the widget's `callback`. We cache it ourselves
+  // because we need to wake up any in-flight `waitForToken` promises, and
+  // because `getResponse` returning "" doesn't tell us whether the challenge
+  // is still running or has silently been invalidated.
+  let currentToken = "";
+  let pendingResolvers: Array<(token: string) => void> = [];
+
+  const notifyToken = (token: string) => {
+    currentToken = token;
+    if (token) {
+      const resolvers = pendingResolvers;
+      pendingResolvers = [];
+      resolvers.forEach((r) => r(token));
+    }
+  };
 
   return {
     render(appearance: TurnstileAppearance = "interaction-only") {
@@ -61,15 +83,39 @@ export function createTurnstile(selector: string): TurnstileWidget {
         } catch {}
         widgetId = null;
       }
+      currentToken = "";
       widgetId = window.turnstile.render(selector, {
         sitekey: SITE_KEY,
         theme: "auto",
         appearance,
+        callback: (token: string) => notifyToken(token),
+        "expired-callback": () => {
+          currentToken = "";
+        },
+        "error-callback": () => {
+          currentToken = "";
+        },
       });
     },
     getToken() {
+      if (currentToken) return currentToken;
       if (widgetId === null || !window.turnstile) return "";
       return window.turnstile.getResponse(widgetId) || "";
+    },
+    waitForToken(timeoutMs = 3000) {
+      const existing = this.getToken();
+      if (existing) return Promise.resolve(existing);
+      if (widgetId === null || !window.turnstile) return Promise.resolve("");
+      return new Promise<string>((resolve) => {
+        let settled = false;
+        const done = (token: string) => {
+          if (settled) return;
+          settled = true;
+          resolve(token);
+        };
+        pendingResolvers.push(done);
+        setTimeout(() => done(""), timeoutMs);
+      });
     },
     reset() {
       if (widgetId !== null && window.turnstile) {
@@ -77,6 +123,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
           window.turnstile.reset(widgetId);
         } catch {}
       }
+      currentToken = "";
     },
     remove() {
       if (widgetId !== null && window.turnstile) {
@@ -85,6 +132,8 @@ export function createTurnstile(selector: string): TurnstileWidget {
         } catch {}
         widgetId = null;
       }
+      currentToken = "";
+      pendingResolvers = [];
     },
   };
 }

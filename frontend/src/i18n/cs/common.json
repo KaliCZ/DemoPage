@@ -28,6 +28,7 @@
     "cancel": "Zrušit",
     "confirmationSent": "Zkontrolujte svůj e-mail a potvrďte svůj účet.",
     "signingIn": "Dokončuji přihlášení",
+    "verifying": "Ověřování…",
     "callbackError": "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu."
   },
   "theme": {
