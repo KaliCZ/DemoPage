@@ -29,8 +29,8 @@
     "paragraph2suffix": ". Stay tuned."
   },
   "qrCode": {
-    "label": "Scan to share",
-    "buttonAriaLabel": "Share or copy QR code image",
+    "label": "Click to share",
+    "buttonAriaLabel": "Share",
     "shareTitle": "kalandra.tech",
     "shareText": "Pavel Kalandra — kalandra.tech",
     "copied": "QR code copied to clipboard",

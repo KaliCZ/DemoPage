@@ -43,16 +43,16 @@ const path = rects.join("");
 const feedbackJson = JSON.stringify(t);
 ---
 
-<figure class="qr-card">
-  <button
-    type="button"
-    class="qr-face"
-    aria-label={buttonAriaLabel}
-    data-qr-trigger
-    data-qr-share-title={shareTitle}
-    data-qr-share-text={shareText}
-    data-qr-feedback={feedbackJson}
-  >
+<button
+  type="button"
+  class="qr-card"
+  aria-label={buttonAriaLabel}
+  data-qr-trigger
+  data-qr-share-title={shareTitle}
+  data-qr-share-text={shareText}
+  data-qr-feedback={feedbackJson}
+>
+  <span class="qr-face">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox={`0 0 ${size} ${size}`}
@@ -75,9 +75,9 @@ const feedbackJson = JSON.stringify(t);
       decoding="async"
       data-qr-portrait
     />
-  </button>
-  <figcaption class="qr-caption">{label}</figcaption>
-</figure>
+  </span>
+  <span class="qr-caption">{label}</span>
+</button>
 
 <style>
   .qr-card {
@@ -90,6 +90,9 @@ const feedbackJson = JSON.stringify(t);
     border: 1px solid color-mix(in srgb, var(--color-outline-variant) 40%, transparent);
     border-radius: 1rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
     transition:
       transform 0.3s ease,
       box-shadow 0.3s ease,
@@ -100,6 +103,11 @@ const feedbackJson = JSON.stringify(t);
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
     box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.2);
+  }
+
+  .qr-card:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
   }
 
   /* The inner face is kept on a fixed light background so the QR always has the
@@ -115,14 +123,6 @@ const feedbackJson = JSON.stringify(t);
     border-radius: 0.5rem;
     color: #1a1a1a;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
-    border: none;
-    cursor: pointer;
-    font: inherit;
-  }
-
-  .qr-face:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 3px;
   }
 
   .qr-svg {

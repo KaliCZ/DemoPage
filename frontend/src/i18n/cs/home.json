@@ -29,8 +29,8 @@
     "paragraph2suffix": ". Sledujte novinky."
   },
   "qrCode": {
-    "label": "Naskenuj a sdílej",
-    "buttonAriaLabel": "Sdílet nebo zkopírovat obrázek QR kódu",
+    "label": "Klikni a sdílej",
+    "buttonAriaLabel": "Sdílet",
     "shareTitle": "kalandra.tech",
     "shareText": "Pavel Kalandra — kalandra.tech",
     "copied": "QR kód byl zkopírován do schránky",
