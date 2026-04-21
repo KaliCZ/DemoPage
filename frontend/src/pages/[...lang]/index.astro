@@ -50,7 +50,19 @@ const t = translations[lang];
           >{t.whatsHere.paragraph2suffix}
         </p>
       </div>
-      <QrCodeCard url="https://www.kalandra.tech" label={t.qrCode.label} ariaLabel={t.qrCode.ariaLabel} />
+      <QrCodeCard
+        url="https://www.kalandra.tech"
+        label={t.qrCode.label}
+        buttonAriaLabel={t.qrCode.buttonAriaLabel}
+        shareTitle={t.qrCode.shareTitle}
+        shareText={t.qrCode.shareText}
+        t={{
+          copied: t.qrCode.copied,
+          copyFailed: t.qrCode.copyFailed,
+          shareFailed: t.qrCode.shareFailed,
+          unsupported: t.qrCode.unsupported,
+        }}
+      />
     </div>
 
     <!-- Cards -->

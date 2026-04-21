@@ -29,7 +29,13 @@
     "paragraph2suffix": ". Stay tuned."
   },
   "qrCode": {
-    "label": "Scan to share",
-    "ariaLabel": "QR code linking to www.kalandra.tech"
+    "label": "Click to share",
+    "buttonAriaLabel": "Share",
+    "shareTitle": "kalandra.tech",
+    "shareText": "Pavel Kalandra — kalandra.tech",
+    "copied": "QR code copied to clipboard",
+    "copyFailed": "Could not copy the QR code. Please try again.",
+    "shareFailed": "Sharing was not available. The QR code was copied to your clipboard instead.",
+    "unsupported": "Your browser doesn't support copying images. Try a different browser or right-click the QR code to save it."
   }
 }
