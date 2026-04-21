@@ -30,6 +30,12 @@
   },
   "qrCode": {
     "label": "Naskenuj a sdílej",
-    "ariaLabel": "QR kód s odkazem na www.kalandra.tech"
+    "buttonAriaLabel": "Sdílet nebo zkopírovat obrázek QR kódu",
+    "shareTitle": "kalandra.tech",
+    "shareText": "Pavel Kalandra — kalandra.tech",
+    "copied": "QR kód byl zkopírován do schránky",
+    "copyFailed": "QR kód se nepodařilo zkopírovat. Zkuste to prosím znovu.",
+    "shareFailed": "Sdílení nebylo dostupné. QR kód byl místo toho zkopírován do schránky.",
+    "unsupported": "Váš prohlížeč nepodporuje kopírování obrázků. Vyzkoušejte jiný prohlížeč nebo QR kód uložte pravým tlačítkem."
   }
 }

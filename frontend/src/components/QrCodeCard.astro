@@ -4,10 +4,18 @@ import QRCode from "qrcode";
 interface Props {
   url: string;
   label: string;
-  ariaLabel: string;
+  buttonAriaLabel: string;
+  shareTitle: string;
+  shareText: string;
+  t: {
+    copied: string;
+    copyFailed: string;
+    shareFailed: string;
+    unsupported: string;
+  };
 }
 
-const { url, label, ariaLabel } = Astro.props;
+const { url, label, buttonAriaLabel, shareTitle, shareText, t } = Astro.props;
 
 // Error correction level "H" tolerates up to ~30% obscurement, giving us
 // headroom to punch a portrait into the center of the code.
@@ -31,10 +39,20 @@ for (let y = 0; y < size; y++) {
   }
 }
 const path = rects.join("");
+
+const feedbackJson = JSON.stringify(t);
 ---
 
 <figure class="qr-card">
-  <a href={url} aria-label={ariaLabel} class="qr-face">
+  <button
+    type="button"
+    class="qr-face"
+    aria-label={buttonAriaLabel}
+    data-qr-trigger
+    data-qr-share-title={shareTitle}
+    data-qr-share-text={shareText}
+    data-qr-feedback={feedbackJson}
+  >
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox={`0 0 ${size} ${size}`}
@@ -42,6 +60,7 @@ const path = rects.join("");
       shape-rendering="crispEdges"
       class="qr-svg"
       aria-hidden="true"
+      data-qr-svg
     >
       <path d={path} fill="currentColor"></path>
     </svg>
@@ -54,8 +73,9 @@ const path = rects.join("");
       class="qr-portrait"
       loading="lazy"
       decoding="async"
+      data-qr-portrait
     />
-  </a>
+  </button>
   <figcaption class="qr-caption">{label}</figcaption>
 </figure>
 
@@ -95,6 +115,14 @@ const path = rects.join("");
     border-radius: 0.5rem;
     color: #1a1a1a;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    border: none;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .qr-face:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
   }
 
   .qr-svg {
@@ -142,3 +170,140 @@ const path = rects.join("");
       0 0 64px -20px color-mix(in srgb, var(--color-primary) 70%, transparent);
   }
 </style>
+
+<script>
+  type Feedback = {
+    copied: string;
+    copyFailed: string;
+    shareFailed: string;
+    unsupported: string;
+  };
+
+  function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+  }
+
+  // Re-renders the on-screen QR face (SVG + circular portrait overlay) into a
+  // PNG blob. Drawing from the live SVG keeps the exported image in sync with
+  // whatever the component happens to render — no duplicated layout math.
+  async function buildQrImage(face: HTMLElement): Promise<Blob> {
+    const svg = face.querySelector<SVGSVGElement>("[data-qr-svg]");
+    const portrait = face.querySelector<HTMLImageElement>("[data-qr-portrait]");
+    if (!svg || !portrait) throw new Error("QR face is missing expected children");
+
+    const exportSize = 640;
+    const canvas = document.createElement("canvas");
+    canvas.width = exportSize;
+    canvas.height = exportSize;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2D context unavailable");
+
+    // Match the on-screen .qr-face background so scanners see the expected
+    // high-contrast cream field around the code.
+    ctx.fillStyle = "#fdfcf9";
+    ctx.fillRect(0, 0, exportSize, exportSize);
+
+    // Inner padding mirrors 0.75rem on a 12rem face (6.25%).
+    const pad = exportSize * 0.0625;
+    const inner = exportSize - pad * 2;
+
+    // currentColor doesn't resolve when an SVG is loaded as an <img>, so bake
+    // the fill into the serialized copy before rasterizing.
+    const svgClone = svg.cloneNode(true) as SVGSVGElement;
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svgClone.querySelectorAll('[fill="currentColor"]').forEach((el) => el.setAttribute("fill", "#1a1a1a"));
+    const svgStr = new XMLSerializer().serializeToString(svgClone);
+    const svgUrl = URL.createObjectURL(new Blob([svgStr], { type: "image/svg+xml" }));
+    try {
+      const svgImg = await loadImage(svgUrl);
+      ctx.drawImage(svgImg, pad, pad, inner, inner);
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+
+    // Circular portrait overlay with the cream ring from the on-screen design.
+    const portraitSize = inner * 0.26;
+    const cx = exportSize / 2;
+    const cy = exportSize / 2;
+    const ringThickness = inner * 0.024;
+    const ringRadius = portraitSize / 2 + ringThickness;
+
+    ctx.fillStyle = "#fdfcf9";
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    const portraitImg = await loadImage(portrait.currentSrc || portrait.src);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, portraitSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(portraitImg, cx - portraitSize / 2, cy - portraitSize / 2, portraitSize, portraitSize);
+    ctx.restore();
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Canvas toBlob returned null"))), "image/png");
+    });
+  }
+
+  function toast(message: string, type: "success" | "error" | "info" = "info") {
+    (window as any).__showSnackbar?.(message, type);
+  }
+
+  async function copyImageToClipboard(blob: Blob, feedback: Feedback) {
+    if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+      toast(feedback.unsupported, "error");
+      return;
+    }
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      toast(feedback.copied, "success");
+    } catch {
+      toast(feedback.copyFailed, "error");
+    }
+  }
+
+  async function handleTrigger(face: HTMLElement) {
+    const feedback = JSON.parse(face.dataset.qrFeedback || "{}") as Feedback;
+    const shareTitle = face.dataset.qrShareTitle || "";
+    const shareText = face.dataset.qrShareText || "";
+
+    let blob: Blob;
+    try {
+      blob = await buildQrImage(face);
+    } catch {
+      toast(feedback.copyFailed, "error");
+      return;
+    }
+
+    const file = new File([blob], "kalandra-tech-qr.png", { type: "image/png" });
+    // Touch-primary devices get the native share sheet (it already includes
+    // Copy as one of the options). Everyone else goes straight to the
+    // clipboard, which on desktop pastes inline into Slack/email/etc.
+    const prefersShare =
+      matchMedia("(pointer: coarse)").matches && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
+
+    if (prefersShare) {
+      try {
+        await navigator.share({ files: [file], title: shareTitle, text: shareText });
+        return;
+      } catch (err) {
+        if ((err as DOMException)?.name === "AbortError") return;
+        // Fall through to clipboard so the user still gets something useful.
+      }
+    }
+
+    await copyImageToClipboard(blob, feedback);
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-qr-trigger]").forEach((face) => {
+    face.addEventListener("click", () => {
+      void handleTrigger(face);
+    });
+  });
+</script>
