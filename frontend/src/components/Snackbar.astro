@@ -89,6 +89,15 @@ import { Icon } from "astro-icon/components";
       closeBtn.classList.remove("hidden");
     }
 
+    // If already visible, snap to hidden without transition so the entrance animation replays
+    if (snackbar.classList.contains("opacity-100")) {
+      snackbar.style.transition = "none";
+      snackbar.classList.remove("opacity-100", "translate-y-0", "pointer-events-auto");
+      snackbar.classList.add("opacity-0", "-translate-y-4", "pointer-events-none");
+      void snackbar.offsetWidth;
+      snackbar.style.transition = "";
+    }
+
     // Show
     snackbar.classList.remove("opacity-0", "-translate-y-4", "pointer-events-none");
     snackbar.classList.add("opacity-100", "translate-y-0", "pointer-events-auto");
