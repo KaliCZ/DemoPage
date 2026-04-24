@@ -503,9 +503,15 @@ const t = translations[lang];
           if (dialog.open) dialog.close();
           resolve(result);
         }
-        function onConfirm() { cleanup(true); }
-        function onCancel() { cleanup(false); }
-        function onClose() { cleanup(false); }
+        function onConfirm() {
+          cleanup(true);
+        }
+        function onCancel() {
+          cleanup(false);
+        }
+        function onClose() {
+          cleanup(false);
+        }
 
         confirmBtn.addEventListener("click", onConfirm);
         cancelBtn.addEventListener("click", onCancel);
