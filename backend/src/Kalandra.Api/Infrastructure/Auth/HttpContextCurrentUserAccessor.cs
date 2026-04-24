@@ -58,20 +58,21 @@ public class HttpContextCurrentUserAccessor(
     /// Parses user_metadata looking for "full_name" and "avatar_url",
     /// falling back to the email's local part for the name.
     /// </summary>
-    private static (string FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
+    private static (NonEmptyString FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
     {
+        // MailAddress guarantees a non-empty local part on a successful construction.
+        var fallbackName = NonEmptyString.Create(email.User);
+
         if (string.IsNullOrEmpty(userMetadata))
-            return (email.User, null);
+            return (fallbackName, null);
 
         using var doc = JsonDocument.Parse(userMetadata);
 
-        string? fullName = null;
+        NonEmptyString? fullName = null;
         if (doc.RootElement.TryGetProperty("full_name", out var fullNameProp) &&
             fullNameProp.ValueKind == JsonValueKind.String)
         {
-            var name = fullNameProp.GetString();
-            if (!string.IsNullOrEmpty(name))
-                fullName = name;
+            fullName = fullNameProp.GetString().AsNonEmpty();
         }
 
         Uri? avatarUrl = null;
@@ -83,6 +84,6 @@ public class HttpContextCurrentUserAccessor(
                 Uri.TryCreate(url, UriKind.Absolute, out avatarUrl);
         }
 
-        return (fullName ?? email.User, avatarUrl);
+        return (fullName ?? fallbackName, avatarUrl);
     }
 }

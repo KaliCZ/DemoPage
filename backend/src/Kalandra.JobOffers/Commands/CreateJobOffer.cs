@@ -83,7 +83,7 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         // Create event
         var submitted = new JobOfferSubmitted(
             UserId: command.User.Id,
-            UserEmail: NonEmptyString.Create(command.User.Email.Address),
+            UserEmail: command.User.EmailAddress,
             CompanyName: command.CompanyName,
             ContactName: command.ContactName,
             ContactEmail: command.ContactEmail,

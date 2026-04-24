@@ -5,9 +5,9 @@ namespace Kalandra.Api.Features.JobOffers.Contracts;
 public record CommentResponse(
     Guid Id,
     Guid UserId,
-    string UserEmail,
-    string UserName,
-    string Content,
+    NonEmptyString UserEmail,
+    NonEmptyString UserName,
+    NonEmptyString Content,
     DateTimeOffset CreatedAt)
 {
     public static CommentResponse Serialize(JobOfferCommentAdded comment) => new(

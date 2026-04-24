@@ -3,11 +3,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
 public record CreateJobOfferRequest(
-    [Required, MaxLength(200)] string CompanyName,
-    [Required, MaxLength(200)] string ContactName,
-    [Required, EmailAddress, MaxLength(255)] string ContactEmail,
-    [Required, MaxLength(200)] string JobTitle,
-    [Required, MaxLength(5000)] string Description,
+    NonEmptyString CompanyName,
+    NonEmptyString ContactName,
+    NonEmptyString ContactEmail,
+    NonEmptyString JobTitle,
+    NonEmptyString Description,
     [MaxLength(100)] string? SalaryRange,
     [MaxLength(200)] string? Location,
     bool IsRemote,

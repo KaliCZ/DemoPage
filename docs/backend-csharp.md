@@ -11,13 +11,18 @@ Prefer strong types that make invalid states unrepresentable. Use the `Kalicz.St
 - `Guid` (or a typed ID) instead of `string` for identifiers.
 - `DateTimeOffset` instead of `string` for timestamps.
 
-Parse at the boundary (API layer), then pass the strong type through commands and into the domain. If parsing fails, the error is caught at the edge — the domain never has to check for empty strings or malformed emails.
+Parse at the boundary (API layer), then pass the strong type through commands and into the domain. The boundary is the DTO itself — required text fields are typed as `NonEmptyString` (or `NonEmptyString?` for PATCH "no change" semantics), so the controller can pass them straight through to the command:
 
 ```csharp
-// Good — parsed at the API boundary, domain receives NonEmptyString
+// Good — DTO holds NonEmptyString; controller has no boilerplate
+public record CreateJobOfferRequest(
+    NonEmptyString CompanyName,
+    [EmailAddress] NonEmptyString ContactEmail,
+    ...);
+
 var command = new CreateJobOfferCommand(
-    CompanyName: request.CompanyName.ToNonEmpty(),
-    ContactEmail: new MailAddress(request.ContactEmail),
+    CompanyName: request.CompanyName,
+    ContactEmail: request.ContactEmail,
     ...);
 
 // Bad — raw string passed through, domain has to validate
@@ -27,7 +32,11 @@ var command = new CreateJobOfferCommand(
     ...);
 ```
 
-`NonEmptyString` has an implicit conversion to `string`, so a domain record holding one deserializes to (and serializes from) the same JSON string — no converter registration needed, and passing it anywhere that takes a `string` just works. For a nullable intake (`AsNonEmpty()` returns `NonEmptyString?`), use the pattern form directly: `request.Field?.ToNonEmpty()` for optional PATCH fields, `request.Field.ToNonEmpty()` (throws) for required fields.
+The `StrongTypes` `[JsonConverter]` rejects empty JSON strings as `JsonException`, which ASP.NET surfaces as an RFC 7807 400. For `[FromForm]` / query string inputs — where model binding doesn't go through the JSON converter — the `NonEmptyStringModelBinderProvider` in `Kalandra.Api/Infrastructure/` fills the same role and is registered in `Program.cs` via `ModelBinderProviders.Insert(0, ...)`.
+
+Most `System.ComponentModel.DataAnnotations` attributes don't recognise strong types — their `IsValid` checks `value is string` and returns `false` for anything else. `[MaxLength]` even throws `InvalidCastException`. Keep these attributes on plain `string?` / `string` properties only, and rely on the type itself for invariants on strong-typed properties.
+
+`NonEmptyString` has an implicit conversion to `string`, so a domain record holding one deserializes to (and serializes from) the same JSON string and passes anywhere a `string` is accepted. Reach for `.ToNonEmpty()` / `.AsNonEmpty()` only when crossing from a loose primitive string you don't control (e.g. `IFormFile.FileName`) into domain code.
 
 ## Named arguments
 

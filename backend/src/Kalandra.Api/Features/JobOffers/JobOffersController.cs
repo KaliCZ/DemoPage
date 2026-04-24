@@ -66,11 +66,11 @@ public class JobOffersController(
 
         var command = new CreateJobOfferCommand(
             User: AppUser,
-            CompanyName: request.CompanyName.ToNonEmpty(),
-            ContactName: request.ContactName.ToNonEmpty(),
-            ContactEmail: request.ContactEmail.ToNonEmpty(),
-            JobTitle: request.JobTitle.ToNonEmpty(),
-            Description: request.Description.ToNonEmpty(),
+            CompanyName: request.CompanyName,
+            ContactName: request.ContactName,
+            ContactEmail: request.ContactEmail,
+            JobTitle: request.JobTitle,
+            Description: request.Description,
             SalaryRange: request.SalaryRange,
             Location: request.Location,
             IsRemote: request.IsRemote,
@@ -117,11 +117,11 @@ public class JobOffersController(
             var command = new EditJobOfferCommand(
                 Id: id,
                 User: AppUser,
-                CompanyName: request.CompanyName?.ToNonEmpty(),
-                ContactName: request.ContactName?.ToNonEmpty(),
-                ContactEmail: request.ContactEmail?.ToNonEmpty(),
-                JobTitle: request.JobTitle?.ToNonEmpty(),
-                Description: request.Description?.ToNonEmpty(),
+                CompanyName: request.CompanyName,
+                ContactName: request.ContactName,
+                ContactEmail: request.ContactEmail,
+                JobTitle: request.JobTitle,
+                Description: request.Description,
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
@@ -238,7 +238,7 @@ public class JobOffersController(
         var command = new AddCommentCommand(
             JobOfferId: id,
             User: AppUser,
-            Content: request.Content.Trim().ToNonEmpty(),
+            Content: request.Content.Value.Trim().ToNonEmpty(),
             Timestamp: timeProvider.GetUtcNow());
 
         var result = await addCommentHandler.HandleAsync(command, ct);

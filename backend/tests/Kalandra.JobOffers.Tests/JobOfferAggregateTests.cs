@@ -13,11 +13,11 @@ public class JobOfferAggregateTests
     private static readonly Guid OtherId = new("22222222-2222-2222-2222-222222222222");
     private static readonly Guid AdminId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-    private static readonly CurrentUser Owner = new(OwnerId, new MailAddress("owner@test.com"), "Owner", []);
-    private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), "Other", []);
-    private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), "Admin", [UserRole.Admin]);
-
     private static NonEmptyString NE(string s) => NonEmptyString.Create(s);
+
+    private static readonly CurrentUser Owner = new(OwnerId, new MailAddress("owner@test.com"), NE("Owner"), []);
+    private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), NE("Other"), []);
+    private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), NE("Admin"), [UserRole.Admin]);
 
     private static JobOffer CreateSubmittedOffer(Guid? userId = null)
     {

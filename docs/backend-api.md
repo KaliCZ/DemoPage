@@ -40,7 +40,7 @@ There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature r
 
 ## Request & response DTOs
 
-- Requests are `record`s with nullable string properties that get lifted into `NonEmptyString` via `StrongTypes` (`request.CompanyName.ToNonEmpty()` to throw on empty, `request.CompanyName?.ToNonEmpty()` for optional PATCH fields) when building commands. The API layer never writes its own validation attributes — invariants live in the domain.
+- Requests are `record`s whose required text fields are typed directly as `NonEmptyString` (or `NonEmptyString?` for PATCH "leave this field alone" semantics). The invariant is enforced at the boundary by the type system: JSON bodies go through the `StrongTypes` `[JsonConverter]`, `[FromForm]` / query string inputs go through the `NonEmptyStringModelBinderProvider` registered in `Program.cs`. An empty value surfaces as an RFC 7807 400 with the field name — the controller never calls `.ToNonEmpty()` on input.
 - Responses are `record`s with a static `Serialize(entity, viewer)` method. The `viewer` parameter lets the response decide whether to expose admin-only fields. See `GetJobOfferDetailResponse.Serialize` — `AdminNotes` is returned as `null` unless `viewer.IsAdmin` is true.
 - Every action declares its shape with `[ProducesResponseType<T>(StatusCodes.Status2xx)]` and `[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]`. This powers Swagger and documents the contract.
 

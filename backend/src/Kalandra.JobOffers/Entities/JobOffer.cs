@@ -64,7 +64,7 @@ public class JobOffer
         // treat it as "leave this field alone" rather than "set it to null".
         return new JobOfferEdited(
             EditedByUserId: user.Id,
-            EditedByEmail: NonEmptyString.Create(user.Email.Address),
+            EditedByEmail: user.EmailAddress,
             CompanyName: companyName is not null && companyName != CompanyName ? companyName : null,
             ContactName: contactName is not null && contactName != ContactName ? contactName : null,
             ContactEmail: contactEmail is not null && contactEmail != ContactEmail ? contactEmail : null,
@@ -90,7 +90,7 @@ public class JobOffer
 
         return new JobOfferCancelled(
             CancelledByUserId: user.Id,
-            CancelledByEmail: NonEmptyString.Create(user.Email.Address),
+            CancelledByEmail: user.EmailAddress,
             Reason: reason,
             Timestamp: timestamp);
     }
@@ -106,7 +106,7 @@ public class JobOffer
 
         return new JobOfferStatusChanged(
             ChangedByUserId: user.Id,
-            ChangedByEmail: NonEmptyString.Create(user.Email.Address),
+            ChangedByEmail: user.EmailAddress,
             OldStatus: Status,
             NewStatus: newStatus,
             Notes: notes,
