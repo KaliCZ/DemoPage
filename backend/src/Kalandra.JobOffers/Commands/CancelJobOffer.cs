@@ -12,25 +12,25 @@ public record CancelJobOfferCommand(
 
 public class CancelJobOfferHandler(IDocumentSession session)
 {
-    public async Task<Try<JobOffer, CancelJobOfferError>> HandleAsync(
+    public async Task<Result<JobOffer, CancelJobOfferError>> HandleAsync(
         CancelJobOfferCommand command, CancellationToken ct)
     {
         var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);
         if (stream.Aggregate is not { } offer)
-            return Try.Error<JobOffer, CancelJobOfferError>(CancelJobOfferError.NotFound);
+            return CancelJobOfferError.NotFound;
 
         var result = offer.Cancel(
             user: command.User,
             reason: command.Reason,
             timestamp: command.Timestamp);
 
-        if (result.IsError)
-            return Try.Error<JobOffer, CancelJobOfferError>(result.Error.Get());
+        if (result.Error is { } error)
+            return error;
 
-        var evt = result.Success.Get();
+        var evt = result.Success!;
         stream.AppendOne(evt);
         offer.Apply(evt);
         await session.SaveChangesAsync(ct);
-        return Try.Success<JobOffer, CancelJobOfferError>(offer);
+        return offer;
     }
 }

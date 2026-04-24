@@ -21,7 +21,7 @@ A controller action has a strict, short job:
 1. **Parse** request DTOs and resolve the current user via `ICurrentUserAccessor`.
 2. **Guard** with any HTTP-specific checks that cannot live in the domain (Turnstile token validation, file-size limits on `IFormFile`).
 3. **Build** a command or query record for the appropriate handler.
-4. **Call** the handler, `await` its `Try<TSuccess, TError>` result.
+4. **Call** the handler, `await` its `Result<TSuccess, TError>` value.
 5. **Map** handler error enums onto API error enums and HTTP status codes via an exhaustive `switch` expression.
 6. **Serialize** the success value to a typed response DTO.
 
@@ -40,7 +40,7 @@ There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature r
 
 ## Request & response DTOs
 
-- Requests are `record`s with nullable string properties that get unwrapped via `StrongTypes` (`request.CompanyName.AsNonEmpty().Get()`) when building commands. The API layer never writes its own validation attributes — invariants live in the domain.
+- Requests are `record`s with nullable string properties that get lifted into `NonEmptyString` via `StrongTypes` (`request.CompanyName.ToNonEmpty()` to throw on empty, `request.CompanyName?.ToNonEmpty()` for optional PATCH fields) when building commands. The API layer never writes its own validation attributes — invariants live in the domain.
 - Responses are `record`s with a static `Serialize(entity, viewer)` method. The `viewer` parameter lets the response decide whether to expose admin-only fields. See `GetJobOfferDetailResponse.Serialize` — `AdminNotes` is returned as `null` unless `viewer.IsAdmin` is true.
 - Every action declares its shape with `[ProducesResponseType<T>(StatusCodes.Status2xx)]` and `[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]`. This powers Swagger and documents the contract.
 
@@ -60,17 +60,20 @@ The API error enum is a **stable public contract** used by the frontend for dire
 
 ```csharp
 // ❌ BAD — leaks domain enum into the API contract
-return this.ValidationError("attachments", result.Error.Get());
+return this.ValidationError("attachments", error);
 ```
 
 ```csharp
 // ✅ GOOD — explicit mapping, compiler catches any new variant
-return result.Error.Get() switch
+if (result.Error is { } error)
 {
-    CreateJobOfferError.TooManyAttachments    => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
-    CreateJobOfferError.TotalSizeTooLarge     => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
-    CreateJobOfferError.DisallowedContentType => this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
-};
+    return error switch
+    {
+        CreateJobOfferError.TooManyAttachments    => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
+        CreateJobOfferError.TotalSizeTooLarge     => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
+        CreateJobOfferError.DisallowedContentType => this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
+    };
+}
 ```
 
 ### What this also forbids

@@ -13,7 +13,7 @@ public record TurnstileConfig(NonEmptyString SecretKey)
         var section = configuration.GetSection("Turnstile");
 
         var config = new TurnstileConfig(
-            SecretKey: NonEmptyString.CreateUnsafe(section["SecretKey"]));
+            SecretKey: NonEmptyString.Create(section["SecretKey"]));
 
         services.AddSingleton(config);
 

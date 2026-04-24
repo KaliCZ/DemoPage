@@ -4,7 +4,7 @@ namespace Kalandra.JobOffers.Events;
 
 public record JobOfferStatusChanged(
     Guid ChangedByUserId,
-    string ChangedByEmail,
+    NonEmptyString ChangedByEmail,
     JobOfferStatus OldStatus,
     JobOfferStatus NewStatus,
     string? Notes,

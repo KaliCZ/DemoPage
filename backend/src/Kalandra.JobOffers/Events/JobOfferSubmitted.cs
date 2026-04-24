@@ -4,12 +4,12 @@ namespace Kalandra.JobOffers.Events;
 
 public record JobOfferSubmitted(
     Guid UserId,
-    string UserEmail,
-    string CompanyName,
-    string ContactName,
-    string ContactEmail,
-    string JobTitle,
-    string Description,
+    NonEmptyString UserEmail,
+    NonEmptyString CompanyName,
+    NonEmptyString ContactName,
+    NonEmptyString ContactEmail,
+    NonEmptyString JobTitle,
+    NonEmptyString Description,
     string? SalaryRange,
     string? Location,
     bool IsRemote,

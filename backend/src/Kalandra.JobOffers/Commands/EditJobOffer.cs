@@ -20,33 +20,33 @@ public record EditJobOfferCommand(
 
 public class EditJobOfferHandler(IDocumentSession session)
 {
-    public async Task<Try<JobOffer, EditJobOfferError>> HandleAsync(
+    public async Task<Result<JobOffer, EditJobOfferError>> HandleAsync(
         EditJobOfferCommand command, CancellationToken ct)
     {
         var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);
         if (stream.Aggregate is not { } offer)
-            return Try.Error<JobOffer, EditJobOfferError>(EditJobOfferError.NotFound);
+            return EditJobOfferError.NotFound;
 
         var result = offer.Edit(
             user: command.User,
-            companyName: command.CompanyName?.Value,
-            contactName: command.ContactName?.Value,
-            contactEmail: command.ContactEmail?.Value,
-            jobTitle: command.JobTitle?.Value,
-            description: command.Description?.Value,
+            companyName: command.CompanyName,
+            contactName: command.ContactName,
+            contactEmail: command.ContactEmail,
+            jobTitle: command.JobTitle,
+            description: command.Description,
             salaryRange: command.SalaryRange,
             location: command.Location,
             isRemote: command.IsRemote,
             additionalNotes: command.AdditionalNotes,
             timestamp: command.Timestamp);
 
-        if (result.IsError)
-            return Try.Error<JobOffer, EditJobOfferError>(result.Error.Get());
+        if (result.Error is { } error)
+            return error;
 
-        var evt = result.Success.Get();
+        var evt = result.Success!;
         stream.AppendOne(evt);
         offer.Apply(evt);
         await session.SaveChangesAsync(ct);
-        return Try.Success<JobOffer, EditJobOfferError>(offer);
+        return offer;
     }
 }

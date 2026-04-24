@@ -6,7 +6,7 @@ The domain layer owns the business. It lives in `backend/src/Kalandra.JobOffers/
 
 - [The handler pattern](#the-handler-pattern)
 - [Commands, queries, handlers](#commands-queries-handlers)
-- [The `Try<TSuccess, TError>` return type](#the-trytsuccess-terror-return-type)
+- [The `Result<TSuccess, TError>` return type](#the-resulttsuccess-terror-return-type)
 - [Entities and event sourcing](#entities-and-event-sourcing)
 - [Events](#events)
 - [Multiple streams per aggregate](#multiple-streams-per-aggregate)
@@ -31,7 +31,7 @@ A handler's validation is the **last line of defence**. The API layer may reject
 
 ## Commands, queries, handlers
 
-- **Commands** mutate state. Their return type is `Try<TSuccess, TError>` where `TSuccess` is either the new stream ID (on create) or the updated aggregate (on edit/cancel/change-status). They take an `IDocumentSession` (read-write).
+- **Commands** mutate state. Their return type is `Result<TSuccess, TError>` where `TSuccess` is either the new stream ID (on create) or the updated aggregate (on edit/cancel/change-status). They take an `IDocumentSession` (read-write).
 - **Queries** read state. They return `T?` (null for not-found or not-authorized) or a result record. They take an `IQuerySession` (read-only).
 - Both are registered as `Scoped` in `ServiceRegistration.AddJobOffersDomain()`.
 - The command / query / handler live in the **same file** with matching names: `CreateJobOffer.cs` holds `CreateJobOfferCommand`, `CreateJobOfferError`, and `CreateJobOfferHandler`.
@@ -54,16 +54,16 @@ public async Task<JobOffer?> HandleAsync(GetJobOfferDetailQuery query, Cancellat
 
 Queries that shouldn't expose an aggregate's existence return `null` (not a domain error enum) when the user isn't authorized to see it. The controller maps `null` to `404 NotFound`, so non-owners cannot distinguish "doesn't exist" from "not mine".
 
-## The `Try<TSuccess, TError>` return type
+## The `Result<TSuccess, TError>` return type
 
-See `docs/backend-csharp.md` → "Try result type" for the API. Handlers and entity decision methods return `Try<TSuccess, TError>` for business failures. Exceptions are only for infrastructure faults.
+See `docs/backend-csharp.md` → "Result type" for the API. Handlers and entity decision methods return `Result<TSuccess, TError>` for business failures. Exceptions are only for infrastructure faults.
 
 ## Entities and event sourcing
 
 Aggregates are plain C# classes with:
 
 - **Public state** — mutable `{ get; set; }` properties that reflect the current projection. Marten rehydrates these via `Apply(...)` methods.
-- **Decision methods** — `Edit`, `Cancel`, `ChangeStatus`, etc. Each returns a `Try<TEvent, TError>`: if the operation is allowed, it returns the event that describes the state change; if not, it returns a domain error. **Decision methods do not mutate the aggregate.** Mutation happens only in `Apply`.
+- **Decision methods** — `Edit`, `Cancel`, `ChangeStatus`, etc. Each returns a `Result<TEvent, TError>`: if the operation is allowed, it returns the event that describes the state change; if not, it returns a domain error. **Decision methods do not mutate the aggregate.** Mutation happens only in `Apply`.
 - **Apply methods** — one `Apply(TEvent)` per event type. These are the only methods that mutate state. Marten calls them during snapshot rebuilds; handlers also call them manually after appending, so the in-memory aggregate stays in sync without a reload.
 
 ### Why this split?
@@ -72,7 +72,7 @@ Separating "decide" from "apply" means:
 
 - The same event that is appended to the stream is the one that rebuilds state. The two cannot drift.
 - `Apply` can be tested in isolation by constructing an event and checking the resulting state.
-- `Edit` / `Cancel` / `ChangeStatus` can be tested by constructing an aggregate in a given state and asserting on the returned `Try`, without touching Marten at all.
+- `Edit` / `Cancel` / `ChangeStatus` can be tested by constructing an aggregate in a given state and asserting on the returned `Result`, without touching Marten at all.
 - Marten's snapshot projection (`SnapshotLifecycle.Inline`) can rebuild the aggregate from events on load, guaranteeing that persisted state and derived state are identical.
 
 ### Status transitions
@@ -86,8 +86,8 @@ Events are `record`s with only immutable data:
 ```csharp
 public record JobOfferSubmitted(
     Guid UserId,
-    string UserEmail,
-    string CompanyName,
+    NonEmptyString UserEmail,
+    NonEmptyString CompanyName,
     // ...
     IReadOnlyList<AttachmentInfo> Attachments,
     DateTimeOffset Timestamp);
@@ -132,5 +132,5 @@ These enums are **internal to the domain**. They may be renamed, split, or merge
 - **No response DTOs.** Handlers return domain entities or raw event records. DTO shaping belongs in the API layer.
 - **No direct database queries outside of handlers.** No static `JobOffer.LoadFromDb(...)` helpers. The entity is pure; Marten is the only persistence mechanism, and only handlers call it.
 - **No `DateTime.UtcNow`.** Clocks are always injected as `TimeProvider` and the timestamp is passed through the command.
-- **No throwing for business failures.** Use `Try<..., DomainError>`. Throw only for programmer errors and infrastructure faults.
+- **No throwing for business failures.** Use `Result<..., DomainError>`. Throw only for programmer errors and infrastructure faults.
 - **No swallowing `ConcurrencyException`.** The handler commits with `SaveChangesAsync` and lets concurrency exceptions bubble up to the controller's `WithConcurrencyHandling` wrapper.

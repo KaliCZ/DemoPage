@@ -16,7 +16,7 @@ Parse at the boundary (API layer), then pass the strong type through commands an
 ```csharp
 // Good — parsed at the API boundary, domain receives NonEmptyString
 var command = new CreateJobOfferCommand(
-    CompanyName: request.CompanyName.AsNonEmpty().Get(),
+    CompanyName: request.CompanyName.ToNonEmpty(),
     ContactEmail: new MailAddress(request.ContactEmail),
     ...);
 
@@ -26,6 +26,8 @@ var command = new CreateJobOfferCommand(
     ContactEmail: request.ContactEmail, // might not be an email
     ...);
 ```
+
+`NonEmptyString` has an implicit conversion to `string`, so a domain record holding one deserializes to (and serializes from) the same JSON string — no converter registration needed, and passing it anywhere that takes a `string` just works. For a nullable intake (`AsNonEmpty()` returns `NonEmptyString?`), use the pattern form directly: `request.Field?.ToNonEmpty()` for optional PATCH fields, `request.Field.ToNonEmpty()` (throws) for required fields.
 
 ## Named arguments
 
@@ -44,15 +46,16 @@ var (success, error, edited) = offer.Edit(
 var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
 ```
 
-## `Try<TSuccess, TError>` result type
+## `Result<TSuccess, TError>` type
 
-`Try<TSuccess, TError>` is a discriminated-union-like result type from the `Kalicz.StrongTypes` package (available via `global using StrongTypes;`). Use it for handler and entity methods whose "failure" is a business decision, not an exception.
+`Result<TSuccess, TError>` is a discriminated-union-like result type from the `Kalicz.StrongTypes` package (available via `global using StrongTypes;`). Use it for handler and entity methods whose "failure" is a business decision, not an exception.
 
-- `Try.Success<TSuccess, TError>(value)` — successful case.
-- `Try.Error<TSuccess, TError>(error)` — business-logic failure.
-- `result.IsError`, `result.Success.Get()`, `result.Error.Get()` — interrogation.
+- Return the success value directly — the implicit operator wraps it: `return newId;` or `return offer;`.
+- Return the error value directly — the implicit operator wraps it: `return EditJobOfferError.NotAuthorized;`.
+- Unwrap via pattern matching: `if (result.Error is { } error) return Map(error);` then read success as `result.Success!` (`!.Value` for value-type payloads).
+- `result.IsSuccess` / `result.IsError` are available when you don't need the payload.
 
-Exceptions are reserved for truly exceptional conditions (storage failures, DB outages, concurrency conflicts). A user trying to edit someone else's job offer is not an exception — it's a `Try.Error`.
+Exceptions are reserved for truly exceptional conditions (storage failures, DB outages, concurrency conflicts). A user trying to edit someone else's job offer is not an exception — it's a domain error carried by the `Result`.
 
 ## Enum switches: no default branch
 

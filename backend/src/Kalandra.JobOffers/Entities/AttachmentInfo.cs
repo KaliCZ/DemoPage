@@ -1,7 +1,7 @@
 namespace Kalandra.JobOffers.Entities;
 
 public record AttachmentInfo(
-    string FileName,
-    string StoragePath,
+    NonEmptyString FileName,
+    NonEmptyString StoragePath,
     long FileSize,
-    string ContentType);
+    NonEmptyString ContentType);

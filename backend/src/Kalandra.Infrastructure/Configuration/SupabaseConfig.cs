@@ -15,8 +15,8 @@ public record SupabaseConfig(
         var section = configuration.GetSection("Supabase");
 
         var config = new SupabaseConfig(
-            ProjectUrl: NonEmptyString.CreateUnsafe(section["ProjectUrl"]),
-            ServiceKey: NonEmptyString.CreateUnsafe(section["ServiceKey"]));
+            ProjectUrl: NonEmptyString.Create(section["ProjectUrl"]),
+            ServiceKey: NonEmptyString.Create(section["ServiceKey"]));
 
         services.AddSingleton(config);
 

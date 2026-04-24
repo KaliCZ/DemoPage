@@ -12,13 +12,13 @@ public record BetterStackConfig(
     {
         var section = configuration.GetSection("BetterStack");
 
-        if (section["SourceToken"].AsNonEmpty().GetOrNull() is not { } sourceToken ||
-            section["OtlpEndpoint"].AsNonEmpty().GetOrNull() is not { } otlpEndpoint)
+        if (section["SourceToken"].AsNonEmpty() is not { } sourceToken ||
+            section["OtlpEndpoint"].AsNonEmpty() is not { } otlpEndpoint)
         {
             return null;
         }
 
-        var config = new BetterStackConfig(SourceToken: sourceToken, OtlpEndpoint: new Uri(otlpEndpoint.Value));
+        var config = new BetterStackConfig(SourceToken: sourceToken, OtlpEndpoint: new Uri(otlpEndpoint));
 
         services.AddSingleton(config);
 
