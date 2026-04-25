@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kalandra.Blog\Kalandra.Blog.csproj" />
     <ProjectReference Include="..\Kalandra.Infrastructure\Kalandra.Infrastructure.csproj" />
     <ProjectReference Include="..\Kalandra.JobOffers\Kalandra.JobOffers.csproj" />
   </ItemGroup>

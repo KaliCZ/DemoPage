@@ -1,0 +1,165 @@
+---
+import Layout from "../layouts/Layout.astro";
+import BlogReactions from "./BlogReactions.astro";
+import BlogComments from "./BlogComments.astro";
+import type { Locale } from "../i18n/utils";
+import type { BlogPostMeta } from "../blog/types";
+import enBlog from "../i18n/en/blog.json";
+import csBlog from "../i18n/cs/blog.json";
+
+interface Props {
+  post: BlogPostMeta;
+  lang: Locale;
+}
+
+const { post, lang } = Astro.props;
+const t = lang === "cs" ? csBlog : enBlog;
+
+const dateFmt = new Intl.DateTimeFormat(lang === "cs" ? "cs-CZ" : "en-US", { dateStyle: "long" });
+const published = dateFmt.format(new Date(post.pubDate));
+const updated = post.updatedDate && post.updatedDate !== post.pubDate ? dateFmt.format(new Date(post.updatedDate)) : null;
+
+const title = post.title[lang];
+const summary = post.summary[lang];
+---
+
+<Layout
+  title={`${title} | Pavel Kalandra`}
+  description={summary}
+  activePage="blog"
+  pagePath={`blog/${post.slug}`}
+  rssUrl="/rss.xml"
+  lang={lang}
+>
+  <article class="max-w-3xl mx-auto px-4 md:px-8">
+    <header class="mb-10">
+      <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter leading-[1.1] mb-4">
+        {title}
+      </h1>
+      <p class="font-body text-lg text-on-surface-variant leading-relaxed mb-4">{summary}</p>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-on-surface-variant">
+        <time datetime={post.pubDate}>{t.post.publishedOn}: <span class="text-on-surface">{published}</span></time>
+        {
+          updated && (
+            <time datetime={post.updatedDate}>
+              {t.post.updatedOn}: <span class="text-on-surface">{updated}</span>
+            </time>
+          )
+        }
+      </div>
+      {
+        post.tags.length > 0 && (
+          <ul class="flex flex-wrap gap-2 mt-4" aria-label={t.post.tagsLabel}>
+            {post.tags.map((tag) => (
+              <li class="text-xs font-label uppercase tracking-widest px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant">
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    <div class="prose prose-lg max-w-none blog-prose">
+      <slot />
+    </div>
+
+    <BlogReactions slug={post.slug} lang={lang} t={t.reactions} />
+    <BlogComments slug={post.slug} lang={lang} t={t.comments} />
+  </article>
+</Layout>
+
+<style>
+  /* Lightweight typography for Markdown-like blog content. Keeps the chrome
+     consistent with the rest of the site without pulling in @tailwindcss/typography. */
+  .blog-prose :global(p) {
+    margin: 1rem 0;
+    line-height: 1.75;
+    color: var(--color-on-surface);
+  }
+  .blog-prose :global(h2) {
+    font-family: var(--font-headline);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .blog-prose :global(h3) {
+    font-family: var(--font-headline);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .blog-prose :global(a) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .blog-prose :global(a:hover) {
+    text-decoration-thickness: 2px;
+  }
+  .blog-prose :global(ul),
+  .blog-prose :global(ol) {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+  .blog-prose :global(ul) {
+    list-style-type: disc;
+  }
+  .blog-prose :global(ol) {
+    list-style-type: decimal;
+  }
+  .blog-prose :global(li) {
+    margin: 0.25rem 0;
+    line-height: 1.7;
+  }
+  .blog-prose :global(blockquote) {
+    border-left: 3px solid var(--color-primary);
+    margin: 1.25rem 0;
+    padding: 0.25rem 1rem;
+    color: var(--color-on-surface-variant);
+    font-style: italic;
+  }
+  .blog-prose :global(code) {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.9em;
+    background: color-mix(in oklab, var(--color-surface-container-high) 70%, transparent);
+    padding: 0.1em 0.4em;
+    border-radius: 0.35rem;
+  }
+  .blog-prose :global(pre) {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    background: var(--color-surface-container-high);
+    border: 1px solid color-mix(in oklab, var(--color-outline-variant) 30%, transparent);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    line-height: 1.5;
+  }
+  .blog-prose :global(pre code) {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.875rem;
+  }
+  .blog-prose :global(figure) {
+    margin: 1.75rem 0;
+  }
+  .blog-prose :global(figcaption) {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-on-surface-variant);
+    margin-top: 0.5rem;
+  }
+  .blog-prose :global(img),
+  .blog-prose :global(svg) {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem auto;
+    display: block;
+    border-radius: 0.5rem;
+  }
+</style>

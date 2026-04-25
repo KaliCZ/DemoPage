@@ -23,7 +23,16 @@ interface Props {
     | "admin/test-errors"
     | "profile"
     | "privacy"
-    | "terms";
+    | "terms"
+    | "blog";
+  /**
+   * Path used for canonical / alternate URLs when it differs from
+   * `activePage` (e.g. blog posts at `blog/<slug>` while still
+   * highlighting the "blog" nav link).
+   */
+  pagePath?: string;
+  /** Optional <link rel="alternate" type="application/rss+xml"> URL. */
+  rssUrl?: string;
   lang?: Locale;
 }
 
@@ -31,14 +40,18 @@ const {
   title,
   description = "Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public at kalandra.tech.",
   activePage,
+  pagePath,
+  rssUrl,
   lang = "en",
 } = Astro.props;
+
+const canonicalPagePath = pagePath ?? activePage;
 
 const t = lang === "cs" ? csCommon : enCommon;
 
 const siteUrl = "https://www.kalandra.tech";
-const enUrl = activePage === "home" ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
-const csUrl = activePage === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
+const enUrl = canonicalPagePath === "home" ? `${siteUrl}/` : `${siteUrl}/${canonicalPagePath}`;
+const csUrl = canonicalPagePath === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${canonicalPagePath}`;
 const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 ---
 
@@ -59,6 +72,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="alternate" hreflang="cs" href={csUrl} />
     <link rel="alternate" hreflang="x-default" href={enUrl} />
     <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    {rssUrl && <link rel="alternate" type="application/rss+xml" title="kalandra.tech blog" href={rssUrl} />}
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

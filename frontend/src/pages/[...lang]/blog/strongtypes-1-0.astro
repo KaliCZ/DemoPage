@@ -1,0 +1,205 @@
+---
+import BlogPostLayout from "../../../components/BlogPostLayout.astro";
+import { locales, defaultLocale, type Locale } from "../../../i18n/utils";
+import type { BlogPostMeta } from "../../../blog/types";
+
+export const post: BlogPostMeta = {
+  slug: "strongtypes-1-0",
+  pubDate: "2026-04-23T15:32:00Z",
+  updatedDate: "2026-04-23T16:47:00Z",
+  title: {
+    en: "Shipping StrongTypes 1.0 — small types, fewer bugs",
+    cs: "Vyšlo StrongTypes 1.0 — malé typy, méně chyb",
+  },
+  summary: {
+    en: "StrongTypes 1.0 is out: NonEmptyString, sign-bound numerics, NonEmptyEnumerable, Maybe and Result for C#. The library you reach for when nullable and Try just aren't enough.",
+    cs: "Vyšlo StrongTypes 1.0: NonEmptyString, číselné typy se znaménkovým invariantem, NonEmptyEnumerable, Maybe a Result pro C#. Knihovna, po které sáhnete, když nullable a Try už nestačí.",
+  },
+  tags: ["csharp", "library", "release"],
+};
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+
+// Diagrams live in the StrongTypes repo. Linking the raw GitHub URLs keeps
+// this post in lock-step with the library docs — when a diagram is updated
+// upstream, the post picks it up without a frontend redeploy.
+const repo = "https://github.com/KaliCZ/StrongTypes";
+const diagram = (name: string) => `${repo}/raw/main/docs/diagrams/${name}.svg`;
+---
+
+<BlogPostLayout post={post} lang={lang}>
+  <p>
+    <a href={`${repo}/releases/tag/1.0.0`} target="_blank" rel="noopener"><strong>StrongTypes 1.0</strong></a> is out on NuGet. It's the first
+    stable cut of a small library I've been using to make everyday C# code safer — without dragging in a full algebraic-types framework. Three
+    packages: <code>Kalicz.StrongTypes</code> (core types and JSON converters),
+    <code>Kalicz.StrongTypes.EfCore</code> (EF Core mapping), and <code>Kalicz.StrongTypes.FsCheck</code> (property-based testing).
+  </p>
+
+  <figure>
+    <img
+      src={diagram("impact")}
+      alt="Validation pushed to the boundary: with strong types invalid input fails before it reaches the domain."
+      loading="lazy"
+    />
+    <figcaption>Strong types push validation to the API boundary.</figcaption>
+  </figure>
+
+  <h2>Why a 1.0?</h2>
+  <p>
+    The core idea: parse, don't validate. A
+    <code>NonEmptyString</code> is a string that is never null, empty, or whitespace-only — guaranteed at construction. A
+    <code>Positive&lt;int&gt;</code> is an int that is strictly greater than zero — guaranteed at construction. Once the parse succeeds, every
+    downstream method gets to assume the invariant. No more <code>if (string.IsNullOrWhiteSpace(...))</code>
+    sprinkled through the domain.
+  </p>
+  <p>
+    Every type ships with a <code>System.Text.Json</code> converter attached via <code>[JsonConverter]</code>, so invalid JSON fails at
+    deserialization — in ASP.NET Core, that's before your endpoint method even runs. No extra
+    <code>JsonSerializerOptions</code>, no manual converter registration.
+  </p>
+
+  <figure>
+    <img src={diagram("package-layout")} alt="The three NuGet packages and how they depend on each other." loading="lazy" />
+    <figcaption>Three packages so you only pull in what you actually use.</figcaption>
+  </figure>
+
+  <h2>The factory pattern</h2>
+  <p>
+    Every validated type uses the same shape: <code>Create</code> throws on bad input,
+    <code>TryCreate</code> returns null. The <code>As…</code> / <code>To…</code> string extensions mirror that split, so the call site decides
+    how to handle bad input.
+  </p>
+
+  <figure>
+    <img
+      src={diagram("trycreate-create-flow")}
+      alt="TryCreate returns null on invalid input; Create throws ArgumentException."
+      loading="lazy"
+    />
+    <figcaption>Pick the factory that matches how you want to handle bad input.</figcaption>
+  </figure>
+
+  <pre><code>{`NonEmptyString? maybe = NonEmptyString.TryCreate(input); // null when null/empty/whitespace
+NonEmptyString  must  = NonEmptyString.Create(input);   // throws ArgumentException
+NonEmptyString? sugar = userInput.AsNonEmpty();         // same as TryCreate, fluently
+
+Positive<int>? p   = Positive<int>.TryCreate(value);
+NonNegative<decimal> nn = NonNegative<decimal>.Create(amount);`}</code></pre>
+
+  <h2>NonEmptyEnumerable&lt;T&gt;</h2>
+  <p>
+    Same idea, applied to sequences. <code>NonEmptyEnumerable&lt;T&gt;</code> is a read-only sequence that is guaranteed to contain at least one
+    element — so <code>.Head</code> is always defined, <code>.Max()</code> never throws, and invariant-preserving LINQ operations like <code
+      >Select</code
+    >, <code>SelectMany</code>, <code>Distinct</code> and
+    <code>Concat</code> return another <code>NonEmptyEnumerable&lt;TResult&gt;</code> rather than decaying to plain
+    <code>IEnumerable</code>.
+  </p>
+
+  <figure>
+    <img
+      src={diagram("covariance")}
+      alt="The covariant out T parameter lets a NonEmptyEnumerable<Dog> upcast to INonEmptyEnumerable<Animal>."
+      loading="lazy"
+    />
+    <figcaption>The interface is covariant, so collection types upcast naturally.</figcaption>
+  </figure>
+
+  <h2>Maybe&lt;T&gt; for the cases nullable can't model</h2>
+  <p>
+    StrongTypes is deliberately not trying to replace <code>T?</code>. Plain nullables already cover most optional logic once you reach for <code
+      >Map</code
+    > / <code>MapTrue</code> / <code>MapFalse</code> to compose them. Where they fall over is HTTP <code>PATCH</code>: a request needs to
+    distinguish three intents — <em>don't touch this field</em>,
+    <em>clear it to null</em>, and <em>set it to a new value</em>. Plain <code>T?</code> collapses the first two.
+    <code>Maybe&lt;T&gt;?</code> keeps them apart.
+  </p>
+
+  <figure>
+    <img
+      src={diagram("patch-three-state")}
+      alt="The three states a PATCH field can be in: untouched, cleared, or set. Maybe<T>? maps onto all three."
+      loading="lazy"
+    />
+    <figcaption>The three states a PATCH field can be in.</figcaption>
+  </figure>
+
+  <pre><code>{`public record PatchRequest(Maybe<string>? NullableValue);
+
+[HttpPatch("{id:guid}")]
+public async Task<IActionResult> Patch(Guid id, PatchRequest request)
+{
+    var entity = await Db.FindAsync<MyEntity>(id);
+    if (entity is null) return NotFound();
+
+    // null means "skipped". Maybe.None means "deliberately set to null".
+    if (request.NullableValue is { } nv)
+        entity.NullableValue = nv.Value;
+
+    await Db.SaveChangesAsync();
+    return Ok();
+}`}</code></pre>
+
+  <p>
+    The struct also composes monadically through <code>Map</code>, <code>FlatMap</code> and <code>Where</code>, with LINQ query syntax
+    falling out for free.
+  </p>
+
+  <figure>
+    <img
+      src={diagram("maybe-composition")}
+      alt="A pipeline of Map / FlatMap / Where operations on Maybe, where None short-circuits the whole chain."
+      loading="lazy"
+    />
+    <figcaption>None short-circuits the whole chain — no explicit null checks.</figcaption>
+  </figure>
+
+  <h2>Result&lt;T, TError&gt; for failure paths</h2>
+  <p>
+    <code>Result&lt;T, TError&gt;</code> makes the failure path explicit in the type signature instead of hiding it behind exceptions. <code
+      >Result&lt;T&gt;</code
+    > is shorthand for <code>Result&lt;T, Exception&gt;</code>, so signatures can read <code>public Result&lt;User&gt; Load(...)</code> without
+    naming the error type.
+  </p>
+
+  <figure>
+    <img
+      src={diagram("result-composition")}
+      alt="A pipeline of Map / MapError / FlatMap operations on Result, with success and error flowing on independent tracks."
+      loading="lazy"
+    />
+    <figcaption>Success and error flow on independent tracks.</figcaption>
+  </figure>
+
+  <pre><code>{`public Result<int, string> Parse(string s) =>
+    int.TryParse(s, out var n) ? n : "not a number";
+
+Result<int, string> r = Parse(input);
+if (r.Success is { } value) return Ok(value);
+if (r.Error   is { } msg)   return BadRequest(msg);`}</code></pre>
+
+  <p>
+    There are also async overloads for every operation, <code>Result.Catch</code> for wrapping throwing calls, and
+    <code>Result.Aggregate</code> for combining several validations into a single result that collects every error rather than failing on the
+    first.
+  </p>
+
+  <h2>Where it fits in this site</h2>
+  <p>
+    The backend that powers this site is also using StrongTypes — every API request parses raw strings into
+    <code>NonEmptyString</code>, <code>MailAddress</code>, or a <code>Try&lt;T, TError&gt;</code> result before it reaches a handler. Once the
+    parse passes, the domain code never has to recheck. It's a small library doing one job: making the easy thing the right thing.
+  </p>
+  <p>
+    You can grab StrongTypes 1.0 from
+    <a href="https://www.nuget.org/packages/Kalicz.StrongTypes/" target="_blank" rel="noopener">NuGet</a> or read the full
+    <a href={`${repo}#readme`} target="_blank" rel="noopener">README</a>. Issues, PRs, and ideas are welcome on
+    <a href={repo} target="_blank" rel="noopener">GitHub</a>.
+  </p>
+</BlogPostLayout>
