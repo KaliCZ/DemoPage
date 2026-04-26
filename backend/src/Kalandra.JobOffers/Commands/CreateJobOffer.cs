@@ -73,10 +73,10 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
             var uploaded = await storageService.UploadAsync(folderPrefix, items, ct);
             uploadedAttachments = uploaded
                 .Select(f => new AttachmentInfo(
-                    FileName: NonEmptyString.Create(f.FileName),
-                    StoragePath: NonEmptyString.Create(f.StoragePath),
+                    FileName: f.FileName,
+                    StoragePath: f.StoragePath,
                     FileSize: f.FileSize,
-                    ContentType: NonEmptyString.Create(f.ContentType)))
+                    ContentType: f.ContentType))
                 .ToList();
         }
 

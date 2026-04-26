@@ -1,3 +1,5 @@
+using StrongTypes;
+
 namespace Kalandra.Infrastructure.Storage;
 
 public interface IStorageService
@@ -17,9 +19,9 @@ public interface IStorageService
 }
 
 public record FileUploadItem(
-    string FileName,
+    NonEmptyString FileName,
     long FileSize,
-    string ContentType,
+    NonEmptyString ContentType,
     Stream Content);
 
 public record StorageDownloadResult(Stream Content, long? ContentLength) : IAsyncDisposable

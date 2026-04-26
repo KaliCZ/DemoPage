@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Api.StrongTypesExtensions;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -13,6 +14,11 @@ Observability.Add(builder);
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers(options =>
     {
+        // Insert at 0 so the NonEmptyString binder is consulted before the
+        // built-in providers can return a binder for the underlying type.
+        // Model binding and DataAnnotations are independent stages — binders
+        // construct the value, attributes validate the result, so [StringMaxLength]
+        // / [EmailFormat] still run after this binder succeeds.
         options.ModelBinderProviders.Insert(0, new NonEmptyStringModelBinderProvider());
     })
     .AddJsonOptions(options =>

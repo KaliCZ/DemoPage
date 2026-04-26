@@ -238,7 +238,7 @@ public class JobOffersController(
         var command = new AddCommentCommand(
             JobOfferId: id,
             User: AppUser,
-            Content: request.Content.Value.Trim().ToNonEmpty(),
+            Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
         var result = await addCommentHandler.HandleAsync(command, ct);

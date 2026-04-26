@@ -68,6 +68,99 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("CompanyName", 200)]
+    [InlineData("ContactName", 200)]
+    [InlineData("JobTitle", 200)]
+    [InlineData("ContactEmail", 255)] // value still has to look like an email; we exceed by lengthening the local-part
+    [InlineData("Description", 5000)]
+    [InlineData("SalaryRange", 100)]
+    [InlineData("Location", 200)]
+    [InlineData("AdditionalNotes", 2000)]
+    public async Task Create_WithFieldOverMaxLength_Returns400_WithFieldError(string fieldName, int maxLength)
+    {
+        Authenticate();
+
+        var oversized = fieldName == "ContactEmail"
+            ? new string('a', maxLength) + "@example.com"
+            : new string('a', maxLength + 1);
+
+        var content = CreateValidFormContent(overrides: new() { [fieldName] = oversized });
+
+        var response = await client.PostAsync("/api/job-offers", content, Ct);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        AssertValidationFieldError(await ParseJsonAsync(response), fieldName);
+    }
+
+    [Fact]
+    public async Task Create_WithInvalidEmailFormat_Returns400()
+    {
+        Authenticate();
+
+        var content = CreateValidFormContent(overrides: new() { ["ContactEmail"] = "not-an-email" });
+
+        var response = await client.PostAsync("/api/job-offers", content, Ct);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        AssertValidationFieldError(await ParseJsonAsync(response), "ContactEmail");
+    }
+
+    [Fact]
+    public async Task Edit_WithFieldOverMaxLength_Returns400_WithFieldError()
+    {
+        var (id, _) = await CreateOfferAs("editmax@test.com");
+
+        var response = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}",
+            new { description = new string('a', 5001) },
+            Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        AssertValidationFieldError(await ParseJsonAsync(response), "Description");
+    }
+
+    [Fact]
+    public async Task Edit_WithInvalidEmailFormat_Returns400()
+    {
+        var (id, _) = await CreateOfferAs("editemail@test.com");
+
+        var response = await client.PatchAsJsonAsync(
+            $"/api/job-offers/{id}",
+            new { contactEmail = "not-an-email" },
+            Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        AssertValidationFieldError(await ParseJsonAsync(response), "ContactEmail");
+    }
+
+    [Fact]
+    public async Task AddComment_OverMaxLength_Returns400_WithFieldError()
+    {
+        var (id, _) = await CreateOfferAs("commentmax@test.com");
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/job-offers/{id}/comments",
+            new { content = new string('a', 5001) },
+            Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        AssertValidationFieldError(await ParseJsonAsync(response), "Content");
+    }
+
+    [Fact]
+    public async Task AddComment_AtMaxLength_Succeeds()
+    {
+        var (id, _) = await CreateOfferAs("commentboundary@test.com");
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/job-offers/{id}/comments",
+            new { content = new string('a', 5000) },
+            Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     [Fact]
     public async Task Create_WithAttachments_ReturnsAttachmentInfo()
     {
@@ -625,6 +718,15 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             $"Expected valid timestamp for '{propertyName}', got '{raw}'");
     }
 
+    private static void AssertValidationFieldError(JsonElement problem, string fieldName)
+    {
+        var errors = problem.GetProperty("errors");
+        Assert.True(
+            errors.TryGetProperty(fieldName, out var fieldErrors),
+            $"Expected validation error for field '{fieldName}'. Available: {string.Join(", ", errors.EnumerateObject().Select(e => e.Name))}");
+        Assert.True(fieldErrors.GetArrayLength() > 0);
+    }
+
     private static async Task<JsonElement> ParseJsonAsync(HttpResponseMessage response)
     {
         var doc = await JsonDocument.ParseAsync(
@@ -632,20 +734,30 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         return doc.RootElement;
     }
 
-    private static MultipartFormDataContent CreateValidFormContent()
+    private static MultipartFormDataContent CreateValidFormContent(Dictionary<string, string>? overrides = null)
     {
-        return new MultipartFormDataContent
+        var fields = new Dictionary<string, string>
         {
-            { new StringContent("test-token"), "cf-turnstile-response" },
-            { new StringContent("Acme Corp"), "CompanyName" },
-            { new StringContent("John Doe"), "ContactName" },
-            { new StringContent("john@acme.com"), "ContactEmail" },
-            { new StringContent("Senior Developer"), "JobTitle" },
-            { new StringContent("We are looking for a senior developer to join our team."), "Description" },
-            { new StringContent("$120k - $160k"), "SalaryRange" },
-            { new StringContent("Prague, CZ"), "Location" },
-            { new StringContent("true"), "IsRemote" },
+            ["cf-turnstile-response"] = "test-token",
+            ["CompanyName"] = "Acme Corp",
+            ["ContactName"] = "John Doe",
+            ["ContactEmail"] = "john@acme.com",
+            ["JobTitle"] = "Senior Developer",
+            ["Description"] = "We are looking for a senior developer to join our team.",
+            ["SalaryRange"] = "$120k - $160k",
+            ["Location"] = "Prague, CZ",
+            ["IsRemote"] = "true",
         };
+
+        if (overrides != null)
+        {
+            foreach (var (k, v) in overrides) fields[k] = v;
+        }
+
+        var content = new MultipartFormDataContent();
+        foreach (var (k, v) in fields)
+            content.Add(new StringContent(v), k);
+        return content;
     }
 
     private static object CreateValidEditBody() =>

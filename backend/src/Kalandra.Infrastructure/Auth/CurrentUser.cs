@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Net.Mail;
+using Kalandra.Infrastructure.StrongTypesExtensions;
 using StrongTypes;
 
 namespace Kalandra.Infrastructure.Auth;
@@ -18,8 +19,8 @@ public record CurrentUser(
 {
     public bool IsAdmin => Roles.Contains(UserRole.Admin);
 
-    // MailAddress guarantees a non-empty Address on a successfully constructed
-    // value, so this conversion is always valid. Exposing it saves domain code
-    // from calling NonEmptyString.Create on every emitted event.
-    public NonEmptyString EmailAddress => NonEmptyString.Create(Email.Address);
+    // MailAddress.Address is non-empty by construction; the
+    // MailAddressExtensions helper makes that conversion explicit so domain
+    // code doesn't need to call NonEmptyString.Create on every emitted event.
+    public NonEmptyString EmailAddress => Email.ToNonEmpty();
 }

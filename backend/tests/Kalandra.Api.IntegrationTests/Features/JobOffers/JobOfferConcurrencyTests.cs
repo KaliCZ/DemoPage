@@ -13,7 +13,6 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 {
     private readonly IDocumentStore store = factory.Services.GetRequiredService<IDocumentStore>();
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
-    private static NonEmptyString NE(string s) => NonEmptyString.Create(s);
 
     [Fact]
     public async Task FetchForWriting_RejectsStaleSecondWriter()
@@ -26,12 +25,12 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 id: jobOfferId,
                 new JobOfferSubmitted(
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
-                    UserEmail: NE("owner@test.com"),
-                    CompanyName: NE("Acme Corp"),
-                    ContactName: NE("John Doe"),
-                    ContactEmail: NE("john@acme.com"),
-                    JobTitle: NE("Senior Developer"),
-                    Description: NE("Original description"),
+                    UserEmail: "owner@test.com".ToNonEmpty(),
+                    CompanyName: "Acme Corp".ToNonEmpty(),
+                    ContactName: "John Doe".ToNonEmpty(),
+                    ContactEmail: "john@acme.com".ToNonEmpty(),
+                    JobTitle: "Senior Developer".ToNonEmpty(),
+                    Description: "Original description".ToNonEmpty(),
                     SalaryRange: null,
                     Location: "Prague",
                     IsRemote: true,
@@ -50,7 +49,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         firstWriter.AppendOne(new JobOfferStatusChanged(
             ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            ChangedByEmail: NE("admin@test.com"),
+            ChangedByEmail: "admin@test.com".ToNonEmpty(),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -60,12 +59,12 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         secondWriter.AppendOne(new JobOfferEdited(
             EditedByUserId: new Guid("11111111-1111-1111-1111-111111111111"),
-            EditedByEmail: NE("owner@test.com"),
-            CompanyName: NE("Acme Corp"),
-            ContactName: NE("John Doe"),
-            ContactEmail: NE("john@acme.com"),
-            JobTitle: NE("Principal Engineer"),
-            Description: NE("Edited with stale version"),
+            EditedByEmail: "owner@test.com".ToNonEmpty(),
+            CompanyName: "Acme Corp".ToNonEmpty(),
+            ContactName: "John Doe".ToNonEmpty(),
+            ContactEmail: "john@acme.com".ToNonEmpty(),
+            JobTitle: "Principal Engineer".ToNonEmpty(),
+            Description: "Edited with stale version".ToNonEmpty(),
             SalaryRange: null,
             Location: "Prague",
             IsRemote: true,
@@ -87,12 +86,12 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 id: jobOfferId,
                 new JobOfferSubmitted(
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
-                    UserEmail: NE("owner@test.com"),
-                    CompanyName: NE("Acme Corp"),
-                    ContactName: NE("John Doe"),
-                    ContactEmail: NE("john@acme.com"),
-                    JobTitle: NE("Senior Developer"),
-                    Description: NE("Original description"),
+                    UserEmail: "owner@test.com".ToNonEmpty(),
+                    CompanyName: "Acme Corp".ToNonEmpty(),
+                    ContactName: "John Doe".ToNonEmpty(),
+                    ContactEmail: "john@acme.com".ToNonEmpty(),
+                    JobTitle: "Senior Developer".ToNonEmpty(),
+                    Description: "Original description".ToNonEmpty(),
                     SalaryRange: null,
                     Location: "Prague",
                     IsRemote: true,
@@ -116,9 +115,9 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 new JobOfferCommentAdded(
                     CommentId: Guid.NewGuid(),
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
-                    UserEmail: NE("owner@test.com"),
-                    UserName: NE("Owner"),
-                    Content: NE("Any updates?"),
+                    UserEmail: "owner@test.com".ToNonEmpty(),
+                    UserName: "Owner".ToNonEmpty(),
+                    Content: "Any updates?".ToNonEmpty(),
                     Timestamp: DateTimeOffset.UtcNow));
             await commentSession.SaveChangesAsync(Ct);
         }
@@ -126,7 +125,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         // The writer's save should succeed — comment didn't touch the job offer stream
         writer.AppendOne(new JobOfferStatusChanged(
             ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            ChangedByEmail: NE("admin@test.com"),
+            ChangedByEmail: "admin@test.com".ToNonEmpty(),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,

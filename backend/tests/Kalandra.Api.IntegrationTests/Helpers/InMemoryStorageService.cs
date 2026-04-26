@@ -25,7 +25,7 @@ public class InMemoryStorageService : IStorageService
 
             results.Add(new StorageFileInfo(
                 FileName: file.FileName,
-                StoragePath: storagePath,
+                StoragePath: storagePath.ToNonEmpty(),
                 FileSize: file.FileSize,
                 ContentType: file.ContentType));
         }

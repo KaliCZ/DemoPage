@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Kalandra.Api.Infrastructure;
+namespace Kalandra.Api.StrongTypesExtensions;
 
 /// <summary>
 /// Binds <see cref="NonEmptyString"/> and <see cref="NonEmptyString?"/> from
@@ -10,6 +10,9 @@ namespace Kalandra.Api.Infrastructure;
 /// surfaces as an RFC 7807 400 response — matching the behaviour of the
 /// <c>JsonConverter</c> on the JSON path.
 /// </summary>
+// Candidate to move into a future Kalicz.StrongTypes.AspNetCore package so
+// every consumer gets this binding out of the box. Tracked at
+// https://github.com/KaliCZ/StrongTypes/issues/75.
 public class NonEmptyStringModelBinderProvider : IModelBinderProvider
 {
     public IModelBinder? GetBinder(ModelBinderProviderContext context)

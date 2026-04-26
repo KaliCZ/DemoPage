@@ -32,9 +32,11 @@ var command = new CreateJobOfferCommand(
     ...);
 ```
 
-The `StrongTypes` `[JsonConverter]` rejects empty JSON strings as `JsonException`, which ASP.NET surfaces as an RFC 7807 400. For `[FromForm]` / query string inputs — where model binding doesn't go through the JSON converter — the `NonEmptyStringModelBinderProvider` in `Kalandra.Api/Infrastructure/` fills the same role and is registered in `Program.cs` via `ModelBinderProviders.Insert(0, ...)`.
+The `StrongTypes` `[JsonConverter]` rejects empty JSON strings as `JsonException`, which ASP.NET surfaces as an RFC 7807 400. For `[FromForm]` / query string inputs — where model binding doesn't go through the JSON converter — the `NonEmptyStringModelBinderProvider` in `Kalandra.Api/StrongTypesExtensions/` fills the same role and is registered in `Program.cs` via `ModelBinderProviders.Insert(0, ...)`.
 
-Most `System.ComponentModel.DataAnnotations` attributes don't recognise strong types — their `IsValid` checks `value is string` and returns `false` for anything else. `[MaxLength]` even throws `InvalidCastException`. Keep these attributes on plain `string?` / `string` properties only, and rely on the type itself for invariants on strong-typed properties.
+Most `System.ComponentModel.DataAnnotations` attributes don't recognise strong types — their `IsValid` checks `value is string` and returns `false` for anything else. `[MaxLength]` even throws `InvalidCastException`. Use `[StringMaxLength]` and `[EmailFormat]` from `Kalandra.Api/StrongTypesExtensions/` on `NonEmptyString`-typed DTO properties; they accept both `string` and `NonEmptyString`. Keep the BCL `[MaxLength]` only on plain `string?` / `string` properties.
+
+Anything in a `StrongTypesExtensions/` folder is a candidate to upstream into the `Kalicz.StrongTypes` package family — the BCL types extension (`Kalandra.Infrastructure/StrongTypesExtensions/MailAddressExtensions.cs`), the ASP.NET model binder, and the data-annotation attributes are kept in those folders so the migration target is obvious when the package grows the corresponding surface.
 
 `NonEmptyString` has an implicit conversion to `string`, so a domain record holding one deserializes to (and serializes from) the same JSON string and passes anywhere a `string` is accepted. Reach for `.ToNonEmpty()` / `.AsNonEmpty()` only when crossing from a loose primitive string you don't control (e.g. `IFormFile.FileName`) into domain code.
 
