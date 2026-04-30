@@ -75,7 +75,7 @@ jobs:
       # Start Supabase first in background — it pulls Docker images (~50s)
       # which overlaps with .NET/Node setup, backend build, and npm ci below.
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
 
