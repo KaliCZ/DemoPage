@@ -31,9 +31,9 @@ const linkIconMap: Record<string, string> = {
 <Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
   <div class="max-w-7xl mx-auto px-4 md:px-8">
     <!-- Hero -->
-    <section class="mb-24 md:mb-32">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-        <div class="lg:col-span-8">
+    <section class="mb-16 md:mb-20">
+      <div class="max-w-4xl">
+        <div>
           <div class="flex items-center gap-2 mb-6 font-label text-xs uppercase tracking-widest text-primary">
             <Icon name="material-symbols:package-2" class="size-4" aria-hidden="true" />
             <span>{t.hero.tagline}</span>
@@ -106,24 +106,6 @@ const linkIconMap: Record<string, string> = {
             </div>
           </div>
         </div>
-
-        <!-- Quick facts card -->
-        <aside class="lg:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
-          <h2 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
-            <Icon name="material-symbols:bolt" class="size-6 text-tertiary" aria-hidden="true" />
-            {t.facts.title}
-          </h2>
-          <dl class="space-y-5">
-            {
-              t.facts.items.map((fact) => (
-                <div>
-                  <dt class="font-label text-xs text-on-surface-variant uppercase mb-1">{fact.label}</dt>
-                  <dd class="font-body font-semibold text-on-surface">{fact.value}</dd>
-                </div>
-              ))
-            }
-          </dl>
-        </aside>
       </div>
     </section>
 
@@ -159,37 +141,12 @@ const linkIconMap: Record<string, string> = {
       </div>
     </section>
 
-    <!-- Anatomy -->
-    <section class="mb-24 md:mb-32">
-      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
-        {t.anatomy.title}
-      </h2>
-      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
-        {t.anatomy.subtitle}
-      </p>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {
-          t.anatomy.items.map((item) => (
-            <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden flex flex-col">
-              <div class="bg-white p-6 flex items-center justify-center">
-                <img src={item.src} alt={item.alt} loading="lazy" decoding="async" class="block max-w-full h-auto" />
-              </div>
-              <figcaption class="p-6 border-t border-outline-variant/30">
-                <h3 class="font-headline font-bold text-on-surface mb-1">{item.title}</h3>
-                <p class="font-body text-sm text-on-surface-variant leading-relaxed">{item.description}</p>
-              </figcaption>
-            </figure>
-          ))
-        }
-      </div>
-    </section>
-
     <!-- Features -->
     <section class="mb-24 md:mb-32">
       <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
         {t.features.title}
       </h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {
           t.features.groups.map((group) => {
             const accent = group.color === "tertiary" ? "text-tertiary" : "text-primary";
@@ -200,14 +157,14 @@ const linkIconMap: Record<string, string> = {
                   <Icon name={`material-symbols:${group.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
                   {group.heading}
                 </h3>
-                <ul class="space-y-4">
+                <ul class="space-y-5">
                   {group.items.map((item) => (
                     <li class="font-body text-on-surface-variant">
                       <div class="flex items-start gap-2">
-                        <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-2", dot]} aria-hidden="true" />
+                        <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-[10px]", dot]} aria-hidden="true" />
                         <div>
-                          <code class="font-mono text-sm text-on-surface">{item.name}</code>
-                          <p class="text-sm text-on-surface-variant mt-1 leading-relaxed">{item.description}</p>
+                          <code class="font-mono text-[15px] font-bold text-on-surface block leading-snug">{item.name}</code>
+                          <p class="font-body text-sm text-on-surface-variant mt-1.5 leading-relaxed">{item.description}</p>
                         </div>
                       </div>
                     </li>
@@ -218,6 +175,23 @@ const linkIconMap: Record<string, string> = {
           })
         }
       </div>
+
+      <!-- Package layout diagram. -->
+      <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+        <div class="bg-white p-6 flex items-center justify-center">
+          <img
+            src={t.packageLayout.diagram.src}
+            alt={t.packageLayout.diagram.alt}
+            loading="lazy"
+            decoding="async"
+            class="block max-w-full h-auto"
+          />
+        </div>
+        <figcaption class="p-6 border-t border-outline-variant/30">
+          <h3 class="font-headline font-bold text-on-surface mb-1">{t.packageLayout.title}</h3>
+          <p class="font-body text-sm text-on-surface-variant leading-relaxed">{t.packageLayout.description}</p>
+        </figcaption>
+      </figure>
     </section>
 
     <!-- Examples -->
@@ -239,9 +213,10 @@ const linkIconMap: Record<string, string> = {
                   <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
                 </div>
                 <div class:list={["grid", hasDiagram ? "lg:grid-cols-2 lg:divide-x lg:divide-outline-variant/30" : "grid-cols-1"]}>
-                  <pre class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface m-0">
-                    <code>{example.code}</code>
-                  </pre>
+                  <pre
+                    class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface m-0"
+                    set:text={example.code}
+                  />
                   {hasDiagram && (
                     <div class="bg-white p-6 flex items-center justify-center">
                       <img

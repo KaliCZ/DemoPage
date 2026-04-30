@@ -17,22 +17,9 @@
     "copied": "Zkopírováno do schránky",
     "copyFailed": "Kopírování selhalo. Zkopírujte prosím ručně."
   },
-  "facts": {
-    "title": "V kostce",
-    "items": [
-      { "label": "Licence", "value": "MIT" },
-      { "label": "Cíl", "value": ".NET 10" },
-      { "label": "Závislosti", "value": "Žádné" }
-    ]
-  },
   "badges": {
     "ariaLabel": "Stavové odznaky projektu",
     "items": [
-      {
-        "src": "https://img.shields.io/github/v/release/KaliCZ/StrongTypes?label=verze&color=4858ab",
-        "alt": "Nejnovější verze na GitHubu",
-        "href": "https://github.com/KaliCZ/StrongTypes/releases"
-      },
       {
         "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
         "alt": "Nejnovější NuGet verze balíčku Kalicz.StrongTypes",
@@ -86,23 +73,13 @@
       }
     ]
   },
-  "anatomy": {
-    "title": "Anatomie",
-    "subtitle": "Jak do sebe balíčky zapadají a jaký kousek variance dělá NonEmptyEnumerable kompozičním.",
-    "items": [
-      {
-        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
-        "alt": "Diagram tří NuGet balíčků: hlavní Kalicz.StrongTypes plus volitelné doplňky EfCore a FsCheck",
-        "title": "Rozložení balíčků",
-        "description": "Jeden hlavní balíček, dva volitelné doplňky. Stáhněte si jen to, co potřebujete."
-      },
-      {
-        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/covariance.svg",
-        "alt": "Diagram zobrazující kovariantní upcast z INonEmptyEnumerable<Cat> na INonEmptyEnumerable<Animal>",
-        "title": "Kovariance",
-        "description": "INonEmptyEnumerable<out T> je kovariantní, takže neprázdná sekvence Cats je zároveň neprázdná sekvence Animals — bez kopie, bez LINQ."
-      }
-    ]
+  "packageLayout": {
+    "title": "Rozložení balíčků",
+    "description": "Jeden hlavní balíček, dva volitelné doplňky. Stáhněte si jen to, co potřebujete.",
+    "diagram": {
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+      "alt": "Diagram tří NuGet balíčků: hlavní Kalicz.StrongTypes plus volitelné doplňky EfCore a FsCheck"
+    }
   },
   "features": {
     "title": "Co je uvnitř",
@@ -155,18 +132,18 @@
     "subtitle": "Pár ukázek pro představu. Plnou dokumentaci a další příklady najdete na GitHubu.",
     "items": [
       {
-        "title": "Vytvoření NonEmptyString",
-        "description": "Tři varianty: vyhodit výjimku, zkusit, nebo plynulé rozšíření. Vyberte si tu, která se hodí pro dané volání.",
-        "code": "// Vyhodí výjimku, pokud je vstup neplatný\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Vrátí null, pokud je vstup neplatný\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Forma rozšíření\nNonEmptyString? fluent = userInput.AsNonEmpty();",
+        "title": "Validace na hranici API",
+        "description": "JSON konvertor odmítne neplatný vstup při deserializaci. Váš endpoint nikdy neuvidí špatnou hodnotu.",
+        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n// V ASP.NET Core: prázdné Name nebo nulové/záporné Age\n// selže při model bindingu ještě před handlerem.\n[HttpPost]\npublic IResult Create(CreateUserRequest req) =>\n    Results.Ok(_users.Add(req.Name, req.Age));"
+      },
+      {
+        "title": "Explicitní vytváření hodnot",
+        "description": "Každý typ má Create (vyhodí výjimku při neplatném vstupu) a TryCreate (vrátí null). Stringové typy mají i plynulou formu rozšíření.",
+        "code": "// Stringy — tři varianty volání\nNonEmptyString name = NonEmptyString.Create(input);    // throws\nNonEmptyString? maybe = NonEmptyString.TryCreate(input); // null on fail\nNonEmptyString? fluent = input.AsNonEmpty();             // extension\n\n// Čísla — obaly nad libovolným INumber<T> vynucující znaménko\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = NonNegative<decimal>.TryCreate(amount);\n\n// Sekvence — alespoň jeden prvek, Head a Tail jsou vždy bezpečné\nNonEmptyEnumerable<string> tags =\n    NonEmptyEnumerable.Create(\"primary\", \"secondary\", \"tertiary\");\nstring first = tags.Head;",
         "diagram": {
           "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
           "alt": "Diagram porovnávající TryCreate (vrátí null při neplatném vstupu) a Create (vyhodí výjimku při neplatném vstupu)"
         }
-      },
-      {
-        "title": "Validace na hranici API",
-        "description": "JSON konvertor odmítne neplatný vstup při deserializaci. Váš endpoint nikdy neuvidí špatnou hodnotu.",
-        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n// V ASP.NET Core: prázdné Name nebo nulové/záporné Age\n// selže při model bindingu ještě před handlerem.\n[HttpPost]\npublic IResult Create(CreateUserRequest req) =>\n    Results.Ok(_users.Add(req.Name, req.Age));"
       },
       {
         "title": "Skládání s Maybe<T>",

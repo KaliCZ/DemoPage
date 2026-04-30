@@ -17,22 +17,9 @@
     "copied": "Copied to clipboard",
     "copyFailed": "Could not copy. Please copy manually."
   },
-  "facts": {
-    "title": "At a glance",
-    "items": [
-      { "label": "License", "value": "MIT" },
-      { "label": "Target", "value": ".NET 10" },
-      { "label": "Dependencies", "value": "None" }
-    ]
-  },
   "badges": {
     "ariaLabel": "Project status badges",
     "items": [
-      {
-        "src": "https://img.shields.io/github/v/release/KaliCZ/StrongTypes?label=latest&color=4858ab",
-        "alt": "Latest release on GitHub",
-        "href": "https://github.com/KaliCZ/StrongTypes/releases"
-      },
       {
         "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
         "alt": "Latest NuGet version of Kalicz.StrongTypes",
@@ -86,23 +73,13 @@
       }
     ]
   },
-  "anatomy": {
-    "title": "Anatomy",
-    "subtitle": "How the packages fit together, and the small piece of variance that makes NonEmptyEnumerable composable.",
-    "items": [
-      {
-        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
-        "alt": "Diagram of the three NuGet packages: the core Kalicz.StrongTypes plus optional EfCore and FsCheck companion packages",
-        "title": "Package layout",
-        "description": "One core package, two opt-in companions. Pull in only what you need."
-      },
-      {
-        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/covariance.svg",
-        "alt": "Diagram showing covariant upcast from INonEmptyEnumerable<Cat> to INonEmptyEnumerable<Animal>",
-        "title": "Covariance",
-        "description": "INonEmptyEnumerable<out T> is covariant, so a non-empty sequence of Cats is a non-empty sequence of Animals — no copy, no LINQ."
-      }
-    ]
+  "packageLayout": {
+    "title": "Package layout",
+    "description": "One core package, two opt-in companions. Pull in only what you need.",
+    "diagram": {
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+      "alt": "Diagram of the three NuGet packages: the core Kalicz.StrongTypes plus optional EfCore and FsCheck companion packages"
+    }
   },
   "features": {
     "title": "What's in the box",
@@ -152,18 +129,18 @@
     "subtitle": "A few snippets to give you the feel of it. Full docs and more examples are on GitHub.",
     "items": [
       {
-        "title": "Create a NonEmptyString",
-        "description": "Three flavours: throw, try, or fluent extension. Pick whichever suits the call site.",
-        "code": "// Throws if invalid\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Returns null if invalid\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Extension form\nNonEmptyString? fluent = userInput.AsNonEmpty();",
+        "title": "Validate at the API boundary",
+        "description": "The JSON converter rejects invalid input during deserialization. Your endpoint never sees a bad value.",
+        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n// In ASP.NET Core: an empty Name or zero/negative Age\n// fails model binding before the handler runs.\n[HttpPost]\npublic IResult Create(CreateUserRequest req) =>\n    Results.Ok(_users.Add(req.Name, req.Age));"
+      },
+      {
+        "title": "Construct values explicitly",
+        "description": "Each type has Create (throws on invalid) and TryCreate (returns null). String types also have a fluent extension form.",
+        "code": "// Strings — three call styles\nNonEmptyString name = NonEmptyString.Create(input);    // throws\nNonEmptyString? maybe = NonEmptyString.TryCreate(input); // null on fail\nNonEmptyString? fluent = input.AsNonEmpty();             // extension\n\n// Numbers — sign-enforced wrappers over any INumber<T>\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = NonNegative<decimal>.TryCreate(amount);\n\n// Sequences — at least one element, Head and Tail always safe\nNonEmptyEnumerable<string> tags =\n    NonEmptyEnumerable.Create(\"primary\", \"secondary\", \"tertiary\");\nstring first = tags.Head;",
         "diagram": {
           "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
           "alt": "Flow diagram contrasting TryCreate (returns null on invalid input) and Create (throws on invalid input)"
         }
-      },
-      {
-        "title": "Validate at the API boundary",
-        "description": "The JSON converter rejects invalid input during deserialization. Your endpoint never sees a bad value.",
-        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n// In ASP.NET Core: an empty Name or zero/negative Age\n// fails model binding before the handler runs.\n[HttpPost]\npublic IResult Create(CreateUserRequest req) =>\n    Results.Ok(_users.Add(req.Name, req.Age));"
       },
       {
         "title": "Compose with Maybe<T>",
