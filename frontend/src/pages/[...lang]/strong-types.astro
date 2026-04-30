@@ -1,0 +1,266 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../layouts/Layout.astro";
+import IconGitHub from "../../components/icons/IconGitHub.astro";
+import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/strong-types.json";
+import csStrings from "../../i18n/cs/strong-types.json";
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+
+const githubUrl = "https://github.com/KaliCZ/StrongTypes";
+const nugetUrl = "https://www.nuget.org/packages/Kalicz.StrongTypes";
+
+const linkIconMap: Record<string, string> = {
+  github: "material-symbols:code",
+  package: "material-symbols:package-2",
+  database: "material-symbols:database",
+  science: "material-symbols:science",
+};
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
+  <div class="max-w-7xl mx-auto px-4 md:px-8">
+    <!-- Hero -->
+    <section class="mb-24 md:mb-32">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+        <div class="lg:col-span-8">
+          <div class="flex items-center gap-2 mb-6 font-label text-xs uppercase tracking-widest text-primary">
+            <Icon name="material-symbols:package-2" class="size-4" aria-hidden="true" />
+            <span>{t.hero.tagline}</span>
+          </div>
+          <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
+            {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
+              >{t.hero.titleHighlight}</span
+            >{t.hero.titleSuffix}
+          </h1>
+          <p class="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl leading-relaxed mb-10">
+            {t.hero.description}
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3 mb-8">
+            <a
+              href={githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="bg-on-surface text-surface px-5 py-2.5 font-headline font-bold rounded-lg shadow-sm hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+            >
+              <IconGitHub class="w-4 h-4" />
+              {t.hero.primaryCta}
+            </a>
+            <a
+              href={nugetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="bg-primary text-on-primary px-5 py-2.5 font-headline font-bold rounded-lg shadow-sm hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+            >
+              <Icon name="material-symbols:package-2" class="size-4" aria-hidden="true" />
+              {t.hero.secondaryCta}
+            </a>
+          </div>
+
+          <!-- Install command -->
+          <div class="bg-surface-container rounded-xl border border-outline-variant/40 p-1 max-w-xl">
+            <div class="flex items-center gap-2 px-3 pt-2 pb-1 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+              <Icon name="material-symbols:terminal" class="size-3.5" aria-hidden="true" />
+              {t.hero.installLabel}
+            </div>
+            <div class="flex items-center justify-between gap-3 px-3 pb-3 pt-1">
+              <code class="font-mono text-sm md:text-[15px] text-on-surface truncate" data-install-command>
+                {t.hero.install}
+              </code>
+              <button
+                type="button"
+                data-copy-install
+                class="shrink-0 p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
+                aria-label={t.hero.copyAriaLabel}
+                title={t.hero.copyAriaLabel}
+                data-copied-msg={t.hero.copied}
+                data-copy-failed-msg={t.hero.copyFailed}
+              >
+                <Icon name="material-symbols:content-copy" class="size-4 copy-idle" aria-hidden="true" />
+                <Icon name="material-symbols:check" class="size-4 hidden copy-done" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick facts card -->
+        <aside class="lg:col-span-4 bg-surface-container p-8 rounded-xl border border-outline-variant/40 shadow-sm">
+          <h2 class="font-headline font-bold text-xl mb-6 flex items-center gap-2 text-on-surface">
+            <Icon name="material-symbols:bolt" class="size-6 text-tertiary" aria-hidden="true" />
+            {t.facts.title}
+          </h2>
+          <dl class="space-y-5">
+            {
+              t.facts.items.map((fact) => (
+                <div>
+                  <dt class="font-label text-xs text-on-surface-variant uppercase mb-1">{fact.label}</dt>
+                  <dd class="font-body font-semibold text-on-surface">{fact.value}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Why -->
+    <section class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.why.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+        {t.why.subtitle}
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {
+          t.why.points.map((point) => (
+            <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+              <Icon name={`material-symbols:${point.icon.replace(/_/g, "-")}`} class="size-7 text-primary mb-4 block" aria-hidden="true" />
+              <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{point.title}</h3>
+              <p class="font-body text-on-surface-variant text-sm leading-relaxed">{point.description}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
+        {t.features.title}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {
+          t.features.groups.map((group) => {
+            const accent = group.color === "tertiary" ? "text-tertiary" : "text-primary";
+            const dot = group.color === "tertiary" ? "bg-tertiary" : "bg-primary";
+            return (
+              <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+                <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", accent]}>
+                  <Icon name={`material-symbols:${group.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
+                  {group.heading}
+                </h3>
+                <ul class="space-y-4">
+                  {group.items.map((item) => (
+                    <li class="font-body text-on-surface-variant">
+                      <div class="flex items-start gap-2">
+                        <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-2", dot]} aria-hidden="true" />
+                        <div>
+                          <code class="font-mono text-sm text-on-surface">{item.name}</code>
+                          <p class="text-sm text-on-surface-variant mt-1 leading-relaxed">{item.description}</p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })
+        }
+      </div>
+    </section>
+
+    <!-- Examples -->
+    <section class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.examples.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+        {t.examples.subtitle}
+      </p>
+      <div class="space-y-6">
+        {
+          t.examples.items.map((example) => (
+            <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+              <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
+                <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
+                <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
+              </div>
+              <pre class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface">
+                <code>{example.code}</code>
+              </pre>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="mb-24">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.links.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+        {t.links.subtitle}
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {
+          t.links.items.map((item) => {
+            const iconName = linkIconMap[item.icon] ?? "material-symbols:link";
+            const isGitHub = item.icon === "github";
+            return (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex items-start gap-4"
+              >
+                <div class="shrink-0 size-10 rounded-lg bg-primary/10 grid place-items-center text-primary group-hover:bg-primary/15 transition-colors">
+                  {isGitHub ? <IconGitHub class="w-5 h-5" /> : <Icon name={iconName} class="size-5" aria-hidden="true" />}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{item.title}</h3>
+                  <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{item.description}</p>
+                  <span class="font-mono text-xs text-on-surface-variant mt-3 inline-flex items-center gap-1">
+                    {item.cta}
+                    <Icon
+                      name="material-symbols:arrow-outward"
+                      class="size-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </div>
+              </a>
+            );
+          })
+        }
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  const copyButton = document.querySelector<HTMLButtonElement>("[data-copy-install]");
+  const installCommand = document.querySelector<HTMLElement>("[data-install-command]");
+
+  copyButton?.addEventListener("click", async () => {
+    if (!installCommand) return;
+    const text = installCommand.textContent?.trim() ?? "";
+    const idle = copyButton.querySelector<HTMLElement>(".copy-idle");
+    const done = copyButton.querySelector<HTMLElement>(".copy-done");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      idle?.classList.add("hidden");
+      done?.classList.remove("hidden");
+      (window as any).__showSnackbar?.(copyButton.dataset.copiedMsg ?? "Copied", "success");
+      setTimeout(() => {
+        idle?.classList.remove("hidden");
+        done?.classList.add("hidden");
+      }, 2000);
+    } catch {
+      (window as any).__showSnackbar?.(copyButton.dataset.copyFailedMsg ?? "Copy failed", "error");
+    }
+  });
+</script>

@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "title": "StrongTypes | kalandra.tech — Safer C# Types",
+    "description": "StrongTypes is a small C# library for safer, more expressive code: NonEmptyString, validated numerics, NonEmptyEnumerable, Maybe<T>, and Result<T, TError>."
+  },
+  "hero": {
+    "tagline": "C# Library · NuGet",
+    "titlePrefix": "A few small types that make C# ",
+    "titleHighlight": "safer",
+    "titleSuffix": ".",
+    "description": "StrongTypes adds focused, validated wrapper types that move invariants into the type system — \"a string that is never empty\" or \"an integer that is always positive\". Validation happens at the boundary, so invalid data never reaches your handlers.",
+    "primaryCta": "View on GitHub",
+    "secondaryCta": "View on NuGet",
+    "install": "dotnet add package Kalicz.StrongTypes",
+    "installLabel": "Install",
+    "copyAriaLabel": "Copy install command",
+    "copied": "Copied to clipboard",
+    "copyFailed": "Could not copy. Please copy manually."
+  },
+  "facts": {
+    "title": "At a glance",
+    "items": [
+      { "label": "License", "value": "MIT" },
+      { "label": "Target", "value": ".NET 10" },
+      { "label": "Latest", "value": "1.0.1" },
+      { "label": "Dependencies", "value": "None" }
+    ]
+  },
+  "why": {
+    "title": "Why bother with strong types?",
+    "subtitle": "Most C# code defends against invalid input by re-validating it everywhere. StrongTypes flips that around: validate once, at the boundary, and let the compiler enforce the rest.",
+    "points": [
+      {
+        "icon": "shield-lock",
+        "title": "Invariants in the type",
+        "description": "If a method takes NonEmptyString, it cannot receive an empty one. The compiler — not a runtime guard clause — does the work."
+      },
+      {
+        "icon": "bolt",
+        "title": "Validation at the edge",
+        "description": "Built-in System.Text.Json converters reject invalid payloads during deserialization, before your endpoint method is even called."
+      },
+      {
+        "icon": "code-blocks",
+        "title": "Expressive intent",
+        "description": "A signature like Result<Order, OrderError> Place(Positive<int> qty) tells the reader exactly what's allowed and what can fail."
+      },
+      {
+        "icon": "package-2",
+        "title": "Small and focused",
+        "description": "No heavy framework, no runtime reflection magic. Drop it in alongside your existing code — types compose with what you already have."
+      }
+    ]
+  },
+  "features": {
+    "title": "What's in the box",
+    "groups": [
+      {
+        "color": "primary",
+        "icon": "label",
+        "heading": "Validated wrappers",
+        "items": [
+          { "name": "NonEmptyString", "description": "Guaranteed non-null, non-empty, non-whitespace string." },
+          {
+            "name": "Positive<T>, NonNegative<T>, Negative<T>, NonPositive<T>",
+            "description": "Sign-enforcing wrappers over any INumber<T>."
+          },
+          {
+            "name": "NonEmptyEnumerable<T>",
+            "description": "Read-only sequence with at least one element — Head and Tail are always safe to access."
+          }
+        ]
+      },
+      {
+        "color": "tertiary",
+        "icon": "alt-route",
+        "heading": "Algebraic types",
+        "items": [
+          { "name": "Maybe<T>", "description": "Optional values with Map and FlatMap. Useful for HTTP PATCH (don't touch / clear / set)." },
+          { "name": "Result<T, TError>", "description": "Explicit failure handling without exceptions. Includes async support." }
+        ]
+      },
+      {
+        "color": "primary",
+        "icon": "settings",
+        "heading": "Built-in integrations",
+        "items": [
+          { "name": "System.Text.Json", "description": "Automatic converters — no registration required." },
+          { "name": "EF Core value converters", "description": "Via the Kalicz.StrongTypes.EfCore companion package." },
+          {
+            "name": "FsCheck generators",
+            "description": "Via the Kalicz.StrongTypes.FsCheck companion package for property-based testing."
+          }
+        ]
+      }
+    ]
+  },
+  "examples": {
+    "title": "How it looks",
+    "subtitle": "A few snippets to give you the feel of it. Full docs and more examples are on GitHub.",
+    "items": [
+      {
+        "title": "Create a NonEmptyString",
+        "description": "Three flavours: throw, try, or fluent extension. Pick whichever suits the call site.",
+        "code": "// Throws if invalid\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Returns null if invalid\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Extension form\nNonEmptyString? fluent = userInput.AsNonEmpty();"
+      },
+      {
+        "title": "Validate at the API boundary",
+        "description": "The JSON converter rejects invalid input during deserialization. Your endpoint never sees a bad value.",
+        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n// In ASP.NET Core: an empty Name or zero/negative Age\n// fails model binding before the handler runs.\n[HttpPost]\npublic IResult Create(CreateUserRequest req) =>\n    Results.Ok(_users.Add(req.Name, req.Age));"
+      },
+      {
+        "title": "Compose with Maybe<T>",
+        "description": "Chain optional operations without nested null checks.",
+        "code": "Maybe<int> doubled = Maybe.Some(3).Map(x => x * 2);\n// Some(6)\n\nMaybe<int> parsed = Maybe.Some(\"42\")\n    .FlatMap(s => int.TryParse(s, out var n)\n        ? Maybe.Some(n)\n        : Maybe.None<int>());"
+      },
+      {
+        "title": "Explicit failures with Result<T, TError>",
+        "description": "Pattern-match on Success or Error — no exceptions, no out parameters.",
+        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value) Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg) Console.WriteLine($\"failed: {msg}\");"
+      },
+      {
+        "title": "Three-state PATCH with Maybe<T>",
+        "description": "Distinguish \"don't touch\", \"clear to null\", and \"set to value\" — a long-standing pain point in REST APIs.",
+        "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → don't touch the field\n// Some(null)   → clear it\n// Some(\"abc\")  → set it\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;"
+      }
+    ]
+  },
+  "links": {
+    "title": "Get started",
+    "subtitle": "Source, packages, and docs.",
+    "items": [
+      {
+        "icon": "github",
+        "title": "GitHub repository",
+        "description": "Source, README, releases, and issue tracker.",
+        "url": "https://github.com/KaliCZ/StrongTypes",
+        "cta": "KaliCZ/StrongTypes"
+      },
+      {
+        "icon": "package",
+        "title": "NuGet — Core",
+        "description": "The main package. Contains all validated and algebraic types.",
+        "url": "https://www.nuget.org/packages/Kalicz.StrongTypes",
+        "cta": "Kalicz.StrongTypes"
+      },
+      {
+        "icon": "database",
+        "title": "NuGet — EF Core",
+        "description": "Value converters for persisting StrongTypes with Entity Framework Core.",
+        "url": "https://www.nuget.org/packages/Kalicz.StrongTypes.EfCore",
+        "cta": "Kalicz.StrongTypes.EfCore"
+      },
+      {
+        "icon": "science",
+        "title": "NuGet — FsCheck",
+        "description": "Generators for property-based testing of StrongTypes values.",
+        "url": "https://www.nuget.org/packages/Kalicz.StrongTypes.FsCheck",
+        "cta": "Kalicz.StrongTypes.FsCheck"
+      }
+    ]
+  }
+}

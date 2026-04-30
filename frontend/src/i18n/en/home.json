@@ -14,19 +14,21 @@
       "description": "What drives me as an engineer.",
       "cta": "Read more"
     },
-    "project": {
-      "title": "Project",
-      "description": "From a simple page to advanced features. Follow the roadmap.",
+    "thisSite": {
+      "title": "This Site",
+      "description": "Built in public — every version, decision, and deployment documented.",
       "cta": "View roadmap"
+    },
+    "strongTypes": {
+      "title": "StrongTypes",
+      "description": "A C# library for safer, more expressive code — non-empty strings, validated numerics, Maybe and Result.",
+      "cta": "Explore the library"
     }
   },
   "whatsHere": {
     "title": "What is this page?",
     "siteName": "kalandra.tech",
-    "paragraph1": " is my personal website, but it's also an experiment. I'm building it transparently — every version, every architectural decision, every deployment is public.",
-    "paragraph2prefix": "More projects are coming in the future. For now, the only project here is ",
-    "paragraph2link": "the meta-project of building this very site",
-    "paragraph2suffix": ". Stay tuned."
+    "paragraph1": " is my personal website, but it's also an experiment. I'm building it transparently — every version, every architectural decision, every deployment is public."
   },
   "qrCode": {
     "label": "Click to share",

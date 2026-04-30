@@ -41,13 +41,8 @@ const t = translations[lang];
         <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">
           {t.whatsHere.title}
         </h2>
-        <p class="text-on-surface-variant text-lg leading-relaxed mb-6">
-          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
-        </p>
         <p class="text-on-surface-variant text-lg leading-relaxed">
-          {t.whatsHere.paragraph2prefix}<a href={localePath(lang, "project")} class="text-primary hover:underline"
-            >{t.whatsHere.paragraph2link}</a
-          >{t.whatsHere.paragraph2suffix}
+          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
         </p>
       </div>
       <QrCodeCard
@@ -66,11 +61,11 @@ const t = translations[lang];
     </div>
 
     <!-- Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
       <!-- About Me card -->
       <a
         href={localePath(lang, "about")}
-        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md"
+        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col"
       >
         <div class="flex items-center gap-3 mb-4">
           <Icon name="material-symbols:person" class="size-6 text-primary" aria-hidden="true" />
@@ -78,7 +73,7 @@ const t = translations[lang];
             {t.cards.about.title}
           </h2>
         </div>
-        <p class="text-on-surface-variant leading-relaxed mb-6">
+        <p class="text-on-surface-variant leading-relaxed mb-6 flex-1">
           {t.cards.about.description}
         </p>
         <span class="font-label text-sm uppercase tracking-widest text-primary flex items-center gap-1">
@@ -87,22 +82,42 @@ const t = translations[lang];
         </span>
       </a>
 
-      <!-- Project card -->
+      <!-- This Site project card -->
       <a
         href={localePath(lang, "project")}
-        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-tertiary/30 transition-all duration-300 shadow-sm hover:shadow-md"
+        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-tertiary/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col"
       >
         <div class="flex items-center gap-3 mb-4">
           <Icon name="material-symbols:rocket-launch" class="size-6 text-tertiary" aria-hidden="true" />
           <h2 class="font-headline text-2xl font-bold group-hover:text-tertiary transition-colors">
-            {t.cards.project.title}
+            {t.cards.thisSite.title}
           </h2>
         </div>
-        <p class="text-on-surface-variant leading-relaxed mb-6">
-          {t.cards.project.description}
+        <p class="text-on-surface-variant leading-relaxed mb-6 flex-1">
+          {t.cards.thisSite.description}
         </p>
         <span class="font-label text-sm uppercase tracking-widest text-tertiary flex items-center gap-1">
-          {t.cards.project.cta}
+          {t.cards.thisSite.cta}
+          <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+        </span>
+      </a>
+
+      <!-- StrongTypes project card -->
+      <a
+        href={localePath(lang, "strong-types")}
+        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col md:col-span-2 lg:col-span-1"
+      >
+        <div class="flex items-center gap-3 mb-4">
+          <Icon name="material-symbols:package-2" class="size-6 text-primary" aria-hidden="true" />
+          <h2 class="font-headline text-2xl font-bold group-hover:text-primary transition-colors">
+            {t.cards.strongTypes.title}
+          </h2>
+        </div>
+        <p class="text-on-surface-variant leading-relaxed mb-6 flex-1">
+          {t.cards.strongTypes.description}
+        </p>
+        <span class="font-label text-sm uppercase tracking-widest text-primary flex items-center gap-1">
+          {t.cards.strongTypes.cta}
           <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
         </span>
       </a>

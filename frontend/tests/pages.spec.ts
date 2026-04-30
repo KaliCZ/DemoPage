@@ -43,6 +43,11 @@ test.describe("Page rendering", () => {
     await page.goto("/project");
     await expect(page).toHaveTitle(/Project/);
   });
+
+  test("strong-types page loads", async ({ page }) => {
+    await page.goto("/strong-types");
+    await expect(page).toHaveTitle(/StrongTypes/);
+  });
 });
 
 test.describe("Navigation", () => {

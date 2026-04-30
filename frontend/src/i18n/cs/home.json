@@ -14,19 +14,21 @@
       "description": "Co mě jako inženýra pohání.",
       "cta": "Číst dále"
     },
-    "project": {
-      "title": "Projekt",
-      "description": "Od jednoduché stránky až po pokročilé funkce. Sledujte plán do budoucna.",
+    "thisSite": {
+      "title": "Tato stránka",
+      "description": "Stavěná veřejně — každá verze, rozhodnutí i nasazení jsou zdokumentovány.",
       "cta": "Zobrazit plán"
+    },
+    "strongTypes": {
+      "title": "StrongTypes",
+      "description": "C# knihovna pro bezpečnější a výstižnější kód — neprázdné řetězce, validované numerické typy, Maybe a Result.",
+      "cta": "Prozkoumat knihovnu"
     }
   },
   "whatsHere": {
     "title": "Co je tato stránka?",
     "siteName": "kalandra.tech",
-    "paragraph1": " je moje osobní webová stránka, a zároveň i experiment. Stavím ji transparentě — každá verze, každé architektonické rozhodnutí, každý deployment je veřejný.",
-    "paragraph2prefix": "Další projekty přibudou časem. Zatím je tu jediný projekt — ",
-    "paragraph2link": "meta-projekt stavby tohoto webu",
-    "paragraph2suffix": ". Sledujte novinky."
+    "paragraph1": " je moje osobní webová stránka, a zároveň i experiment. Stavím ji transparentě — každá verze, každé architektonické rozhodnutí, každý deployment je veřejný."
   },
   "qrCode": {
     "label": "Klikni a sdílej",
