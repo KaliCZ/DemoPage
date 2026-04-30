@@ -19,7 +19,50 @@
     "overview": "Overview",
     "manifesto": "Manifesto",
     "skills": "Skills",
+    "personal": "About me",
     "career": "Career"
+  },
+  "personal": {
+    "title": "About me",
+    "subtitle": "A few things I get up to when I'm away from the keyboard.",
+    "items": [
+      {
+        "icon": "mic-external-on",
+        "color": "primary",
+        "title": "I sing",
+        "description": "If there's a chance to sing along, I'll take it."
+      },
+      {
+        "icon": "casino",
+        "color": "tertiary",
+        "title": "Games of every kind",
+        "description": "Board games, video games, sport — if it's a game, I want in."
+      },
+      {
+        "icon": "sports-soccer",
+        "color": "primary",
+        "title": "Former footballer",
+        "description": "Played football competitively as a younger man."
+      },
+      {
+        "icon": "stadia-controller",
+        "color": "tertiary",
+        "title": "Esports past",
+        "description": "Competed at a high level in League of Legends and Rocket League."
+      },
+      {
+        "icon": "two-wheeler",
+        "color": "primary",
+        "title": "Two wheels",
+        "description": "Spent a few years racing 190cc motorcycles."
+      },
+      {
+        "icon": "family-restroom",
+        "color": "tertiary",
+        "title": "Father of two",
+        "description": "Most of my non-work time goes here."
+      }
+    ]
   },
   "manifesto": {
     "title": "My Manifesto",

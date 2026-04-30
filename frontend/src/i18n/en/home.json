@@ -13,16 +13,6 @@
       "title": "About Me",
       "description": "What drives me as an engineer.",
       "cta": "Read more"
-    },
-    "thisSite": {
-      "title": "This Site",
-      "description": "Built in public — every version, decision, and deployment documented.",
-      "cta": "View roadmap"
-    },
-    "strongTypes": {
-      "title": "StrongTypes",
-      "description": "A C# library for safer, more expressive code — non-empty strings, validated numerics, Maybe and Result.",
-      "cta": "Explore the library"
     }
   },
   "whatsHere": {

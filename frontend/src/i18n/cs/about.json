@@ -19,7 +19,50 @@
     "overview": "Přehled",
     "manifesto": "Manifest",
     "skills": "Dovednosti",
+    "personal": "O mně",
     "career": "Kariéra"
+  },
+  "personal": {
+    "title": "O mně",
+    "subtitle": "Pár věcí, kterým se věnuju, když nejsem u klávesnice.",
+    "items": [
+      {
+        "icon": "mic-external-on",
+        "color": "primary",
+        "title": "Zpívám",
+        "description": "Když je k tomu příležitost, rád si zazpívám."
+      },
+      {
+        "icon": "casino",
+        "color": "tertiary",
+        "title": "Hry všeho druhu",
+        "description": "Deskové, počítačové, sportovní — když je to hra, jsem v ní."
+      },
+      {
+        "icon": "sports-soccer",
+        "color": "primary",
+        "title": "Bývalý fotbalista",
+        "description": "Za mlada jsem fotbal hrával závodně."
+      },
+      {
+        "icon": "stadia-controller",
+        "color": "tertiary",
+        "title": "Esportová minulost",
+        "description": "Hrál jsem League of Legends a Rocket League na vysoké úrovni."
+      },
+      {
+        "icon": "two-wheeler",
+        "color": "primary",
+        "title": "Motorky",
+        "description": "Pár let jsem závodil na malých 190ccm motorkách."
+      },
+      {
+        "icon": "family-restroom",
+        "color": "tertiary",
+        "title": "Otec dvou dětí",
+        "description": "Sem směřuje většina mého času mimo práci."
+      }
+    ]
   },
   "manifesto": {
     "title": "Můj manifest",
