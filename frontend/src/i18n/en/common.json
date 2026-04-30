@@ -42,7 +42,8 @@
     "mainNavigation": "Main navigation",
     "toggleDarkMode": "Toggle dark mode",
     "changeLanguage": "Change language",
-    "openProjectsMenu": "Open projects menu"
+    "openProjectsMenu": "Quick links to specific projects",
+    "breadcrumb": "Breadcrumb"
   },
   "notFound": {
     "title": "Page Not Found",

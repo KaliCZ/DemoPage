@@ -1,0 +1,76 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../layouts/Layout.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/projects.json";
+import csStrings from "../../i18n/cs/projects.json";
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="projects" lang={lang}>
+  <section class="max-w-7xl mx-auto px-4 md:px-8">
+    <!-- Hero -->
+    <div class="mb-12 md:mb-16 max-w-3xl">
+      <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-[1.1] text-on-surface">
+        {t.hero.title}
+      </h1>
+      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">
+        {t.hero.subtitle}
+      </p>
+    </div>
+
+    <!-- Project cards. Same shape as the home-page cards so the visual vocabulary is consistent;
+         this page exists as a category landing so the nav's "Projects" link has somewhere
+         meaningful to point, and so each project gets a richer description than the home page
+         can afford. -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mb-24">
+      <a
+        href={localePath(lang, "project")}
+        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-tertiary/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col"
+      >
+        <div class="flex items-center gap-3 mb-4">
+          <Icon name="material-symbols:rocket-launch" class="size-6 text-tertiary" aria-hidden="true" />
+          <h2 class="font-headline text-2xl font-bold group-hover:text-tertiary transition-colors">
+            {t.items.thisSite.title}
+          </h2>
+        </div>
+        <div class="text-on-surface-variant leading-relaxed mb-6 flex-1 space-y-3">
+          {t.items.thisSite.description.map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+        <span class="font-label text-sm uppercase tracking-widest text-tertiary flex items-center gap-1">
+          {t.items.thisSite.cta}
+          <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+        </span>
+      </a>
+
+      <a
+        href={localePath(lang, "strong-types")}
+        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col"
+      >
+        <div class="flex items-center gap-3 mb-4">
+          <Icon name="material-symbols:package-2" class="size-6 text-primary" aria-hidden="true" />
+          <h2 class="font-headline text-2xl font-bold group-hover:text-primary transition-colors">
+            {t.items.strongTypes.title}
+          </h2>
+        </div>
+        <div class="text-on-surface-variant leading-relaxed mb-6 flex-1 space-y-3">
+          {t.items.strongTypes.description.map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+        <span class="font-label text-sm uppercase tracking-widest text-primary flex items-center gap-1">
+          {t.items.strongTypes.cta}
+          <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+        </span>
+      </a>
+    </div>
+  </section>
+</Layout>

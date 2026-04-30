@@ -42,7 +42,8 @@
     "mainNavigation": "Hlavní navigace",
     "toggleDarkMode": "Přepnout tmavý režim",
     "changeLanguage": "Změnit jazyk",
-    "openProjectsMenu": "Otevřít nabídku projektů"
+    "openProjectsMenu": "Rychlé odkazy na konkrétní projekty",
+    "breadcrumb": "Drobečková navigace"
   },
   "notFound": {
     "title": "Stránka nenalezena",

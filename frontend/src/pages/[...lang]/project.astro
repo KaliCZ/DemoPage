@@ -4,11 +4,15 @@ import Layout from "../../layouts/Layout.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
 import ArchitectureDiagram from "../../components/ArchitectureDiagram.astro";
 import OnThisPage from "../../components/OnThisPage.astro";
-import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import Breadcrumb from "../../components/Breadcrumb.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/project.json";
 import csStrings from "../../i18n/cs/project.json";
+import enCommon from "../../i18n/en/common.json";
+import csCommon from "../../i18n/cs/common.json";
 
 const translations = { en: enStrings, cs: csStrings };
+const commonTranslations = { en: enCommon, cs: csCommon };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({
@@ -18,6 +22,7 @@ export function getStaticPaths() {
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
+const tCommon = commonTranslations[lang];
 
 const tocItems = [
   { id: "hero", label: t.toc.overview },
@@ -31,8 +36,13 @@ const tocItems = [
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="project" lang={lang}>
-  <div class="xl:grid xl:grid-cols-[1fr_220px] xl:gap-12 max-w-7xl mx-auto px-4 md:px-8 relative">
+  <div class="max-w-7xl mx-auto px-4 md:px-8 relative">
     <div>
+      <Breadcrumb
+        ariaLabel={tCommon.a11y.breadcrumb}
+        items={[{ label: tCommon.nav.projects, href: localePath(lang, "projects") }, { label: tCommon.nav.projectThisSite }]}
+        class="mb-8"
+      />
       <!-- Hero / Intro Section -->
       <section id="hero" class="mb-24">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">

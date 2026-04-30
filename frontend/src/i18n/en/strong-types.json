@@ -1,14 +1,13 @@
 {
   "meta": {
-    "title": "StrongTypes | kalandra.tech — Safer C# Types",
-    "description": "StrongTypes is a small C# library for safer, more expressive code: NonEmptyString, validated numerics, NonEmptyEnumerable, Maybe<T>, and Result<T, TError>."
+    "title": "Kalicz.StrongTypes | kalandra.tech — Safer C# Types",
+    "description": "Kalicz.StrongTypes is a C# NuGet package for safer, more expressive code: NonEmptyString, validated numerics, NonEmptyEnumerable, Maybe<T>, and Result<T, TError>."
   },
   "hero": {
-    "tagline": "C# Library · NuGet",
     "titlePrefix": "A few small types that make C# ",
     "titleHighlight": "safer",
     "titleSuffix": ".",
-    "description": "StrongTypes adds focused, validated wrapper types that move invariants into the type system — \"a string that is never empty\" or \"an integer that is always positive\". Validation happens at the boundary, so invalid data never reaches your handlers.",
+    "description": "Kalicz.StrongTypes is a C# NuGet package that adds no-code validations enforced by the compiler. Wrapper types like NonEmptyString or Positive<int> move invariants into the type system, and validation happens at the boundary — so invalid data never reaches your handlers.",
     "primaryCta": "View on GitHub",
     "secondaryCta": "View on NuGet",
     "install": "dotnet add package Kalicz.StrongTypes",
@@ -131,30 +130,21 @@
       {
         "title": "Validate at the API boundary",
         "description": "The JSON converter rejects invalid input during deserialization. Your endpoint never sees a bad value.",
-        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n// In ASP.NET Core: an empty Name or zero/negative Age\n// fails model binding before the handler runs.\n[HttpPost]\npublic IResult Create(CreateUserRequest req) =>\n    Results.Ok(_users.Add(req.Name, req.Age));"
+        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n[HttpPost]\npublic async Task<IResult> Create(CreateUserRequest req)\n{\n    // No extra validation needed here:\n    // ASP pipeline rejects invalid payloads with 400.\n    _users.Add(req.Name, req.Age);\n    await _users.SaveChangesAsync();\n    return Results.NoContent();\n}"
       },
       {
         "title": "Construct values explicitly",
         "description": "Each type has Create (throws on invalid) and TryCreate (returns null). String types also have a fluent extension form.",
-        "code": "// Strings — three call styles\nNonEmptyString name = NonEmptyString.Create(input);    // throws\nNonEmptyString? maybe = NonEmptyString.TryCreate(input); // null on fail\nNonEmptyString? fluent = input.AsNonEmpty();             // extension\n\n// Numbers — sign-enforced wrappers over any INumber<T>\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = NonNegative<decimal>.TryCreate(amount);\n\n// Sequences — at least one element, Head and Tail always safe\nNonEmptyEnumerable<string> tags =\n    NonEmptyEnumerable.Create(\"primary\", \"secondary\", \"tertiary\");\nstring first = tags.Head;",
+        "code": "// Strings — three call styles\n// throws if invalid\nNonEmptyString name = NonEmptyString.Create(input);\n// null if invalid\nNonEmptyString? safe = NonEmptyString.TryCreate(input);\n// fluent extension\nNonEmptyString? fluent = input.AsNonEmpty();\n\n// Numbers — sign-enforced over INumber<T>\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = amount.AsNonNegative();\n\n// Sequences — at least one element, Head safe\nNonEmptyEnumerable<string> tags = [\"red\", \"blue\"];\nNonEmptyEnumerable<string>? maybe = list.AsNonEmpty();\nstring first = tags.Head;",
         "diagram": {
           "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
           "alt": "Flow diagram contrasting TryCreate (returns null on invalid input) and Create (throws on invalid input)"
         }
       },
       {
-        "title": "Compose with Maybe<T>",
-        "description": "Chain optional operations without nested null checks.",
-        "code": "Maybe<int> doubled = Maybe.Some(3).Map(x => x * 2);\n// Some(6)\n\nMaybe<int> parsed = Maybe.Some(\"42\")\n    .FlatMap(s => int.TryParse(s, out var n)\n        ? Maybe.Some(n)\n        : Maybe.None<int>());",
-        "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
-          "alt": "Pipeline diagram showing Some and None values flowing through Map and FlatMap operations on Maybe<T>"
-        }
-      },
-      {
         "title": "Explicit failures with Result<T, TError>",
         "description": "Pattern-match on Success or Error — no exceptions, no out parameters.",
-        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value) Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg) Console.WriteLine($\"failed: {msg}\");",
+        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value)\n    Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg)\n    Console.WriteLine($\"failed: {msg}\");",
         "diagram": {
           "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/result-composition.svg",
           "alt": "Pipeline diagram showing how a Result<T, TError> value flows through Map, MapError, and FlatMap stages"
@@ -168,8 +158,29 @@
           "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/patch-three-state.svg",
           "alt": "Diagram of the three-state PATCH model: null (don't touch), Some(null) (clear), Some(value) (set)"
         }
+      },
+      {
+        "title": "Compose with Maybe<T>",
+        "description": "Chain optional operations without nested null checks. Implicit operators handle the wrapping — you return a T or Maybe.None and it just works.",
+        "code": "// Producer: implicit conversion from T or Maybe.None\nMaybe<int> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : Maybe.None;\n\n// Map: T -> U, auto-wraps in Maybe\nMaybe<int> doubled = Parse(\"21\").Map(x => x * 2);\n// Some(42)\n\n// FlatMap: T -> Maybe<U>, no double-wrap\nMaybe<int> sum = Parse(\"1\").FlatMap(a =>\n    Parse(\"2\").Map(b => a + b));\n// Some(3)",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
+          "alt": "Pipeline diagram showing Some and None values flowing through Map and FlatMap operations on Maybe<T>"
+        }
       }
     ]
+  },
+  "lightbox": {
+    "dialogLabel": "Enlarged diagram",
+    "closeLabel": "Close"
+  },
+  "toc": {
+    "title": "On this page",
+    "overview": "Overview",
+    "why": "Why",
+    "features": "What's in the box",
+    "examples": "How it looks",
+    "getStarted": "Get started"
   },
   "links": {
     "title": "Get started",
