@@ -16,7 +16,7 @@ const { title, items, desktop = true } = Astro.props;
 <!-- Mobile TOC — Sticky Bottom Tab Bar -->
 <nav
   id="toc-bar"
-  class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+  class="xl:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
   aria-label={title}
 >
   <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
@@ -38,7 +38,7 @@ const { title, items, desktop = true } = Astro.props;
 
 {
   desktop && (
-    <aside class="hidden lg:block">
+    <aside class="hidden xl:block">
       <nav class="sticky top-24 space-y-3" aria-label={title}>
         <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-4">{title}</h4>
         {items.map((item) => (
@@ -77,7 +77,7 @@ const { title, items, desktop = true } = Astro.props;
     display: none;
   }
   /* Bottom padding so content isn't hidden behind the sticky bar */
-  @media (max-width: 1023px) {
+  @media (max-width: 1279px) {
     body {
       padding-bottom: 3.5rem;
     }
