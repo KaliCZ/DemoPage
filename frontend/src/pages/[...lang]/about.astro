@@ -4,6 +4,7 @@ import Layout from "../../layouts/Layout.astro";
 import IconEmail from "../../components/icons/IconEmail.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
 import IconLinkedIn from "../../components/icons/IconLinkedIn.astro";
+import OnThisPage from "../../components/OnThisPage.astro";
 import { locales, defaultLocale, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/about.json";
 import csStrings from "../../i18n/cs/about.json";
@@ -18,11 +19,18 @@ export function getStaticPaths() {
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
+
+const tocItems = [
+  { id: "hero", label: t.toc.overview },
+  { id: "manifesto", label: t.toc.manifesto },
+  { id: "skills", label: t.toc.skills },
+  { id: "career", label: t.toc.career },
+];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="about" lang={lang}>
   <!-- Hero Section -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 mb-24 lg:mb-40">
+  <section id="hero" class="max-w-7xl mx-auto px-4 md:px-8 mb-12 lg:mb-16">
     <div class="flex flex-col md:flex-row items-end gap-12">
       <div class="w-full md:w-2/3">
         <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-8">
@@ -96,7 +104,10 @@ const t = translations[lang];
   </section>
 
   <!-- Manifesto Section -->
-  <section class="bg-surface-container-low py-24 mb-24 lg:mb-40 relative overflow-hidden border-y border-on-surface/5">
+  <section
+    id="manifesto"
+    class="bg-surface-container-highest dark:bg-surface-container-low py-12 lg:py-16 relative overflow-hidden border-t border-outline-variant dark:border-on-surface/5"
+  >
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
     <div class="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -155,8 +166,48 @@ const t = translations[lang];
     </div>
   </section>
 
+  <!-- Skills Section -->
+  <section
+    id="skills"
+    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 mb-16 lg:mb-24 relative overflow-hidden border-b border-outline-variant/60 dark:border-on-surface/5"
+  >
+    <div class="max-w-7xl mx-auto px-4 md:px-8">
+      <div class="text-center mb-10">
+        <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
+          {t.skills.title}
+        </h2>
+        <p class="font-body text-on-surface-variant max-w-2xl mx-auto">
+          {t.skills.subtitle}
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {
+          t.skills.categories.map((cat) => (
+            <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+              <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", `text-${cat.color}`]}>
+                <Icon name={`material-symbols:${cat.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
+                {cat.label}
+              </h3>
+              {"description" in cat && cat.description && (
+                <p class="font-body text-on-surface-variant text-sm leading-relaxed mb-5">{cat.description}</p>
+              )}
+              <ul class="space-y-3">
+                {cat.items.map((item) => (
+                  <li class="font-body text-on-surface-variant flex items-start gap-2">
+                    <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-2", `bg-${cat.color}`]} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
   <!-- Career Journey Section -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 mb-40">
+  <section id="career" class="max-w-7xl mx-auto px-4 md:px-8 mb-40">
     <div class="text-center mb-24">
       <span class="font-label text-secondary uppercase tracking-widest text-sm mb-4 block">{t.career.label}</span>
       <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">
@@ -200,7 +251,7 @@ const t = translations[lang];
                     {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
                     {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
                     {entry.description && !hasSubEntries && (
-                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>
+                      <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
                     )}
                     {hasSubEntries && (
                       <div class="space-y-6 text-left">
@@ -233,7 +284,7 @@ const t = translations[lang];
                     {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
                     {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
                     {entry.description && !hasSubEntries && (
-                      <p class="font-body text-on-surface-variant text-sm leading-relaxed">{entry.description}</p>
+                      <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
                     )}
                     {hasSubEntries && (
                       <div class="space-y-6 text-left">
@@ -258,4 +309,6 @@ const t = translations[lang];
       </div>
     </div>
   </section>
+
+  <OnThisPage title={t.toc.title} items={tocItems} desktop={false} />
 </Layout>
