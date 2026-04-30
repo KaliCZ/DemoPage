@@ -84,14 +84,10 @@
         "label": "Cloud & Infrastructure",
         "description": "Comfortable owning the full production stack — from registering a domain to shipping deploys and watching live dashboards.",
         "items": [
-          "Microsoft Azure",
-          "Cloudflare",
-          "Supabase",
-          "Docker",
-          "GitHub Actions",
-          "Sentry",
-          "BetterStack",
-          "Custom DNS, SPF/DKIM/DMARC"
+          "Cloud platforms (Microsoft Azure, Cloudflare, Supabase)",
+          "CI/CD & Containers (GitHub Actions, Docker)",
+          "Observability (Sentry, BetterStack)",
+          "DNS setup & Emails (Brevo, SendGrid)"
         ]
       },
       {

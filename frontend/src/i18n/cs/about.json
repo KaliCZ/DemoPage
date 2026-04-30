@@ -84,14 +84,10 @@
         "label": "Cloud a infrastruktura",
         "description": "Komfortně vlastním celý produkční stack — od registrace domény přes nasazení až po živé dashboardy.",
         "items": [
-          "Microsoft Azure",
-          "Cloudflare",
-          "Supabase",
-          "Docker",
-          "GitHub Actions",
-          "Sentry",
-          "BetterStack",
-          "Vlastní DNS, SPF/DKIM/DMARC"
+          "Cloud platformy (Microsoft Azure, Cloudflare, Supabase)",
+          "CI/CD a kontejnery (GitHub Actions, Docker)",
+          "Observability (Sentry, BetterStack)",
+          "Nastavení DNS a e-maily (Brevo, SendGrid)"
         ]
       },
       {
