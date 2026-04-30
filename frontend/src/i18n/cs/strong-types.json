@@ -22,13 +22,47 @@
     "items": [
       { "label": "Licence", "value": "MIT" },
       { "label": "Cíl", "value": ".NET 10" },
-      { "label": "Verze", "value": "1.0.1" },
       { "label": "Závislosti", "value": "Žádné" }
+    ]
+  },
+  "badges": {
+    "ariaLabel": "Stavové odznaky projektu",
+    "items": [
+      {
+        "src": "https://img.shields.io/github/v/release/KaliCZ/StrongTypes?label=verze&color=4858ab",
+        "alt": "Nejnovější verze na GitHubu",
+        "href": "https://github.com/KaliCZ/StrongTypes/releases"
+      },
+      {
+        "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
+        "alt": "Nejnovější NuGet verze balíčku Kalicz.StrongTypes",
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+      },
+      {
+        "src": "https://img.shields.io/nuget/dt/Kalicz.StrongTypes?label=stahovani",
+        "alt": "Celkový počet stažení balíčku Kalicz.StrongTypes",
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+      },
+      {
+        "src": "https://img.shields.io/github/actions/workflow/status/KaliCZ/StrongTypes/build.yml?branch=main&label=build",
+        "alt": "Stav buildu na GitHub Actions",
+        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml"
+      },
+      {
+        "src": "https://img.shields.io/github/license/KaliCZ/StrongTypes",
+        "alt": "Licence projektu",
+        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt"
+      }
     ]
   },
   "why": {
     "title": "Proč se obtěžovat se silnými typy?",
     "subtitle": "Většina C# kódu se brání neplatnému vstupu tím, že ho znovu validuje všude. StrongTypes to obrací: validujte jednou, na hranici, a zbytek nechte vynutit překladač.",
+    "diagram": {
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/impact.svg",
+      "alt": "Diagram ukazující, jak StrongTypes přesouvá validaci na hranici aplikace a zbytek kódu zůstává bez ochranných podmínek",
+      "caption": "Validace se přesouvá na hranici. Vnitřní kód přestane stále dokola kontrolovat tytéž invarianty."
+    },
     "points": [
       {
         "icon": "shield-lock",
@@ -49,6 +83,24 @@
         "icon": "package-2",
         "title": "Malé a zaměřené",
         "description": "Žádný těžký framework, žádné runtime kouzlení s reflexí. Přidá se vedle existujícího kódu — typy se kombinují s tím, co už máte."
+      }
+    ]
+  },
+  "anatomy": {
+    "title": "Anatomie",
+    "subtitle": "Jak do sebe balíčky zapadají a jaký kousek variance dělá NonEmptyEnumerable kompozičním.",
+    "items": [
+      {
+        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+        "alt": "Diagram tří NuGet balíčků: hlavní Kalicz.StrongTypes plus volitelné doplňky EfCore a FsCheck",
+        "title": "Rozložení balíčků",
+        "description": "Jeden hlavní balíček, dva volitelné doplňky. Stáhněte si jen to, co potřebujete."
+      },
+      {
+        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/covariance.svg",
+        "alt": "Diagram zobrazující kovariantní upcast z INonEmptyEnumerable<Cat> na INonEmptyEnumerable<Animal>",
+        "title": "Kovariance",
+        "description": "INonEmptyEnumerable<out T> je kovariantní, takže neprázdná sekvence Cats je zároveň neprázdná sekvence Animals — bez kopie, bez LINQ."
       }
     ]
   },
@@ -105,7 +157,11 @@
       {
         "title": "Vytvoření NonEmptyString",
         "description": "Tři varianty: vyhodit výjimku, zkusit, nebo plynulé rozšíření. Vyberte si tu, která se hodí pro dané volání.",
-        "code": "// Vyhodí výjimku, pokud je vstup neplatný\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Vrátí null, pokud je vstup neplatný\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Forma rozšíření\nNonEmptyString? fluent = userInput.AsNonEmpty();"
+        "code": "// Vyhodí výjimku, pokud je vstup neplatný\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Vrátí null, pokud je vstup neplatný\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Forma rozšíření\nNonEmptyString? fluent = userInput.AsNonEmpty();",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
+          "alt": "Diagram porovnávající TryCreate (vrátí null při neplatném vstupu) a Create (vyhodí výjimku při neplatném vstupu)"
+        }
       },
       {
         "title": "Validace na hranici API",
@@ -115,17 +171,29 @@
       {
         "title": "Skládání s Maybe<T>",
         "description": "Řetězení volitelných operací bez vnořených null kontrol.",
-        "code": "Maybe<int> doubled = Maybe.Some(3).Map(x => x * 2);\n// Some(6)\n\nMaybe<int> parsed = Maybe.Some(\"42\")\n    .FlatMap(s => int.TryParse(s, out var n)\n        ? Maybe.Some(n)\n        : Maybe.None<int>());"
+        "code": "Maybe<int> doubled = Maybe.Some(3).Map(x => x * 2);\n// Some(6)\n\nMaybe<int> parsed = Maybe.Some(\"42\")\n    .FlatMap(s => int.TryParse(s, out var n)\n        ? Maybe.Some(n)\n        : Maybe.None<int>());",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
+          "alt": "Diagram pipeline ukazující, jak Some a None hodnoty procházejí operacemi Map a FlatMap nad Maybe<T>"
+        }
       },
       {
         "title": "Explicitní chyby s Result<T, TError>",
         "description": "Pattern matching na Success nebo Error — žádné výjimky, žádné out parametry.",
-        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value) Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg) Console.WriteLine($\"failed: {msg}\");"
+        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value) Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg) Console.WriteLine($\"failed: {msg}\");",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/result-composition.svg",
+          "alt": "Diagram pipeline ukazující, jak hodnota Result<T, TError> prochází fázemi Map, MapError a FlatMap"
+        }
       },
       {
         "title": "Tři stavy v PATCH s Maybe<T>",
         "description": "Rozlišení \"neměnit\", \"nastavit na null\" a \"nastavit na hodnotu\" — letitý problém v REST API.",
-        "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → pole neměnit\n// Some(null)   → vyprázdnit\n// Some(\"abc\")  → nastavit\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;"
+        "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → pole neměnit\n// Some(null)   → vyprázdnit\n// Some(\"abc\")  → nastavit\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/patch-three-state.svg",
+          "alt": "Diagram tří stavů v PATCH: null (neměnit), Some(null) (vyprázdnit), Some(value) (nastavit)"
+        }
       }
     ]
   },

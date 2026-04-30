@@ -68,6 +68,19 @@ const linkIconMap: Record<string, string> = {
             </a>
           </div>
 
+          <!-- Live status badges -->
+          <ul class="flex flex-wrap items-center gap-2 mb-6" aria-label={t.badges.ariaLabel}>
+            {
+              t.badges.items.map((badge) => (
+                <li>
+                  <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
+                    <img src={badge.src} alt={badge.alt} loading="lazy" class="block h-5" />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
           <!-- Install command -->
           <div class="bg-surface-container rounded-xl border border-outline-variant/40 p-1 max-w-xl">
             <div class="flex items-center gap-2 px-3 pt-2 pb-1 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
@@ -119,9 +132,20 @@ const linkIconMap: Record<string, string> = {
       <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
         {t.why.title}
       </h2>
-      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+      <p class="font-body text-on-surface-variant mb-10 max-w-3xl text-lg leading-relaxed">
         {t.why.subtitle}
       </p>
+
+      <!-- Featured diagram. Wrapped in a forced light surface because the SVG colors are hardcoded. -->
+      <figure class="mb-12 bg-white rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+        <img src={t.why.diagram.src} alt={t.why.diagram.alt} loading="lazy" decoding="async" class="block w-full h-auto p-6" />
+        <figcaption
+          class="px-6 pb-5 pt-1 text-sm text-on-surface-variant border-t border-outline-variant/30 bg-surface-container-low font-body italic"
+        >
+          {t.why.diagram.caption}
+        </figcaption>
+      </figure>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         {
           t.why.points.map((point) => (
@@ -130,6 +154,31 @@ const linkIconMap: Record<string, string> = {
               <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{point.title}</h3>
               <p class="font-body text-on-surface-variant text-sm leading-relaxed">{point.description}</p>
             </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Anatomy -->
+    <section class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.anatomy.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+        {t.anatomy.subtitle}
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {
+          t.anatomy.items.map((item) => (
+            <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden flex flex-col">
+              <div class="bg-white p-6 flex items-center justify-center">
+                <img src={item.src} alt={item.alt} loading="lazy" decoding="async" class="block max-w-full h-auto" />
+              </div>
+              <figcaption class="p-6 border-t border-outline-variant/30">
+                <h3 class="font-headline font-bold text-on-surface mb-1">{item.title}</h3>
+                <p class="font-body text-sm text-on-surface-variant leading-relaxed">{item.description}</p>
+              </figcaption>
+            </figure>
           ))
         }
       </div>
@@ -179,19 +228,35 @@ const linkIconMap: Record<string, string> = {
       <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
         {t.examples.subtitle}
       </p>
-      <div class="space-y-6">
+      <div class="space-y-8">
         {
-          t.examples.items.map((example) => (
-            <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
-              <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
-                <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
-                <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
+          t.examples.items.map((example) => {
+            const hasDiagram = "diagram" in example && example.diagram;
+            return (
+              <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+                <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
+                  <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
+                  <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
+                </div>
+                <div class:list={["grid", hasDiagram ? "lg:grid-cols-2 lg:divide-x lg:divide-outline-variant/30" : "grid-cols-1"]}>
+                  <pre class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface m-0">
+                    <code>{example.code}</code>
+                  </pre>
+                  {hasDiagram && (
+                    <div class="bg-white p-6 flex items-center justify-center">
+                      <img
+                        src={example.diagram!.src}
+                        alt={example.diagram!.alt}
+                        loading="lazy"
+                        decoding="async"
+                        class="block max-w-full h-auto"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-              <pre class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface">
-                <code>{example.code}</code>
-              </pre>
-            </div>
-          ))
+            );
+          })
         }
       </div>
     </section>

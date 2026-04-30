@@ -22,13 +22,47 @@
     "items": [
       { "label": "License", "value": "MIT" },
       { "label": "Target", "value": ".NET 10" },
-      { "label": "Latest", "value": "1.0.1" },
       { "label": "Dependencies", "value": "None" }
+    ]
+  },
+  "badges": {
+    "ariaLabel": "Project status badges",
+    "items": [
+      {
+        "src": "https://img.shields.io/github/v/release/KaliCZ/StrongTypes?label=latest&color=4858ab",
+        "alt": "Latest release on GitHub",
+        "href": "https://github.com/KaliCZ/StrongTypes/releases"
+      },
+      {
+        "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
+        "alt": "Latest NuGet version of Kalicz.StrongTypes",
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+      },
+      {
+        "src": "https://img.shields.io/nuget/dt/Kalicz.StrongTypes?label=downloads",
+        "alt": "Total NuGet downloads of Kalicz.StrongTypes",
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+      },
+      {
+        "src": "https://img.shields.io/github/actions/workflow/status/KaliCZ/StrongTypes/build.yml?branch=main&label=build",
+        "alt": "GitHub Actions build status",
+        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml"
+      },
+      {
+        "src": "https://img.shields.io/github/license/KaliCZ/StrongTypes",
+        "alt": "Project license",
+        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt"
+      }
     ]
   },
   "why": {
     "title": "Why bother with strong types?",
     "subtitle": "Most C# code defends against invalid input by re-validating it everywhere. StrongTypes flips that around: validate once, at the boundary, and let the compiler enforce the rest.",
+    "diagram": {
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/impact.svg",
+      "alt": "Diagram showing how StrongTypes pulls validation to the application boundary, leaving the rest of the code free of guard clauses",
+      "caption": "Validation moves to the boundary. Internal code stops re-checking the same invariants over and over."
+    },
     "points": [
       {
         "icon": "shield-lock",
@@ -49,6 +83,24 @@
         "icon": "package-2",
         "title": "Small and focused",
         "description": "No heavy framework, no runtime reflection magic. Drop it in alongside your existing code — types compose with what you already have."
+      }
+    ]
+  },
+  "anatomy": {
+    "title": "Anatomy",
+    "subtitle": "How the packages fit together, and the small piece of variance that makes NonEmptyEnumerable composable.",
+    "items": [
+      {
+        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+        "alt": "Diagram of the three NuGet packages: the core Kalicz.StrongTypes plus optional EfCore and FsCheck companion packages",
+        "title": "Package layout",
+        "description": "One core package, two opt-in companions. Pull in only what you need."
+      },
+      {
+        "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/covariance.svg",
+        "alt": "Diagram showing covariant upcast from INonEmptyEnumerable<Cat> to INonEmptyEnumerable<Animal>",
+        "title": "Covariance",
+        "description": "INonEmptyEnumerable<out T> is covariant, so a non-empty sequence of Cats is a non-empty sequence of Animals — no copy, no LINQ."
       }
     ]
   },
@@ -102,7 +154,11 @@
       {
         "title": "Create a NonEmptyString",
         "description": "Three flavours: throw, try, or fluent extension. Pick whichever suits the call site.",
-        "code": "// Throws if invalid\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Returns null if invalid\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Extension form\nNonEmptyString? fluent = userInput.AsNonEmpty();"
+        "code": "// Throws if invalid\nNonEmptyString name = NonEmptyString.Create(input);\n\n// Returns null if invalid\nNonEmptyString? maybeName = NonEmptyString.TryCreate(input);\n\n// Extension form\nNonEmptyString? fluent = userInput.AsNonEmpty();",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
+          "alt": "Flow diagram contrasting TryCreate (returns null on invalid input) and Create (throws on invalid input)"
+        }
       },
       {
         "title": "Validate at the API boundary",
@@ -112,17 +168,29 @@
       {
         "title": "Compose with Maybe<T>",
         "description": "Chain optional operations without nested null checks.",
-        "code": "Maybe<int> doubled = Maybe.Some(3).Map(x => x * 2);\n// Some(6)\n\nMaybe<int> parsed = Maybe.Some(\"42\")\n    .FlatMap(s => int.TryParse(s, out var n)\n        ? Maybe.Some(n)\n        : Maybe.None<int>());"
+        "code": "Maybe<int> doubled = Maybe.Some(3).Map(x => x * 2);\n// Some(6)\n\nMaybe<int> parsed = Maybe.Some(\"42\")\n    .FlatMap(s => int.TryParse(s, out var n)\n        ? Maybe.Some(n)\n        : Maybe.None<int>());",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
+          "alt": "Pipeline diagram showing Some and None values flowing through Map and FlatMap operations on Maybe<T>"
+        }
       },
       {
         "title": "Explicit failures with Result<T, TError>",
         "description": "Pattern-match on Success or Error — no exceptions, no out parameters.",
-        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value) Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg) Console.WriteLine($\"failed: {msg}\");"
+        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value) Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg) Console.WriteLine($\"failed: {msg}\");",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/result-composition.svg",
+          "alt": "Pipeline diagram showing how a Result<T, TError> value flows through Map, MapError, and FlatMap stages"
+        }
       },
       {
         "title": "Three-state PATCH with Maybe<T>",
         "description": "Distinguish \"don't touch\", \"clear to null\", and \"set to value\" — a long-standing pain point in REST APIs.",
-        "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → don't touch the field\n// Some(null)   → clear it\n// Some(\"abc\")  → set it\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;"
+        "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → don't touch the field\n// Some(null)   → clear it\n// Some(\"abc\")  → set it\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/patch-three-state.svg",
+          "alt": "Diagram of the three-state PATCH model: null (don't touch), Some(null) (clear), Some(value) (set)"
+        }
       }
     ]
   },
