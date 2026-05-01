@@ -11,7 +11,10 @@
   "cards": {
     "about": {
       "title": "O mně",
-      "description": "Co mě jako inženýra pohání.",
+      "description": [
+        "Co mě jako inženýra žene vpřed — a pár věcí o mně mimo klávesnici.",
+        "Technologie, se kterými pracuji, kariérní cesta, která mě sem dovedla, a pohled na život mimo IDE."
+      ],
       "cta": "Číst dále"
     }
   },

@@ -11,7 +11,10 @@
   "cards": {
     "about": {
       "title": "About Me",
-      "description": "What drives me as an engineer.",
+      "description": [
+        "What drives me as an engineer — and a few things about me beyond the keyboard.",
+        "The tech stack I work with, the career path that got me here, and a glimpse of life outside the IDE."
+      ],
       "cta": "Read more"
     }
   },

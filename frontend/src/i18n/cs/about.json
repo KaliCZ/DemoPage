@@ -30,7 +30,7 @@
         "icon": "mic-external-on",
         "color": "primary",
         "title": "Zpívám",
-        "description": "Když je k tomu příležitost, rád si zazpívám."
+        "description": "Karaoke? Jdu do toho!"
       },
       {
         "icon": "casino",
@@ -42,7 +42,7 @@
         "icon": "sports-soccer",
         "color": "primary",
         "title": "Bývalý fotbalista",
-        "description": "Za mlada jsem fotbal hrával závodně."
+        "description": "Dřív jsem hodně sportoval. Teď to musím dávkovat kvůli zraněním kotníků."
       },
       {
         "icon": "stadia-controller",
@@ -54,7 +54,7 @@
         "icon": "two-wheeler",
         "color": "primary",
         "title": "Motorky",
-        "description": "Pár let jsem závodil na malých 190ccm motorkách."
+        "description": "Nějaký čas jsem se věnoval amatérským motocyklovým závodům. (190 ccm)"
       },
       {
         "icon": "family-restroom",

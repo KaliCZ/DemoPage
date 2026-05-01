@@ -9,9 +9,10 @@
   },
   "items": {
     "thisSite": {
-      "title": "This Site",
+      "title": "How I built this site",
       "description": [
-        "kalandra.tech itself — built in public, with every architecture decision, deployment, and lesson learned written down as it happens. The site is the artifact."
+        "kalandra.tech itself — built in public, with every architecture decision, deployment, and lesson learned written down as it happens. The site is the artifact.",
+        "Covers the webpage and its hosting, the API and its hosting, the database with event sourcing, the CI/CD pipeline with E2E tests. And more."
       ],
       "cta": "View roadmap"
     },

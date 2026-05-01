@@ -1,5 +1,4 @@
 ---
-import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import QrCodeCard from "../../components/QrCodeCard.astro";
 import ProjectCard from "../../components/ProjectCard.astro";
@@ -71,25 +70,17 @@ const tProjects = projectTranslations[lang];
 
     <!-- Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
-      <!-- About Me card -->
-      <a
+      <!-- About Me card. Same <ProjectCard> component as the project cards below
+           — visually identical, no point keeping inline markup just because the
+           page it links to isn't a "project" per se. -->
+      <ProjectCard
         href={localePath(lang, "about")}
-        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col"
-      >
-        <div class="flex items-center gap-3 mb-4">
-          <Icon name="material-symbols:person" class="size-6 text-primary" aria-hidden="true" />
-          <h2 class="font-headline text-2xl font-bold group-hover:text-primary transition-colors">
-            {t.cards.about.title}
-          </h2>
-        </div>
-        <p class="text-on-surface-variant leading-relaxed mb-6 flex-1">
-          {t.cards.about.description}
-        </p>
-        <span class="font-label text-sm uppercase tracking-widest text-primary flex items-center gap-1">
-          {t.cards.about.cta}
-          <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-        </span>
-      </a>
+        icon="person"
+        accent="primary"
+        title={t.cards.about.title}
+        description={t.cards.about.description}
+        cta={t.cards.about.cta}
+      />
 
       <!-- Project cards. Shared component AND shared content with the /projects
            index — both pages read from projects.json so a copy edit there

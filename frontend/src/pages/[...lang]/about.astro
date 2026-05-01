@@ -170,7 +170,7 @@ const tocItems = [
   <!-- Skills Section -->
   <section
     id="skills"
-    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 mb-16 lg:mb-24 relative overflow-hidden border-b border-outline-variant/60 dark:border-on-surface/5"
+    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 relative overflow-hidden border-b border-outline-variant/60 dark:border-on-surface/5"
   >
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
@@ -207,36 +207,42 @@ const tocItems = [
     </div>
   </section>
 
-  <!-- Personal Section. A lighter, transparent band between the heavier Skills
-       band above and the no-bg Career timeline below — gives the page some
-       breath and signals "human" before the career timeline kicks in. Cards
+  <!-- Personal Section. Third band in the sequence Manifesto → Skills → Personal,
+       using the lighter shade so it alternates with Skills (which uses the
+       middle shade). The band's bottom border acts as the divider that closes
+       off the colored-bands zone before the transparent Career timeline. Cards
        use a horizontal icon-then-text layout so each item reads as a quick
        human attribute rather than a feature. -->
-  <section id="personal" class="max-w-7xl mx-auto px-4 md:px-8 mb-16 lg:mb-24">
-    <div class="text-center mb-10">
-      <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
-        {t.personal.title}
-      </h2>
-      <p class="font-body text-on-surface-variant max-w-2xl mx-auto">
-        {t.personal.subtitle}
-      </p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-      {
-        t.personal.items.map((item) => (
-          <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 flex items-start gap-4">
-            <Icon
-              name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
-              class:list={["size-8 shrink-0", `text-${item.color}`]}
-              aria-hidden="true"
-            />
-            <div>
-              <h3 class="font-headline font-bold text-lg mb-1">{item.title}</h3>
-              <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
+  <section
+    id="personal"
+    class="bg-surface-container-highest dark:bg-surface-container-low py-12 lg:py-16 mb-16 lg:mb-24 relative overflow-hidden border-b border-outline-variant/60 dark:border-on-surface/5"
+  >
+    <div class="max-w-7xl mx-auto px-4 md:px-8">
+      <div class="text-center mb-10">
+        <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
+          {t.personal.title}
+        </h2>
+        <p class="font-body text-on-surface-variant max-w-2xl mx-auto">
+          {t.personal.subtitle}
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {
+          t.personal.items.map((item) => (
+            <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 flex items-start gap-4">
+              <Icon
+                name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
+                class:list={["size-8 shrink-0", `text-${item.color}`]}
+                aria-hidden="true"
+              />
+              <div>
+                <h3 class="font-headline font-bold text-lg mb-1">{item.title}</h3>
+                <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
+              </div>
             </div>
-          </div>
-        ))
-      }
+          ))
+        }
+      </div>
     </div>
   </section>
 

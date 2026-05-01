@@ -30,7 +30,7 @@
         "icon": "mic-external-on",
         "color": "primary",
         "title": "I sing",
-        "description": "If there's a chance to sing along, I'll take it."
+        "description": "Karaoke? I'm in!"
       },
       {
         "icon": "casino",
@@ -42,7 +42,7 @@
         "icon": "sports-soccer",
         "color": "primary",
         "title": "Former footballer",
-        "description": "Played football competitively as a younger man."
+        "description": "I used to spend a lot of time doing sports. Now I need to pace myself due to ankle injuries."
       },
       {
         "icon": "stadia-controller",
@@ -54,7 +54,7 @@
         "icon": "two-wheeler",
         "color": "primary",
         "title": "Two wheels",
-        "description": "Spent a few years racing 190cc motorcycles."
+        "description": "I spent some time in motorcycle amateur races. (190cc)"
       },
       {
         "icon": "family-restroom",

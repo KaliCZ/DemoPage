@@ -9,9 +9,10 @@
   },
   "items": {
     "thisSite": {
-      "title": "Tato stránka",
+      "title": "Jak jsem stavěl tuto stránku",
       "description": [
-        "Samotná kalandra.tech — stavěná veřejně, s každým architektonickým rozhodnutím, nasazením a získanou lekcí zapsanou v okamžiku, kdy se to děje. Stránka sama je artefakt."
+        "Samotná kalandra.tech — stavěná veřejně, s každým architektonickým rozhodnutím, nasazením a získanou lekcí zapsanou v okamžiku, kdy se to děje. Stránka sama je artefakt.",
+        "Pokrývá webovou stránku a její hosting, API a jeho hosting, databázi s event sourcingem, CI/CD pipeline s E2E testy. A další."
       ],
       "cta": "Zobrazit plán"
     },
