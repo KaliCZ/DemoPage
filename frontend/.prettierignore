@@ -5,3 +5,5 @@ playwright-report/
 test-results/
 # Third-party BetterStack snippet — minified IIFE breaks prettier-plugin-astro parser
 src/components/BetterStack.astro
+# Hand-tuned CV source — print-specific CSS layout shouldn't be reflowed
+cv/
