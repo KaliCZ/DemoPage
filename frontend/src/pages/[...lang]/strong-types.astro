@@ -1,0 +1,413 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../layouts/Layout.astro";
+import OnThisPage from "../../components/OnThisPage.astro";
+import Breadcrumb from "../../components/Breadcrumb.astro";
+import IconGitHub from "../../components/icons/IconGitHub.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/strong-types.json";
+import csStrings from "../../i18n/cs/strong-types.json";
+import enCommon from "../../i18n/en/common.json";
+import csCommon from "../../i18n/cs/common.json";
+
+const translations = { en: enStrings, cs: csStrings };
+const commonTranslations = { en: enCommon, cs: csCommon };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+const tCommon = commonTranslations[lang];
+
+const githubUrl = "https://github.com/KaliCZ/StrongTypes";
+const nugetUrl = "https://www.nuget.org/packages/Kalicz.StrongTypes";
+
+const linkIconMap: Record<string, string> = {
+  github: "material-symbols:code",
+  package: "material-symbols:package-2",
+  database: "material-symbols:database",
+  science: "material-symbols:science",
+};
+
+const tocItems = [
+  { id: "overview", label: t.toc.overview },
+  { id: "why", label: t.toc.why },
+  { id: "features", label: t.toc.features },
+  { id: "examples", label: t.toc.examples },
+  { id: "get-started", label: t.toc.getStarted },
+];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
+  <div class="max-w-7xl mx-auto px-4 md:px-8">
+    <Breadcrumb
+      ariaLabel={tCommon.a11y.breadcrumb}
+      items={[{ label: tCommon.nav.projects, href: localePath(lang, "projects") }, { label: tCommon.nav.projectStrongTypes }]}
+      class="mb-8"
+    />
+    <!-- Hero. Two columns at lg+: prose on the left, the call-to-action stack
+         (CTAs, badges, install command) on the right so neither half feels empty. -->
+    <section id="overview" class="mb-16 md:mb-20">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+        <div class="lg:col-span-7">
+          <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
+            {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
+              >{t.hero.titleHighlight}</span
+            >{t.hero.titleSuffix}
+          </h1>
+          <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">
+            {t.hero.description}
+          </p>
+        </div>
+
+        <div class="lg:col-span-5 flex flex-col gap-6">
+          <!-- Install command -->
+          <div class="bg-surface-container rounded-xl border border-outline-variant/40 p-1">
+            <div class="flex items-center gap-2 px-3 pt-2 pb-1 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+              <Icon name="material-symbols:terminal" class="size-3.5" aria-hidden="true" />
+              {t.hero.installLabel}
+            </div>
+            <div class="flex items-center justify-between gap-3 px-3 pb-3 pt-1">
+              <code class="font-mono text-sm md:text-[15px] text-on-surface truncate" data-install-command>
+                {t.hero.install}
+              </code>
+              <button
+                type="button"
+                data-copy-install
+                class="shrink-0 p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
+                aria-label={t.hero.copyAriaLabel}
+                title={t.hero.copyAriaLabel}
+                data-copied-msg={t.hero.copied}
+                data-copy-failed-msg={t.hero.copyFailed}
+              >
+                <Icon name="material-symbols:content-copy" class="size-4 copy-idle" aria-hidden="true" />
+                <Icon name="material-symbols:check" class="size-4 hidden copy-done" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Live status badges -->
+          <ul class="flex flex-wrap items-center gap-2" aria-label={t.badges.ariaLabel}>
+            {
+              t.badges.items.map((badge) => (
+                <li>
+                  <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
+                    <img src={badge.src} alt={badge.alt} loading="lazy" class="block h-5" />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <a
+              href={githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="bg-on-surface text-surface px-5 py-2.5 font-headline font-bold rounded-lg shadow-sm hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+            >
+              <IconGitHub class="w-4 h-4" />
+              {t.hero.primaryCta}
+            </a>
+            <a
+              href={nugetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="bg-primary text-on-primary px-5 py-2.5 font-headline font-bold rounded-lg shadow-sm hover:opacity-90 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+            >
+              <Icon name="material-symbols:package-2" class="size-4" aria-hidden="true" />
+              {t.hero.secondaryCta}
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why -->
+    <section id="why" class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.why.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-10 max-w-3xl text-lg leading-relaxed">
+        {t.why.subtitle}
+      </p>
+
+      <!-- Featured diagram. Wrapped in a forced light surface because the SVG colors are hardcoded. -->
+      <figure class="mb-12 bg-white rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+        <img
+          src={t.why.diagram.src}
+          alt={t.why.diagram.alt}
+          loading="lazy"
+          decoding="async"
+          data-zoomable
+          class="block w-full h-auto p-6 cursor-zoom-in transition-transform hover:scale-[1.01]"
+        />
+        <figcaption
+          class="px-6 pb-5 pt-1 text-sm text-on-surface-variant border-t border-outline-variant/30 bg-surface-container-low font-body italic"
+        >
+          {t.why.diagram.caption}
+        </figcaption>
+      </figure>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {
+          t.why.points.map((point) => (
+            <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+              <Icon name={`material-symbols:${point.icon.replace(/_/g, "-")}`} class="size-7 text-primary mb-4 block" aria-hidden="true" />
+              <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{point.title}</h3>
+              <p class="font-body text-on-surface-variant text-sm leading-relaxed">{point.description}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
+        {t.features.title}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {
+          t.features.groups.map((group) => {
+            const accent = group.color === "tertiary" ? "text-tertiary" : "text-primary";
+            const dot = group.color === "tertiary" ? "bg-tertiary" : "bg-primary";
+            return (
+              <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+                <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", accent]}>
+                  <Icon name={`material-symbols:${group.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
+                  {group.heading}
+                </h3>
+                <ul class="space-y-5">
+                  {group.items.map((item) => (
+                    <li class="font-body text-on-surface-variant">
+                      <div class="flex items-start gap-2">
+                        <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-[10px]", dot]} aria-hidden="true" />
+                        <div>
+                          <code class="font-mono text-[15px] font-bold text-on-surface block leading-snug">{item.name}</code>
+                          <p class="font-body text-sm text-on-surface-variant mt-1.5 leading-relaxed">{item.description}</p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })
+        }
+      </div>
+
+      <!-- Package layout diagram. -->
+      <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+        <div class="bg-white p-6 flex items-center justify-center">
+          <img
+            src={t.packageLayout.diagram.src}
+            alt={t.packageLayout.diagram.alt}
+            loading="lazy"
+            decoding="async"
+            data-zoomable
+            class="block max-w-full h-auto cursor-zoom-in transition-transform hover:scale-[1.01]"
+          />
+        </div>
+        <figcaption class="p-6 border-t border-outline-variant/30">
+          <h3 class="font-headline font-bold text-on-surface mb-1">{t.packageLayout.title}</h3>
+          <p class="font-body text-sm text-on-surface-variant leading-relaxed">{t.packageLayout.description}</p>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- Examples -->
+    <section id="examples" class="mb-24 md:mb-32">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.examples.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+        {t.examples.subtitle}
+      </p>
+      <div class="space-y-8">
+        {
+          t.examples.items.map((example) => {
+            const hasDiagram = "diagram" in example && example.diagram;
+            return (
+              <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+                <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
+                  <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
+                  <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
+                </div>
+                <div class:list={["grid", hasDiagram ? "lg:grid-cols-2 lg:divide-x lg:divide-outline-variant/30" : "grid-cols-1"]}>
+                  <pre
+                    class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface m-0"
+                    set:text={example.code}
+                  />
+                  {hasDiagram && (
+                    <div class="bg-white p-6 flex items-center justify-center">
+                      <img
+                        src={example.diagram!.src}
+                        alt={example.diagram!.alt}
+                        loading="lazy"
+                        decoding="async"
+                        data-zoomable
+                        class="block max-w-full h-auto cursor-zoom-in transition-transform hover:scale-[1.01]"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        }
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section id="get-started" class="mb-24">
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
+        {t.links.title}
+      </h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
+        {t.links.subtitle}
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {
+          t.links.items.map((item) => {
+            const iconName = linkIconMap[item.icon] ?? "material-symbols:link";
+            const isGitHub = item.icon === "github";
+            return (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex items-start gap-4"
+              >
+                <div class="shrink-0 size-10 rounded-lg bg-primary/10 grid place-items-center text-primary group-hover:bg-primary/15 transition-colors">
+                  {isGitHub ? <IconGitHub class="w-5 h-5" /> : <Icon name={iconName} class="size-5" aria-hidden="true" />}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{item.title}</h3>
+                  <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{item.description}</p>
+                  <span class="font-mono text-xs text-on-surface-variant mt-3 inline-flex items-center gap-1">
+                    {item.cta}
+                    <Icon
+                      name="material-symbols:arrow-outward"
+                      class="size-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </div>
+              </a>
+            );
+          })
+        }
+      </div>
+    </section>
+  </div>
+
+  <OnThisPage title={t.toc.title} items={tocItems} />
+
+  <!-- Diagram lightbox. Single shared <dialog> instance; we clone the clicked source <img>
+       into [data-lightbox-slot] each time so the lightbox renders the already-loaded image
+       at its natural size from the very first frame (no broken-image flash, no zero-size
+       collapse from an empty src=""). Native <dialog> gives us free Escape-to-close and
+       focus management for the modal. -->
+  <dialog
+    id="diagram-lightbox"
+    aria-label={t.lightbox.dialogLabel}
+    class="m-auto p-0 border-0 bg-transparent rounded-xl shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-w-[95vw] max-h-[95vh]"
+  >
+    <div class="relative bg-white p-6 rounded-xl overflow-hidden min-w-[280px] min-h-[200px]">
+      <button
+        type="button"
+        data-lightbox-close
+        aria-label={t.lightbox.closeLabel}
+        class="absolute top-3 right-3 z-10 size-9 grid place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+      >
+        <Icon name="material-symbols:close" class="size-5" aria-hidden="true" />
+      </button>
+      <div data-lightbox-slot class="flex items-center justify-center"></div>
+    </div>
+  </dialog>
+</Layout>
+
+<script>
+  const copyButton = document.querySelector<HTMLButtonElement>("[data-copy-install]");
+  const installCommand = document.querySelector<HTMLElement>("[data-install-command]");
+
+  copyButton?.addEventListener("click", async () => {
+    if (!installCommand) return;
+    const text = installCommand.textContent?.trim() ?? "";
+    const idle = copyButton.querySelector<HTMLElement>(".copy-idle");
+    const done = copyButton.querySelector<HTMLElement>(".copy-done");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      idle?.classList.add("hidden");
+      done?.classList.remove("hidden");
+      (window as any).__showSnackbar?.(copyButton.dataset.copiedMsg ?? "Copied", "success");
+      setTimeout(() => {
+        idle?.classList.remove("hidden");
+        done?.classList.add("hidden");
+      }, 2000);
+    } catch {
+      (window as any).__showSnackbar?.(copyButton.dataset.copyFailedMsg ?? "Copy failed", "error");
+    }
+  });
+
+  // Diagram lightbox: clicking any <img data-zoomable> clones it into the dialog slot
+  // and opens the shared <dialog>. tabindex=0 + keydown handlers make the imgs keyboard-
+  // activatable; cloning the already-loaded image avoids the broken-image flash that comes
+  // from setting .src on a placeholder element with an empty initial src.
+  const lightbox = document.getElementById("diagram-lightbox") as HTMLDialogElement | null;
+  const lightboxSlot = lightbox?.querySelector<HTMLElement>("[data-lightbox-slot]");
+  const lightboxClose = document.querySelector<HTMLButtonElement>("[data-lightbox-close]");
+
+  function openLightbox(source: HTMLImageElement) {
+    if (!lightbox || !lightboxSlot) return;
+    const clone = source.cloneNode(true) as HTMLImageElement;
+    clone.removeAttribute("data-zoomable");
+    clone.removeAttribute("tabindex");
+    clone.removeAttribute("role");
+    // Scale up to fit ~85% of viewport while preserving aspect ratio. The diagrams
+    // are SVGs so scaling up renders crisply, and the lightbox should be _bigger_
+    // than the inline rendering — not pinned to whatever pixel size the SVG's
+    // viewBox happens to declare. Setting explicit width/height as attributes
+    // also reserves layout space immediately, sidestepping the "freshly cloned
+    // <img> reports naturalWidth = 0 until the cached fetch resolves" problem.
+    const naturalW = source.naturalWidth || 800;
+    const naturalH = source.naturalHeight || 600;
+    const maxW = window.innerWidth * 0.85;
+    const maxH = window.innerHeight * 0.85;
+    const scale = Math.min(maxW / naturalW, maxH / naturalH);
+    clone.width = Math.round(naturalW * scale);
+    clone.height = Math.round(naturalH * scale);
+    // The page-level imgs use loading="lazy"; cloneNode carries that over,
+    // which delays even the cache hit. Force eager.
+    clone.loading = "eager";
+    clone.className = "block object-contain";
+    lightboxSlot.replaceChildren(clone);
+    lightbox.showModal();
+  }
+
+  document.querySelectorAll<HTMLImageElement>("img[data-zoomable]").forEach((img) => {
+    img.tabIndex = 0;
+    img.setAttribute("role", "button");
+    img.addEventListener("click", () => openLightbox(img));
+    img.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openLightbox(img);
+      }
+    });
+  });
+
+  lightboxClose?.addEventListener("click", () => lightbox?.close());
+
+  // Backdrop click closes. The dialog's own click event fires on the backdrop pseudo-element
+  // by reporting `event.target === dialog` (since clicks on contents bubble from inner elements).
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target === lightbox) lightbox.close();
+  });
+</script>

@@ -7,16 +7,17 @@ interface TocItem {
 interface Props {
   title: string;
   items: TocItem[];
-  desktop?: boolean;
 }
 
-const { title, items, desktop = true } = Astro.props;
+const { title, items } = Astro.props;
 ---
 
-<!-- Mobile TOC — Sticky Bottom Tab Bar -->
+<!-- Sticky bottom-bar TOC, shown at all viewport widths.
+     One UX, one mental model — desktop gets the same scrollable pill row as mobile,
+     freeing the page's horizontal space for content. -->
 <nav
   id="toc-bar"
-  class="xl:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+  class="fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
   aria-label={title}
 >
   <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
@@ -36,33 +37,7 @@ const { title, items, desktop = true } = Astro.props;
   </div>
 </nav>
 
-{
-  desktop && (
-    <aside class="hidden xl:block">
-      <nav class="sticky top-24 space-y-3" aria-label={title}>
-        <h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-4">{title}</h4>
-        {items.map((item) => (
-          <a
-            href={`#${item.id}`}
-            class="toc-link block font-body text-sm text-on-surface-variant hover:text-primary transition-colors"
-            data-toc-target={item.id}
-          >
-            {item.label}
-          </a>
-        ))}
-      </nav>
-    </aside>
-  )
-}
-
 <style>
-  .toc-link-active {
-    color: var(--color-primary);
-    font-weight: 600;
-    border-left: 2px solid var(--color-primary);
-    padding-left: 0.5rem;
-    margin-left: -0.625rem;
-  }
   .toc-pill-active {
     background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
     color: var(--color-primary);
@@ -76,17 +51,17 @@ const { title, items, desktop = true } = Astro.props;
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  /* Bottom padding so content isn't hidden behind the sticky bar */
-  @media (max-width: 1279px) {
-    body {
-      padding-bottom: 3.5rem;
-    }
+  /* Bottom padding so content isn't hidden behind the sticky bar — applied at all widths
+     since the bar is now always visible. Tuned to roughly match the bar's own height
+     (py-2 outer + py-1.5 pill + ~16px text line + 1px border ≈ 45px) so the footer sits
+     flush against the bar without a visible gap. */
+  body {
+    padding-bottom: 3rem;
   }
 </style>
 
 <script>
   const sections = document.querySelectorAll("section[id]");
-  const tocLinks = document.querySelectorAll(".toc-link");
   const tocPills = document.querySelectorAll(".toc-pill");
 
   const observer = new IntersectionObserver(
@@ -95,12 +70,6 @@ const { title, items, desktop = true } = Astro.props;
         if (entry.isIntersecting) {
           const id = entry.target.id;
 
-          // Desktop rail
-          tocLinks.forEach((link) => link.classList.remove("toc-link-active"));
-          const activeDesktop = document.querySelector(`.toc-link[data-toc-target="${id}"]`);
-          if (activeDesktop) activeDesktop.classList.add("toc-link-active");
-
-          // Mobile pill bar
           tocPills.forEach((l) => l.classList.remove("toc-pill-active"));
           const activePill = document.querySelector(`.toc-pill[data-toc-target="${id}"]`);
           if (activePill) {

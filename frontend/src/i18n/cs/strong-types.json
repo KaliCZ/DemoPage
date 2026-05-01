@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "title": "Kalicz.StrongTypes | kalandra.tech — Bezpečnější C# typy",
+    "description": "Kalicz.StrongTypes je C# NuGet balíček pro bezpečnější a výstižnější kód: NonEmptyString, validované numerické typy, NonEmptyEnumerable, Maybe<T> a Result<T, TError>."
+  },
+  "hero": {
+    "titlePrefix": "Pár malých typů, které dělají C# ",
+    "titleHighlight": "bezpečnějším",
+    "titleSuffix": ".",
+    "description": "Kalicz.StrongTypes je C# NuGet balíček, který přidává bezkódové validace vynucené překladačem. Typy jako NonEmptyString nebo Positive<int> přesouvají invarianty do typového systému a validace se odehrává na hranici — takže neplatná data se k vašim handlerům vůbec nedostanou.",
+    "primaryCta": "Zobrazit na GitHubu",
+    "secondaryCta": "Zobrazit na NuGetu",
+    "install": "dotnet add package Kalicz.StrongTypes",
+    "installLabel": "Instalace",
+    "copyAriaLabel": "Zkopírovat instalační příkaz",
+    "copied": "Zkopírováno do schránky",
+    "copyFailed": "Kopírování selhalo. Zkopírujte prosím ručně."
+  },
+  "badges": {
+    "ariaLabel": "Stavové odznaky projektu",
+    "items": [
+      {
+        "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
+        "alt": "Nejnovější NuGet verze balíčku Kalicz.StrongTypes",
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+      },
+      {
+        "src": "https://img.shields.io/nuget/dt/Kalicz.StrongTypes?label=stahovani",
+        "alt": "Celkový počet stažení balíčku Kalicz.StrongTypes",
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+      },
+      {
+        "src": "https://img.shields.io/github/actions/workflow/status/KaliCZ/StrongTypes/build.yml?branch=main&label=build",
+        "alt": "Stav buildu na GitHub Actions",
+        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml"
+      },
+      {
+        "src": "https://img.shields.io/github/license/KaliCZ/StrongTypes",
+        "alt": "Licence projektu",
+        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt"
+      }
+    ]
+  },
+  "why": {
+    "title": "Proč se obtěžovat se silnými typy?",
+    "subtitle": "Většina C# kódu se brání neplatnému vstupu tím, že ho znovu validuje všude. StrongTypes to obrací: validujte jednou, na hranici, a zbytek nechte vynutit překladač.",
+    "diagram": {
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/impact.svg",
+      "alt": "Diagram ukazující, jak StrongTypes přesouvá validaci na hranici aplikace a zbytek kódu zůstává bez ochranných podmínek",
+      "caption": "Validace se přesouvá na hranici. Vnitřní kód přestane stále dokola kontrolovat tytéž invarianty."
+    },
+    "points": [
+      {
+        "icon": "shield-lock",
+        "title": "Invarianty v typu",
+        "description": "Pokud metoda přijímá NonEmptyString, prázdný řetězec se k ní nedostane. Práci odvede překladač — ne strážní podmínka v runtime."
+      },
+      {
+        "icon": "bolt",
+        "title": "Validace na hranici",
+        "description": "Vestavěné konvertory pro System.Text.Json odmítnou neplatná data při deserializaci, ještě než se zavolá handler endpointu."
+      },
+      {
+        "icon": "code-blocks",
+        "title": "Výstižný záměr",
+        "description": "Signatura jako Result<Order, OrderError> Place(Positive<int> qty) čtenáři přesně říká, co je dovoleno a co může selhat."
+      },
+      {
+        "icon": "package-2",
+        "title": "Malé a zaměřené",
+        "description": "Žádný těžký framework, žádné runtime kouzlení s reflexí. Přidá se vedle existujícího kódu — typy se kombinují s tím, co už máte."
+      }
+    ]
+  },
+  "packageLayout": {
+    "title": "Rozložení balíčků",
+    "description": "Jeden hlavní balíček, dva volitelné doplňky. Stáhněte si jen to, co potřebujete.",
+    "diagram": {
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+      "alt": "Diagram tří NuGet balíčků: hlavní Kalicz.StrongTypes plus volitelné doplňky EfCore a FsCheck"
+    }
+  },
+  "features": {
+    "title": "Co je uvnitř",
+    "groups": [
+      {
+        "color": "primary",
+        "icon": "label",
+        "heading": "Validované obaly",
+        "items": [
+          { "name": "NonEmptyString", "description": "Zaručeně nenulový, neprázdný řetězec, který není ani jen samé bílé znaky." },
+          {
+            "name": "Positive<T>, NonNegative<T>, Negative<T>, NonPositive<T>",
+            "description": "Obaly vynucující znaménko nad libovolným INumber<T>."
+          },
+          {
+            "name": "NonEmptyEnumerable<T>",
+            "description": "Read-only sekvence s alespoň jedním prvkem — Head a Tail jsou vždy bezpečně přístupné."
+          }
+        ]
+      },
+      {
+        "color": "tertiary",
+        "icon": "alt-route",
+        "heading": "Algebraické typy",
+        "items": [
+          {
+            "name": "Maybe<T>",
+            "description": "Volitelné hodnoty s Map a FlatMap. Hodí se pro HTTP PATCH (neměnit / vyprázdnit / nastavit)."
+          },
+          { "name": "Result<T, TError>", "description": "Explicitní zacházení s chybami bez výjimek. Včetně podpory async." }
+        ]
+      },
+      {
+        "color": "primary",
+        "icon": "settings",
+        "heading": "Vestavěné integrace",
+        "items": [
+          { "name": "System.Text.Json", "description": "Automatické konvertory — bez nutnosti registrace." },
+          { "name": "EF Core value convertery", "description": "Skrze doplňkový balíček Kalicz.StrongTypes.EfCore." },
+          {
+            "name": "Generátory pro FsCheck",
+            "description": "Skrze doplňkový balíček Kalicz.StrongTypes.FsCheck pro property-based testing."
+          }
+        ]
+      }
+    ]
+  },
+  "examples": {
+    "title": "Jak to vypadá",
+    "subtitle": "Pár ukázek pro představu. Plnou dokumentaci a další příklady najdete na GitHubu.",
+    "items": [
+      {
+        "title": "Validace na hranici API",
+        "description": "JSON konvertor odmítne neplatný vstup při deserializaci. Váš endpoint nikdy neuvidí špatnou hodnotu.",
+        "code": "public record CreateUserRequest(\n    NonEmptyString Name,\n    Positive<int> Age);\n\n[HttpPost]\npublic async Task<IResult> Create(CreateUserRequest req)\n{\n    // Žádná další validace tu není potřeba:\n    // ASP pipeline odmítne neplatný vstup s 400.\n    _users.Add(req.Name, req.Age);\n    await _users.SaveChangesAsync();\n    return Results.NoContent();\n}"
+      },
+      {
+        "title": "Explicitní vytváření hodnot",
+        "description": "Každý typ má Create (vyhodí výjimku při neplatném vstupu) a TryCreate (vrátí null). Stringové typy mají i plynulou formu rozšíření.",
+        "code": "// Stringy — tři varianty volání\n// throws při neplatném vstupu\nNonEmptyString name = NonEmptyString.Create(input);\n// null při neplatném\nNonEmptyString? safe = NonEmptyString.TryCreate(input);\n// fluent rozšíření\nNonEmptyString? fluent = input.AsNonEmpty();\n\n// Čísla — vynucené znaménko nad INumber<T>\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = amount.AsNonNegative();\n\n// Sekvence — alespoň jeden prvek, Head bezpečné\nNonEmptyEnumerable<string> tags = [\"red\", \"blue\"];\nNonEmptyEnumerable<string>? maybe = list.AsNonEmpty();\nstring first = tags.Head;",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
+          "alt": "Diagram porovnávající TryCreate (vrátí null při neplatném vstupu) a Create (vyhodí výjimku při neplatném vstupu)"
+        }
+      },
+      {
+        "title": "Explicitní chyby s Result<T, TError>",
+        "description": "Pattern matching na Success nebo Error — žádné výjimky, žádné out parametry.",
+        "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value)\n    Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg)\n    Console.WriteLine($\"failed: {msg}\");",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/result-composition.svg",
+          "alt": "Diagram pipeline ukazující, jak hodnota Result<T, TError> prochází fázemi Map, MapError a FlatMap"
+        }
+      },
+      {
+        "title": "Tři stavy v PATCH s Maybe<T>",
+        "description": "Rozlišení \"neměnit\", \"nastavit na null\" a \"nastavit na hodnotu\" — letitý problém v REST API.",
+        "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → pole neměnit\n// Some(null)   → vyprázdnit\n// Some(\"abc\")  → nastavit\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/patch-three-state.svg",
+          "alt": "Diagram tří stavů v PATCH: null (neměnit), Some(null) (vyprázdnit), Some(value) (nastavit)"
+        }
+      },
+      {
+        "title": "Skládání s Maybe<T>",
+        "description": "Řetězení volitelných operací bez vnořených null kontrol. Implicitní operátory zařídí zabalení — vrátíte T nebo Maybe.None a funguje to.",
+        "code": "// Producent: implicitní převod z T nebo Maybe.None\nMaybe<int> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : Maybe.None;\n\n// Map: T -> U, automaticky zabalí v Maybe\nMaybe<int> doubled = Parse(\"21\").Map(x => x * 2);\n// Some(42)\n\n// FlatMap: T -> Maybe<U>, bez dvojitého zabalení\nMaybe<int> sum = Parse(\"1\").FlatMap(a =>\n    Parse(\"2\").Map(b => a + b));\n// Some(3)",
+        "diagram": {
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
+          "alt": "Diagram pipeline ukazující, jak Some a None hodnoty procházejí operacemi Map a FlatMap nad Maybe<T>"
+        }
+      }
+    ]
+  },
+  "lightbox": {
+    "dialogLabel": "Zvětšený diagram",
+    "closeLabel": "Zavřít"
+  },
+  "toc": {
+    "title": "Na této stránce",
+    "overview": "Přehled",
+    "why": "Proč",
+    "features": "Co je uvnitř",
+    "examples": "Jak to vypadá",
+    "getStarted": "Začínáme"
+  },
+  "links": {
+    "title": "Začínáme",
+    "subtitle": "Zdrojový kód, balíčky a dokumentace.",
+    "items": [
+      {
+        "icon": "github",
+        "title": "GitHub repozitář",
+        "description": "Zdrojový kód, README, releases a issue tracker.",
+        "url": "https://github.com/KaliCZ/StrongTypes",
+        "cta": "KaliCZ/StrongTypes"
+      },
+      {
+        "icon": "package",
+        "title": "NuGet — Core",
+        "description": "Hlavní balíček. Obsahuje všechny validované a algebraické typy.",
+        "url": "https://www.nuget.org/packages/Kalicz.StrongTypes",
+        "cta": "Kalicz.StrongTypes"
+      },
+      {
+        "icon": "database",
+        "title": "NuGet — EF Core",
+        "description": "Value convertery pro ukládání StrongTypes přes Entity Framework Core.",
+        "url": "https://www.nuget.org/packages/Kalicz.StrongTypes.EfCore",
+        "cta": "Kalicz.StrongTypes.EfCore"
+      },
+      {
+        "icon": "science",
+        "title": "NuGet — FsCheck",
+        "description": "Generátory pro property-based testing hodnot StrongTypes.",
+        "url": "https://www.nuget.org/packages/Kalicz.StrongTypes.FsCheck",
+        "cta": "Kalicz.StrongTypes.FsCheck"
+      }
+    ]
+  }
+}

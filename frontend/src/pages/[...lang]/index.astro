@@ -1,12 +1,18 @@
 ---
-import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import QrCodeCard from "../../components/QrCodeCard.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/home.json";
 import csStrings from "../../i18n/cs/home.json";
+// Project cards on the home page render the same content as on the /projects
+// index — both surfaces read from the same JSON so a copy edit lands in both
+// places at once.
+import enProjects from "../../i18n/en/projects.json";
+import csProjects from "../../i18n/cs/projects.json";
 
 const translations = { en: enStrings, cs: csStrings };
+const projectTranslations = { en: enProjects, cs: csProjects };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({
@@ -16,38 +22,35 @@ export function getStaticPaths() {
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
+const tProjects = projectTranslations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="home" lang={lang}>
   <!-- Hero -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-24 lg:mb-40">
-    <div class="max-w-4xl">
-      <h1
-        class:list={[
-          "font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] mb-8",
-          lang === "cs" && "whitespace-nowrap",
-        ]}
-      >
-        {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleName}</span>
-      </h1>
-      <p class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12">
-        {t.hero.subtitle}
-      </p>
-    </div>
+    <h1
+      class:list={[
+        "font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] mb-8 max-w-4xl",
+        lang === "cs" && "whitespace-nowrap",
+      ]}
+    >
+      {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleName}</span>
+    </h1>
 
-    <!-- What's here + QR card -->
+    <!-- Subtitle + "What is this page?" copy on the left, QR card on the right.
+         items-start anchors the QR card's top edge to the same y-axis as the
+         "Software engineer..." subtitle line — previously the card sat next to
+         the "What is this page?" heading instead, which gave it too much air. -->
     <div class="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-10 lg:gap-16 items-start mb-16 max-w-5xl">
       <div>
+        <p class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12">
+          {t.hero.subtitle}
+        </p>
         <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">
           {t.whatsHere.title}
         </h2>
-        <p class="text-on-surface-variant text-lg leading-relaxed mb-6">
-          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
-        </p>
         <p class="text-on-surface-variant text-lg leading-relaxed">
-          {t.whatsHere.paragraph2prefix}<a href={localePath(lang, "project")} class="text-primary hover:underline"
-            >{t.whatsHere.paragraph2link}</a
-          >{t.whatsHere.paragraph2suffix}
+          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
         </p>
       </div>
       <QrCodeCard
@@ -66,46 +69,39 @@ const t = translations[lang];
     </div>
 
     <!-- Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
-      <!-- About Me card -->
-      <a
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
+      <!-- About Me card. Same <ProjectCard> component as the project cards below
+           — visually identical, no point keeping inline markup just because the
+           page it links to isn't a "project" per se. -->
+      <ProjectCard
         href={localePath(lang, "about")}
-        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md"
-      >
-        <div class="flex items-center gap-3 mb-4">
-          <Icon name="material-symbols:person" class="size-6 text-primary" aria-hidden="true" />
-          <h2 class="font-headline text-2xl font-bold group-hover:text-primary transition-colors">
-            {t.cards.about.title}
-          </h2>
-        </div>
-        <p class="text-on-surface-variant leading-relaxed mb-6">
-          {t.cards.about.description}
-        </p>
-        <span class="font-label text-sm uppercase tracking-widest text-primary flex items-center gap-1">
-          {t.cards.about.cta}
-          <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-        </span>
-      </a>
+        icon="person"
+        accent="primary"
+        title={t.cards.about.title}
+        description={t.cards.about.description}
+        cta={t.cards.about.cta}
+      />
 
-      <!-- Project card -->
-      <a
+      <!-- Project cards. Shared component AND shared content with the /projects
+           index — both pages read from projects.json so a copy edit there
+           updates both surfaces. -->
+      <ProjectCard
         href={localePath(lang, "project")}
-        class="group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 hover:border-tertiary/30 transition-all duration-300 shadow-sm hover:shadow-md"
-      >
-        <div class="flex items-center gap-3 mb-4">
-          <Icon name="material-symbols:rocket-launch" class="size-6 text-tertiary" aria-hidden="true" />
-          <h2 class="font-headline text-2xl font-bold group-hover:text-tertiary transition-colors">
-            {t.cards.project.title}
-          </h2>
-        </div>
-        <p class="text-on-surface-variant leading-relaxed mb-6">
-          {t.cards.project.description}
-        </p>
-        <span class="font-label text-sm uppercase tracking-widest text-tertiary flex items-center gap-1">
-          {t.cards.project.cta}
-          <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-        </span>
-      </a>
+        icon="rocket-launch"
+        accent="tertiary"
+        title={tProjects.items.thisSite.title}
+        description={tProjects.items.thisSite.description}
+        cta={tProjects.items.thisSite.cta}
+      />
+      <ProjectCard
+        href={localePath(lang, "strong-types")}
+        icon="package-2"
+        accent="primary"
+        title={tProjects.items.strongTypes.title}
+        description={tProjects.items.strongTypes.description}
+        cta={tProjects.items.strongTypes.cta}
+        class="md:col-span-2 lg:col-span-1"
+      />
     </div>
   </section>
 </Layout>
