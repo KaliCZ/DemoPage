@@ -108,11 +108,7 @@
         "icon": "code",
         "color": "primary",
         "label": "Jazyky a frameworky",
-        "items": [
-          "C# / .NET / ASP.NET Core / WPF",
-          "JavaScript / TypeScript / Vue.js / Astro",
-          "Go"
-        ]
+        "items": ["C# / .NET / ASP.NET Core / WPF", "JavaScript / TypeScript / Vue.js / Astro", "Go"]
       },
       {
         "icon": "database",
@@ -141,12 +137,7 @@
         "icon": "hub",
         "color": "primary",
         "label": "Architektura a inženýrství",
-        "items": [
-          "Architektura systémů",
-          "Dekompozice modulárního monolitu",
-          "Optimalizace výkonu",
-          "REST / GraphQL / gRPC"
-        ]
+        "items": ["Architektura systémů", "Dekompozice modulárního monolitu", "Optimalizace výkonu", "REST / GraphQL / gRPC"]
       },
       {
         "icon": "lightbulb",
