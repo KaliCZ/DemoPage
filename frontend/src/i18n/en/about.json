@@ -108,7 +108,11 @@
         "icon": "code",
         "color": "primary",
         "label": "Languages & Frameworks",
-        "items": ["C# / .NET / ASP.NET Core / WPF", "JavaScript / TypeScript / Vue.js / Astro", "Go"]
+        "items": [
+          "C# / .NET / ASP.NET Core / WPF",
+          "JavaScript / TypeScript / Vue.js / Astro",
+          "Go"
+        ]
       },
       {
         "icon": "database",
@@ -137,7 +141,31 @@
         "icon": "hub",
         "color": "primary",
         "label": "Architecture & Engineering",
-        "items": ["System Architecture", "Modular monolith decomposition", "Performance optimization", "REST / GraphQL / gRPC"]
+        "items": [
+          "System Architecture",
+          "Modular monolith decomposition",
+          "Performance optimization",
+          "REST / GraphQL / gRPC"
+        ]
+      },
+      {
+        "icon": "lightbulb",
+        "color": "secondary",
+        "label": "Product Mindset",
+        "items": [
+          {
+            "title": "Continuous discovery",
+            "description": "Analytics, support tickets, dogfooding and regular contact with users."
+          },
+          {
+            "title": "The \"why\" behind the \"what\"",
+            "description": "Interrogating feature requests for the underlying job-to-be-done."
+          },
+          {
+            "title": "User disengagement",
+            "description": "The best UX is the one the user never has to open. Surface anomalies, free the human."
+          }
+        ]
       }
     ]
   },
