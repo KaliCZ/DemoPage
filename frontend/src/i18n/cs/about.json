@@ -12,7 +12,10 @@
     "emailLabel": "pavel@kalandra.tech",
     "emailAriaLabel": "Poslat e-mail Pavlovi",
     "linkedinLabel": "LinkedIn",
-    "linkedinAriaLabel": "LinkedIn profil"
+    "linkedinAriaLabel": "LinkedIn profil",
+    "cvLabel": "Životopis",
+    "cvAriaLabel": "Stáhnout životopis (PDF)",
+    "cvTitle": "Stáhnout životopis — PDF"
   },
   "toc": {
     "title": "Na této stránce",
