@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "astro dev --open",
     "dev:claudePreview": "cross-env VITE_STRICT_PORT=1 astro dev",
+    "prebuild": "node scripts/generate-cv-pdf.mjs",
     "build": "astro build",
+    "build:cv": "node scripts/generate-cv-pdf.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "test": "playwright test",

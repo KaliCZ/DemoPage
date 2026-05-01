@@ -12,7 +12,10 @@
     "emailLabel": "pavel@kalandra.tech",
     "emailAriaLabel": "Send email to Pavel",
     "linkedinLabel": "LinkedIn",
-    "linkedinAriaLabel": "LinkedIn profile"
+    "linkedinAriaLabel": "LinkedIn profile",
+    "cvLabel": "CV",
+    "cvAriaLabel": "Download CV (PDF)",
+    "cvTitle": "Download CV — PDF"
   },
   "toc": {
     "title": "On this page",

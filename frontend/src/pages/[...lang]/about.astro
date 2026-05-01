@@ -1,6 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
+import IconDownload from "../../components/icons/IconDownload.astro";
 import IconEmail from "../../components/icons/IconEmail.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
 import IconLinkedIn from "../../components/icons/IconLinkedIn.astro";
@@ -80,6 +81,16 @@ const tocItems = [
           >
             <IconLinkedIn class="w-5 h-5" />
             {t.hero.linkedinLabel}
+          </a>
+          <a
+            class="flex items-center gap-2 font-label text-sm uppercase tracking-widest hover:text-primary transition-colors"
+            href="/cv/pavel-kalandra-cv.pdf"
+            download
+            title={t.hero.cvTitle}
+            aria-label={t.hero.cvAriaLabel}
+          >
+            <IconDownload class="w-5 h-5" />
+            {t.hero.cvLabel}
           </a>
         </div>
       </div>

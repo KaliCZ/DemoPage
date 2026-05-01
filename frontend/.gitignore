@@ -2,6 +2,8 @@
 dist/
 # generated types
 .astro/
+# generated CV PDF (built from cv/*.html via scripts/generate-cv-pdf.mjs)
+public/cv/
 
 # dependencies
 node_modules/
