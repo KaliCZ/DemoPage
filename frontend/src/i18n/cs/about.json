@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "O mně | Pavel Kalandra — kalandra.tech",
-    "description": "O Pavlu Kalandrovi — kariérní cesta od C# vývojáře po CTO."
+    "description": "O Pavlu Kalandrovi — kariérní cesta od C# vývojáře po lead engineera."
   },
   "hero": {
     "name": "Pavel Kalandra",
@@ -12,7 +12,60 @@
     "emailLabel": "pavel@kalandra.tech",
     "emailAriaLabel": "Poslat e-mail Pavlovi",
     "linkedinLabel": "LinkedIn",
-    "linkedinAriaLabel": "LinkedIn profil"
+    "linkedinAriaLabel": "LinkedIn profil",
+    "cvLabel": "Životopis",
+    "cvAriaLabel": "Stáhnout životopis (PDF)",
+    "cvTitle": "Stáhnout životopis — PDF"
+  },
+  "toc": {
+    "title": "Na této stránce",
+    "overview": "Přehled",
+    "manifesto": "Manifest",
+    "skills": "Dovednosti",
+    "personal": "O mně",
+    "career": "Kariéra"
+  },
+  "personal": {
+    "title": "O mně",
+    "subtitle": "Pár věcí, kterým se věnuju, když nejsem u klávesnice.",
+    "items": [
+      {
+        "icon": "mic-external-on",
+        "color": "primary",
+        "title": "Zpívám",
+        "description": "Karaoke? Jdu do toho!"
+      },
+      {
+        "icon": "casino",
+        "color": "tertiary",
+        "title": "Hry všeho druhu",
+        "description": "Deskové, počítačové, sportovní — když je to hra, jsem v ní."
+      },
+      {
+        "icon": "sports-soccer",
+        "color": "primary",
+        "title": "Bývalý fotbalista",
+        "description": "Dřív jsem hodně sportoval. Teď to musím dávkovat kvůli zraněním kotníků."
+      },
+      {
+        "icon": "stadia-controller",
+        "color": "tertiary",
+        "title": "Esportová minulost",
+        "description": "Hrál jsem League of Legends a Rocket League na vysoké úrovni."
+      },
+      {
+        "icon": "two-wheeler",
+        "color": "primary",
+        "title": "Motorky",
+        "description": "Nějaký čas jsem se věnoval amatérským motocyklovým závodům. (190 ccm)"
+      },
+      {
+        "icon": "family-restroom",
+        "color": "tertiary",
+        "title": "Otec dvou dětí",
+        "description": "Sem směřuje většina mého času mimo práci."
+      }
+    ]
   },
   "manifesto": {
     "title": "Můj manifest",
@@ -49,6 +102,67 @@
       }
     ]
   },
+  "skills": {
+    "label": "Nástroje",
+    "title": "Dovednosti",
+    "subtitle": "Deset let praktického inženýrství napříč celým stackem a vedení, které dokáže škálovat týmy i systémy zároveň.",
+    "categories": [
+      {
+        "icon": "code",
+        "color": "primary",
+        "label": "Jazyky a frameworky",
+        "items": ["C# / .NET / ASP.NET Core / WPF", "JavaScript / TypeScript / Vue.js / Astro", "Go"]
+      },
+      {
+        "icon": "database",
+        "color": "tertiary",
+        "label": "Data a úložiště",
+        "items": [
+          "SQL (MSSQL, PostgreSQL)",
+          "NoSQL (Azure Table Storage, Cosmos DB)",
+          "File Storage (Azure Blob, Supabase Storage)",
+          "Změny schématu při deployi bez výpadku"
+        ]
+      },
+      {
+        "icon": "cloud",
+        "color": "secondary",
+        "label": "Cloud a infrastruktura",
+        "description": "Komfortně vlastním celý produkční stack — od registrace domény přes nasazení až po živé dashboardy.",
+        "items": [
+          "Cloud platformy (Microsoft Azure, Cloudflare, Supabase)",
+          "CI/CD a kontejnery (GitHub Actions, Docker)",
+          "Observability (Sentry, BetterStack)",
+          "Nastavení DNS a e-maily (Brevo, SendGrid)"
+        ]
+      },
+      {
+        "icon": "hub",
+        "color": "primary",
+        "label": "Architektura a inženýrství",
+        "items": ["Architektura systémů", "Dekompozice modulárního monolitu", "Optimalizace výkonu", "REST / GraphQL / gRPC"]
+      },
+      {
+        "icon": "lightbulb",
+        "color": "secondary",
+        "label": "Produktové myšlení",
+        "items": [
+          {
+            "title": "Kontinuální discovery",
+            "description": "Analytika, support tickety, dogfooding a pravidelný kontakt s uživateli."
+          },
+          {
+            "title": "„Proč“ za „co“",
+            "description": "Zkoumat, jaký skutečný úkol za požadavkem stojí, ne jen postavit, co bylo vysloveno."
+          },
+          {
+            "title": "User disengagement",
+            "description": "Nejlepší UX je takové, které uživatel nikdy nemusí otevřít. Vynést anomálie na povrch a uvolnit člověka."
+          }
+        ]
+      }
+    ]
+  },
   "career": {
     "label": "Cesta",
     "title": "Kariérní cesta",
@@ -56,23 +170,23 @@
       {
         "side": "right",
         "date": "Čer 2025 — Současnost",
-        "role": "CTO",
+        "role": "Lead Engineer (CTO)",
         "company": "tickadoo",
-        "description": "Zodpovědný za celkovou architekturu systému, návrh featur a způsoby práce."
+        "description": "Hands-on role vedoucí single-pizza tým, který staví aplikaci pro prodej vstupenek od externích poskytovatelů.\n\nZodpovídám za celkovou architekturu systému, návrh featur, prioritizaci backlogu a způsoby práce — a zároveň každý týden píšu produkční kód."
       },
       {
         "side": "left",
         "date": "Úno 2025 — Srp 2025",
         "role": "Staff Software Engineer",
         "company": "Outreach",
-        "description": "Moc jsem se neohřál, odešel jsem za skvělou příležitostí jako CTO v tickadoo."
+        "description": "Moc jsem se neohřál, odešel jsem za skvělou příležitostí jako Lead Engineer v tickadoo."
       },
       {
         "side": "right",
         "date": "Dub 2024 — Led 2025",
         "role": "Tribe Lead",
         "company": "Rossum",
-        "description": "Vedl jsem třetinu engineeringu, restrukturalizoval týmy na produktově zaměřené a koučoval nové lídry."
+        "description": "Moje jediná hands-off role — middle management. Vedl jsem zhruba třetinu engineeringu — tým 15 lidí.\n\nVedl jsem iniciativu, která sladila strukturu týmů se strukturou produktu, aby inženýři mohli mít end-to-end vlastnictví své domény. Také jsem zavedl principy a procesy, které zajistily, že technická kvalita nepadla za oběť napjatým termínům."
       },
       {
         "side": "left",
@@ -103,7 +217,7 @@
         "date": "Dub 2016 — Úno 2018",
         "role": "Software Developer",
         "company": "ZENTITY a.s.",
-        "description": "Správa ASP.NET webové aplikace; později migrace z SQL reportingu na vlastní d3.js/Vue.js reporting."
+        "description": "Vlastnil jsem ASP.NET webovou aplikaci end-to-end, včetně Azure infrastruktury, na které běžela — Azure SQL, Azure Table Storage a Azure Active Directory. Nahradil jsem zastaralé SSRS reporty interaktivním Vue.js frontendem, který tahal data z dedikovaného API a vykresloval responzivní d3.js grafy, doplněné bočním filtrem, díky kterému si uživatelé mohli data sami krájet podle potřeby."
       },
       {
         "side": "left",

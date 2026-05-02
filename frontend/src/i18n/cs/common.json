@@ -2,7 +2,9 @@
   "nav": {
     "home": "Domů",
     "about": "O mně",
-    "project": "Projekt",
+    "projects": "Projekty",
+    "projectThisSite": "Tato stránka",
+    "projectStrongTypes": "StrongTypes",
     "hireMe": "Najměte mě",
     "blog": "Blog",
     "mySubmissions": "Mé nabídky",
@@ -40,7 +42,9 @@
     "skipToContent": "Přeskočit na obsah",
     "mainNavigation": "Hlavní navigace",
     "toggleDarkMode": "Přepnout tmavý režim",
-    "changeLanguage": "Změnit jazyk"
+    "changeLanguage": "Změnit jazyk",
+    "openProjectsMenu": "Rychlé odkazy na konkrétní projekty",
+    "breadcrumb": "Drobečková navigace"
   },
   "notFound": {
     "title": "Stránka nenalezena",

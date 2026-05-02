@@ -1,0 +1,54 @@
+---
+import { Icon } from "astro-icon/components";
+
+// Shared card used on the home page (compact, single-paragraph blurb) and on
+// the /projects index (richer, multi-paragraph blurb). Description accepts both
+// shapes; a single string is normalized to a one-element array so the markup
+// stays identical in both call sites.
+//
+// Accent picks the per-project color (e.g. tertiary for "This Site", primary
+// for "StrongTypes") which threads through icon color, hover border, hover
+// title color, and CTA label color.
+interface Props {
+  href: string;
+  // material-symbols name without the prefix (e.g. "rocket-launch")
+  icon: string;
+  accent: "primary" | "tertiary";
+  title: string;
+  description: string | string[];
+  cta: string;
+  // Extra classes for layout overrides (e.g. responsive grid spans on the home
+  // page where the StrongTypes card needs `md:col-span-2 lg:col-span-1`).
+  class?: string;
+}
+
+const { href, icon, accent, title, description, cta, class: extraClass } = Astro.props;
+const paragraphs = Array.isArray(description) ? description : [description];
+
+const accentText = accent === "tertiary" ? "text-tertiary" : "text-primary";
+const accentBorder = accent === "tertiary" ? "hover:border-tertiary/30" : "hover:border-primary/30";
+const accentTitleHover = accent === "tertiary" ? "group-hover:text-tertiary" : "group-hover:text-primary";
+---
+
+<a
+  href={href}
+  class:list={[
+    "group bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col",
+    accentBorder,
+    extraClass,
+  ]}
+>
+  <div class="flex items-center gap-3 mb-4">
+    <Icon name={`material-symbols:${icon}`} class:list={["size-6", accentText]} aria-hidden="true" />
+    <h2 class:list={["font-headline text-2xl font-bold transition-colors", accentTitleHover]}>
+      {title}
+    </h2>
+  </div>
+  <div class="text-on-surface-variant leading-relaxed mb-6 flex-1 space-y-3">
+    {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+  </div>
+  <span class:list={["font-label text-sm uppercase tracking-widest flex items-center gap-1", accentText]}>
+    {cta}
+    <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+  </span>
+</a>

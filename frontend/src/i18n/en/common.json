@@ -2,7 +2,9 @@
   "nav": {
     "home": "Home",
     "about": "About Me",
-    "project": "Project",
+    "projects": "Projects",
+    "projectThisSite": "This Site",
+    "projectStrongTypes": "StrongTypes",
     "hireMe": "Hire Me",
     "blog": "Blog",
     "mySubmissions": "My Submissions",
@@ -40,7 +42,9 @@
     "skipToContent": "Skip to content",
     "mainNavigation": "Main navigation",
     "toggleDarkMode": "Toggle dark mode",
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "openProjectsMenu": "Quick links to specific projects",
+    "breadcrumb": "Breadcrumb"
   },
   "notFound": {
     "title": "Page Not Found",

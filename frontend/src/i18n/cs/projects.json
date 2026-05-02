@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "title": "Projekty | kalandra.tech",
+    "description": "Softwarové projekty Pavla Kalandry — samotná kalandra.tech, stavěná veřejně, a StrongTypes, C# NuGet balíček pro bezpečnější typy."
+  },
+  "hero": {
+    "title": "Projekty",
+    "subtitle": "Co stavím — veřejně. Vyberte si jeden a ponořte se."
+  },
+  "items": {
+    "thisSite": {
+      "title": "Jak jsem stavěl tuto stránku",
+      "description": [
+        "Samotná kalandra.tech — stavěná veřejně, s každým architektonickým rozhodnutím, nasazením a získanou lekcí zapsanou v okamžiku, kdy se to děje. Stránka sama je artefakt.",
+        "Pokrývá webovou stránku a její hosting, API a jeho hosting, databázi s event sourcingem, CI/CD pipeline s E2E testy. A další."
+      ],
+      "cta": "Zobrazit plán"
+    },
+    "strongTypes": {
+      "title": "StrongTypes",
+      "description": [
+        "C# NuGet balíček, který přesouvá invarianty do typového systému: NonEmptyString, NonEmptyEnumerable, validované numerické typy, Maybe a Result.",
+        "Umožňuje bezkódové validace vynucené překladačem."
+      ],
+      "cta": "Prozkoumat knihovnu"
+    }
+  }
+}

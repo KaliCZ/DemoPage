@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "astro dev --open",
     "dev:claudePreview": "cross-env VITE_STRICT_PORT=1 astro dev",
+    "prebuild": "playwright install chromium && node scripts/generate-cv-pdf.mjs",
     "build": "astro build",
+    "build:cv": "node scripts/generate-cv-pdf.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "test": "playwright test",
@@ -20,10 +22,10 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
-    "@iconify-json/material-symbols": "^1.2.67",
-    "@supabase/supabase-js": "^2.104.0",
+    "@iconify-json/material-symbols": "^1.2.69",
+    "@supabase/supabase-js": "^2.105.1",
     "@tailwindcss/vite": "^4.2.4",
-    "astro": "^6.1.8",
+    "astro": "^6.1.10",
     "astro-icon": "^1.1.5",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.2.2"

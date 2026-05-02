@@ -214,6 +214,38 @@ const t = translations[lang];
   >
   <template id="icon-close"><Icon name="material-symbols:close" class="size-[18px]" aria-hidden="true" /></template>
 
+  <dialog
+    id="confirm-incomplete-dialog"
+    aria-labelledby="confirm-incomplete-title"
+    class="m-auto bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 max-w-sm w-full backdrop:bg-black/50"
+  >
+    <div class="space-y-5">
+      <h2 id="confirm-incomplete-title" class="font-headline text-xl font-bold text-on-surface">
+        {t.form.confirmIncomplete.title}
+      </h2>
+      <p class="text-sm text-on-surface-variant font-body">
+        {t.form.confirmIncomplete.description}
+      </p>
+      <ul id="confirm-incomplete-fields" class="list-disc pl-5 text-sm text-on-surface font-body space-y-1"></ul>
+      <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          id="confirm-incomplete-cancel"
+          class="px-4 py-2 rounded-xl text-sm font-label text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+        >
+          {t.form.confirmIncomplete.cancelButton}
+        </button>
+        <button
+          type="button"
+          id="confirm-incomplete-confirm"
+          class="px-4 py-2 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+        >
+          {t.form.confirmIncomplete.confirmButton}
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <script
     define:vars={{
       apiUrl: import.meta.env.PUBLIC_API_URL || "",
@@ -226,6 +258,7 @@ const t = translations[lang];
       successText: t.form.successTitle,
       validationStrings: t.form.validation,
       apiErrorMap: t.form.errors,
+      incompleteFieldLabels: t.form.confirmIncomplete.fields,
       jobOffersPath: localePath(lang, "job-offers"),
     }}
   >
@@ -434,6 +467,59 @@ const t = translations[lang];
       });
     }
 
+    // Ask the user to confirm when optional fields or attachments are empty.
+    // Required fields are handled by validateAllFields above, so here we only
+    // look at the fields that are legitimately optional.
+    function getMissingOptionalFields(form) {
+      var missing = [];
+      if (!form.salaryRange.value.trim()) missing.push(incompleteFieldLabels.salaryRange);
+      if (!form.location.value.trim()) missing.push(incompleteFieldLabels.location);
+      if (!form.additionalNotes.value.trim()) missing.push(incompleteFieldLabels.additionalNotes);
+      if (selectedFiles.length === 0) missing.push(incompleteFieldLabels.attachments);
+      return missing;
+    }
+
+    function confirmIncompleteSubmission(missing) {
+      return new Promise(function (resolve) {
+        var dialog = document.getElementById("confirm-incomplete-dialog");
+        var list = document.getElementById("confirm-incomplete-fields");
+        var confirmBtn = document.getElementById("confirm-incomplete-confirm");
+        var cancelBtn = document.getElementById("confirm-incomplete-cancel");
+        if (!dialog || !list || !confirmBtn || !cancelBtn) {
+          resolve(true);
+          return;
+        }
+        list.innerHTML = "";
+        missing.forEach(function (label) {
+          var li = document.createElement("li");
+          li.textContent = label;
+          list.appendChild(li);
+        });
+
+        function cleanup(result) {
+          confirmBtn.removeEventListener("click", onConfirm);
+          cancelBtn.removeEventListener("click", onCancel);
+          dialog.removeEventListener("close", onClose);
+          if (dialog.open) dialog.close();
+          resolve(result);
+        }
+        function onConfirm() {
+          cleanup(true);
+        }
+        function onCancel() {
+          cleanup(false);
+        }
+        function onClose() {
+          cleanup(false);
+        }
+
+        confirmBtn.addEventListener("click", onConfirm);
+        cancelBtn.addEventListener("click", onCancel);
+        dialog.addEventListener("close", onClose);
+        dialog.showModal();
+      });
+    }
+
     // Form submission
     document.getElementById("job-offer-form")?.addEventListener("submit", async function (e) {
       e.preventDefault();
@@ -442,6 +528,12 @@ const t = translations[lang];
       var errorEl = document.getElementById("form-error");
 
       if (!validateAllFields(form)) return;
+
+      var missing = getMissingOptionalFields(form);
+      if (missing.length > 0) {
+        var confirmed = await confirmIncompleteSubmission(missing);
+        if (!confirmed) return;
+      }
 
       if (submitBtn) submitBtn.textContent = submittingText;
       if (submitBtn) submitBtn.disabled = true;

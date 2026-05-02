@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "About Me | Pavel Kalandra — kalandra.tech",
-    "description": "About Pavel Kalandra — career journey from C# developer to CTO."
+    "description": "About Pavel Kalandra — career journey from C# developer to lead engineer."
   },
   "hero": {
     "name": "Pavel Kalandra",
@@ -12,7 +12,60 @@
     "emailLabel": "pavel@kalandra.tech",
     "emailAriaLabel": "Send email to Pavel",
     "linkedinLabel": "LinkedIn",
-    "linkedinAriaLabel": "LinkedIn profile"
+    "linkedinAriaLabel": "LinkedIn profile",
+    "cvLabel": "CV",
+    "cvAriaLabel": "Download CV (PDF)",
+    "cvTitle": "Download CV — PDF"
+  },
+  "toc": {
+    "title": "On this page",
+    "overview": "Overview",
+    "manifesto": "Manifesto",
+    "skills": "Skills",
+    "personal": "About me",
+    "career": "Career"
+  },
+  "personal": {
+    "title": "About me",
+    "subtitle": "A few things I get up to when I'm away from the keyboard.",
+    "items": [
+      {
+        "icon": "mic-external-on",
+        "color": "primary",
+        "title": "I sing",
+        "description": "Karaoke? I'm in!"
+      },
+      {
+        "icon": "casino",
+        "color": "tertiary",
+        "title": "Games of every kind",
+        "description": "Board games, video games, sport — if it's a game, I want in."
+      },
+      {
+        "icon": "sports-soccer",
+        "color": "primary",
+        "title": "Former footballer",
+        "description": "I used to spend a lot of time doing sports. Now I need to pace myself due to ankle injuries."
+      },
+      {
+        "icon": "stadia-controller",
+        "color": "tertiary",
+        "title": "Esports past",
+        "description": "Competed at a high level in League of Legends and Rocket League."
+      },
+      {
+        "icon": "two-wheeler",
+        "color": "primary",
+        "title": "Two wheels",
+        "description": "I spent some time in motorcycle amateur races. (190cc)"
+      },
+      {
+        "icon": "family-restroom",
+        "color": "tertiary",
+        "title": "Father of two",
+        "description": "Most of my non-work time goes here."
+      }
+    ]
   },
   "manifesto": {
     "title": "My Manifesto",
@@ -49,6 +102,67 @@
       }
     ]
   },
+  "skills": {
+    "label": "Toolbox",
+    "title": "Skills",
+    "subtitle": "A decade of hands-on engineering across the stack, plus the leadership instincts to scale teams and systems together.",
+    "categories": [
+      {
+        "icon": "code",
+        "color": "primary",
+        "label": "Languages & Frameworks",
+        "items": ["C# / .NET / ASP.NET Core / WPF", "JavaScript / TypeScript / Vue.js / Astro", "Go"]
+      },
+      {
+        "icon": "database",
+        "color": "tertiary",
+        "label": "Data & Storage",
+        "items": [
+          "SQL (MSSQL, PostgreSQL)",
+          "NoSQL (Azure Table Storage, Cosmos DB)",
+          "File Storage (Azure Blob, Supabase Storage)",
+          "Zero-downtime schema changes during deploy"
+        ]
+      },
+      {
+        "icon": "cloud",
+        "color": "secondary",
+        "label": "Cloud & Infrastructure",
+        "description": "Comfortable owning the full production stack — from registering a domain to shipping deploys and watching live dashboards.",
+        "items": [
+          "Cloud platforms (Microsoft Azure, Cloudflare, Supabase)",
+          "CI/CD & Containers (GitHub Actions, Docker)",
+          "Observability (Sentry, BetterStack)",
+          "DNS setup & Emails (Brevo, SendGrid)"
+        ]
+      },
+      {
+        "icon": "hub",
+        "color": "primary",
+        "label": "Architecture & Engineering",
+        "items": ["System Architecture", "Modular monolith decomposition", "Performance optimization", "REST / GraphQL / gRPC"]
+      },
+      {
+        "icon": "lightbulb",
+        "color": "secondary",
+        "label": "Product Mindset",
+        "items": [
+          {
+            "title": "Continuous discovery",
+            "description": "Analytics, support tickets, dogfooding and regular contact with users."
+          },
+          {
+            "title": "The \"why\" behind the \"what\"",
+            "description": "Interrogating feature requests for the underlying job-to-be-done."
+          },
+          {
+            "title": "User disengagement",
+            "description": "The best UX is the one the user never has to open. Surface anomalies, free the human."
+          }
+        ]
+      }
+    ]
+  },
   "career": {
     "label": "The Path",
     "title": "Career Journey",
@@ -56,23 +170,23 @@
       {
         "side": "right",
         "date": "Jun 2025 — Present",
-        "role": "CTO",
+        "role": "Lead Engineer (CTO)",
         "company": "tickadoo",
-        "description": "Responsible for overall system architecture, feature design and ways of working."
+        "description": "A hands-on role leading a single-pizza team building an app for selling tickets from third-party providers.\n\nOwning the overall system architecture, feature design, backlog prioritization and engineering ways of working — while still shipping production code every week."
       },
       {
         "side": "left",
         "date": "Feb 2025 — Aug 2025",
         "role": "Staff Software Engineer",
         "company": "Outreach",
-        "description": "Didn't stay long, left for a great opportunity as CTO at tickadoo."
+        "description": "Didn't stay long, left for a great opportunity as Lead Engineer at tickadoo."
       },
       {
         "side": "right",
         "date": "Apr 2024 — Jan 2025",
         "role": "Tribe Lead",
         "company": "Rossum",
-        "description": "Led one-third of engineering, restructuring into product-focused teams and coaching new leaders."
+        "description": "My only hands-off role — middle management. I lead roughly one third of engineering - a team of 15.\n\nI ran an initiative to align the team structure with the product structure so engineers can have end-to-end ownership of their domain. I also put in place some principles and processes that kept technical quality from being sacrificed under tight deadlines."
       },
       {
         "side": "left",
@@ -103,7 +217,7 @@
         "date": "Apr 2016 — Feb 2018",
         "role": "Software Developer",
         "company": "ZENTITY a.s.",
-        "description": "Managed ASP.NET web application; later migrated from SQL reporting to custom d3.js/Vue.js reporting."
+        "description": "Owned an ASP.NET web application end-to-end, including the Azure infrastructure it ran on — Azure SQL, Azure Table Storage, and Azure Active Directory. Replaced the legacy SSRS reports with an interactive Vue.js frontend that pulled data from a dedicated API and rendered responsive d3.js charts, complete with a sidebar filter so users could slice the data themselves."
       },
       {
         "side": "left",

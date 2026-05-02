@@ -44,6 +44,16 @@ test.describe("Page rendering", () => {
     await expect(page).toHaveTitle(/Project/);
   });
 
+  test("projects index page loads", async ({ page }) => {
+    await page.goto("/projects");
+    await expect(page).toHaveTitle(/Projects/);
+  });
+
+  test("strong-types page loads", async ({ page }) => {
+    await page.goto("/strong-types");
+    await expect(page).toHaveTitle(/StrongTypes/);
+  });
+
   test("blog index lists posts and links to RSS", async ({ page }) => {
     await page.goto("/blog");
     await expect(page).toHaveTitle(/Blog/);

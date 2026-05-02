@@ -79,6 +79,10 @@ test.describe("Edit Activity Log", () => {
     });
 
     await page.click("#submit-btn");
+    // The incomplete-submission confirmation appears because optional fields
+    // are left blank; confirm to proceed.
+    await expect(page.locator("#confirm-incomplete-dialog")).toBeVisible();
+    await page.click("#confirm-incomplete-confirm");
     await expect(page).toHaveURL(/\/job-offers/, { timeout: 15000 });
 
     // --- Step 2: Verify the detail view is open ---

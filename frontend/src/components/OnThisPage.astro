@@ -1,0 +1,90 @@
+---
+interface TocItem {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  title: string;
+  items: TocItem[];
+}
+
+const { title, items } = Astro.props;
+---
+
+<!-- Sticky bottom-bar TOC, shown at all viewport widths.
+     One UX, one mental model — desktop gets the same scrollable pill row as mobile,
+     freeing the page's horizontal space for content. -->
+<nav
+  id="toc-bar"
+  class="fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+  aria-label={title}
+>
+  <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
+    <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant pr-1">{title}</span>
+    <span class="shrink-0 w-px h-4 bg-outline-variant/40" aria-hidden="true"></span>
+    {
+      items.map((item) => (
+        <a
+          href={`#${item.id}`}
+          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+          data-toc-target={item.id}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+  </div>
+</nav>
+
+<style>
+  .toc-pill-active {
+    background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+  /* Hide scrollbar for the pill bar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  /* Bottom padding so content isn't hidden behind the sticky bar — applied at all widths
+     since the bar is now always visible. Tuned to roughly match the bar's own height
+     (py-2 outer + py-1.5 pill + ~16px text line + 1px border ≈ 45px) so the footer sits
+     flush against the bar without a visible gap. */
+  body {
+    padding-bottom: 3rem;
+  }
+</style>
+
+<script>
+  const sections = document.querySelectorAll("section[id]");
+  const tocPills = document.querySelectorAll(".toc-pill");
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+
+          tocPills.forEach((l) => l.classList.remove("toc-pill-active"));
+          const activePill = document.querySelector(`.toc-pill[data-toc-target="${id}"]`);
+          if (activePill) {
+            activePill.classList.add("toc-pill-active");
+            activePill.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+              inline: "center",
+            });
+          }
+        }
+      });
+    },
+    { rootMargin: "-20% 0px -70% 0px" },
+  );
+
+  sections.forEach((section) => observer.observe(section));
+</script>

@@ -38,6 +38,18 @@
     "submitting": "Odesílám...",
     "successTitle": "Nabídka odeslána!",
     "successMessage": "Děkuji za váš zájem. Vaši nabídku posoudím a ozvu se vám e-mailem. Její stav můžete sledovat na stránce Pracovní nabídky.",
+    "confirmIncomplete": {
+      "title": "Odeslat s chybějícími údaji?",
+      "description": "Nevyplnili jste následující volitelné údaje. Přesto chcete nabídku odeslat?",
+      "fields": {
+        "salaryRange": "Mzdové rozmezí",
+        "location": "Lokalita",
+        "additionalNotes": "Další poznámky",
+        "attachments": "Přílohy"
+      },
+      "confirmButton": "Přesto odeslat",
+      "cancelButton": "Vrátit se"
+    },
     "captchaError": "Prosím dokončete ověření CAPTCHA.",
     "captchaRequiredError": "V poslední době jste odeslali několik nabídek. Potvrďte prosím, že jste člověk, a zkuste to znovu.",
     "errorMessage": "Něco se pokazilo. Zkuste to prosím znovu.",
