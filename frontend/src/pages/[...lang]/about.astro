@@ -178,14 +178,10 @@ const tocItems = [
     </div>
   </section>
 
-  <!-- Light-mode-only separator between Manifesto and Skills bands (dark mode
-       deliberately keeps no separator here). -->
-  <div class="border-t border-outline-variant dark:hidden"></div>
-
   <!-- Skills Section -->
   <section
     id="skills"
-    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 relative overflow-hidden border-b border-outline-variant dark:border-on-surface/5"
+    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 relative overflow-hidden border-t border-b border-outline-variant"
   >
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
@@ -237,7 +233,7 @@ const tocItems = [
        human attribute rather than a feature. -->
   <section
     id="personal"
-    class="bg-surface-container-highest dark:bg-surface-container-low py-12 lg:py-16 mb-16 lg:mb-24 relative overflow-hidden border-b border-outline-variant dark:border-on-surface/5"
+    class="bg-surface-container-highest dark:bg-surface-container-low py-12 lg:py-16 mb-8 lg:mb-12 relative overflow-hidden border-b border-outline-variant dark:border-on-surface/5"
   >
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
@@ -269,9 +265,8 @@ const tocItems = [
   </section>
 
   <!-- Career Journey Section -->
-  <section id="career" class="max-w-7xl mx-auto px-4 md:px-8 mb-40">
-    <div class="text-center mb-24">
-      <span class="font-label text-secondary uppercase tracking-widest text-sm mb-4 block">{t.career.label}</span>
+  <section id="career" class="max-w-7xl mx-auto px-4 md:px-8">
+    <div class="text-center mb-16">
       <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">
         {t.career.title}
       </h2>
