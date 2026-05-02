@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import Card from "./Card.astro";
 
 // Shared card used on the home page (compact, single-paragraph blurb) and on
 // the /projects index (richer, multi-paragraph blurb). Description accepts both
@@ -26,18 +27,10 @@ const { href, icon, accent, title, description, cta, class: extraClass } = Astro
 const paragraphs = Array.isArray(description) ? description : [description];
 
 const accentText = accent === "tertiary" ? "text-tertiary" : "text-primary";
-const accentBorder = accent === "tertiary" ? "hover:border-tertiary/30" : "hover:border-primary/30";
 const accentTitleHover = accent === "tertiary" ? "group-hover:text-tertiary" : "group-hover:text-primary";
 ---
 
-<a
-  href={href}
-  class:list={[
-    "group bg-surface-container-lowest dark:bg-surface-container-low p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col",
-    accentBorder,
-    extraClass,
-  ]}
->
+<Card as="a" href={href} accent={accent} class:list={["flex flex-col", extraClass]}>
   <div class="flex items-center gap-3 mb-4">
     <Icon name={`material-symbols:${icon}`} class:list={["size-6", accentText]} aria-hidden="true" />
     <h2 class:list={["font-headline text-2xl font-bold transition-colors", accentTitleHover]}>
@@ -51,4 +44,4 @@ const accentTitleHover = accent === "tertiary" ? "group-hover:text-tertiary" : "
     {cta}
     <Icon name="material-symbols:arrow-forward" class="size-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
   </span>
-</a>
+</Card>
