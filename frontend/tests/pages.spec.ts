@@ -65,29 +65,61 @@ test.describe("Navigation", () => {
     await expect(page).toHaveURL("/hire-me");
   });
 
-  test("language switcher changes language", async ({ page }) => {
+  test("language switcher changes language and renders translated content", async ({ page }) => {
     await page.goto("/about");
-    // Hover over language picker to open dropdown
-    const langPicker = page
-      .locator(".group:visible")
-      .filter({ has: page.locator('[aria-label="Change language"]') })
-      .first();
-    await langPicker.hover();
-    await page.getByRole("menuitem", { name: "Čeština" }).first().click();
+    const nav = page.locator("nav[aria-label]");
+
+    // English content present before the switch.
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(nav.getByRole("link", { name: "About Me" }).first()).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Hire Me" }).first()).toBeVisible();
+
+    await page.getByRole("link", { name: "Switch to Czech" }).first().click();
     await expect(page).toHaveURL("/cs/about");
+
+    // Czech content actually rendered — not just URL change.
+    await expect(page.locator("html")).toHaveAttribute("lang", "cs");
+    await expect(nav.getByRole("link", { name: "O mně" }).first()).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Najměte mě" }).first()).toBeVisible();
+
+    // And the reverse direction also flips content back to English.
+    await page.getByRole("link", { name: "Přepnout do angličtiny" }).first().click();
+    await expect(page).toHaveURL("/about");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(nav.getByRole("link", { name: "About Me" }).first()).toBeVisible();
   });
 });
 
 test.describe("Dark mode", () => {
-  test("toggle switches to dark mode", async ({ page }) => {
+  test("toggle switches to dark mode and re-styles the page", async ({ page }) => {
     await page.goto("/");
     const html = page.locator("html");
     await expect(html).not.toHaveClass(/dark/);
 
+    // Capture a few token-driven colors in light mode so we can confirm they
+    // actually change — the .dark class flipping is a precondition, not proof.
+    const readColors = () =>
+      page.evaluate(() => ({
+        body: getComputedStyle(document.body).backgroundColor,
+        nav: getComputedStyle(document.querySelector("nav[aria-label]")!).backgroundColor,
+        footer: getComputedStyle(document.querySelector("footer")!).backgroundColor,
+      }));
+
+    const lightColors = await readColors();
+
     await page.locator("#theme-toggle").click();
     await expect(html).toHaveClass(/dark/);
 
+    const darkColors = await readColors();
+    expect(darkColors.body).not.toBe(lightColors.body);
+    expect(darkColors.nav).not.toBe(lightColors.nav);
+    expect(darkColors.footer).not.toBe(lightColors.footer);
+
     await page.locator("#theme-toggle").click();
     await expect(html).not.toHaveClass(/dark/);
+
+    // Toggling back restores the original light-mode colors.
+    const restoredColors = await readColors();
+    expect(restoredColors).toEqual(lightColors);
   });
 });
