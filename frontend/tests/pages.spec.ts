@@ -67,13 +67,7 @@ test.describe("Navigation", () => {
 
   test("language switcher changes language", async ({ page }) => {
     await page.goto("/about");
-    // Hover over language picker to open dropdown
-    const langPicker = page
-      .locator(".group:visible")
-      .filter({ has: page.locator('[aria-label="Change language"]') })
-      .first();
-    await langPicker.hover();
-    await page.getByRole("menuitem", { name: "Čeština" }).first().click();
+    await page.getByRole("link", { name: "Switch to Czech" }).first().click();
     await expect(page).toHaveURL("/cs/about");
   });
 });
