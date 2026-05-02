@@ -20,7 +20,7 @@
   "toc": {
     "title": "Na této stránce",
     "overview": "Přehled",
-    "manifesto": "Manifest",
+    "values": "Hodnoty",
     "skills": "Dovednosti",
     "personal": "O mně",
     "career": "Kariéra"
@@ -67,38 +67,36 @@
       }
     ]
   },
-  "manifesto": {
-    "title": "Můj manifest",
-    "subtitle": "Navrhuji systémy, které nejen fungují dnes, ale elegantně se vyvíjejí v čase.",
+  "values": {
+    "title": "Moje hodnoty",
     "pillars": [
       {
-        "icon": "architecture",
+        "icon": "tune",
         "color": "primary",
-        "title": "Odolná architektura",
-        "description": "Systémy, které se elegantně přizpůsobují měnícím se potřebám byznysu."
+        "title": "Soustřeď se na produkt, ušetříš na údržbě",
+        "description": "Každý systém, který nasadíš, si necháš navždy. Stavěj jednoduše, když to jde, a komplexně, když to musí být. Microservices nejsou výchozí volba — buď jsou nutnost, nebo overkill."
+      },
+      {
+        "icon": "visibility",
+        "color": "tertiary",
+        "title": "Transparentnost a upřímnost",
+        "description": "Těžká rozhodnutí potřebují kompletní informace. To, co se v týmu neřekne nahlas, se pomlouvá v zákulisí."
+      },
+      {
+        "icon": "handshake",
+        "color": "secondary",
+        "title": "Týmový hráč",
+        "description": "Přijď každý den s úmyslem něco zlepšit — kód, testy, kolegův den. Spolehni se na ostatní a buď spolehlivý pro ně."
       },
       {
         "icon": "groups",
-        "color": "tertiary",
-        "title": "Autonomní týmy",
-        "description": "Kultura, kde každý inženýr cítí zodpovědnost za svou práci a má prostor růst."
-      }
-    ],
-    "accordions": [
-      {
         "color": "primary",
-        "title": "Umožněte si škálovat",
-        "content": "Software by neměl být složitý. Každý kus softwaru vyžaduje údržbu a učení. Pokud vám neusnadňuje život, postavte ho jinak. Nebo ho nestavte vůbec. Nezasekněte se v režimu opravování. Využijte čas na tvorbu hodnoty."
-      },
-      {
-        "color": "tertiary",
-        "title": "Buďte šťastní ze své práce",
-        "content": "Většina inženýrů dělá tuto práci, protože milují tvorbu. Dejte jim trochu volnosti a sledujte, jak váš software roste. Motivovat inženýry by nemělo být těžké."
-      },
-      {
-        "color": "secondary",
-        "title": "Zaměřte se na DX",
-        "content": "Spojením těch dvou bodů dostanete jednoduchý závěr. Opravte to, co inženýry trápí, a oni vám na oplátku vylepší produkt. Všichni vyhrávají. Všichni jsou spokojení."
+        "title": "Autonomní týmy",
+        "description": "Kultura, kde každý inženýr vlastní svou doménu end-to-end a má prostor zanechat stopu.",
+        "paragraphs": [
+          "Slaď strukturu týmů se strukturou produktu, aby inženýři vlastnili doménu end-to-end, ne jen backlog. Zodpovědnost a vlastnictví jdou ruku v ruce. To je opravdový empowerment.",
+          "Dej týmu jasnou vizi, vyhraď čas na bugy a eskalace a 10–20 % času nech volných, aby si inženýři mohli zkoušet vlastní nápady. Řešit problémy je zábava; být kódící opicí bez slova ne."
+        ]
       }
     ]
   },

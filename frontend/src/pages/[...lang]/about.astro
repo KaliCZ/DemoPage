@@ -25,7 +25,7 @@ const t = translations[lang];
 
 const tocItems = [
   { id: "hero", label: t.toc.overview },
-  { id: "manifesto", label: t.toc.manifesto },
+  { id: "values", label: t.toc.values },
   { id: "skills", label: t.toc.skills },
   { id: "personal", label: t.toc.personal },
   { id: "career", label: t.toc.career },
@@ -117,62 +117,64 @@ const tocItems = [
     </div>
   </section>
 
-  <!-- Manifesto Section -->
-  <Band id="manifesto" borders="top">
+  <!-- Values Section -->
+  <Band id="values" borders="top">
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
     <div class="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        <!-- Left Column -->
-        <div>
-          <h2 class="font-headline text-4xl font-extrabold mb-8 tracking-tight">
-            {t.manifesto.title}
-          </h2>
-          <p class="text-on-surface-variant text-lg leading-relaxed mb-12">
-            {t.manifesto.subtitle}
-          </p>
-          <ul class="space-y-8">
-            {
-              t.manifesto.pillars.map((pillar) => (
+      <h2 class="font-headline text-4xl font-extrabold mb-12 tracking-tight">
+        {t.values.title}
+      </h2>
+      <!-- Asymmetric two-column layout: short pillars stack on the left, the
+           long-form Empowered Teams pillar (with its lede + two paragraphs)
+           occupies the right column on its own. The split is driven by the
+           presence of `paragraphs` on the data, so adding/removing long
+           pillars adapts the layout without rewiring it. -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <ul class="space-y-10">
+          {
+            t.values.pillars
+              .filter((pillar) => !("paragraphs" in pillar))
+              .map((pillar) => (
                 <li class="flex gap-4">
                   <Icon
                     name={`material-symbols:${pillar.icon.replace(/_/g, "-")}`}
-                    class:list={["size-[30px] shrink-0", `text-${pillar.color}`]}
+                    class:list={["size-[30px] shrink-0 mt-1", `text-${pillar.color}`]}
                     aria-hidden="true"
                   />
-                  <div>
+                  <div class="flex-1">
                     <h3 class="font-bold text-xl mb-2">{pillar.title}</h3>
                     <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
                   </div>
                 </li>
               ))
-            }
-          </ul>
-        </div>
-        <!-- Right Column (Expandable sections) -->
-        <div class="flex flex-col justify-center">
-          <div class="space-y-4">
-            {
-              t.manifesto.accordions.map((accordion) => (
-                <details class="group bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-sm">
-                  <summary
-                    class:list={[
-                      "p-6 cursor-pointer font-label text-base flex justify-between items-center select-none",
-                      `text-${accordion.color}`,
-                    ]}
-                  >
-                    <span>{accordion.title}</span>
-                    <Icon
-                      name="material-symbols:expand-more"
-                      class="size-3.5 transition-transform group-open:rotate-180"
-                      aria-hidden="true"
-                    />
-                  </summary>
-                  <div class="px-6 pb-6 text-on-surface-variant leading-relaxed">{accordion.content}</div>
-                </details>
+          }
+        </ul>
+        <ul class="space-y-10">
+          {
+            t.values.pillars
+              .filter((pillar) => "paragraphs" in pillar && pillar.paragraphs)
+              .map((pillar) => (
+                <li class="flex gap-4">
+                  <Icon
+                    name={`material-symbols:${pillar.icon.replace(/_/g, "-")}`}
+                    class:list={["size-[30px] shrink-0 mt-1", `text-${pillar.color}`]}
+                    aria-hidden="true"
+                  />
+                  <div class="flex-1">
+                    <h3 class="font-bold text-xl mb-2">{pillar.title}</h3>
+                    <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
+                    {"paragraphs" in pillar && pillar.paragraphs && (
+                      <div class="mt-4 space-y-4">
+                        {pillar.paragraphs.map((para) => (
+                          <p class="text-on-surface-variant leading-relaxed">{para}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </li>
               ))
-            }
-          </div>
-        </div>
+          }
+        </ul>
       </div>
     </div>
   </Band>
@@ -221,7 +223,7 @@ const tocItems = [
     </div>
   </Band>
 
-  <!-- Personal Section. Third band in the sequence Manifesto → Skills → Personal,
+  <!-- Personal Section. Third band in the sequence Values → Skills → Personal,
        using the deeper shade so it alternates with Skills (which uses the
        subtler one). The band's bottom border acts as the divider that closes
        off the colored-bands zone before the transparent Career timeline. Cards

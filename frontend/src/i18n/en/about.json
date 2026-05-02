@@ -20,7 +20,7 @@
   "toc": {
     "title": "On this page",
     "overview": "Overview",
-    "manifesto": "Manifesto",
+    "values": "Values",
     "skills": "Skills",
     "personal": "About me",
     "career": "Career"
@@ -67,38 +67,36 @@
       }
     ]
   },
-  "manifesto": {
-    "title": "My Manifesto",
-    "subtitle": "Designing systems that don't just work today, but evolve gracefully over time.",
+  "values": {
+    "title": "My Values",
     "pillars": [
       {
-        "icon": "architecture",
+        "icon": "tune",
         "color": "primary",
-        "title": "Resilient Architecture",
-        "description": "Systems that evolve gracefully as business needs shift."
+        "title": "Focus on your product, save on maintenance",
+        "description": "Every system you ship is a system you keep forever. Build simple when possible, go complex when necessary. Microservices aren't a default — they're either a must-have or overkill."
+      },
+      {
+        "icon": "visibility",
+        "color": "tertiary",
+        "title": "Transparency and honesty",
+        "description": "Hard decisions need full information. What teams don't say openly, they gossip about privately."
+      },
+      {
+        "icon": "handshake",
+        "color": "secondary",
+        "title": "A Teamplayer",
+        "description": "Show up every day with the intent to improve something — code, tests, a teammate's day. Rely on others, and be reliable for others."
       },
       {
         "icon": "groups",
-        "color": "tertiary",
-        "title": "Empowered Teams",
-        "description": "Autonomous cultures where every engineer has ownership and a path to mastery."
-      }
-    ],
-    "accordions": [
-      {
         "color": "primary",
-        "title": "Allow yourself to scale",
-        "content": "Software shouldn't be hard. Every piece of software requires maintenance and learning. If it doesn't make your life easier, build it different. Or don't build it at all. Don't get stuck in maintenance mode. Use your time for building value."
-      },
-      {
-        "color": "tertiary",
-        "title": "Be happy about your work",
-        "content": "Most engineers do this job because they love building. Give them some free time and just watch how they make your software grow. Motivating engineers shouldn't be difficult."
-      },
-      {
-        "color": "secondary",
-        "title": "Focus on DX",
-        "content": "By applying the two points above, you get a simple implication. Fix what's bothering the engineers and they will make your product better in return. Everybody wins. Everybody's happy."
+        "title": "Empowered teams",
+        "description": "Autonomous cultures where every engineer has end-to-end ownership and room to leave a mark.",
+        "paragraphs": [
+          "Align team structure with product structure so engineers own a domain end-to-end, not just the backlog. Accountability and responsibility go hand in hand. That's empowerment.",
+          "Give the team a clear vision, budget time for bugs and escalations, and leave 10–20% unbooked so engineers can chase their own ideas. Solving problems is fun; being a coding monkey with no say isn't."
+        ]
       }
     ]
   },
