@@ -5,7 +5,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 ## What's here
 
 - [**Home**](https://www.kalandra.tech) — intro and navigation
-- [**About Me**](https://www.kalandra.tech/about) — career timeline, manifesto, links
+- [**About Me**](https://www.kalandra.tech/about) — career timeline, values, links
 - [**Project**](https://www.kalandra.tech/project) — live roadmap tracking the build progress of this site
 - [**Hire Me**](https://www.kalandra.tech/hire-me) — job offer submission form (requires sign-in)
 - [**Job Offers**](https://www.kalandra.tech/job-offers) — submitted offers with status tracking and admin review
