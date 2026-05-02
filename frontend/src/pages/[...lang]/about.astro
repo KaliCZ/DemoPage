@@ -1,6 +1,8 @@
 ---
 import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
+import Band from "../../components/Band.astro";
+import Card from "../../components/Card.astro";
 import IconDownload from "../../components/icons/IconDownload.astro";
 import IconEmail from "../../components/icons/IconEmail.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
@@ -116,10 +118,7 @@ const tocItems = [
   </section>
 
   <!-- Values Section -->
-  <section
-    id="values"
-    class="bg-surface-container-highest dark:bg-surface-container-low py-12 lg:py-16 relative overflow-hidden border-t border-outline-variant dark:border-on-surface/5"
-  >
+  <Band id="values" borders="top">
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
     <div class="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
       <h2 class="font-headline text-4xl font-extrabold mb-12 tracking-tight">
@@ -178,13 +177,10 @@ const tocItems = [
         </ul>
       </div>
     </div>
-  </section>
+  </Band>
 
   <!-- Skills Section -->
-  <section
-    id="skills"
-    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 relative overflow-hidden border-t border-b border-outline-variant dark:border-on-surface/5"
-  >
+  <Band id="skills" level="lowest">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
         <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
@@ -197,7 +193,7 @@ const tocItems = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {
           t.skills.categories.map((cat) => (
-            <div class="bg-surface-container-lowest dark:bg-surface-container-low p-8 rounded-xl border border-outline-variant/40">
+            <Card>
               <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", `text-${cat.color}`]}>
                 <Icon name={`material-symbols:${cat.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
                 {cat.label}
@@ -220,23 +216,20 @@ const tocItems = [
                   );
                 })}
               </ul>
-            </div>
+            </Card>
           ))
         }
       </div>
     </div>
-  </section>
+  </Band>
 
   <!-- Personal Section. Third band in the sequence Values → Skills → Personal,
-       using the lighter shade so it alternates with Skills (which uses the
-       middle shade). The band's bottom border acts as the divider that closes
+       using the deeper shade so it alternates with Skills (which uses the
+       subtler one). The band's bottom border acts as the divider that closes
        off the colored-bands zone before the transparent Career timeline. Cards
        use a horizontal icon-then-text layout so each item reads as a quick
        human attribute rather than a feature. -->
-  <section
-    id="personal"
-    class="bg-surface-container-highest dark:bg-surface-container-low py-12 lg:py-16 mb-8 lg:mb-12 relative overflow-hidden border-b border-outline-variant dark:border-on-surface/5"
-  >
+  <Band id="personal" borders="bottom" class="mb-8 lg:mb-12">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
         <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
@@ -249,7 +242,7 @@ const tocItems = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {
           t.personal.items.map((item) => (
-            <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/40 flex items-start gap-4">
+            <Card level="lowest" padding="compact" class="flex items-start gap-4">
               <Icon
                 name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
                 class:list={["size-8 shrink-0", `text-${item.color}`]}
@@ -259,12 +252,12 @@ const tocItems = [
                 <h3 class="font-headline font-bold text-lg mb-1">{item.title}</h3>
                 <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
               </div>
-            </div>
+            </Card>
           ))
         }
       </div>
     </div>
-  </section>
+  </Band>
 
   <!-- Career Journey Section -->
   <section id="career" class="max-w-7xl mx-auto px-4 md:px-8">
@@ -274,93 +267,66 @@ const tocItems = [
       </h2>
     </div>
 
-    <!-- Timeline -->
+    <!-- Timeline. Entries alternate sides via `side: "left" | "right"` in the
+         JSON; each side is the same card, just mirrored around the central
+         vertical line. The shared <Card> renders the body so the two sides
+         can't drift apart. -->
     <div class="relative">
-      <!-- Vertical Line -->
       <div class="absolute left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/30 hidden md:block"></div>
 
       <div class="space-y-12 md:space-y-0">
         {
           t.career.entries.map((entry, i) => {
             const isRight = entry.side === "right";
-            const dotColor = isRight ? "primary" : "tertiary";
-            const borderHover = isRight ? "hover:border-primary/30" : "hover:border-tertiary/30";
+            const accent = isRight ? "primary" : "tertiary";
             const dotShadow = isRight ? "shadow-[0_0_15px_rgba(72,88,171,0.3)]" : "shadow-[0_0_15px_rgba(0,106,106,0.2)]";
             const hasSubEntries = "subEntries" in entry && entry.subEntries;
+            const isLast = i === t.career.entries.length - 1;
 
-            return isRight ? (
-              <div class="md:flex justify-end items-center w-full md:mb-24">
-                <div class="hidden md:block w-1/2" />
-                <div class="relative md:w-1/2 md:pl-16">
-                  <div
-                    class:list={[
-                      "absolute -left-2 md:-left-1.5 top-0 w-4 h-4 rounded-full z-10 hidden md:block",
-                      `bg-${dotColor}`,
-                      dotShadow,
-                    ]}
-                  />
-                  <div
-                    class:list={[
-                      "bg-surface-container-lowest dark:bg-surface-container-low p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",
-                      borderHover,
-                    ]}
-                  >
-                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
-                    <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
-                    {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
-                    {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
-                    {entry.description && !hasSubEntries && (
-                      <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
-                    )}
-                    {hasSubEntries && (
-                      <div class="space-y-6 text-left">
-                        {entry.subEntries!.map((sub) => (
-                          <div class="border-l-2 border-primary/30 pl-4">
-                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
-                            <p class="font-bold mt-1">{sub.role}</p>
-                            {sub.description && (
-                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+            const sideColumn = (
+              <div class:list={["relative md:w-1/2", isRight ? "md:pl-16" : "md:pr-16 md:text-right"]}>
+                <div
+                  class:list={[
+                    "absolute top-0 w-4 h-4 rounded-full z-10 hidden md:block",
+                    isRight ? "-left-2 md:-left-1.5" : "-right-2",
+                    `bg-${accent}`,
+                    dotShadow,
+                  ]}
+                />
+                <Card accent={accent}>
+                  <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
+                  <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
+                  {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
+                  {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
+                  {entry.description && !hasSubEntries && (
+                    <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
+                  )}
+                  {hasSubEntries && (
+                    <div class="space-y-6 text-left">
+                      {entry.subEntries!.map((sub) => (
+                        <div class="border-l-2 border-primary/30 pl-4">
+                          <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
+                          <p class="font-bold mt-1">{sub.role}</p>
+                          {sub.description && (
+                            <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
               </div>
-            ) : (
-              <div class:list={["md:flex justify-start items-center w-full", i < t.career.entries.length - 1 && "md:mb-24"]}>
-                <div class="relative md:w-1/2 md:pr-16 md:text-right">
-                  <div class:list={["absolute -right-2 top-0 w-4 h-4 rounded-full z-10 hidden md:block", `bg-${dotColor}`, dotShadow]} />
-                  <div
-                    class:list={[
-                      "bg-surface-container-lowest dark:bg-surface-container-low p-8 rounded-xl border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",
-                      borderHover,
-                    ]}
-                  >
-                    <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
-                    <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
-                    {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
-                    {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
-                    {entry.description && !hasSubEntries && (
-                      <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
-                    )}
-                    {hasSubEntries && (
-                      <div class="space-y-6 text-left">
-                        {entry.subEntries!.map((sub) => (
-                          <div class="border-l-2 border-primary/30 pl-4">
-                            <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
-                            <p class="font-bold mt-1">{sub.role}</p>
-                            {sub.description && (
-                              <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div class="hidden md:block w-1/2" />
+            );
+
+            // Right-side rows always pad below; left-side rows do too, except
+            // for the final entry which closes the timeline with no trailing gap.
+            const needsBottomGap = isRight || !isLast;
+            const spacer = <div class="hidden md:block w-1/2" />;
+
+            return (
+              <div class:list={["md:flex items-center w-full", isRight ? "justify-end" : "justify-start", needsBottomGap && "md:mb-24"]}>
+                {isRight ? spacer : sideColumn}
+                {isRight ? sideColumn : spacer}
               </div>
             );
           })
