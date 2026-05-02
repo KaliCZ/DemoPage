@@ -182,8 +182,8 @@ details > summary + * {
    Applied when <html class="dark">
    ============================================ */
 .dark {
-  --color-background: #131313;
-  --color-surface: #131313;
+  --color-background: #0a0a0a;
+  --color-surface: #0a0a0a;
   --color-surface-container-lowest: #0e0e0e;
   --color-surface-container-low: #1c1b1b;
   --color-surface-container: #201f1f;
