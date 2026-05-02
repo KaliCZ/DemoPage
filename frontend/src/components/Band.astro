@@ -1,0 +1,42 @@
+---
+// A horizontal full-width band, used to break the page into themed strips.
+// Bands carry the page's layered surface tokens — saturated cream in light
+// mode, subtle near-black in dark mode — and the matching faint border that
+// closes off each strip from its neighbour.
+//
+// Two `tone`s exist so adjacent bands can alternate without visual drift.
+// `borders` lets each band own only the edges it actually needs (e.g. the
+// last band of a stack carries `bottom`, the first carries `top`).
+interface Props {
+  id?: string;
+  tone?: "raised" | "sunken";
+  borders?: "top" | "bottom" | "both";
+  class?: string;
+}
+
+const { id, tone = "raised", borders = "both", class: extraClass } = Astro.props;
+
+const bgClass =
+  tone === "raised"
+    ? "bg-surface-container-highest dark:bg-surface-container-low"
+    : "bg-surface-container dark:bg-surface-container-lowest";
+
+const borderClass = {
+  top: "border-t",
+  bottom: "border-b",
+  both: "border-t border-b",
+}[borders];
+---
+
+<section
+  id={id}
+  class:list={[
+    bgClass,
+    "py-12 lg:py-16 relative overflow-hidden",
+    borderClass,
+    "border-outline-variant dark:border-on-surface/5",
+    extraClass,
+  ]}
+>
+  <slot />
+</section>

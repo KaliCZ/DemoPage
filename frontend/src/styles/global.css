@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Bind Tailwind's `dark:` variant to the `.dark` class on <html>, not the
+   `prefers-color-scheme` media query. Our design tokens in this file are
+   scoped to `.dark`, so the variant must match — otherwise `dark:` utilities
+   fire whenever the OS prefers dark, while the tokens themselves stay at
+   their light values, producing hybrid mid-toggle rendering. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Safelist dynamic color classes used via interpolated class names (e.g. `bg-${cat.color}`). */
 @source inline("bg-primary bg-secondary bg-tertiary text-primary text-secondary text-tertiary");
 

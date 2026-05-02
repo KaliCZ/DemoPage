@@ -1,0 +1,48 @@
+---
+// Lowest-elevation card. The default surface for content that should sit
+// *above* a Band — cream in light mode, slightly raised neutral in dark.
+// Pass `accent` to make the card a hover target (transition + accent-coloured
+// hover border + lighter resting border); omit it for static content cards.
+//
+// The same component renders as either a div or a link — `as="a"` plus an
+// `href` produces a clickable card with the same surface treatment.
+interface Props {
+  as?: "div" | "a";
+  href?: string;
+  padding?: "compact" | "default";
+  accent?: "primary" | "tertiary";
+  class?: string;
+}
+
+const { as = "div", href, padding = "default", accent, class: extraClass, ...rest } = Astro.props;
+
+const padClass = padding === "compact" ? "p-6" : "p-8";
+
+// `accent` swaps two things at once:
+//   1. resting border opacity drops from /40 to /20 — softer baseline so the
+//      hover state has somewhere to brighten to.
+//   2. the card becomes a `group` with hover transition + accent border tint
+//      + lifted shadow. Children can then key off `group-hover:` on their own.
+const accentClass = accent
+  ? [
+      "group border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",
+      accent === "tertiary" ? "hover:border-tertiary/30" : "hover:border-primary/30",
+    ]
+  : ["border border-outline-variant/40"];
+---
+
+{
+  as === "a" ? (
+    <a
+      href={href}
+      class:list={["bg-surface-container-lowest dark:bg-surface-container-low rounded-xl", padClass, accentClass, extraClass]}
+      {...rest}
+    >
+      <slot />
+    </a>
+  ) : (
+    <div class:list={["bg-surface-container-lowest dark:bg-surface-container-low rounded-xl", padClass, accentClass, extraClass]} {...rest}>
+      <slot />
+    </div>
+  )
+}
