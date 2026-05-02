@@ -7,7 +7,7 @@
     "titlePrefix": "Pár malých typů, které dělají C# ",
     "titleHighlight": "bezpečnějším",
     "titleSuffix": ".",
-    "description": "Kalicz.StrongTypes je C# NuGet balíček, který přidává bezkódové validace vynucené překladačem. Typy jako NonEmptyString nebo Positive<int> přesouvají invarianty do typového systému a validace se odehrává na hranici — takže neplatná data se k vašim handlerům vůbec nedostanou.",
+    "description": "Kalicz.StrongTypes je C# NuGet balíček, který přidává bezkódové validace vynucené překladačem. Neplatná data se nikdy nedostanou do vašeho aplikačního kódu.",
     "primaryCta": "Zobrazit na GitHubu",
     "secondaryCta": "Zobrazit na NuGetu",
     "install": "dotnet add package Kalicz.StrongTypes",
@@ -43,7 +43,7 @@
   },
   "why": {
     "title": "Proč se obtěžovat se silnými typy?",
-    "subtitle": "Většina C# kódu se brání neplatnému vstupu tím, že ho znovu validuje všude. StrongTypes to obrací: validujte jednou, na hranici, a zbytek nechte vynutit překladač.",
+    "subtitle": "Přestaňte validovat vstup všude. Validujte jednou, na hranici, a zbytek nechte vynutit překladač.",
     "diagram": {
       "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/impact.svg",
       "alt": "Diagram ukazující, jak StrongTypes přesouvá validaci na hranici aplikace a zbytek kódu zůstává bez ochranných podmínek",
