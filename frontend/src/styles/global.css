@@ -184,11 +184,11 @@ details > summary + * {
 .dark {
   --color-background: #0a0a0a;
   --color-surface: #0a0a0a;
-  --color-surface-container-lowest: #0e0e0e;
-  --color-surface-container-low: #1c1b1b;
-  --color-surface-container: #201f1f;
-  --color-surface-container-high: #2a2a2a;
-  --color-surface-container-highest: #353534;
+  --color-surface-container-lowest: #0d0d0d;
+  --color-surface-container-low: #171717;
+  --color-surface-container: #1c1c1c;
+  --color-surface-container-high: #252525;
+  --color-surface-container-highest: #2f2f2f;
   --color-surface-variant: #353534;
   --color-surface-dim: #131313;
   --color-surface-bright: #393939;
