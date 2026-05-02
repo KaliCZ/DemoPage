@@ -26,12 +26,17 @@ const reactions = [
   { code: "Tada", char: "🎉" },
   { code: "Laugh", char: "😄" },
 ] as const;
+
+// In dev (npm run dev), PUBLIC_API_URL is empty and Vite proxies /api → backend.
+// In built dists this is the absolute backend origin (e.g. https://api.kalandra.tech).
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
 ---
 
 <section
   class="border-t border-outline-variant/20 pt-8 mt-12"
   data-blog-reactions
   data-slug={slug}
+  data-api-url={apiUrl}
   data-load-failed={t.loadFailed}
   data-submit-failed={t.submitFailed}
   aria-labelledby="reactions-heading"
@@ -77,6 +82,7 @@ const reactions = [
   // button opens the auth dialog instead of submitting.
   async function setupReactions(section: HTMLElement) {
     const slug = section.dataset.slug!;
+    const apiBase = section.dataset.apiUrl ?? "";
     const loadFailedMsg = section.dataset.loadFailed || "Could not load reactions.";
     const submitFailedMsg = section.dataset.submitFailed || "Reaction failed.";
 
@@ -96,7 +102,7 @@ const reactions = [
         const token = await (window as any).__getAccessToken?.();
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
-        const res = await fetch(`/api/blog/${encodeURIComponent(slug)}/reactions`, { headers });
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/reactions`, { headers });
         if (!res.ok) throw new Error("load failed");
         const body = (await res.json()) as {
           counts: Array<{ emoji: string; count: number }>;
@@ -133,7 +139,7 @@ const reactions = [
       countEl.textContent = String(wasPressed ? Math.max(prevCount - 1, 0) : prevCount + 1);
 
       try {
-        const res = await fetch(`/api/blog/${encodeURIComponent(slug)}/reactions`, {
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/reactions`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ emoji }),

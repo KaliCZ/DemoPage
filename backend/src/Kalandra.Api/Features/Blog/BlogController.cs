@@ -44,7 +44,7 @@ public partial class BlogController(
         if (TryParseSlug(slug) is not { } parsedSlug)
             return this.ValidationError("slug", BlogSlugError.InvalidSlug);
 
-        if (request.Content.Trim().AsNonEmpty().GetOrNull() is not { } content)
+        if (request.Content?.Trim().AsNonEmpty().GetOrNull() is not { } content)
             return this.ValidationError("content", AddBlogCommentError.ContentRequired);
 
         var command = new AddBlogCommentCommand(

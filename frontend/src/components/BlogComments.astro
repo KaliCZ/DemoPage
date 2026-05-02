@@ -19,6 +19,9 @@ interface Props {
 }
 
 const { slug, lang, t } = Astro.props;
+
+// Empty in dev (Vite proxies /api → backend); absolute backend origin in built dists.
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
 ---
 
 <section
@@ -26,6 +29,7 @@ const { slug, lang, t } = Astro.props;
   data-blog-comments
   data-slug={slug}
   data-lang={lang}
+  data-api-url={apiUrl}
   data-load-failed={t.loadFailed}
   data-submitted={t.submitted}
   data-error-map={JSON.stringify(t.errors)}
@@ -94,6 +98,7 @@ const { slug, lang, t } = Astro.props;
   function setupComments(section: HTMLElement) {
     const slug = section.dataset.slug!;
     const lang = section.dataset.lang as "en" | "cs";
+    const apiBase = section.dataset.apiUrl ?? "";
     const loadFailedMsg = section.dataset.loadFailed || "Could not load comments.";
     const submittedMsg = section.dataset.submitted || "Comment posted.";
     const errorMap = JSON.parse(section.dataset.errorMap || "{}") as Record<string, Record<string, string>>;
@@ -130,7 +135,7 @@ const { slug, lang, t } = Astro.props;
 
     async function load() {
       try {
-        const res = await fetch(`/api/blog/${encodeURIComponent(slug)}/comments`);
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/comments`);
         if (!res.ok) throw new Error("load failed");
         const body = (await res.json()) as { comments: BlogCommentDto[] };
         renderAll(body.comments);
@@ -160,7 +165,7 @@ const { slug, lang, t } = Astro.props;
       submit.textContent = submit.dataset.labelSubmitting || "Posting…";
 
       try {
-        const res = await fetch(`/api/blog/${encodeURIComponent(slug)}/comments`, {
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/comments`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ content }),
