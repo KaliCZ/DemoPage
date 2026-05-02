@@ -91,11 +91,11 @@ html {
   /* --- Light Mode Colors (default) — warm cream palette --- */
   --color-background: #fdfcf9;
   --color-surface: #fdfcf9;
-  --color-surface-container-lowest: #fcfbf5;
+  --color-surface-container-lowest: #fdfcf9;
   --color-surface-container-low: #faf6ec;
   --color-surface-container: #f7f2e3;
   --color-surface-container-high: #f2ecdb;
-  --color-surface-container-highest: #ede5cd;
+  --color-surface-container-highest: #f0e9d4;
   --color-surface-variant: #e0dfe8;
   --color-surface-dim: #dbd7d3;
   --color-surface-bright: #f9f7f3;

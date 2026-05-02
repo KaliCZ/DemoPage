@@ -178,10 +178,14 @@ const tocItems = [
     </div>
   </section>
 
+  <!-- Light-mode-only separator between Manifesto and Skills bands (dark mode
+       deliberately keeps no separator here). -->
+  <div class="border-t border-outline-variant dark:hidden"></div>
+
   <!-- Skills Section -->
   <section
     id="skills"
-    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 relative overflow-hidden border-y border-outline-variant dark:border-on-surface/5"
+    class="bg-surface-container dark:bg-surface-container-lowest py-12 lg:py-16 relative overflow-hidden border-b border-outline-variant dark:border-on-surface/5"
   >
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
@@ -195,7 +199,7 @@ const tocItems = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {
           t.skills.categories.map((cat) => (
-            <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+            <div class="bg-surface-container-lowest dark:bg-surface-container p-8 rounded-xl border border-outline-variant/40">
               <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", `text-${cat.color}`]}>
                 <Icon name={`material-symbols:${cat.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
                 {cat.label}
@@ -247,7 +251,7 @@ const tocItems = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {
           t.personal.items.map((item) => (
-            <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 flex items-start gap-4">
+            <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/40 flex items-start gap-4">
               <Icon
                 name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
                 class:list={["size-8 shrink-0", `text-${item.color}`]}
