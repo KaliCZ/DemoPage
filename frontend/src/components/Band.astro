@@ -1,25 +1,25 @@
 ---
 // A horizontal full-width band, used to break the page into themed strips.
-// Bands carry the page's layered surface tokens — saturated cream in light
-// mode, subtle near-black in dark mode — and the matching faint border that
-// closes off each strip from its neighbour.
+// Bands sit one step above the page surface (`bg-surface-container-low` —
+// subtle cream in light mode, raised dark grey in dark mode) so the same
+// class produces the right look in both modes without a `dark:` swap.
 //
-// Two `tone`s exist so adjacent bands can alternate without visual drift.
+// `level="lowest"` flattens the band to the page-surface tone, leaving only
+// the borders to bracket the section — used for sections that should feel
+// like a continuation of the page rather than a distinct strip.
+//
 // `borders` lets each band own only the edges it actually needs (e.g. the
 // last band of a stack carries `bottom`, the first carries `top`).
 interface Props {
   id?: string;
-  tone?: "raised" | "sunken";
+  level?: "low" | "lowest";
   borders?: "top" | "bottom" | "both";
   class?: string;
 }
 
-const { id, tone = "raised", borders = "both", class: extraClass } = Astro.props;
+const { id, level = "low", borders = "both", class: extraClass } = Astro.props;
 
-const bgClass =
-  tone === "raised"
-    ? "bg-surface-container-highest dark:bg-surface-container-low"
-    : "bg-surface-container dark:bg-surface-container-lowest";
+const bgClass = level === "lowest" ? "bg-surface-container-lowest" : "bg-surface-container-low";
 
 const borderClass = {
   top: "border-t",
@@ -28,15 +28,6 @@ const borderClass = {
 }[borders];
 ---
 
-<section
-  id={id}
-  class:list={[
-    bgClass,
-    "py-12 lg:py-16 relative overflow-hidden",
-    borderClass,
-    "border-outline-variant dark:border-on-surface/5",
-    extraClass,
-  ]}
->
+<section id={id} class:list={[bgClass, "py-12 lg:py-16 relative overflow-hidden", borderClass, "border-on-surface/5", extraClass]}>
   <slot />
 </section>

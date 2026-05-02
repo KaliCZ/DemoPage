@@ -178,7 +178,7 @@ const tocItems = [
   </Band>
 
   <!-- Skills Section -->
-  <Band id="skills" tone="sunken">
+  <Band id="skills" level="lowest">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
         <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
@@ -240,7 +240,7 @@ const tocItems = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {
           t.personal.items.map((item) => (
-            <Card padding="compact" class="flex items-start gap-4">
+            <Card level="lowest" padding="compact" class="flex items-start gap-4">
               <Icon
                 name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
                 class:list={["size-8 shrink-0", `text-${item.color}`]}
