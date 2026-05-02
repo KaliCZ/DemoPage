@@ -199,7 +199,7 @@ const tocItems = [
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {
           t.skills.categories.map((cat) => (
-            <div class="bg-surface-container-lowest dark:bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+            <div class="bg-surface-container-lowest dark:bg-surface-container-low p-8 rounded-xl border border-outline-variant/40">
               <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", `text-${cat.color}`]}>
                 <Icon name={`material-symbols:${cat.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
                 {cat.label}
