@@ -9,6 +9,7 @@ import enStrings from "../../i18n/en/strong-types.json";
 import csStrings from "../../i18n/cs/strong-types.json";
 import enCommon from "../../i18n/en/common.json";
 import csCommon from "../../i18n/cs/common.json";
+import { strongTypesDiagrams, type StrongTypesDiagramKey } from "../../lib/strong-types-diagrams";
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
@@ -139,8 +140,8 @@ const tocItems = [
       <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with the page. -->
       <figure class="mb-12 rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
         <img
-          src={t.why.diagram.src}
-          data-src-dark={t.why.diagram.srcDark}
+          src={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].src}
+          data-src-dark={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].srcDark}
           alt={t.why.diagram.alt}
           loading="lazy"
           decoding="async"
@@ -206,8 +207,8 @@ const tocItems = [
       <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
         <div class="p-6 flex items-center justify-center">
           <img
-            src={t.packageLayout.diagram.src}
-            data-src-dark={t.packageLayout.diagram.srcDark}
+            src={strongTypesDiagrams[t.packageLayout.diagram.key as StrongTypesDiagramKey].src}
+            data-src-dark={strongTypesDiagrams[t.packageLayout.diagram.key as StrongTypesDiagramKey].srcDark}
             alt={t.packageLayout.diagram.alt}
             loading="lazy"
             decoding="async"
@@ -248,8 +249,8 @@ const tocItems = [
                   {hasDiagram && (
                     <div class="p-6 flex items-center justify-center">
                       <img
-                        src={example.diagram!.src}
-                        data-src-dark={example.diagram!.srcDark}
+                        src={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].src}
+                        data-src-dark={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].srcDark}
                         alt={example.diagram!.alt}
                         loading="lazy"
                         decoding="async"
