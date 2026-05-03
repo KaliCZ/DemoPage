@@ -110,6 +110,28 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         var theme = localStorage.getItem("theme");
         if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
+          // Pre-paint swap of theme-aware images. As the body parses, swap
+          // any `[data-src-dark]` <img> to its dark variant before the
+          // browser paints the light one. MutationObserver callbacks fire
+          // as microtasks before the next paint, so the dark URL is what
+          // the preload-scanner and renderer see.
+          var swap = function (img) {
+            if (!img.dataset.srcLight) img.dataset.srcLight = img.getAttribute("src") || "";
+            var dark = img.dataset.srcDark;
+            if (dark && img.getAttribute("src") !== dark) img.setAttribute("src", dark);
+          };
+          var obs = new MutationObserver(function () {
+            document.querySelectorAll("img[data-src-dark]").forEach(swap);
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+          document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+              document.querySelectorAll("img[data-src-dark]").forEach(swap);
+              obs.disconnect();
+            },
+            { once: true },
+          );
         }
         // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
         // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.

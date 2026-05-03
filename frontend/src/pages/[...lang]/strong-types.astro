@@ -406,24 +406,11 @@ const tocItems = [
     });
   });
 
-  // Theme-aware diagram preload. Each diagram <img> declares its dark
-  // counterpart in `data-src-dark`; the actual src swap on toggle is owned
-  // by `theme-toggle.ts` so it can run inside `document.startViewTransition`
-  // and be captured in the view-transition snapshot. We only preload here
-  // so the swap is a cache hit, not a network round trip — and we sync the
-  // src on initial render in case the page loads with the dark theme already
-  // active (persisted in localStorage).
-  const themedDiagrams = document.querySelectorAll<HTMLImageElement>("img[data-src-dark]");
-  themedDiagrams.forEach((img) => {
-    img.dataset.srcLight = img.getAttribute("src") ?? "";
+  // Preload the dark variant so toggling is a cache hit. Initial-render src
+  // selection is handled pre-paint by the inline script in Layout.astro.
+  document.querySelectorAll<HTMLImageElement>("img[data-src-dark]").forEach((img) => {
     if (img.dataset.srcDark) new Image().src = img.dataset.srcDark;
   });
-  if (document.documentElement.classList.contains("dark")) {
-    themedDiagrams.forEach((img) => {
-      const next = img.dataset.srcDark;
-      if (next && img.getAttribute("src") !== next) img.setAttribute("src", next);
-    });
-  }
 
   lightboxClose?.addEventListener("click", () => lightbox?.close());
 
