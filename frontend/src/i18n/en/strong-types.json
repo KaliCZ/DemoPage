@@ -46,8 +46,7 @@
     "subtitle": "Stop validating input everywhere. Validate once, at the boundary, and let the compiler enforce the rest.",
     "diagram": {
       "key": "impact",
-      "alt": "Diagram showing how StrongTypes pulls validation to the application boundary, leaving the rest of the code free of guard clauses",
-      "caption": "Validation moves to the boundary. Internal code stops re-checking the same invariants over and over."
+      "alt": "Diagram showing how StrongTypes pulls validation to the application boundary, leaving the rest of the code free of guard clauses"
     },
     "points": [
       {
@@ -73,8 +72,6 @@
     ]
   },
   "packageLayout": {
-    "title": "Package layout",
-    "description": "One core package, two opt-in companions. Pull in only what you need.",
     "diagram": {
       "key": "packageLayout",
       "alt": "Diagram of the three NuGet packages: the core Kalicz.StrongTypes plus optional EfCore and FsCheck companion packages"

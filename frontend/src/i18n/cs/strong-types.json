@@ -46,8 +46,7 @@
     "subtitle": "Přestaňte validovat vstup všude. Validujte jednou, na hranici, a zbytek nechte vynutit překladač.",
     "diagram": {
       "key": "impact",
-      "alt": "Diagram ukazující, jak StrongTypes přesouvá validaci na hranici aplikace a zbytek kódu zůstává bez ochranných podmínek",
-      "caption": "Validace se přesouvá na hranici. Vnitřní kód přestane stále dokola kontrolovat tytéž invarianty."
+      "alt": "Diagram ukazující, jak StrongTypes přesouvá validaci na hranici aplikace a zbytek kódu zůstává bez ochranných podmínek"
     },
     "points": [
       {
@@ -73,8 +72,6 @@
     ]
   },
   "packageLayout": {
-    "title": "Rozložení balíčků",
-    "description": "Jeden hlavní balíček, dva volitelné doplňky. Stáhněte si jen to, co potřebujete.",
     "diagram": {
       "key": "packageLayout",
       "alt": "Diagram tří NuGet balíčků: hlavní Kalicz.StrongTypes plus volitelné doplňky EfCore a FsCheck"
