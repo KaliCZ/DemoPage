@@ -9,6 +9,7 @@ import enStrings from "../../i18n/en/strong-types.json";
 import csStrings from "../../i18n/cs/strong-types.json";
 import enCommon from "../../i18n/en/common.json";
 import csCommon from "../../i18n/cs/common.json";
+import { strongTypesDiagrams, type StrongTypesDiagramKey } from "../../lib/strong-types-diagrams";
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
@@ -136,22 +137,16 @@ const tocItems = [
         {t.why.subtitle}
       </p>
 
-      <!-- Featured diagram. Wrapped in a forced light surface because the SVG colors are hardcoded. -->
-      <figure class="mb-12 bg-white rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
-        <img
-          src={t.why.diagram.src}
-          alt={t.why.diagram.alt}
-          loading="lazy"
-          decoding="async"
-          data-zoomable
-          class="block w-full h-auto p-6 cursor-zoom-in transition-transform hover:scale-[1.01]"
-        />
-        <figcaption
-          class="px-6 pb-5 pt-1 text-sm text-on-surface-variant border-t border-outline-variant/30 bg-surface-container-low font-body italic"
-        >
-          {t.why.diagram.caption}
-        </figcaption>
-      </figure>
+      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with the page. -->
+      <img
+        src={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].src}
+        data-src-dark={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].srcDark}
+        alt={t.why.diagram.alt}
+        loading="lazy"
+        decoding="async"
+        data-zoomable
+        class="block w-full h-auto mb-12 cursor-zoom-in transition-transform hover:scale-[1.01]"
+      />
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         {
@@ -202,22 +197,15 @@ const tocItems = [
       </div>
 
       <!-- Package layout diagram. -->
-      <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
-        <div class="bg-white p-6 flex items-center justify-center">
-          <img
-            src={t.packageLayout.diagram.src}
-            alt={t.packageLayout.diagram.alt}
-            loading="lazy"
-            decoding="async"
-            data-zoomable
-            class="block max-w-full h-auto cursor-zoom-in transition-transform hover:scale-[1.01]"
-          />
-        </div>
-        <figcaption class="p-6 border-t border-outline-variant/30">
-          <h3 class="font-headline font-bold text-on-surface mb-1">{t.packageLayout.title}</h3>
-          <p class="font-body text-sm text-on-surface-variant leading-relaxed">{t.packageLayout.description}</p>
-        </figcaption>
-      </figure>
+      <img
+        src={strongTypesDiagrams[t.packageLayout.diagram.key as StrongTypesDiagramKey].src}
+        data-src-dark={strongTypesDiagrams[t.packageLayout.diagram.key as StrongTypesDiagramKey].srcDark}
+        alt={t.packageLayout.diagram.alt}
+        loading="lazy"
+        decoding="async"
+        data-zoomable
+        class="block max-w-full mx-auto h-auto cursor-zoom-in transition-transform hover:scale-[1.01]"
+      />
     </section>
 
     <!-- Examples -->
@@ -233,7 +221,7 @@ const tocItems = [
           t.examples.items.map((example) => {
             const hasDiagram = "diagram" in example && example.diagram;
             return (
-              <div class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
+              <div class="rounded-xl border border-outline-variant/40 overflow-hidden">
                 <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
                   <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
                   <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
@@ -244,9 +232,10 @@ const tocItems = [
                     set:text={example.code}
                   />
                   {hasDiagram && (
-                    <div class="bg-white p-6 flex items-center justify-center">
+                    <div class="p-6 flex items-center justify-center">
                       <img
-                        src={example.diagram!.src}
+                        src={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].src}
+                        data-src-dark={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].srcDark}
                         alt={example.diagram!.alt}
                         loading="lazy"
                         decoding="async"
@@ -318,7 +307,7 @@ const tocItems = [
     aria-label={t.lightbox.dialogLabel}
     class="m-auto p-0 border-0 bg-transparent rounded-xl shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-w-[95vw] max-h-[95vh]"
   >
-    <div class="relative bg-white p-6 rounded-xl overflow-hidden min-w-[280px] min-h-[200px]">
+    <div class="relative bg-surface p-6 rounded-xl overflow-hidden min-w-[280px] min-h-[200px]">
       <button
         type="button"
         data-lightbox-close
@@ -401,6 +390,12 @@ const tocItems = [
         openLightbox(img);
       }
     });
+  });
+
+  // Preload the dark variant so toggling is a cache hit. Initial-render src
+  // selection is handled pre-paint by the inline script in Layout.astro.
+  document.querySelectorAll<HTMLImageElement>("img[data-src-dark]").forEach((img) => {
+    if (img.dataset.srcDark) new Image().src = img.dataset.srcDark;
   });
 
   lightboxClose?.addEventListener("click", () => lightbox?.close());

@@ -45,9 +45,8 @@
     "title": "Why bother with strong types?",
     "subtitle": "Stop validating input everywhere. Validate once, at the boundary, and let the compiler enforce the rest.",
     "diagram": {
-      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/impact.svg",
-      "alt": "Diagram showing how StrongTypes pulls validation to the application boundary, leaving the rest of the code free of guard clauses",
-      "caption": "Validation moves to the boundary. Internal code stops re-checking the same invariants over and over."
+      "key": "impact",
+      "alt": "Diagram showing how StrongTypes pulls validation to the application boundary, leaving the rest of the code free of guard clauses"
     },
     "points": [
       {
@@ -73,10 +72,8 @@
     ]
   },
   "packageLayout": {
-    "title": "Package layout",
-    "description": "One core package, two opt-in companions. Pull in only what you need.",
     "diagram": {
-      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+      "key": "packageLayout",
       "alt": "Diagram of the three NuGet packages: the core Kalicz.StrongTypes plus optional EfCore and FsCheck companion packages"
     }
   },
@@ -137,7 +134,7 @@
         "description": "Each type has Create (throws on invalid) and TryCreate (returns null). String types also have a fluent extension form.",
         "code": "// Strings — three call styles\n// throws if invalid\nNonEmptyString name = NonEmptyString.Create(input);\n// null if invalid\nNonEmptyString? safe = NonEmptyString.TryCreate(input);\n// fluent extension\nNonEmptyString? fluent = input.AsNonEmpty();\n\n// Numbers — sign-enforced over INumber<T>\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = amount.AsNonNegative();\n\n// Sequences — at least one element, Head safe\nNonEmptyEnumerable<string> tags = [\"red\", \"blue\"];\nNonEmptyEnumerable<string>? maybe = list.AsNonEmpty();\nstring first = tags.Head;",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
+          "key": "trycreateCreateFlow",
           "alt": "Flow diagram contrasting TryCreate (returns null on invalid input) and Create (throws on invalid input)"
         }
       },
@@ -146,7 +143,7 @@
         "description": "Pattern-match on Success or Error — no exceptions, no out parameters.",
         "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value)\n    Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg)\n    Console.WriteLine($\"failed: {msg}\");",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/result-composition.svg",
+          "key": "resultComposition",
           "alt": "Pipeline diagram showing how a Result<T, TError> value flows through Map, MapError, and FlatMap stages"
         }
       },
@@ -155,7 +152,7 @@
         "description": "Distinguish \"don't touch\", \"clear to null\", and \"set to value\" — a long-standing pain point in REST APIs.",
         "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → don't touch the field\n// Some(null)   → clear it\n// Some(\"abc\")  → set it\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/patch-three-state.svg",
+          "key": "patchThreeState",
           "alt": "Diagram of the three-state PATCH model: null (don't touch), Some(null) (clear), Some(value) (set)"
         }
       },
@@ -164,7 +161,7 @@
         "description": "Chain optional operations without nested null checks. Implicit operators handle the wrapping — you return a T or Maybe.None and it just works.",
         "code": "// Producer: implicit conversion from T or Maybe.None\nMaybe<int> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : Maybe.None;\n\n// Map: T -> U, auto-wraps in Maybe\nMaybe<int> doubled = Parse(\"21\").Map(x => x * 2);\n// Some(42)\n\n// FlatMap: T -> Maybe<U>, no double-wrap\nMaybe<int> sum = Parse(\"1\").FlatMap(a =>\n    Parse(\"2\").Map(b => a + b));\n// Some(3)",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
+          "key": "maybeComposition",
           "alt": "Pipeline diagram showing Some and None values flowing through Map and FlatMap operations on Maybe<T>"
         }
       }
