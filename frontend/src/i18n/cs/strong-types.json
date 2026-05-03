@@ -45,7 +45,8 @@
     "title": "Proč se obtěžovat se silnými typy?",
     "subtitle": "Přestaňte validovat vstup všude. Validujte jednou, na hranici, a zbytek nechte vynutit překladač.",
     "diagram": {
-      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/impact.svg",
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/impact.svg",
+      "srcDark": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/impact-dark.svg",
       "alt": "Diagram ukazující, jak StrongTypes přesouvá validaci na hranici aplikace a zbytek kódu zůstává bez ochranných podmínek",
       "caption": "Validace se přesouvá na hranici. Vnitřní kód přestane stále dokola kontrolovat tytéž invarianty."
     },
@@ -76,7 +77,8 @@
     "title": "Rozložení balíčků",
     "description": "Jeden hlavní balíček, dva volitelné doplňky. Stáhněte si jen to, co potřebujete.",
     "diagram": {
-      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/package-layout.svg",
+      "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/package-layout.svg",
+      "srcDark": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/package-layout-dark.svg",
       "alt": "Diagram tří NuGet balíčků: hlavní Kalicz.StrongTypes plus volitelné doplňky EfCore a FsCheck"
     }
   },
@@ -140,7 +142,8 @@
         "description": "Každý typ má Create (vyhodí výjimku při neplatném vstupu) a TryCreate (vrátí null). Stringové typy mají i plynulou formu rozšíření.",
         "code": "// Stringy — tři varianty volání\n// throws při neplatném vstupu\nNonEmptyString name = NonEmptyString.Create(input);\n// null při neplatném\nNonEmptyString? safe = NonEmptyString.TryCreate(input);\n// fluent rozšíření\nNonEmptyString? fluent = input.AsNonEmpty();\n\n// Čísla — vynucené znaménko nad INumber<T>\nPositive<int> qty = Positive<int>.Create(5);\nNonNegative<decimal>? price = amount.AsNonNegative();\n\n// Sekvence — alespoň jeden prvek, Head bezpečné\nNonEmptyEnumerable<string> tags = [\"red\", \"blue\"];\nNonEmptyEnumerable<string>? maybe = list.AsNonEmpty();\nstring first = tags.Head;",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/trycreate-create-flow.svg",
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/trycreate-create-flow.svg",
+          "srcDark": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/trycreate-create-flow-dark.svg",
           "alt": "Diagram porovnávající TryCreate (vrátí null při neplatném vstupu) a Create (vyhodí výjimku při neplatném vstupu)"
         }
       },
@@ -149,7 +152,8 @@
         "description": "Pattern matching na Success nebo Error — žádné výjimky, žádné out parametry.",
         "code": "Result<int, string> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : \"not a number\";\n\nvar result = Parse(input);\nif (result.Success is { } value)\n    Console.WriteLine($\"got {value}\");\nif (result.Error is { } msg)\n    Console.WriteLine($\"failed: {msg}\");",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/result-composition.svg",
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/result-composition.svg",
+          "srcDark": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/result-composition-dark.svg",
           "alt": "Diagram pipeline ukazující, jak hodnota Result<T, TError> prochází fázemi Map, MapError a FlatMap"
         }
       },
@@ -158,7 +162,8 @@
         "description": "Rozlišení \"neměnit\", \"nastavit na null\" a \"nastavit na hodnotu\" — letitý problém v REST API.",
         "code": "public record PatchUser(Maybe<string>? Nickname);\n\n// null         → pole neměnit\n// Some(null)   → vyprázdnit\n// Some(\"abc\")  → nastavit\nif (request.Nickname is { } change)\n    user.Nickname = change.Value;",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/patch-three-state.svg",
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/patch-three-state.svg",
+          "srcDark": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/patch-three-state-dark.svg",
           "alt": "Diagram tří stavů v PATCH: null (neměnit), Some(null) (vyprázdnit), Some(value) (nastavit)"
         }
       },
@@ -167,7 +172,8 @@
         "description": "Řetězení volitelných operací bez vnořených null kontrol. Implicitní operátory zařídí zabalení — vrátíte T nebo Maybe.None a funguje to.",
         "code": "// Producent: implicitní převod z T nebo Maybe.None\nMaybe<int> Parse(string s) =>\n    int.TryParse(s, out var n) ? n : Maybe.None;\n\n// Map: T -> U, automaticky zabalí v Maybe\nMaybe<int> doubled = Parse(\"21\").Map(x => x * 2);\n// Some(42)\n\n// FlatMap: T -> Maybe<U>, bez dvojitého zabalení\nMaybe<int> sum = Parse(\"1\").FlatMap(a =>\n    Parse(\"2\").Map(b => a + b));\n// Some(3)",
         "diagram": {
-          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/v1.0.1/docs/diagrams/maybe-composition.svg",
+          "src": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/maybe-composition.svg",
+          "srcDark": "https://raw.githubusercontent.com/KaliCZ/StrongTypes/claude/blissful-elion-43aab7/docs/diagrams/maybe-composition-dark.svg",
           "alt": "Diagram pipeline ukazující, jak Some a None hodnoty procházejí operacemi Map a FlatMap nad Maybe<T>"
         }
       }

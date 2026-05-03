@@ -136,10 +136,11 @@ const tocItems = [
         {t.why.subtitle}
       </p>
 
-      <!-- Featured diagram. Wrapped in a forced light surface because the SVG colors are hardcoded. -->
-      <figure class="mb-12 bg-white rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with the page. -->
+      <figure class="mb-12 rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
         <img
           src={t.why.diagram.src}
+          data-src-dark={t.why.diagram.srcDark}
           alt={t.why.diagram.alt}
           loading="lazy"
           decoding="async"
@@ -203,9 +204,10 @@ const tocItems = [
 
       <!-- Package layout diagram. -->
       <figure class="bg-surface-container rounded-xl border border-outline-variant/40 overflow-hidden">
-        <div class="bg-white p-6 flex items-center justify-center">
+        <div class="p-6 flex items-center justify-center">
           <img
             src={t.packageLayout.diagram.src}
+            data-src-dark={t.packageLayout.diagram.srcDark}
             alt={t.packageLayout.diagram.alt}
             loading="lazy"
             decoding="async"
@@ -244,9 +246,10 @@ const tocItems = [
                     set:text={example.code}
                   />
                   {hasDiagram && (
-                    <div class="bg-white p-6 flex items-center justify-center">
+                    <div class="p-6 flex items-center justify-center">
                       <img
                         src={example.diagram!.src}
+                        data-src-dark={example.diagram!.srcDark}
                         alt={example.diagram!.alt}
                         loading="lazy"
                         decoding="async"
@@ -318,7 +321,7 @@ const tocItems = [
     aria-label={t.lightbox.dialogLabel}
     class="m-auto p-0 border-0 bg-transparent rounded-xl shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-w-[95vw] max-h-[95vh]"
   >
-    <div class="relative bg-white p-6 rounded-xl overflow-hidden min-w-[280px] min-h-[200px]">
+    <div class="relative bg-surface p-6 rounded-xl overflow-hidden min-w-[280px] min-h-[200px]">
       <button
         type="button"
         data-lightbox-close
@@ -401,6 +404,29 @@ const tocItems = [
         openLightbox(img);
       }
     });
+  });
+
+  // Theme-aware diagram swap. Each diagram <img> ships with its light src in
+  // `src` and its dark counterpart in `data-src-dark`. We swap on the page's
+  // theme — driven by the `.dark` class on <html>, not OS preference, so the
+  // top-right toggle controls the diagrams the same way it controls everything
+  // else. Original light src is captured once and cached on the element so we
+  // can restore it cleanly when toggling back.
+  const themedDiagrams = document.querySelectorAll<HTMLImageElement>("img[data-src-dark]");
+  themedDiagrams.forEach((img) => {
+    img.dataset.srcLight = img.getAttribute("src") ?? "";
+  });
+  function applyDiagramTheme() {
+    const dark = document.documentElement.classList.contains("dark");
+    themedDiagrams.forEach((img) => {
+      const next = dark ? (img.dataset.srcDark ?? img.dataset.srcLight ?? "") : (img.dataset.srcLight ?? "");
+      if (next && img.getAttribute("src") !== next) img.setAttribute("src", next);
+    });
+  }
+  applyDiagramTheme();
+  new MutationObserver(applyDiagramTheme).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
   });
 
   lightboxClose?.addEventListener("click", () => lightbox?.close());
