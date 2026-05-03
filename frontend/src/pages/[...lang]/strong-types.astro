@@ -406,28 +406,24 @@ const tocItems = [
     });
   });
 
-  // Theme-aware diagram swap. Each diagram <img> ships with its light src in
-  // `src` and its dark counterpart in `data-src-dark`. We swap on the page's
-  // theme — driven by the `.dark` class on <html>, not OS preference, so the
-  // top-right toggle controls the diagrams the same way it controls everything
-  // else. Original light src is captured once and cached on the element so we
-  // can restore it cleanly when toggling back.
+  // Theme-aware diagram preload. Each diagram <img> declares its dark
+  // counterpart in `data-src-dark`; the actual src swap on toggle is owned
+  // by `theme-toggle.ts` so it can run inside `document.startViewTransition`
+  // and be captured in the view-transition snapshot. We only preload here
+  // so the swap is a cache hit, not a network round trip — and we sync the
+  // src on initial render in case the page loads with the dark theme already
+  // active (persisted in localStorage).
   const themedDiagrams = document.querySelectorAll<HTMLImageElement>("img[data-src-dark]");
   themedDiagrams.forEach((img) => {
     img.dataset.srcLight = img.getAttribute("src") ?? "";
+    if (img.dataset.srcDark) new Image().src = img.dataset.srcDark;
   });
-  function applyDiagramTheme() {
-    const dark = document.documentElement.classList.contains("dark");
+  if (document.documentElement.classList.contains("dark")) {
     themedDiagrams.forEach((img) => {
-      const next = dark ? (img.dataset.srcDark ?? img.dataset.srcLight ?? "") : (img.dataset.srcLight ?? "");
+      const next = img.dataset.srcDark;
       if (next && img.getAttribute("src") !== next) img.setAttribute("src", next);
     });
   }
-  applyDiagramTheme();
-  new MutationObserver(applyDiagramTheme).observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
 
   lightboxClose?.addEventListener("click", () => lightbox?.close());
 
