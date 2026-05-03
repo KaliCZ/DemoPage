@@ -2,7 +2,10 @@
 // locale — so they live here instead of in the i18n JSON files. Each entry has
 // a light and a dark variant; the page wires `srcDark` into the theme toggle
 // via `data-src-dark` so the diagram flips with the rest of the page.
-const branch = "claude/blissful-elion-43aab7";
+//
+// TODO: pin to a StrongTypes release tag once one ships. Tracking in
+// https://github.com/KaliCZ/DemoPage/issues/116
+const branch = "main";
 const baseUrl = `https://raw.githubusercontent.com/KaliCZ/StrongTypes/${branch}/docs/diagrams`;
 
 const diagram = (slug: string) => ({
