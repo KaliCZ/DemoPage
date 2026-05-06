@@ -297,6 +297,13 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       function updateAuthUI(user: any) {
         identifyUser(user);
 
+        // The pre-paint script set `auth-known-in/out` so the right header
+        // chip and `signed-in-only` / `signed-out-only` page sections paint
+        // immediately. Once we have a real session result, JS owns visibility
+        // and those CSS hooks must be removed — otherwise the !important
+        // rules they declare keep showing the old state when we sign in/out.
+        document.documentElement.classList.remove("auth-known-in", "auth-known-out");
+
         const signInDesktop = document.getElementById("auth-sign-in-desktop");
         const profileDesktop = document.getElementById("auth-profile-desktop");
         const avatarDesktop = document.getElementById("auth-avatar-desktop") as HTMLImageElement;
@@ -339,10 +346,18 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         }
       }
 
-      // Wire up click handlers immediately — no need to wait for supabase
+      // Wire up click handlers immediately — no need to wait for supabase.
+      // Sign-in just opens the dialog; sign-out awaits the supabase client
+      // so the listener is on the button before the deferred init fires.
       const openDialog = () => (window as any).__openAuthDialog?.();
       document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
       document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) return;
+        await supabase.auth.signOut();
+        updateAuthUI(null);
+      });
 
       // Lazy-load supabase client. The inline <head> script already paints
       // the correct auth UI from localStorage, so the supabase fetch and
@@ -355,15 +370,8 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         getSupabaseClient().then((supabase) => {
           if (!supabase) return null;
 
-          document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
-            await supabase.auth.signOut();
-            updateAuthUI(null);
-          });
-
           supabase.auth.getSession().then(({ data: { session } }) => {
             updateAuthUI(session?.user ?? null);
-            // Hand visibility control back to JS now that the real session is known.
-            document.documentElement.classList.remove("auth-known-in", "auth-known-out");
           });
 
           supabase.auth.onAuthStateChange((_event, session) => {
