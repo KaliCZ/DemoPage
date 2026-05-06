@@ -44,6 +44,13 @@ const tocItems = [
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
+  {
+    /* Diagrams and shield badges are hosted on third-party domains. Establishing the
+      TLS connection during HTML parse — rather than after the parser reaches each
+      <img> — knocks ~200ms off the LCP image's resource-load delay. */
+  }
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin slot="head" />
+  <link rel="preconnect" href="https://img.shields.io" crossorigin slot="head" />
   <div class="max-w-7xl mx-auto px-4 md:px-8">
     <Breadcrumb
       ariaLabel={tCommon.a11y.breadcrumb}
@@ -91,13 +98,17 @@ const tocItems = [
             </div>
           </div>
 
-          <!-- Live status badges -->
+          <!-- Live status badges. width/height are required so the browser reserves
+               space before the SVGs arrive — without them, badges popping in shifts
+               the page (CLS contribution ~0.21). The values are reasonable estimates
+               of each shields.io render; CSS keeps them at h-5 so any minor mismatch
+               with the actual SVG width is invisible. -->
           <ul class="flex flex-wrap items-center gap-2" aria-label={t.badges.ariaLabel}>
             {
               t.badges.items.map((badge) => (
                 <li>
                   <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
-                    <img src={badge.src} alt={badge.alt} loading="lazy" class="block h-5" />
+                    <img src={badge.src} alt={badge.alt} width={badge.width} height={badge.height} loading="lazy" class="block h-5" />
                   </a>
                 </li>
               ))
@@ -137,12 +148,15 @@ const tocItems = [
         {t.why.subtitle}
       </p>
 
-      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with the page. -->
+      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with
+           the page. This is the LCP element on this page at typical desktop viewports,
+           so it's eager + fetchpriority="high" — Lighthouse otherwise reports a ~1.8s
+           "resource load delay" while it waits for layout before requesting the image. -->
       <img
         src={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].src}
         data-src-dark={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].srcDark}
         alt={t.why.diagram.alt}
-        loading="lazy"
+        fetchpriority="high"
         decoding="async"
         data-zoomable
         class="block w-full h-auto mb-12 cursor-zoom-in transition-transform hover:scale-[1.01]"

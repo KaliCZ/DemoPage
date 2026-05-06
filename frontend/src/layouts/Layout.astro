@@ -105,6 +105,13 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <BetterStack />
 
+    {
+      /* Per-page head injection. Pages can add <link>/<meta>/<script> tags
+        that need to be in <head> (e.g. preconnect to per-page third-party
+        origins) by passing them with `slot="head"`. */
+    }
+    <slot name="head" />
+
     <script is:inline>
       (function () {
         var theme = localStorage.getItem("theme");
@@ -337,30 +344,47 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
       document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
 
-      // Lazy-load supabase client — the inline <head> script already handles
-      // pre-paint auth UI from localStorage, so this can load in the background.
-      // Expose the promise so E2E tests and other scripts can await it.
-      (window as any).__supabaseReady = getSupabaseClient().then((supabase) => {
-        if (!supabase) return null;
+      // Lazy-load supabase client. The inline <head> script already paints
+      // the correct auth UI from localStorage, so the supabase fetch and
+      // session-confirm round-trip don't need to happen during initial
+      // load — defer until the browser is idle (or, failing that, until
+      // after window load) so this stays off the LCP-critical request
+      // chain. The promise is still exposed synchronously so E2E tests
+      // and other scripts can `await window.__supabaseReady`.
+      const initSupabase = () =>
+        getSupabaseClient().then((supabase) => {
+          if (!supabase) return null;
 
-        document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
-          await supabase.auth.signOut();
-          updateAuthUI(null);
+          document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
+            await supabase.auth.signOut();
+            updateAuthUI(null);
+          });
+
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            updateAuthUI(session?.user ?? null);
+            // Hand visibility control back to JS now that the real session is known.
+            document.documentElement.classList.remove("auth-known-in", "auth-known-out");
+          });
+
+          supabase.auth.onAuthStateChange((_event, session) => {
+            updateAuthUI(session?.user ?? null);
+          });
+
+          // Expose globals for other pages and E2E tests
+          (window as any).__supabase = supabase;
+          return supabase;
         });
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          updateAuthUI(session?.user ?? null);
-          // Hand visibility control back to JS now that the real session is known.
-          document.documentElement.classList.remove("auth-known-in", "auth-known-out");
-        });
-
-        supabase.auth.onAuthStateChange((_event, session) => {
-          updateAuthUI(session?.user ?? null);
-        });
-
-        // Expose globals for other pages and E2E tests
-        (window as any).__supabase = supabase;
-        return supabase;
+      (window as any).__supabaseReady = new Promise<any>((resolve) => {
+        const start = () => resolve(initSupabase());
+        const ric = (window as any).requestIdleCallback as ((cb: () => void, opts?: { timeout: number }) => number) | undefined;
+        if (ric) {
+          ric(start, { timeout: 2000 });
+        } else if (document.readyState === "complete") {
+          setTimeout(start, 0);
+        } else {
+          window.addEventListener("load", () => setTimeout(start, 0), { once: true });
+        }
       });
 
       (window as any).__getAccessToken = async () => {

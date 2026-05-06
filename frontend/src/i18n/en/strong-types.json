@@ -22,22 +22,30 @@
       {
         "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
         "alt": "Latest NuGet version of Kalicz.StrongTypes",
-        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes",
+        "width": 96,
+        "height": 20
       },
       {
         "src": "https://img.shields.io/nuget/dt/Kalicz.StrongTypes?label=downloads",
         "alt": "Total NuGet downloads of Kalicz.StrongTypes",
-        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
+        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes",
+        "width": 112,
+        "height": 20
       },
       {
         "src": "https://img.shields.io/github/actions/workflow/status/KaliCZ/StrongTypes/build.yml?branch=main&label=build",
         "alt": "GitHub Actions build status",
-        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml"
+        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml",
+        "width": 108,
+        "height": 20
       },
       {
         "src": "https://img.shields.io/github/license/KaliCZ/StrongTypes",
         "alt": "Project license",
-        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt"
+        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt",
+        "width": 96,
+        "height": 20
       }
     ]
   },
