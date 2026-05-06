@@ -164,6 +164,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             var meta = u.user_metadata || {};
             window.__authPrefill = {
               name: meta.full_name || (u.email ? u.email.split("@")[0] : "User"),
+              email: u.email || "",
               avatar: meta.avatar_url || "",
               isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf("admin") !== -1),
             };

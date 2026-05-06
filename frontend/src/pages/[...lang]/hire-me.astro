@@ -209,6 +209,21 @@ const t = translations[lang];
     </form>
   </section>
 
+  <!-- Prefill name/email from the cached session blob the head pre-paint
+       script parsed. Runs synchronously here, right after the form is in
+       the DOM, so the values are set before the browser paints the form.
+       Empty-value guards prevent overwriting browser autofill. -->
+  <script is:inline>
+    (function () {
+      var p = window.__authPrefill;
+      if (!p) return;
+      var n = document.getElementById("contactName");
+      if (n && !n.value && p.name) n.value = p.name;
+      var e = document.getElementById("contactEmail");
+      if (e && !e.value && p.email) e.value = p.email;
+    })();
+  </script>
+
   <template id="icon-description"
     ><Icon name="material-symbols:description" class="size-[18px] text-on-surface-variant shrink-0" aria-hidden="true" /></template
   >
@@ -268,7 +283,18 @@ const t = translations[lang];
     // while the user is filling out the form.
     fetch(apiUrl + "/health").catch(function () {});
 
-    // Listen for auth changes
+    // The initial prefill from window.__authPrefill happens in a small
+    // inline script right after the form section, so values are set
+    // before paint. This handler covers later sign-ins/sign-outs once
+    // supabase confirms the session. Empty-value guards prevent
+    // overwriting anything the user or pre-paint already filled in.
+    function prefillContactFields(name, email) {
+      var nameField = document.getElementById("contactName");
+      if (nameField && !nameField.value && name) nameField.value = name;
+      var emailField = document.getElementById("contactEmail");
+      if (emailField && !emailField.value && email) emailField.value = email;
+    }
+
     window.addEventListener("auth-change", function (e) {
       var user = e.detail?.user;
       var loginPrompt = document.getElementById("login-prompt");
@@ -277,14 +303,7 @@ const t = translations[lang];
       if (user) {
         if (loginPrompt) loginPrompt.classList.add("hidden");
         if (formSection) formSection.classList.remove("hidden");
-        var nameField = document.getElementById("contactName");
-        if (nameField && !nameField.value && user.user_metadata?.full_name) {
-          nameField.value = user.user_metadata.full_name;
-        }
-        var emailField = document.getElementById("contactEmail");
-        if (emailField && !emailField.value && user.email) {
-          emailField.value = user.email;
-        }
+        prefillContactFields(user.user_metadata?.full_name, user.email);
       } else {
         if (loginPrompt) loginPrompt.classList.remove("hidden");
         if (formSection) formSection.classList.add("hidden");
