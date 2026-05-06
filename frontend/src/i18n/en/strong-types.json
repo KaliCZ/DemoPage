@@ -18,28 +18,13 @@
   },
   "badges": {
     "ariaLabel": "Project status badges",
-    "items": [
-      {
-        "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
-        "alt": "Latest NuGet version of Kalicz.StrongTypes",
-        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
-      },
-      {
-        "src": "https://img.shields.io/nuget/dt/Kalicz.StrongTypes?label=downloads",
-        "alt": "Total NuGet downloads of Kalicz.StrongTypes",
-        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
-      },
-      {
-        "src": "https://img.shields.io/github/actions/workflow/status/KaliCZ/StrongTypes/build.yml?branch=main&label=build",
-        "alt": "GitHub Actions build status",
-        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml"
-      },
-      {
-        "src": "https://img.shields.io/github/license/KaliCZ/StrongTypes",
-        "alt": "Project license",
-        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt"
-      }
-    ]
+    "downloadsLabel": "downloads",
+    "alts": {
+      "nuget": "Latest NuGet version of Kalicz.StrongTypes",
+      "downloads": "Total NuGet downloads of Kalicz.StrongTypes",
+      "build": "GitHub Actions build status",
+      "license": "Project license"
+    }
   },
   "why": {
     "title": "Why bother with strong types?",

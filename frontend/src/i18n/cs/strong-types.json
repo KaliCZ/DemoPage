@@ -18,28 +18,13 @@
   },
   "badges": {
     "ariaLabel": "Stavové odznaky projektu",
-    "items": [
-      {
-        "src": "https://img.shields.io/nuget/v/Kalicz.StrongTypes?label=nuget",
-        "alt": "Nejnovější NuGet verze balíčku Kalicz.StrongTypes",
-        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
-      },
-      {
-        "src": "https://img.shields.io/nuget/dt/Kalicz.StrongTypes?label=stahovani",
-        "alt": "Celkový počet stažení balíčku Kalicz.StrongTypes",
-        "href": "https://www.nuget.org/packages/Kalicz.StrongTypes"
-      },
-      {
-        "src": "https://img.shields.io/github/actions/workflow/status/KaliCZ/StrongTypes/build.yml?branch=main&label=build",
-        "alt": "Stav buildu na GitHub Actions",
-        "href": "https://github.com/KaliCZ/StrongTypes/actions/workflows/build.yml"
-      },
-      {
-        "src": "https://img.shields.io/github/license/KaliCZ/StrongTypes",
-        "alt": "Licence projektu",
-        "href": "https://github.com/KaliCZ/StrongTypes/blob/main/license.txt"
-      }
-    ]
+    "downloadsLabel": "stazeni",
+    "alts": {
+      "nuget": "Nejnovější NuGet verze balíčku Kalicz.StrongTypes",
+      "downloads": "Celkový počet stažení balíčku Kalicz.StrongTypes",
+      "build": "Stav buildu na GitHub Actions",
+      "license": "Licence projektu"
+    }
   },
   "why": {
     "title": "Proč se obtěžovat se silnými typy?",

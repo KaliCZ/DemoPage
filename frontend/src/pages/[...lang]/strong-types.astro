@@ -10,6 +10,7 @@ import csStrings from "../../i18n/cs/strong-types.json";
 import enCommon from "../../i18n/en/common.json";
 import csCommon from "../../i18n/cs/common.json";
 import { strongTypesDiagrams, type StrongTypesDiagramKey } from "../../lib/strong-types-diagrams";
+import { strongTypesBadges, strongTypesBadgeSrc } from "../../lib/strong-types-badges";
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
@@ -44,6 +45,13 @@ const tocItems = [
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
+  {
+    /* Diagrams and shield badges are hosted on third-party domains. Establishing the
+      TLS connection during HTML parse — rather than after the parser reaches each
+      <img> — knocks ~200ms off the LCP image's resource-load delay. */
+  }
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin slot="head" />
+  <link rel="preconnect" href="https://img.shields.io" crossorigin slot="head" />
   <div class="max-w-7xl mx-auto px-4 md:px-8">
     <Breadcrumb
       ariaLabel={tCommon.a11y.breadcrumb}
@@ -91,13 +99,23 @@ const tocItems = [
             </div>
           </div>
 
-          <!-- Live status badges -->
+          <!-- Live status badges. URLs/dimensions live in lib/strong-types-badges.ts;
+               i18n only carries alt text and the localized "downloads" label. The
+               width/height attributes are critical: without them the badges popping
+               in shifted the page by 0.213 CLS. -->
           <ul class="flex flex-wrap items-center gap-2" aria-label={t.badges.ariaLabel}>
             {
-              t.badges.items.map((badge) => (
+              strongTypesBadges.map((badge) => (
                 <li>
                   <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
-                    <img src={badge.src} alt={badge.alt} loading="lazy" class="block h-5" />
+                    <img
+                      src={strongTypesBadgeSrc(badge.id, t.badges.downloadsLabel)}
+                      alt={t.badges.alts[badge.id]}
+                      width={badge.width}
+                      height={badge.height}
+                      loading="lazy"
+                      class="block h-5"
+                    />
                   </a>
                 </li>
               ))
@@ -137,12 +155,15 @@ const tocItems = [
         {t.why.subtitle}
       </p>
 
-      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with the page. -->
+      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with
+           the page. This is the LCP element on this page at typical desktop viewports,
+           so it's eager + fetchpriority="high" — Lighthouse otherwise reports a ~1.8s
+           "resource load delay" while it waits for layout before requesting the image. -->
       <img
         src={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].src}
         data-src-dark={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].srcDark}
         alt={t.why.diagram.alt}
-        loading="lazy"
+        fetchpriority="high"
         decoding="async"
         data-zoomable
         class="block w-full h-auto mb-12 cursor-zoom-in transition-transform hover:scale-[1.01]"
