@@ -22,7 +22,7 @@ export interface StrongTypesBadge {
 
 export const strongTypesBadges: readonly StrongTypesBadge[] = [
   { id: "nuget", href: `https://www.nuget.org/packages/${pkg}`, width: 96, height: 20 },
-  { id: "downloads", href: `https://www.nuget.org/packages/${pkg}`, width: 124, height: 20 },
+  { id: "downloads", href: `https://www.nuget.org/packages/${pkg}`, width: 112, height: 20 },
   { id: "build", href: `https://github.com/${repo}/actions/workflows/build.yml`, width: 108, height: 20 },
   { id: "license", href: `https://github.com/${repo}/blob/main/license.txt`, width: 96, height: 20 },
 ];
