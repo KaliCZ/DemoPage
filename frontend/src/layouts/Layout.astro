@@ -359,13 +359,10 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         updateAuthUI(null);
       });
 
-      // Lazy-load supabase client. The inline <head> script already paints
-      // the correct auth UI from localStorage, so the supabase fetch and
-      // session-confirm round-trip don't need to happen during initial
-      // load — defer until the browser is idle (or, failing that, until
-      // after window load) so this stays off the LCP-critical request
-      // chain. The promise is still exposed synchronously so E2E tests
-      // and other scripts can `await window.__supabaseReady`.
+      // Defer supabase init until after window.load so the chunk fetch
+      // doesn't compete with LCP-critical resources. The pre-paint script
+      // already provides auth UI state from localStorage. __supabaseReady
+      // is exposed synchronously so callers can `await` it.
       const initSupabase = () =>
         getSupabaseClient().then((supabase) => {
           if (!supabase) return null;
@@ -378,17 +375,13 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             updateAuthUI(session?.user ?? null);
           });
 
-          // Expose globals for other pages and E2E tests
           (window as any).__supabase = supabase;
           return supabase;
         });
 
       (window as any).__supabaseReady = new Promise<any>((resolve) => {
         const start = () => resolve(initSupabase());
-        const ric = (window as any).requestIdleCallback as ((cb: () => void, opts?: { timeout: number }) => number) | undefined;
-        if (ric) {
-          ric(start, { timeout: 2000 });
-        } else if (document.readyState === "complete") {
+        if (document.readyState === "complete") {
           setTimeout(start, 0);
         } else {
           window.addEventListener("load", () => setTimeout(start, 0), { once: true });
