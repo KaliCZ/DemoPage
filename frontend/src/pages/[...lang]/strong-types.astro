@@ -10,6 +10,7 @@ import csStrings from "../../i18n/cs/strong-types.json";
 import enCommon from "../../i18n/en/common.json";
 import csCommon from "../../i18n/cs/common.json";
 import { strongTypesDiagrams, type StrongTypesDiagramKey } from "../../lib/strong-types-diagrams";
+import { strongTypesBadges, strongTypesBadgeSrc } from "../../lib/strong-types-badges";
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
@@ -98,17 +99,23 @@ const tocItems = [
             </div>
           </div>
 
-          <!-- Live status badges. width/height are required so the browser reserves
-               space before the SVGs arrive — without them, badges popping in shifts
-               the page (CLS contribution ~0.21). The values are reasonable estimates
-               of each shields.io render; CSS keeps them at h-5 so any minor mismatch
-               with the actual SVG width is invisible. -->
+          <!-- Live status badges. URLs/dimensions live in lib/strong-types-badges.ts;
+               i18n only carries alt text and the localized "downloads" label. The
+               width/height attributes are critical: without them the badges popping
+               in shifted the page by 0.213 CLS. -->
           <ul class="flex flex-wrap items-center gap-2" aria-label={t.badges.ariaLabel}>
             {
-              t.badges.items.map((badge) => (
+              strongTypesBadges.map((badge) => (
                 <li>
                   <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
-                    <img src={badge.src} alt={badge.alt} width={badge.width} height={badge.height} loading="lazy" class="block h-5" />
+                    <img
+                      src={strongTypesBadgeSrc(badge.id, t.badges.downloadsLabel)}
+                      alt={t.badges.alts[badge.id]}
+                      width={badge.width}
+                      height={badge.height}
+                      loading="lazy"
+                      class="block h-5"
+                    />
                   </a>
                 </li>
               ))
