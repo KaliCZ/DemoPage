@@ -53,8 +53,10 @@ const t = translations[lang];
 
   <!-- Profile settings (shown when authenticated). `signed-in-only` keeps
        it visible for signed-in users during the supabase init delay; the
-       `hidden` class is the no-JS / signed-out fallback. -->
-  <section id="profile-section" class="signed-in-only hidden max-w-3xl mx-auto px-8 mb-16 space-y-8">
+       `hidden` class is the no-JS / signed-out fallback.
+       `data-loading` triggers skeleton placeholders for fields that stay
+       empty until supabase loads — populateProfile() removes the attribute. -->
+  <section id="profile-section" class="signed-in-only hidden max-w-3xl mx-auto px-8 mb-16 space-y-8" data-loading aria-busy="true">
     <!-- Avatar -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">
@@ -65,6 +67,18 @@ const t = translations[lang];
           <img id="avatar-preview-img" class="w-16 h-16 rounded-full object-cover hidden" src="" alt="" />
           <div id="avatar-preview-initial" class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
             <span class="text-xl font-bold text-on-primary-container"></span>
+          </div>
+          <!-- Pulsing skeleton circle covering the avatar until
+               populateProfile() runs. The opaque outer circle masks the
+               blue primary-container underneath; the inner element fades
+               in/out via animate-pulse to make the pulsing visible without
+               revealing the blue. Hidden via the loading-skeleton CSS rule
+               once data-loading is removed from #profile-section. -->
+          <div
+            class="loading-skeleton absolute inset-0 w-16 h-16 rounded-full bg-surface-container-high overflow-hidden pointer-events-none"
+            aria-hidden="true"
+          >
+            <div class="w-full h-full rounded-full bg-on-surface-variant/40 animate-pulse"></div>
           </div>
         </div>
         <div class="flex flex-col gap-2">
@@ -90,7 +104,24 @@ const t = translations[lang];
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">
         {t.provider.title}
       </h2>
-      <div id="provider-list" class="flex flex-col gap-3"></div>
+      <div id="provider-list" class="flex flex-col gap-3">
+        <!-- Skeleton placeholders shown until populateProfile() runs.
+             populateProfile() does providerList.innerHTML = "", so these
+             clear automatically once the user data is in. -->
+        <div class="flex items-center gap-3 animate-pulse" aria-hidden="true">
+          <div class="size-5 rounded-full bg-on-surface-variant/20 shrink-0"></div>
+          <div class="flex-1 flex flex-col gap-2">
+            <div class="h-4 w-32 rounded bg-on-surface-variant/20"></div>
+            <div class="h-3 w-48 rounded bg-on-surface-variant/10"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 animate-pulse" aria-hidden="true">
+          <div class="size-5 rounded-full bg-on-surface-variant/20 shrink-0"></div>
+          <div class="flex-1 flex flex-col gap-2">
+            <div class="h-4 w-24 rounded bg-on-surface-variant/20"></div>
+          </div>
+        </div>
+      </div>
       <p id="provider-feedback" class="hidden text-sm font-body mt-3"></p>
     </div>
 
@@ -98,13 +129,25 @@ const t = translations[lang];
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <label for="display-name" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.displayName.label}</label>
       <div class="flex gap-3">
-        <input
-          type="text"
-          id="display-name"
-          maxlength="100"
-          placeholder={t.displayName.placeholder}
-          class="flex-1 px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-        />
+        <div class="relative flex-1">
+          <input
+            type="text"
+            id="display-name"
+            maxlength="100"
+            placeholder={t.displayName.placeholder}
+            class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
+          <!-- Pulsing skeleton over the input until populateProfile() runs.
+               Hidden via the loading-skeleton CSS rule once data-loading is
+               removed from #profile-section. The outer div masks the input's
+               placeholder; the inner bar is what the user sees pulsing. -->
+          <div
+            class="loading-skeleton absolute inset-0 rounded-xl bg-surface-container flex items-center px-4 pointer-events-none"
+            aria-hidden="true"
+          >
+            <div class="h-4 w-40 rounded bg-on-surface-variant/30 animate-pulse"></div>
+          </div>
+        </div>
         <button
           type="button"
           id="save-name-btn"
@@ -116,6 +159,14 @@ const t = translations[lang];
       <p id="name-feedback" class="hidden text-sm font-body mt-2"></p>
     </div>
   </section>
+
+  <style>
+    /* Hide skeleton overlays once #profile-section loses data-loading
+       (populateProfile ran). */
+    #profile-section:not([data-loading]) .loading-skeleton {
+      display: none;
+    }
+  </style>
 
   <template id="google-icon-template">
     <IconGoogle class="w-5 h-5 flex-shrink-0" />
@@ -156,6 +207,11 @@ const t = translations[lang];
         if (loginPrompt) loginPrompt.classList.add("hidden");
         if (profileSection) profileSection.classList.remove("hidden");
         populateProfile(user);
+        // Clear loading state — populateProfile has filled in everything.
+        if (profileSection) {
+          profileSection.removeAttribute("data-loading");
+          profileSection.removeAttribute("aria-busy");
+        }
       } else {
         if (loginPrompt) loginPrompt.classList.remove("hidden");
         if (profileSection) profileSection.classList.add("hidden");
