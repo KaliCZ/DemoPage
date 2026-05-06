@@ -25,7 +25,7 @@
     "description": "Job Description",
     "descriptionPlaceholder": "Tell me about the role, team, and what makes it exciting...",
     "salaryRange": "Salary Range (optional)",
-    "salaryRangePlaceholder": "e.g. $150k – $200k",
+    "salaryRangePlaceholder": "e.g. $120k – $130k",
     "location": "Location (optional)",
     "locationPlaceholder": "e.g. Prague, CZ",
     "isRemote": "Remote position",
