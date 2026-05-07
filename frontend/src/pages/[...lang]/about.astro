@@ -8,7 +8,7 @@ import IconEmail from "../../components/icons/IconEmail.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
 import IconLinkedIn from "../../components/icons/IconLinkedIn.astro";
 import OnThisPage from "../../components/OnThisPage.astro";
-import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
 import enStrings from "../../i18n/en/about.json";
 import csStrings from "../../i18n/cs/about.json";
 
@@ -50,7 +50,9 @@ const tocItems = [
           {t.hero.location}
         </a>
         <p class="font-body text-xl md:text-2xl text-on-surface-variant max-w-2xl leading-relaxed mb-10">
-          {t.hero.subtitle}
+          {t.hero.subtitle}{" "}{t.hero.strongTypesPrefix}<a href={localePath(lang, "strong-types")} class="text-primary hover:underline"
+            >{t.hero.strongTypesLinkText}</a
+          >{t.hero.strongTypesSuffix}
         </p>
         <div class="flex gap-6 flex-wrap">
           <a

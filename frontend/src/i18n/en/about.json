@@ -7,6 +7,9 @@
     "name": "Pavel Kalandra",
     "location": "Prague, Czech Republic",
     "subtitle": "Software engineer and engineering leader dedicated to building resilient systems and high-performing teams.",
+    "strongTypesPrefix": "Author of the ",
+    "strongTypesLinkText": "StrongTypes NuGet package",
+    "strongTypesSuffix": ".",
     "githubLabel": "GitHub",
     "githubAriaLabel": "GitHub profile",
     "emailLabel": "pavel@kalandra.tech",
@@ -109,7 +112,13 @@
         "icon": "code",
         "color": "primary",
         "label": "Languages & Frameworks",
-        "items": ["C# / .NET / ASP.NET Core / WPF", "JavaScript / TypeScript / Vue.js / Astro", "Go"]
+        "items": [
+          "C# / .NET (ASP.NET Core, EF Core, WPF)",
+          "JavaScript / TypeScript (Vue.js / Astro)",
+          "Go",
+          "Tailwind / Bootstrap",
+          "HTML / CSS"
+        ]
       },
       {
         "icon": "database",
@@ -118,27 +127,46 @@
         "items": [
           "SQL (MSSQL, PostgreSQL)",
           "NoSQL (Azure Table Storage, Cosmos DB)",
-          "File Storage (Azure Blob, Supabase Storage)",
+          "Key-value & cache (Redis, Cloudflare KV)",
+          "File Storage (Azure Blob, AWS S3, Supabase Storage)",
           "Zero-downtime schema changes during deploy"
-        ]
-      },
-      {
-        "icon": "cloud",
-        "color": "secondary",
-        "label": "Cloud & Infrastructure",
-        "description": "Comfortable owning the full production stack — from registering a domain to shipping deploys and watching live dashboards.",
-        "items": [
-          "Cloud platforms (Microsoft Azure, Cloudflare, Supabase)",
-          "CI/CD & Containers (GitHub Actions, Docker)",
-          "Observability (Sentry, BetterStack)",
-          "DNS setup & Emails (Brevo, SendGrid)"
         ]
       },
       {
         "icon": "hub",
         "color": "primary",
         "label": "Architecture & Engineering",
-        "items": ["System Architecture", "Modular monolith decomposition", "Performance optimization", "REST / GraphQL / gRPC"]
+        "items": [
+          "System Architecture",
+          "Microservices & distributed systems",
+          "Modular monolith decomposition",
+          "Messaging & workflows (Azure Service Bus, RabbitMQ, Kafka, Temporal)",
+          "Performance optimization",
+          "REST / GraphQL / gRPC"
+        ]
+      },
+      {
+        "icon": "cloud",
+        "color": "secondary",
+        "label": "Cloud & Infrastructure",
+        "description": "Comfortable owning the full production stack — from registering a domain to live dashboards.",
+        "items": [
+          "Cloud platforms (Microsoft Azure, AWS, Cloudflare, Supabase)",
+          "Serverless (Azure Functions, Cloudflare Workers)",
+          "Containers & orchestration (Docker, Kubernetes)",
+          "DNS, CDN & email (Cloudflare, Brevo, SendGrid)"
+        ]
+      },
+      {
+        "icon": "rocket-launch",
+        "color": "tertiary",
+        "label": "DevOps & Quality",
+        "items": [
+          "CI/CD pipelines (GitHub Actions, Azure DevOps Pipelines)",
+          "E2E testing (Playwright)",
+          "Observability, OTEL & incident management (Sentry, BetterStack, Datadog, New Relic, PagerDuty)",
+          "Zero-downtime deploys"
+        ]
       },
       {
         "icon": "lightbulb",

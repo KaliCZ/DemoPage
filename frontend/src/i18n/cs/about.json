@@ -7,6 +7,9 @@
     "name": "Pavel Kalandra",
     "location": "Praha, Česká republika",
     "subtitle": "Softwarový inženýr a technický lídr zaměřený na budování odolných systémů a silných týmů.",
+    "strongTypesPrefix": "Autor ",
+    "strongTypesLinkText": "NuGet balíčku StrongTypes",
+    "strongTypesSuffix": ".",
     "githubLabel": "GitHub",
     "githubAriaLabel": "GitHub profil",
     "emailLabel": "pavel@kalandra.tech",
@@ -109,7 +112,13 @@
         "icon": "code",
         "color": "primary",
         "label": "Jazyky a frameworky",
-        "items": ["C# / .NET / ASP.NET Core / WPF", "JavaScript / TypeScript / Vue.js / Astro", "Go"]
+        "items": [
+          "C# / .NET (ASP.NET Core, EF Core, WPF)",
+          "JavaScript / TypeScript (Vue.js / Astro)",
+          "Go",
+          "Tailwind / Bootstrap",
+          "HTML / CSS"
+        ]
       },
       {
         "icon": "database",
@@ -118,27 +127,46 @@
         "items": [
           "SQL (MSSQL, PostgreSQL)",
           "NoSQL (Azure Table Storage, Cosmos DB)",
-          "File Storage (Azure Blob, Supabase Storage)",
+          "Key-value a cache (Redis, Cloudflare KV)",
+          "File Storage (Azure Blob, AWS S3, Supabase Storage)",
           "Změny schématu při deployi bez výpadku"
-        ]
-      },
-      {
-        "icon": "cloud",
-        "color": "secondary",
-        "label": "Cloud a infrastruktura",
-        "description": "Komfortně vlastním celý produkční stack — od registrace domény přes nasazení až po živé dashboardy.",
-        "items": [
-          "Cloud platformy (Microsoft Azure, Cloudflare, Supabase)",
-          "CI/CD a kontejnery (GitHub Actions, Docker)",
-          "Observability (Sentry, BetterStack)",
-          "Nastavení DNS a e-maily (Brevo, SendGrid)"
         ]
       },
       {
         "icon": "hub",
         "color": "primary",
         "label": "Architektura a inženýrství",
-        "items": ["Architektura systémů", "Dekompozice modulárního monolitu", "Optimalizace výkonu", "REST / GraphQL / gRPC"]
+        "items": [
+          "Architektura systémů",
+          "Mikroslužby a distribuované systémy",
+          "Dekompozice modulárního monolitu",
+          "Messaging a workflows (Azure Service Bus, RabbitMQ, Kafka, Temporal)",
+          "Optimalizace výkonu",
+          "REST / GraphQL / gRPC"
+        ]
+      },
+      {
+        "icon": "cloud",
+        "color": "secondary",
+        "label": "Cloud a infrastruktura",
+        "description": "Komfortně vlastním celý produkční stack — od registrace domény až po živé dashboardy.",
+        "items": [
+          "Cloud platformy (Microsoft Azure, AWS, Cloudflare, Supabase)",
+          "Serverless (Azure Functions, Cloudflare Workers)",
+          "Kontejnery a orchestrace (Docker, Kubernetes)",
+          "DNS, CDN a e-maily (Cloudflare, Brevo, SendGrid)"
+        ]
+      },
+      {
+        "icon": "rocket-launch",
+        "color": "tertiary",
+        "label": "DevOps a kvalita",
+        "items": [
+          "CI/CD pipeliny (GitHub Actions, Azure DevOps Pipelines)",
+          "E2E testování (Playwright)",
+          "Observability, OTEL a incident management (Sentry, BetterStack, Datadog, New Relic, PagerDuty)",
+          "Bezvýpadkové nasazení"
+        ]
       },
       {
         "icon": "lightbulb",
