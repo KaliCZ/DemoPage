@@ -213,6 +213,13 @@
         page-break-inside: avoid;
         break-inside: avoid;
       }
+      /* Force DevOps & Quality (and everything after it in the sidebar) onto
+     page 2 — keeps page 1's sidebar focused on tech foundations and pushes
+     the delivery/quality block into the deeper-experience half of the CV. */
+      .sb-devops {
+        page-break-before: always;
+        break-before: page;
+      }
       .pm-item {
         margin-bottom: 2mm;
       }
@@ -457,9 +464,10 @@
           <div class="skill-cat">
             <div class="cat-label">Languages &amp; Frameworks</div>
             <ul>
-              <li>C# / .NET / ASP.NET Core / WPF</li>
-              <li>JavaScript / TypeScript / Vue.js / Astro</li>
+              <li>C# / .NET (ASP.NET Core, EF Core, WPF)</li>
+              <li>JavaScript / TypeScript (Vue.js / Astro)</li>
               <li>Go</li>
+              <li>Tailwind / Bootstrap</li>
             </ul>
           </div>
 
@@ -468,18 +476,9 @@
             <ul>
               <li>SQL (MSSQL, PostgreSQL)</li>
               <li>NoSQL (Azure Table Storage, Cosmos DB)</li>
-              <li>Azure Blob, Supabase Storage</li>
+              <li>Key-value (Redis, Cloudflare KV)</li>
+              <li>Azure Blob, AWS S3, Supabase Storage</li>
               <li>Zero-downtime schema changes</li>
-            </ul>
-          </div>
-
-          <div class="skill-cat">
-            <div class="cat-label">Cloud &amp; Infrastructure</div>
-            <ul>
-              <li>Azure, Cloudflare, Supabase</li>
-              <li>GitHub Actions, Docker</li>
-              <li>Sentry, BetterStack</li>
-              <li>DNS &amp; email (Brevo, SendGrid)</li>
             </ul>
           </div>
 
@@ -487,9 +486,31 @@
             <div class="cat-label">Architecture &amp; Engineering</div>
             <ul>
               <li>System architecture</li>
+              <li>Microservices &amp; distributed systems</li>
               <li>Modular monolith decomposition</li>
+              <li>Messaging (Azure Service Bus, RabbitMQ, Kafka, Temporal)</li>
               <li>Performance optimization</li>
               <li>REST / GraphQL / gRPC</li>
+            </ul>
+          </div>
+
+          <div class="skill-cat">
+            <div class="cat-label">Cloud &amp; Infrastructure</div>
+            <ul>
+              <li>Azure, AWS, Cloudflare, Supabase</li>
+              <li>Serverless (Azure Functions, Cloudflare Workers)</li>
+              <li>Containers (Docker, Kubernetes)</li>
+              <li>DNS, CDN &amp; email (Cloudflare, Brevo, SendGrid)</li>
+            </ul>
+          </div>
+
+          <div class="skill-cat sb-devops">
+            <div class="cat-label">DevOps &amp; Quality</div>
+            <ul>
+              <li>CI/CD (GitHub Actions, Azure DevOps Pipelines)</li>
+              <li>E2E testing (Playwright)</li>
+              <li>Observability + OTEL + incident mgmt (Sentry, BetterStack, Datadog, New Relic, PagerDuty)</li>
+              <li>Zero-downtime deploys</li>
             </ul>
           </div>
         </div>
