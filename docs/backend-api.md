@@ -40,9 +40,9 @@ There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature r
 
 ## Request & response DTOs
 
-- Requests and responses are `record`s using `Kalicz.StrongTypes` wrappers (`NonEmptyString`, `Email`, etc.) for typed (de)serialization and OpenAPI schemas. See `docs/backend-csharp.md` for the wrapper rules.
-- Responses expose a static `Serialize(entity, viewer)` method. The `viewer` parameter lets the response decide whether to expose admin-only fields. See `GetJobOfferDetailResponse.Serialize` — `AdminNotes` is returned as `null` unless `viewer.IsAdmin` is true.
-- Every action declares its shape with `[ProducesResponseType<T>(StatusCodes.Status2xx)]` and `[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]`. This powers Swagger and documents the contract.
+- Requests are `record`s with `NonEmptyString` / `Email` properties — invariants live in the type, not in attributes.
+- Responses are `record`s with a static `Serialize(entity, viewer)` method. `viewer` lets the response gate admin-only fields (see `GetJobOfferDetailResponse.Serialize`).
+- Declare shape with `[ProducesResponseType<T>(...)]` so Swagger documents the contract.
 
 ## Error contracts: the two-enum rule
 
