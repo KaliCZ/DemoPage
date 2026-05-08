@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
 using Kalandra.Infrastructure.Auth;
@@ -23,15 +24,15 @@ public class HttpContextCurrentUserAccessor(
         var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
         var emailStr = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
 
-        if (!Guid.TryParse(userIdStr, out var userId) || Email.TryCreate(emailStr) is not { } email)
+        if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var mailAddress))
             return null;
 
         var userMetadata = principal.FindFirstValue("user_metadata");
-        var (fullName, avatarUrl) = ExtractUserMetadata(userMetadata, email);
+        var (fullName, avatarUrl) = ExtractUserMetadata(userMetadata, mailAddress);
 
         return new CurrentUser(
             Id: userId,
-            Email: email,
+            Email: new Email(mailAddress),
             FullName: fullName,
             Roles: ExtractRoles(principal),
             AvatarUrl: avatarUrl
@@ -58,10 +59,10 @@ public class HttpContextCurrentUserAccessor(
     /// Parses user_metadata looking for "full_name" and "avatar_url",
     /// falling back to the email's local part for the name.
     /// </summary>
-    private static (NonEmptyString FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, Email email)
+    private static (NonEmptyString FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
     {
         // MailAddress guarantees a non-empty local part on a successful construction.
-        var fallbackName = NonEmptyString.Create(email.Value.User);
+        var fallbackName = NonEmptyString.Create(email.User);
 
         if (string.IsNullOrEmpty(userMetadata))
             return (fallbackName, null);
