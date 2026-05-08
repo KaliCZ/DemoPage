@@ -56,6 +56,9 @@ public class JobOffersController(
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
             return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
+        // ContentType isn't validated separately — browsers always set it. .ToNonEmpty()
+        // throwing here would mean a malformed request with no Content-Type on the file
+        // part, where a 500 is fine.
         // OpenReadStream() wraps the framework's request buffer — disposed at end of request.
         var files = new List<CreateJobOfferFile>(attachments?.Count ?? 0);
         foreach (var (i, f) in (attachments ?? []).Index())
@@ -65,16 +68,11 @@ public class JobOffersController(
                 ModelState.AddModelError($"attachments[{i}].FileName", "FileName must be non-empty.");
                 continue;
             }
-            if (f.ContentType.AsNonEmpty() is not { } contentType)
-            {
-                ModelState.AddModelError($"attachments[{i}].ContentType", "ContentType must be non-empty.");
-                continue;
-            }
 
             files.Add(new CreateJobOfferFile(
                 FileName: fileName,
                 FileSize: f.Length,
-                ContentType: contentType,
+                ContentType: f.ContentType.ToNonEmpty(),
                 Content: f.OpenReadStream()));
         }
         if (!ModelState.IsValid)
