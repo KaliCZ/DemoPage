@@ -58,9 +58,9 @@ public class JobOffersController(
         // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
         var files = (attachments ?? [])
             .Select(f => new CreateJobOfferFile(
-                FileName: f.FileName.ToNonEmpty(),
+                FileName: f.FileName,
                 FileSize: f.Length,
-                ContentType: f.ContentType.ToNonEmpty(),
+                ContentType: f.ContentType,
                 Content: f.OpenReadStream()))
             .ToList();
 

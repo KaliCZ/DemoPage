@@ -27,7 +27,7 @@ public class AddCommentHandler(IDocumentSession session)
         var commentEvent = new JobOfferCommentAdded(
             CommentId: Guid.NewGuid(),
             UserId: command.User.Id,
-            UserEmail: new Email(command.User.Email),
+            UserEmail: command.User.Email,
             UserName: command.User.FullName,
             Content: command.Content,
             Timestamp: command.Timestamp);

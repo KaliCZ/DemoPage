@@ -66,7 +66,7 @@ public class JobOffer
         // treat it as "leave this field alone" rather than "set it to null".
         return new JobOfferEdited(
             EditedByUserId: user.Id,
-            EditedByEmail: new Email(user.Email),
+            EditedByEmail: user.Email,
             CompanyName: companyName is not null && companyName != CompanyName ? companyName : null,
             ContactName: contactName is not null && contactName != ContactName ? contactName : null,
             ContactEmail: contactEmail is not null && contactEmail.Address != ContactEmail.Address ? new Email(contactEmail) : null,
@@ -92,7 +92,7 @@ public class JobOffer
 
         return new JobOfferCancelled(
             CancelledByUserId: user.Id,
-            CancelledByEmail: new Email(user.Email),
+            CancelledByEmail: user.Email,
             Reason: reason,
             Timestamp: timestamp);
     }
@@ -108,7 +108,7 @@ public class JobOffer
 
         return new JobOfferStatusChanged(
             ChangedByUserId: user.Id,
-            ChangedByEmail: new Email(user.Email),
+            ChangedByEmail: user.Email,
             OldStatus: Status,
             NewStatus: newStatus,
             Notes: notes,

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using StrongTypes;
 using Supabase.Storage;
 using Supabase.Storage.Interfaces;
 
@@ -21,7 +20,7 @@ public class SupabaseStorageService(
 
         foreach (var file in files)
         {
-            var extension = Path.GetExtension(file.FileName.Value);
+            var extension = Path.GetExtension(file.FileName);
             var storagePath = $"{folderPrefix}{Guid.NewGuid()}{extension}";
 
             try
@@ -29,7 +28,7 @@ public class SupabaseStorageService(
                 using var ms = new MemoryStream();
                 await file.Content.CopyToAsync(ms, ct);
 
-                var fileOptions = new Supabase.Storage.FileOptions { ContentType = file.ContentType.Value };
+                var fileOptions = new Supabase.Storage.FileOptions { ContentType = file.ContentType };
                 await bucket.Upload(ms.ToArray(), storagePath, fileOptions, onProgress: null, inferContentType: true, ct);
             }
             catch
@@ -40,7 +39,7 @@ public class SupabaseStorageService(
 
             uploaded.Add(new StorageFileInfo(
                 FileName: file.FileName,
-                StoragePath: storagePath.ToNonEmpty(),
+                StoragePath: storagePath,
                 FileSize: file.FileSize,
                 ContentType: file.ContentType));
         }
@@ -69,7 +68,7 @@ public class SupabaseStorageService(
 
         try
         {
-            var paths = uploaded.Select(f => f.StoragePath.Value).ToList();
+            var paths = uploaded.Select(f => f.StoragePath).ToList();
             await bucket.Remove(paths);
         }
         catch (Exception ex)

@@ -11,9 +11,9 @@ namespace Kalandra.JobOffers.Commands;
 public enum CreateJobOfferError { TooManyAttachments, TotalSizeTooLarge, DisallowedContentType }
 
 public record CreateJobOfferFile(
-    NonEmptyString FileName,
+    string FileName,
     long FileSize,
-    NonEmptyString ContentType,
+    string ContentType,
     Stream Content);
 
 public record CreateJobOfferCommand(
@@ -85,10 +85,10 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         // Create event
         var submitted = new JobOfferSubmitted(
             UserId: command.User.Id,
-            UserEmail: new Email(command.User.Email),
+            UserEmail: command.User.Email,
             CompanyName: command.CompanyName,
             ContactName: command.ContactName,
-            ContactEmail: new Email(command.ContactEmail),
+            ContactEmail: command.ContactEmail,
             JobTitle: command.JobTitle,
             Description: command.Description,
             SalaryRange: command.SalaryRange,

@@ -1,9 +1,7 @@
-using StrongTypes;
-
 namespace Kalandra.Infrastructure.Storage;
 
 public record StorageFileInfo(
-    NonEmptyString FileName,
-    NonEmptyString StoragePath,
+    string FileName,
+    string StoragePath,
     long FileSize,
-    NonEmptyString ContentType);
+    string ContentType);

@@ -40,8 +40,8 @@ There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature r
 
 ## Request & response DTOs
 
-- Requests are `record`s whose required text fields are typed directly as `NonEmptyString` (or `NonEmptyString?` for PATCH "leave this field alone" semantics), and email fields as `Email` (from `Kalicz.StrongTypes`). The invariant is enforced at the boundary by the type system: JSON bodies go through the `StrongTypes` `[JsonConverter]`, `[FromForm]` / query string inputs go through ASP.NET's built-in `IParsable` model binder (each wrapper implements `IParsable<T>`). An empty / malformed value surfaces as an RFC 7807 400 with the field name — the controller never calls `.ToNonEmpty()` on input. Length cap on `NonEmptyString` properties uses the BCL `[MaxLength(N)]` (works because `NonEmptyString` exposes `Count`); `Email` enforces RFC 5321's 254-char cap and addr-spec format itself, so no extra attributes are layered on top.
-- Responses are `record`s with a static `Serialize(entity, viewer)` method. The `viewer` parameter lets the response decide whether to expose admin-only fields. See `GetJobOfferDetailResponse.Serialize` — `AdminNotes` is returned as `null` unless `viewer.IsAdmin` is true.
+- Requests and responses are `record`s using `Kalicz.StrongTypes` wrappers (`NonEmptyString`, `Email`, etc.) for typed (de)serialization and OpenAPI schemas. See `docs/backend-csharp.md` for the wrapper rules.
+- Responses expose a static `Serialize(entity, viewer)` method. The `viewer` parameter lets the response decide whether to expose admin-only fields. See `GetJobOfferDetailResponse.Serialize` — `AdminNotes` is returned as `null` unless `viewer.IsAdmin` is true.
 - Every action declares its shape with `[ProducesResponseType<T>(StatusCodes.Status2xx)]` and `[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]`. This powers Swagger and documents the contract.
 
 ## Error contracts: the two-enum rule
