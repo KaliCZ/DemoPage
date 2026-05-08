@@ -11,7 +11,7 @@ Use `Kalicz.StrongTypes` and BCL types over raw primitives:
 - `MailAddress` everywhere else (commands, `CurrentUser`, decision-method parameters). `MailAddress` → `Email` is implicit; `Email.Value` is the `MailAddress`.
 - `Guid` for IDs, `DateTimeOffset` for timestamps.
 
-`.AsNonEmpty()` / `.ToNonEmpty()` only when crossing from a loose primitive string you don't control (config values, JWT claims).
+`.AsNonEmpty()` / `.ToNonEmpty()` only when crossing from a loose primitive string you don't control — config values, JWT claims, `IFormFile.FileName` / `ContentType`. For request-time inputs (multipart files), use `.AsNonEmpty()` and feed nulls into `ModelState` so empty values surface as RFC 7807 400, not as a thrown exception.
 
 ## Named arguments
 
