@@ -1,7 +1,7 @@
-using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Tests;
 
@@ -13,9 +13,9 @@ public class JobOfferAggregateTests
     private static readonly Guid OtherId = new("22222222-2222-2222-2222-222222222222");
     private static readonly Guid AdminId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-    private static readonly CurrentUser Owner = new(OwnerId, new MailAddress("owner@test.com"), "Owner".ToNonEmpty(), []);
-    private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), "Other".ToNonEmpty(), []);
-    private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), "Admin".ToNonEmpty(), [UserRole.Admin]);
+    private static readonly CurrentUser Owner = new(OwnerId, Email.Create("owner@test.com"), "Owner".ToNonEmpty(), []);
+    private static readonly CurrentUser Other = new(OtherId, Email.Create("other@test.com"), "Other".ToNonEmpty(), []);
+    private static readonly CurrentUser Admin = new(AdminId, Email.Create("admin@test.com"), "Admin".ToNonEmpty(), [UserRole.Admin]);
 
     private static JobOffer CreateSubmittedOffer(Guid? userId = null)
     {
@@ -23,10 +23,10 @@ public class JobOfferAggregateTests
         var offer = new JobOffer();
         offer.Apply(new JobOfferSubmitted(
             UserId: id,
-            UserEmail: $"{id}@test.com".ToNonEmpty(),
+            UserEmail: Email.Create($"{id}@test.com"),
             CompanyName: "Acme".ToNonEmpty(),
             ContactName: "John".ToNonEmpty(),
-            ContactEmail: "john@acme.com".ToNonEmpty(),
+            ContactEmail: Email.Create("john@acme.com"),
             JobTitle: "Dev".ToNonEmpty(),
             Description: "Desc".ToNonEmpty(),
             SalaryRange: null,
@@ -48,7 +48,7 @@ public class JobOfferAggregateTests
             user: Owner,
             companyName: "NewCo".ToNonEmpty(),
             contactName: "Jane".ToNonEmpty(),
-            contactEmail: "jane@co.com".ToNonEmpty(),
+            contactEmail: Email.Create("jane@co.com"),
             jobTitle: "CTO".ToNonEmpty(),
             description: "New desc".ToNonEmpty(),
             salaryRange: null,
@@ -109,7 +109,7 @@ public class JobOfferAggregateTests
             user: Other,
             companyName: "Co".ToNonEmpty(),
             contactName: "J".ToNonEmpty(),
-            contactEmail: "j@co.com".ToNonEmpty(),
+            contactEmail: Email.Create("j@co.com"),
             jobTitle: "Dev".ToNonEmpty(),
             description: "Desc".ToNonEmpty(),
             salaryRange: null,
@@ -128,7 +128,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com".ToNonEmpty(),
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: null,
             Timestamp: Now));
 
@@ -136,7 +136,7 @@ public class JobOfferAggregateTests
             user: Owner,
             companyName: "Co".ToNonEmpty(),
             contactName: "J".ToNonEmpty(),
-            contactEmail: "j@co.com".ToNonEmpty(),
+            contactEmail: Email.Create("j@co.com"),
             jobTitle: "Dev".ToNonEmpty(),
             description: "Desc".ToNonEmpty(),
             salaryRange: null,
@@ -169,7 +169,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -195,7 +195,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.LetsTalk,
             Notes: null,
@@ -212,7 +212,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com".ToNonEmpty(),
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: null,
             Timestamp: Now));
 
@@ -285,7 +285,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -305,7 +305,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -325,7 +325,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.LetsTalk,
             Notes: null,
@@ -345,7 +345,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.Declined,
             Notes: null,
@@ -365,7 +365,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com".ToNonEmpty(),
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: null,
             Timestamp: Now));
 
@@ -402,10 +402,10 @@ public class JobOfferAggregateTests
         var offer = new JobOffer();
         offer.Apply(new JobOfferSubmitted(
             UserId: u1,
-            UserEmail: "u1@test.com".ToNonEmpty(),
+            UserEmail: Email.Create("u1@test.com"),
             CompanyName: "Co".ToNonEmpty(),
             ContactName: "Name".ToNonEmpty(),
-            ContactEmail: "c@co.com".ToNonEmpty(),
+            ContactEmail: Email.Create("c@co.com"),
             JobTitle: "Dev".ToNonEmpty(),
             Description: "Desc".ToNonEmpty(),
             SalaryRange: "$100k",
@@ -427,10 +427,10 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferEdited(
             EditedByUserId: OwnerId,
-            EditedByEmail: "owner@test.com".ToNonEmpty(),
+            EditedByEmail: Email.Create("owner@test.com"),
             CompanyName: "NewCo".ToNonEmpty(),
             ContactName: "Jane".ToNonEmpty(),
-            ContactEmail: "jane@co.com".ToNonEmpty(),
+            ContactEmail: Email.Create("jane@co.com"),
             JobTitle: "CTO".ToNonEmpty(),
             Description: "New".ToNonEmpty(),
             SalaryRange: "$200k",
@@ -457,7 +457,7 @@ public class JobOfferAggregateTests
 
         offer.Apply(new JobOfferEdited(
             EditedByUserId: OwnerId,
-            EditedByEmail: "owner@test.com".ToNonEmpty(),
+            EditedByEmail: Email.Create("owner@test.com"),
             CompanyName: null,
             ContactName: null,
             ContactEmail: null,
@@ -485,7 +485,7 @@ public class JobOfferAggregateTests
             user: Owner,
             companyName: "Acme".ToNonEmpty(),           // unchanged
             contactName: "John".ToNonEmpty(),           // unchanged
-            contactEmail: "john@acme.com".ToNonEmpty(), // unchanged
+            contactEmail: Email.Create("john@acme.com"), // unchanged
             jobTitle: "Senior Dev".ToNonEmpty(),        // changed (was "Dev")
             description: "Desc".ToNonEmpty(),           // unchanged
             salaryRange: null,                 // unchanged (was null)
@@ -513,7 +513,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: "Reviewing",
@@ -528,7 +528,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com".ToNonEmpty(),
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: "Reason",
             Timestamp: Now));
 

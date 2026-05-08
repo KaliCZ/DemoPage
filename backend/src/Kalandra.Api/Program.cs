@@ -1,26 +1,18 @@
 using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
-using Kalandra.Api.StrongTypesExtensions;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OpenApi;
+using StrongTypes.OpenApi.Swashbuckle;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Observability.Add(builder);
 
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers(options =>
-    {
-        // Insert at 0 so the NonEmptyString binder is consulted before the
-        // built-in providers can return a binder for the underlying type.
-        // Model binding and DataAnnotations are independent stages — binders
-        // construct the value, attributes validate the result, so [StringMaxLength]
-        // / [EmailFormat] still run after this binder succeeds.
-        options.ModelBinderProviders.Insert(0, new NonEmptyStringModelBinderProvider());
-    })
+builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
@@ -28,6 +20,7 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.AddStrongTypes();
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

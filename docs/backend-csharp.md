@@ -4,20 +4,20 @@ Language-level rules that apply across all backend projects.
 
 ## Parse, don't validate
 
-Prefer strong types that make invalid states unrepresentable. Use the `Kalicz.StrongTypes` library (`NonEmptyString`, etc.) and BCL types over raw primitives:
+Prefer strong types that make invalid states unrepresentable. Use the `Kalicz.StrongTypes` library and BCL types over raw primitives:
 
 - `NonEmptyString` instead of `string` for required text fields.
-- `MailAddress` instead of `string` for emails.
+- `Email` (from `Kalicz.StrongTypes`) instead of `string` or `MailAddress` for emails.
 - `Guid` (or a typed ID) instead of `string` for identifiers.
 - `DateTimeOffset` instead of `string` for timestamps.
 
-Parse at the boundary (API layer), then pass the strong type through commands and into the domain. The boundary is the DTO itself — required text fields are typed as `NonEmptyString` (or `NonEmptyString?` for PATCH "no change" semantics), so the controller can pass them straight through to the command:
+Parse at the boundary (API layer), then pass the strong type through commands and into the domain. The boundary is the DTO itself — required text fields are typed as `NonEmptyString` (or `NonEmptyString?` for PATCH "no change" semantics), email fields as `Email`, so the controller can pass them straight through to the command:
 
 ```csharp
-// Good — DTO holds NonEmptyString; controller has no boilerplate
+// Good — DTO holds the strong type; controller has no boilerplate
 public record CreateJobOfferRequest(
-    NonEmptyString CompanyName,
-    [EmailAddress] NonEmptyString ContactEmail,
+    [MaxLength(200)] NonEmptyString CompanyName,
+    Email ContactEmail,
     ...);
 
 var command = new CreateJobOfferCommand(
@@ -32,13 +32,13 @@ var command = new CreateJobOfferCommand(
     ...);
 ```
 
-The `StrongTypes` `[JsonConverter]` rejects empty JSON strings as `JsonException`, which ASP.NET surfaces as an RFC 7807 400. For `[FromForm]` / query string inputs — where model binding doesn't go through the JSON converter — the `NonEmptyStringModelBinderProvider` in `Kalandra.Api/StrongTypesExtensions/` fills the same role and is registered in `Program.cs` via `ModelBinderProviders.Insert(0, ...)`.
+`Kalicz.StrongTypes` ships `[JsonConverter]`s and `IParsable<T>` implementations on every wrapper, so each type binds end-to-end out of the box: empty / malformed JSON bodies fail through the converter, and `[FromForm]` / `[FromQuery]` / `[FromRoute]` / `[FromHeader]` inputs flow through ASP.NET's built-in `IParsable` model binder. Either path surfaces a bad value as an RFC 7807 400 with the field name — no project-level binder, attribute, or extension is needed.
 
-Most `System.ComponentModel.DataAnnotations` attributes don't recognise strong types — their `IsValid` checks `value is string` and returns `false` for anything else. `[MaxLength]` even throws `InvalidCastException`. Use `[StringMaxLength]` and `[EmailFormat]` from `Kalandra.Api/StrongTypesExtensions/` on `NonEmptyString`-typed DTO properties; they accept both `string` and `NonEmptyString`. Keep the BCL `[MaxLength]` only on plain `string?` / `string` properties.
+`NonEmptyString` exposes a `Count` property, so the BCL `[MaxLength(N)]` attribute applies to `NonEmptyString` properties without a custom shim. `Email` self-validates the address format and caps length at the RFC 5321 deliverable limit (254 chars), so `[MaxLength]` / `[EmailAddress]` should not be layered on top.
 
-Anything in a `StrongTypesExtensions/` folder is a candidate to upstream into the `Kalicz.StrongTypes` package family — the BCL types extension (`Kalandra.Infrastructure/StrongTypesExtensions/MailAddressExtensions.cs`), the ASP.NET model binder, and the data-annotation attributes are kept in those folders so the migration target is obvious when the package grows the corresponding surface.
+Swashbuckle is taught about the wrapper shapes via `options.AddStrongTypes()` inside `AddSwaggerGen(...)` (from `Kalicz.StrongTypes.OpenApi.Swashbuckle`). Without that call, Swagger renders the wrappers as opaque object schemas instead of the underlying primitives.
 
-`NonEmptyString` has an implicit conversion to `string`, so a domain record holding one deserializes to (and serializes from) the same JSON string and passes anywhere a `string` is accepted. Reach for `.ToNonEmpty()` / `.AsNonEmpty()` only when crossing from a loose primitive string you don't control (e.g. `IFormFile.FileName`) into domain code.
+`NonEmptyString` has an implicit conversion to `string`, so a domain record holding one deserializes to (and serializes from) the same JSON string and passes anywhere a `string` is accepted. `Email` exposes `.Address` for the wire string and `.Value` for a `System.Net.Mail.MailAddress`. Reach for `.ToNonEmpty()` / `.AsNonEmpty()` only when crossing from a loose primitive string you don't control (e.g. `IFormFile.FileName`) into domain code.
 
 ## Named arguments
 

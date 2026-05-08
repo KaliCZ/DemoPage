@@ -6,6 +6,7 @@ using Kalandra.Api.IntegrationTests.Helpers;
 using JasperFx.Events;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
+using StrongTypes;
 
 namespace Kalandra.Api.IntegrationTests.Features.JobOffers;
 
@@ -25,10 +26,10 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 id: jobOfferId,
                 new JobOfferSubmitted(
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
-                    UserEmail: "owner@test.com".ToNonEmpty(),
+                    UserEmail: Email.Create("owner@test.com"),
                     CompanyName: "Acme Corp".ToNonEmpty(),
                     ContactName: "John Doe".ToNonEmpty(),
-                    ContactEmail: "john@acme.com".ToNonEmpty(),
+                    ContactEmail: Email.Create("john@acme.com"),
                     JobTitle: "Senior Developer".ToNonEmpty(),
                     Description: "Original description".ToNonEmpty(),
                     SalaryRange: null,
@@ -49,7 +50,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         firstWriter.AppendOne(new JobOfferStatusChanged(
             ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -59,10 +60,10 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         secondWriter.AppendOne(new JobOfferEdited(
             EditedByUserId: new Guid("11111111-1111-1111-1111-111111111111"),
-            EditedByEmail: "owner@test.com".ToNonEmpty(),
+            EditedByEmail: Email.Create("owner@test.com"),
             CompanyName: "Acme Corp".ToNonEmpty(),
             ContactName: "John Doe".ToNonEmpty(),
-            ContactEmail: "john@acme.com".ToNonEmpty(),
+            ContactEmail: Email.Create("john@acme.com"),
             JobTitle: "Principal Engineer".ToNonEmpty(),
             Description: "Edited with stale version".ToNonEmpty(),
             SalaryRange: null,
@@ -86,10 +87,10 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 id: jobOfferId,
                 new JobOfferSubmitted(
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
-                    UserEmail: "owner@test.com".ToNonEmpty(),
+                    UserEmail: Email.Create("owner@test.com"),
                     CompanyName: "Acme Corp".ToNonEmpty(),
                     ContactName: "John Doe".ToNonEmpty(),
-                    ContactEmail: "john@acme.com".ToNonEmpty(),
+                    ContactEmail: Email.Create("john@acme.com"),
                     JobTitle: "Senior Developer".ToNonEmpty(),
                     Description: "Original description".ToNonEmpty(),
                     SalaryRange: null,
@@ -115,7 +116,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
                 new JobOfferCommentAdded(
                     CommentId: Guid.NewGuid(),
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
-                    UserEmail: "owner@test.com".ToNonEmpty(),
+                    UserEmail: Email.Create("owner@test.com"),
                     UserName: "Owner".ToNonEmpty(),
                     Content: "Any updates?".ToNonEmpty(),
                     Timestamp: DateTimeOffset.UtcNow));
@@ -125,7 +126,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
         // The writer's save should succeed — comment didn't touch the job offer stream
         writer.AppendOne(new JobOfferStatusChanged(
             ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            ChangedByEmail: "admin@test.com".ToNonEmpty(),
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,

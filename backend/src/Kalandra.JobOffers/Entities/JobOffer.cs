@@ -1,5 +1,6 @@
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Events;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Entities;
 
@@ -19,11 +20,11 @@ public class JobOffer
     // These are populated by Apply(JobOfferSubmitted) before any read.
     // Marten rehydrates via the parameterless constructor and replays events;
     // a partially-constructed JobOffer is never observed outside that window.
-    public NonEmptyString UserEmail { get; set; } = null!;
+    public Email UserEmail { get; set; } = null!;
 
     public NonEmptyString CompanyName { get; set; } = null!;
     public NonEmptyString ContactName { get; set; } = null!;
-    public NonEmptyString ContactEmail { get; set; } = null!;
+    public Email ContactEmail { get; set; } = null!;
     public NonEmptyString JobTitle { get; set; } = null!;
     public NonEmptyString Description { get; set; } = null!;
     public string? SalaryRange { get; set; }
@@ -40,7 +41,7 @@ public class JobOffer
         CurrentUser user,
         NonEmptyString? companyName,
         NonEmptyString? contactName,
-        NonEmptyString? contactEmail,
+        Email? contactEmail,
         NonEmptyString? jobTitle,
         NonEmptyString? description,
         string? salaryRange,
@@ -64,7 +65,7 @@ public class JobOffer
         // treat it as "leave this field alone" rather than "set it to null".
         return new JobOfferEdited(
             EditedByUserId: user.Id,
-            EditedByEmail: user.EmailAddress,
+            EditedByEmail: user.Email,
             CompanyName: companyName is not null && companyName != CompanyName ? companyName : null,
             ContactName: contactName is not null && contactName != ContactName ? contactName : null,
             ContactEmail: contactEmail is not null && contactEmail != ContactEmail ? contactEmail : null,
@@ -90,7 +91,7 @@ public class JobOffer
 
         return new JobOfferCancelled(
             CancelledByUserId: user.Id,
-            CancelledByEmail: user.EmailAddress,
+            CancelledByEmail: user.Email,
             Reason: reason,
             Timestamp: timestamp);
     }
@@ -106,7 +107,7 @@ public class JobOffer
 
         return new JobOfferStatusChanged(
             ChangedByUserId: user.Id,
-            ChangedByEmail: user.EmailAddress,
+            ChangedByEmail: user.Email,
             OldStatus: Status,
             NewStatus: newStatus,
             Notes: notes,
@@ -143,7 +144,7 @@ public class JobOffer
         // Null means "not edited" — preserve the current value for that field.
         if (e.CompanyName != null) CompanyName = e.CompanyName;
         if (e.ContactName != null) ContactName = e.ContactName;
-        if (e.ContactEmail != null) ContactEmail = e.ContactEmail;
+        if (e.ContactEmail is { } contactEmail) ContactEmail = contactEmail;
         if (e.JobTitle != null) JobTitle = e.JobTitle;
         if (e.Description != null) Description = e.Description;
         if (e.SalaryRange != null) SalaryRange = e.SalaryRange;

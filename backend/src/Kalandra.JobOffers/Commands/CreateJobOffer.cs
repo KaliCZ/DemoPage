@@ -18,7 +18,7 @@ public record CreateJobOfferCommand(
     CurrentUser User,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
-    NonEmptyString ContactEmail,
+    Email ContactEmail,
     NonEmptyString JobTitle,
     NonEmptyString Description,
     string? SalaryRange,
@@ -83,7 +83,7 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         // Create event
         var submitted = new JobOfferSubmitted(
             UserId: command.User.Id,
-            UserEmail: command.User.EmailAddress,
+            UserEmail: command.User.Email,
             CompanyName: command.CompanyName,
             ContactName: command.ContactName,
             ContactEmail: command.ContactEmail,

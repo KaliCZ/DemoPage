@@ -1,11 +1,12 @@
 using Kalandra.JobOffers.Events;
+using StrongTypes;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
 public record CommentResponse(
     Guid Id,
     Guid UserId,
-    NonEmptyString UserEmail,
+    Email UserEmail,
     NonEmptyString UserName,
     NonEmptyString Content,
     DateTimeOffset CreatedAt)

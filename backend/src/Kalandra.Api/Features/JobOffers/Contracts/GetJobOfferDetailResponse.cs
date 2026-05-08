@@ -1,4 +1,5 @@
 using Kalandra.JobOffers.Entities;
+using StrongTypes;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
@@ -6,7 +7,7 @@ public record GetJobOfferDetailResponse(
     Guid Id,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
-    NonEmptyString ContactEmail,
+    Email ContactEmail,
     NonEmptyString JobTitle,
     NonEmptyString Description,
     string? SalaryRange,
@@ -15,7 +16,7 @@ public record GetJobOfferDetailResponse(
     string? AdditionalNotes,
     IReadOnlyList<AttachmentInfo> Attachments,
     JobOfferStatus Status,
-    NonEmptyString UserEmail,
+    Email UserEmail,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt)
 {

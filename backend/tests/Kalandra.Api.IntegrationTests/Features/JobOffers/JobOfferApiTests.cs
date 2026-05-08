@@ -72,7 +72,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [InlineData("CompanyName", 200)]
     [InlineData("ContactName", 200)]
     [InlineData("JobTitle", 200)]
-    [InlineData("ContactEmail", 255)] // value still has to look like an email; we exceed by lengthening the local-part
+    [InlineData("ContactEmail", 254)] // Email caps at RFC 5321's 254 chars; value still has to look like an email, we exceed by lengthening the local-part
     [InlineData("Description", 5000)]
     [InlineData("SalaryRange", 100)]
     [InlineData("Location", 200)]
@@ -131,7 +131,9 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             Ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        AssertValidationFieldError(await ParseJsonAsync(response), "ContactEmail");
+        // Email's [JsonConverter] rejects bad formats at deserialization time, so
+        // ASP.NET surfaces the failure under the JSON path key — not the property name.
+        AssertValidationFieldError(await ParseJsonAsync(response), "$.contactEmail");
     }
 
     [Fact]

@@ -86,7 +86,7 @@ Events are `record`s with only immutable data:
 ```csharp
 public record JobOfferSubmitted(
     Guid UserId,
-    NonEmptyString UserEmail,
+    Email UserEmail,
     NonEmptyString CompanyName,
     // ...
     IReadOnlyList<AttachmentInfo> Attachments,

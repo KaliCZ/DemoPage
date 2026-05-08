@@ -1,5 +1,5 @@
-using Kalandra.Api.StrongTypesExtensions;
+using System.ComponentModel.DataAnnotations;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
-public record AddCommentRequest([StringMaxLength(5000)] NonEmptyString Content);
+public record AddCommentRequest([MaxLength(5000)] NonEmptyString Content);

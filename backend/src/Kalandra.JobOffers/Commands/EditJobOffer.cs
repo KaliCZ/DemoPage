@@ -9,7 +9,7 @@ public record EditJobOfferCommand(
     CurrentUser User,
     NonEmptyString? CompanyName,
     NonEmptyString? ContactName,
-    NonEmptyString? ContactEmail,
+    Email? ContactEmail,
     NonEmptyString? JobTitle,
     NonEmptyString? Description,
     string? SalaryRange,

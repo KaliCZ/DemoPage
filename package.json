@@ -21,7 +21,7 @@
     "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
     "test:backend": "dotnet test --verbosity normal",
     "test:frontend": "cd frontend && npm run test:install && npm test",
-    "test:e2e:build": "cd frontend && npm run build",
+    "test:e2e:build": "cd frontend && cross-env PUBLIC_API_URL=http://localhost:5000 npm run build",
     "test:e2e": "npm run dev:db && npm run dev:supabase && npm run test:e2e:build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"wait-on http://localhost:5000/health && serve frontend/dist -l 4321\" \"wait-on http://localhost:5000/health && wait-on http://localhost:4321 && cd frontend && npm run test:e2e\""
   },
   "devDependencies": {
