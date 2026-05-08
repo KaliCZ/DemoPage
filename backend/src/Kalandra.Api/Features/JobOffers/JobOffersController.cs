@@ -58,9 +58,8 @@ public class JobOffersController(
 
         // OpenReadStream() wraps the framework's request buffer — disposed at end of request.
         var files = new List<CreateJobOfferFile>(attachments?.Count ?? 0);
-        for (var i = 0; i < (attachments?.Count ?? 0); i++)
+        foreach (var (i, f) in (attachments ?? []).Index())
         {
-            var f = attachments![i];
             if (f.FileName.AsNonEmpty() is not { } fileName)
             {
                 ModelState.AddModelError($"attachments[{i}].FileName", "FileName must be non-empty.");
