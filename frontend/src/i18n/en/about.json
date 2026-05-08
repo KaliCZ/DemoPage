@@ -1,51 +1,191 @@
 {
   "meta": {
     "title": "About Me | Pavel Kalandra — kalandra.tech",
-    "description": "About Pavel Kalandra — career journey from C# developer to CTO."
+    "description": "About Pavel Kalandra — career journey from C# developer to lead engineer."
   },
   "hero": {
     "name": "Pavel Kalandra",
     "location": "Prague, Czech Republic",
     "subtitle": "Software engineer and engineering leader dedicated to building resilient systems and high-performing teams.",
+    "strongTypesPrefix": "Author of the ",
+    "strongTypesLinkText": "StrongTypes NuGet package",
+    "strongTypesSuffix": ".",
     "githubLabel": "GitHub",
     "githubAriaLabel": "GitHub profile",
     "emailLabel": "pavel@kalandra.tech",
     "emailAriaLabel": "Send email to Pavel",
     "linkedinLabel": "LinkedIn",
-    "linkedinAriaLabel": "LinkedIn profile"
+    "linkedinAriaLabel": "LinkedIn profile",
+    "cvLabel": "CV",
+    "cvAriaLabel": "Download CV (PDF)",
+    "cvTitle": "Download CV — PDF"
   },
-  "manifesto": {
-    "title": "My Manifesto",
-    "subtitle": "Designing systems that don't just work today, but evolve gracefully over time.",
+  "toc": {
+    "title": "On this page",
+    "overview": "Overview",
+    "values": "Values",
+    "skills": "Skills",
+    "personal": "About me",
+    "career": "Career"
+  },
+  "personal": {
+    "title": "About me",
+    "subtitle": "A few things I get up to when I'm away from the keyboard.",
+    "items": [
+      {
+        "icon": "mic-external-on",
+        "color": "primary",
+        "title": "I sing",
+        "description": "Karaoke? I'm in!"
+      },
+      {
+        "icon": "casino",
+        "color": "tertiary",
+        "title": "Games of every kind",
+        "description": "Board games, video games, sport — if it's a game, I want in."
+      },
+      {
+        "icon": "sports-soccer",
+        "color": "primary",
+        "title": "Former footballer",
+        "description": "I used to spend a lot of time doing sports. Now I need to pace myself due to ankle injuries."
+      },
+      {
+        "icon": "stadia-controller",
+        "color": "tertiary",
+        "title": "Esports past",
+        "description": "Competed at a high level in League of Legends and Rocket League."
+      },
+      {
+        "icon": "two-wheeler",
+        "color": "primary",
+        "title": "Two wheels",
+        "description": "I spent some time in motorcycle amateur races. (190cc)"
+      },
+      {
+        "icon": "family-restroom",
+        "color": "tertiary",
+        "title": "Father of two",
+        "description": "Most of my non-work time goes here."
+      }
+    ]
+  },
+  "values": {
+    "title": "My Values",
     "pillars": [
       {
-        "icon": "architecture",
+        "icon": "tune",
         "color": "primary",
-        "title": "Resilient Architecture",
-        "description": "Systems that evolve gracefully as business needs shift."
+        "title": "Focus on your product, save on maintenance",
+        "description": "Every system you ship is a system you keep forever. Build simple when possible, go complex when necessary. Microservices aren't a default — they're either a must-have or overkill."
+      },
+      {
+        "icon": "visibility",
+        "color": "tertiary",
+        "title": "Transparency and honesty",
+        "description": "Hard decisions need full information. What teams don't say openly, they gossip about privately."
+      },
+      {
+        "icon": "handshake",
+        "color": "secondary",
+        "title": "A Teamplayer",
+        "description": "Show up every day with the intent to improve something — code, tests, a teammate's day. Rely on others, and be reliable for others."
       },
       {
         "icon": "groups",
-        "color": "tertiary",
-        "title": "Empowered Teams",
-        "description": "Autonomous cultures where every engineer has ownership and a path to mastery."
-      }
-    ],
-    "accordions": [
-      {
         "color": "primary",
-        "title": "Allow yourself to scale",
-        "content": "Software shouldn't be hard. Every piece of software requires maintenance and learning. If it doesn't make your life easier, build it different. Or don't build it at all. Don't get stuck in maintenance mode. Use your time for building value."
+        "title": "Empowered teams",
+        "description": "Autonomous cultures where every engineer has end-to-end ownership and room to leave a mark.",
+        "paragraphs": [
+          "Align team structure with product structure so engineers own a domain end-to-end, not just the backlog. Accountability and responsibility go hand in hand. That's empowerment.",
+          "Give the team a clear vision, budget time for bugs and escalations, and leave 10–20% unbooked so engineers can chase their own ideas. Solving problems is fun; being a coding monkey with no say isn't."
+        ]
+      }
+    ]
+  },
+  "skills": {
+    "label": "Toolbox",
+    "title": "Skills",
+    "subtitle": "A decade of hands-on engineering across the stack, plus the leadership instincts to scale teams and systems together.",
+    "categories": [
+      {
+        "icon": "code",
+        "color": "primary",
+        "label": "Languages & Frameworks",
+        "items": [
+          "C# / .NET (ASP.NET Core, EF Core, WPF)",
+          "JavaScript / TypeScript (Vue.js / Astro)",
+          "Go",
+          "Tailwind / Bootstrap",
+          "HTML / CSS"
+        ]
       },
       {
+        "icon": "database",
         "color": "tertiary",
-        "title": "Be happy about your work",
-        "content": "Most engineers do this job because they love building. Give them some free time and just watch how they make your software grow. Motivating engineers shouldn't be difficult."
+        "label": "Data & Storage",
+        "items": [
+          "SQL (MSSQL, PostgreSQL)",
+          "NoSQL (Azure Table Storage, Cosmos DB)",
+          "Key-value & cache (Redis, Cloudflare KV)",
+          "File Storage (Azure Blob, AWS S3, Supabase Storage)",
+          "Zero-downtime schema changes during deploy"
+        ]
       },
       {
+        "icon": "hub",
+        "color": "primary",
+        "label": "Architecture & Engineering",
+        "items": [
+          "System Architecture",
+          "Microservices & distributed systems",
+          "Modular monolith decomposition",
+          "Messaging & workflows (Azure Service Bus, RabbitMQ, Kafka, Temporal)",
+          "Performance optimization",
+          "REST / GraphQL / gRPC"
+        ]
+      },
+      {
+        "icon": "cloud",
         "color": "secondary",
-        "title": "Focus on DX",
-        "content": "By applying the two points above, you get a simple implication. Fix what's bothering the engineers and they will make your product better in return. Everybody wins. Everybody's happy."
+        "label": "Cloud & Infrastructure",
+        "description": "Comfortable owning the full production stack — from registering a domain to live dashboards.",
+        "items": [
+          "Cloud platforms (Microsoft Azure, AWS, Cloudflare, Supabase)",
+          "Serverless (Azure Functions, Cloudflare Workers)",
+          "Containers & orchestration (Docker, Kubernetes)",
+          "DNS, CDN & email (Cloudflare, Brevo, SendGrid)"
+        ]
+      },
+      {
+        "icon": "rocket-launch",
+        "color": "tertiary",
+        "label": "DevOps & Quality",
+        "items": [
+          "CI/CD pipelines (GitHub Actions, Azure DevOps Pipelines)",
+          "E2E testing (Playwright)",
+          "Observability, OTEL & incident management (Sentry, BetterStack, Datadog, New Relic, PagerDuty)",
+          "Zero-downtime deploys"
+        ]
+      },
+      {
+        "icon": "lightbulb",
+        "color": "secondary",
+        "label": "Product Mindset",
+        "items": [
+          {
+            "title": "Continuous discovery",
+            "description": "Analytics, support tickets, dogfooding and regular contact with users."
+          },
+          {
+            "title": "The \"why\" behind the \"what\"",
+            "description": "Interrogating feature requests for the underlying job-to-be-done."
+          },
+          {
+            "title": "User disengagement",
+            "description": "The best UX is the one the user never has to open. Surface anomalies, free the human."
+          }
+        ]
       }
     ]
   },
@@ -56,23 +196,23 @@
       {
         "side": "right",
         "date": "Jun 2025 — Present",
-        "role": "CTO",
+        "role": "Lead Engineer (CTO)",
         "company": "tickadoo",
-        "description": "Responsible for overall system architecture, feature design and ways of working."
+        "description": "A hands-on role leading a single-pizza team building an app for selling tickets from third-party providers.\n\nOwning the overall system architecture, feature design, backlog prioritization and engineering ways of working — while still shipping production code every day."
       },
       {
         "side": "left",
         "date": "Feb 2025 — Aug 2025",
         "role": "Staff Software Engineer",
         "company": "Outreach",
-        "description": "Didn't stay long, left for a great opportunity as CTO at tickadoo."
+        "description": "Didn't stay long, left for a great opportunity as Lead Engineer at tickadoo."
       },
       {
         "side": "right",
         "date": "Apr 2024 — Jan 2025",
         "role": "Tribe Lead",
         "company": "Rossum",
-        "description": "Led one-third of engineering, restructuring into product-focused teams and coaching new leaders."
+        "description": "My only hands-off role — middle management. Led roughly one third of engineering — a team of 15.\n\nI ran an initiative to align team structure with product structure so engineers could have end-to-end ownership of their domain. I put principles and processes in place that kept technical quality from being sacrificed under tight deadlines. I built a transparent roadmap to manage stakeholder delivery expectations and discuss staffing requirements. I hired and coached new leaders."
       },
       {
         "side": "left",
@@ -103,7 +243,7 @@
         "date": "Apr 2016 — Feb 2018",
         "role": "Software Developer",
         "company": "ZENTITY a.s.",
-        "description": "Managed ASP.NET web application; later migrated from SQL reporting to custom d3.js/Vue.js reporting."
+        "description": "Owned an ASP.NET web application end-to-end, including the Azure infrastructure it ran on — Azure SQL, Azure Table Storage, and Azure Active Directory. Replaced the legacy SSRS reports with an interactive Vue.js frontend that pulled data from a dedicated API and rendered responsive d3.js charts, complete with a sidebar filter so users could slice the data themselves."
       },
       {
         "side": "left",

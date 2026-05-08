@@ -11,22 +11,17 @@
   "cards": {
     "about": {
       "title": "About Me",
-      "description": "What drives me as an engineer.",
+      "description": [
+        "What drives me as an engineer — and a few things about me beyond the keyboard.",
+        "The tech stack I work with, the career path that got me here, and a glimpse of life outside the IDE."
+      ],
       "cta": "Read more"
-    },
-    "project": {
-      "title": "Project",
-      "description": "From a simple page to advanced features. Follow the roadmap.",
-      "cta": "View roadmap"
     }
   },
   "whatsHere": {
     "title": "What is this page?",
     "siteName": "kalandra.tech",
-    "paragraph1": " is my personal website, but it's also an experiment. I'm building it transparently — every version, every architectural decision, every deployment is public.",
-    "paragraph2prefix": "More projects are coming in the future. For now, the only project here is ",
-    "paragraph2link": "the meta-project of building this very site",
-    "paragraph2suffix": ". Stay tuned."
+    "paragraph1": " is my personal website, but it's also an experiment. I'm building it transparently — every version, every architectural decision, every deployment is public."
   },
   "qrCode": {
     "label": "Click to share",

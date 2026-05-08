@@ -1,0 +1,55 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import enStrings from "../../i18n/en/projects.json";
+import csStrings from "../../i18n/cs/projects.json";
+
+const translations = { en: enStrings, cs: csStrings };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="projects" lang={lang}>
+  <section class="max-w-7xl mx-auto px-4 md:px-8">
+    <!-- Hero -->
+    <div class="mb-12 md:mb-16 max-w-3xl">
+      <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-[1.1] text-on-surface">
+        {t.hero.title}
+      </h1>
+      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">
+        {t.hero.subtitle}
+      </p>
+    </div>
+
+    <!-- Project cards. Same component as the home page so the visual vocabulary stays
+         consistent; this page exists as a category landing so the nav's "Projects" link
+         has somewhere meaningful to point, and so each project gets a richer (multi-
+         paragraph) description than the home page can afford. -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mb-24">
+      <ProjectCard
+        href={localePath(lang, "project")}
+        icon="rocket-launch"
+        accent="tertiary"
+        title={t.items.thisSite.title}
+        description={t.items.thisSite.description}
+        cta={t.items.thisSite.cta}
+      />
+      <ProjectCard
+        href={localePath(lang, "strong-types")}
+        icon="package-2"
+        accent="primary"
+        title={t.items.strongTypes.title}
+        description={t.items.strongTypes.description}
+        cta={t.items.strongTypes.cta}
+      />
+    </div>
+  </section>
+</Layout>

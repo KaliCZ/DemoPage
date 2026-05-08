@@ -106,7 +106,9 @@
     "pipelineDeployBackend": "BE deploy na VPS",
     "pipelineDeployFrontend": "FE deploy na Cloudflare",
     "notifications": "NOTIFIKACE",
-    "observability": "OBSERVABILITA"
+    "observability": "OBSERVABILITA",
+    "downloadPng": "Stáhnout PNG",
+    "downloadAriaLabel": "Stáhnout diagram architektury jako PNG"
   },
   "decisions": {
     "title": "Architektonická rozhodnutí",

@@ -106,6 +106,11 @@ test.describe("Hire Me Flow", () => {
     // 6. Submit the form — redirects to /job-offers#<offerId> on success
     await page.click("#submit-btn");
 
+    // The incomplete-submission confirmation appears because no attachment
+    // was provided; confirm to proceed.
+    await expect(page.locator("#confirm-incomplete-dialog")).toBeVisible();
+    await page.click("#confirm-incomplete-confirm");
+
     // 6. Verify redirect to job-offers page (allow extra time for API call)
     await expect(page).toHaveURL(/\/job-offers/, { timeout: 15000 });
 
@@ -169,8 +174,12 @@ test.describe("Hire Me Flow", () => {
         input.value = "test-token";
       });
 
-      // Submit — redirects to /job-offers#<offerId> on success
+      // Submit — redirects to /job-offers#<offerId> on success. The
+      // incomplete-submission confirmation appears because optional fields
+      // (salary, location, notes) were left blank; confirm to proceed.
       await page.click("#submit-btn");
+      await expect(page.locator("#confirm-incomplete-dialog")).toBeVisible();
+      await page.click("#confirm-incomplete-confirm");
       await expect(page).toHaveURL(/\/job-offers/, { timeout: 15000 });
 
       // 5. Get the access token to fetch the offer detail via API

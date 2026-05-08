@@ -16,7 +16,9 @@ interface Props {
   activePage:
     | "home"
     | "about"
+    | "projects"
     | "project"
+    | "strong-types"
     | "hire-me"
     | "job-offers"
     | "admin/job-offers"
@@ -103,11 +105,40 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <BetterStack />
 
+    {
+      /* Per-page head injection. Pages can add <link>/<meta>/<script> tags
+        that need to be in <head> (e.g. preconnect to per-page third-party
+        origins) by passing them with `slot="head"`. */
+    }
+    <slot name="head" />
+
     <script is:inline>
       (function () {
         var theme = localStorage.getItem("theme");
         if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
+          // Pre-paint swap of theme-aware images. As the body parses, swap
+          // any `[data-src-dark]` <img> to its dark variant before the
+          // browser paints the light one. MutationObserver callbacks fire
+          // as microtasks before the next paint, so the dark URL is what
+          // the preload-scanner and renderer see.
+          var swap = function (img) {
+            if (!img.dataset.srcLight) img.dataset.srcLight = img.getAttribute("src") || "";
+            var dark = img.dataset.srcDark;
+            if (dark && img.getAttribute("src") !== dark) img.setAttribute("src", dark);
+          };
+          var obs = new MutationObserver(function () {
+            document.querySelectorAll("img[data-src-dark]").forEach(swap);
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+          document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+              document.querySelectorAll("img[data-src-dark]").forEach(swap);
+              obs.disconnect();
+            },
+            { once: true },
+          );
         }
         // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
         // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
@@ -133,6 +164,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             var meta = u.user_metadata || {};
             window.__authPrefill = {
               name: meta.full_name || (u.email ? u.email.split("@")[0] : "User"),
+              email: u.email || "",
               avatar: meta.avatar_url || "",
               isAdmin: !!(u.app_metadata && Array.isArray(u.app_metadata.roles) && u.app_metadata.roles.indexOf("admin") !== -1),
             };
@@ -266,6 +298,13 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       function updateAuthUI(user: any) {
         identifyUser(user);
 
+        // The pre-paint script set `auth-known-in/out` so the right header
+        // chip and `signed-in-only` / `signed-out-only` page sections paint
+        // immediately. Once we have a real session result, JS owns visibility
+        // and those CSS hooks must be removed — otherwise the !important
+        // rules they declare keep showing the old state when we sign in/out.
+        document.documentElement.classList.remove("auth-known-in", "auth-known-out");
+
         const signInDesktop = document.getElementById("auth-sign-in-desktop");
         const profileDesktop = document.getElementById("auth-profile-desktop");
         const avatarDesktop = document.getElementById("auth-avatar-desktop") as HTMLImageElement;
@@ -308,35 +347,46 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         }
       }
 
-      // Wire up click handlers immediately — no need to wait for supabase
+      // Wire up click handlers immediately — no need to wait for supabase.
+      // Sign-in just opens the dialog; sign-out awaits the supabase client
+      // so the listener is on the button before the deferred init fires.
       const openDialog = () => (window as any).__openAuthDialog?.();
       document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
       document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
+      document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) return;
+        await supabase.auth.signOut();
+        updateAuthUI(null);
+      });
 
-      // Lazy-load supabase client — the inline <head> script already handles
-      // pre-paint auth UI from localStorage, so this can load in the background.
-      // Expose the promise so E2E tests and other scripts can await it.
-      (window as any).__supabaseReady = getSupabaseClient().then((supabase) => {
-        if (!supabase) return null;
+      // Defer supabase init until after window.load so the chunk fetch
+      // doesn't compete with LCP-critical resources. The pre-paint script
+      // already provides auth UI state from localStorage. __supabaseReady
+      // is exposed synchronously so callers can `await` it.
+      const initSupabase = () =>
+        getSupabaseClient().then((supabase) => {
+          if (!supabase) return null;
 
-        document.getElementById("auth-sign-out-desktop")?.addEventListener("click", async () => {
-          await supabase.auth.signOut();
-          updateAuthUI(null);
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            updateAuthUI(session?.user ?? null);
+          });
+
+          supabase.auth.onAuthStateChange((_event, session) => {
+            updateAuthUI(session?.user ?? null);
+          });
+
+          (window as any).__supabase = supabase;
+          return supabase;
         });
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          updateAuthUI(session?.user ?? null);
-          // Hand visibility control back to JS now that the real session is known.
-          document.documentElement.classList.remove("auth-known-in", "auth-known-out");
-        });
-
-        supabase.auth.onAuthStateChange((_event, session) => {
-          updateAuthUI(session?.user ?? null);
-        });
-
-        // Expose globals for other pages and E2E tests
-        (window as any).__supabase = supabase;
-        return supabase;
+      (window as any).__supabaseReady = new Promise<any>((resolve) => {
+        const start = () => resolve(initSupabase());
+        if (document.readyState === "complete") {
+          setTimeout(start, 0);
+        } else {
+          window.addEventListener("load", () => setTimeout(start, 0), { once: true });
+        }
       });
 
       (window as any).__getAccessToken = async () => {

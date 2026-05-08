@@ -16,6 +16,8 @@
     "dev:stop": "cd backend && docker compose down && supabase stop",
     "dev:wipe": "cd backend && docker compose down -v && supabase stop --no-backup",
     "build:frontend": "cd frontend && npm run build",
+    "format": "cd frontend && npm run format",
+    "format:check": "cd frontend && npm run format:check",
     "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
     "test:backend": "dotnet test --verbosity normal",
     "test:frontend": "cd frontend && npm run test:install && npm test",
@@ -26,7 +28,7 @@
     "concurrently": "^9.1.0",
     "cross-env": "^10.1.0",
     "serve": "^14.2.6",
-    "supabase": "^2.93.0",
+    "supabase": "^2.98.2",
     "wait-on": "^9.0.5"
   }
 }

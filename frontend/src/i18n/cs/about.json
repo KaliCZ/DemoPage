@@ -1,51 +1,191 @@
 {
   "meta": {
     "title": "O mně | Pavel Kalandra — kalandra.tech",
-    "description": "O Pavlu Kalandrovi — kariérní cesta od C# vývojáře po CTO."
+    "description": "O Pavlu Kalandrovi — kariérní cesta od C# vývojáře po lead engineera."
   },
   "hero": {
     "name": "Pavel Kalandra",
     "location": "Praha, Česká republika",
     "subtitle": "Softwarový inženýr a technický lídr zaměřený na budování odolných systémů a silných týmů.",
+    "strongTypesPrefix": "Autor ",
+    "strongTypesLinkText": "NuGet balíčku StrongTypes",
+    "strongTypesSuffix": ".",
     "githubLabel": "GitHub",
     "githubAriaLabel": "GitHub profil",
     "emailLabel": "pavel@kalandra.tech",
     "emailAriaLabel": "Poslat e-mail Pavlovi",
     "linkedinLabel": "LinkedIn",
-    "linkedinAriaLabel": "LinkedIn profil"
+    "linkedinAriaLabel": "LinkedIn profil",
+    "cvLabel": "Životopis",
+    "cvAriaLabel": "Stáhnout životopis (PDF)",
+    "cvTitle": "Stáhnout životopis — PDF"
   },
-  "manifesto": {
-    "title": "Můj manifest",
-    "subtitle": "Navrhuji systémy, které nejen fungují dnes, ale elegantně se vyvíjejí v čase.",
+  "toc": {
+    "title": "Na této stránce",
+    "overview": "Přehled",
+    "values": "Hodnoty",
+    "skills": "Dovednosti",
+    "personal": "O mně",
+    "career": "Kariéra"
+  },
+  "personal": {
+    "title": "O mně",
+    "subtitle": "Pár věcí, kterým se věnuju, když nejsem u klávesnice.",
+    "items": [
+      {
+        "icon": "mic-external-on",
+        "color": "primary",
+        "title": "Zpívám",
+        "description": "Karaoke? Jdu do toho!"
+      },
+      {
+        "icon": "casino",
+        "color": "tertiary",
+        "title": "Hry všeho druhu",
+        "description": "Deskové, počítačové, sportovní — když je to hra, jsem v ní."
+      },
+      {
+        "icon": "sports-soccer",
+        "color": "primary",
+        "title": "Bývalý fotbalista",
+        "description": "Dřív jsem hodně sportoval. Teď to musím dávkovat kvůli zraněním kotníků."
+      },
+      {
+        "icon": "stadia-controller",
+        "color": "tertiary",
+        "title": "Esportová minulost",
+        "description": "Hrál jsem League of Legends a Rocket League na vysoké úrovni."
+      },
+      {
+        "icon": "two-wheeler",
+        "color": "primary",
+        "title": "Motorky",
+        "description": "Nějaký čas jsem se věnoval amatérským motocyklovým závodům. (190 ccm)"
+      },
+      {
+        "icon": "family-restroom",
+        "color": "tertiary",
+        "title": "Otec dvou dětí",
+        "description": "Sem směřuje většina mého času mimo práci."
+      }
+    ]
+  },
+  "values": {
+    "title": "Moje hodnoty",
     "pillars": [
       {
-        "icon": "architecture",
+        "icon": "tune",
         "color": "primary",
-        "title": "Odolná architektura",
-        "description": "Systémy, které se elegantně přizpůsobují měnícím se potřebám byznysu."
+        "title": "Soustřeď se na produkt, ušetříš na údržbě",
+        "description": "Každý systém, který nasadíš, si necháš navždy. Stavěj jednoduše, když to jde, a komplexně, když to musí být. Microservices nejsou výchozí volba — buď jsou nutnost, nebo overkill."
+      },
+      {
+        "icon": "visibility",
+        "color": "tertiary",
+        "title": "Transparentnost a upřímnost",
+        "description": "Těžká rozhodnutí potřebují kompletní informace. To, co se v týmu neřekne nahlas, se pomlouvá v zákulisí."
+      },
+      {
+        "icon": "handshake",
+        "color": "secondary",
+        "title": "Týmový hráč",
+        "description": "Přijď každý den s úmyslem něco zlepšit — kód, testy, kolegův den. Spolehni se na ostatní a buď spolehlivý pro ně."
       },
       {
         "icon": "groups",
-        "color": "tertiary",
-        "title": "Autonomní týmy",
-        "description": "Kultura, kde každý inženýr cítí zodpovědnost za svou práci a má prostor růst."
-      }
-    ],
-    "accordions": [
-      {
         "color": "primary",
-        "title": "Umožněte si škálovat",
-        "content": "Software by neměl být složitý. Každý kus softwaru vyžaduje údržbu a učení. Pokud vám neusnadňuje život, postavte ho jinak. Nebo ho nestavte vůbec. Nezasekněte se v režimu opravování. Využijte čas na tvorbu hodnoty."
+        "title": "Autonomní týmy",
+        "description": "Kultura, kde každý inženýr vlastní svou doménu end-to-end a má prostor zanechat stopu.",
+        "paragraphs": [
+          "Slaď strukturu týmů se strukturou produktu, aby inženýři vlastnili doménu end-to-end, ne jen backlog. Zodpovědnost a vlastnictví jdou ruku v ruce. To je opravdový empowerment.",
+          "Dej týmu jasnou vizi, vyhraď čas na bugy a eskalace a 10–20 % času nech volných, aby si inženýři mohli zkoušet vlastní nápady. Řešit problémy je zábava; být kódící opicí bez slova ne."
+        ]
+      }
+    ]
+  },
+  "skills": {
+    "label": "Nástroje",
+    "title": "Dovednosti",
+    "subtitle": "Deset let praktického inženýrství napříč celým stackem a vedení, které dokáže škálovat týmy i systémy zároveň.",
+    "categories": [
+      {
+        "icon": "code",
+        "color": "primary",
+        "label": "Jazyky a frameworky",
+        "items": [
+          "C# / .NET (ASP.NET Core, EF Core, WPF)",
+          "JavaScript / TypeScript (Vue.js / Astro)",
+          "Go",
+          "Tailwind / Bootstrap",
+          "HTML / CSS"
+        ]
       },
       {
+        "icon": "database",
         "color": "tertiary",
-        "title": "Buďte šťastní ze své práce",
-        "content": "Většina inženýrů dělá tuto práci, protože milují tvorbu. Dejte jim trochu volnosti a sledujte, jak váš software roste. Motivovat inženýry by nemělo být těžké."
+        "label": "Data a úložiště",
+        "items": [
+          "SQL (MSSQL, PostgreSQL)",
+          "NoSQL (Azure Table Storage, Cosmos DB)",
+          "Key-value a cache (Redis, Cloudflare KV)",
+          "File Storage (Azure Blob, AWS S3, Supabase Storage)",
+          "Změny schématu při deployi bez výpadku"
+        ]
       },
       {
+        "icon": "hub",
+        "color": "primary",
+        "label": "Architektura a inženýrství",
+        "items": [
+          "Architektura systémů",
+          "Mikroslužby a distribuované systémy",
+          "Dekompozice modulárního monolitu",
+          "Messaging a workflows (Azure Service Bus, RabbitMQ, Kafka, Temporal)",
+          "Optimalizace výkonu",
+          "REST / GraphQL / gRPC"
+        ]
+      },
+      {
+        "icon": "cloud",
         "color": "secondary",
-        "title": "Zaměřte se na DX",
-        "content": "Spojením těch dvou bodů dostanete jednoduchý závěr. Opravte to, co inženýry trápí, a oni vám na oplátku vylepší produkt. Všichni vyhrávají. Všichni jsou spokojení."
+        "label": "Cloud a infrastruktura",
+        "description": "Komfortně vlastním celý produkční stack — od registrace domény až po živé dashboardy.",
+        "items": [
+          "Cloud platformy (Microsoft Azure, AWS, Cloudflare, Supabase)",
+          "Serverless (Azure Functions, Cloudflare Workers)",
+          "Kontejnery a orchestrace (Docker, Kubernetes)",
+          "DNS, CDN a e-maily (Cloudflare, Brevo, SendGrid)"
+        ]
+      },
+      {
+        "icon": "rocket-launch",
+        "color": "tertiary",
+        "label": "DevOps a kvalita",
+        "items": [
+          "CI/CD pipeliny (GitHub Actions, Azure DevOps Pipelines)",
+          "E2E testování (Playwright)",
+          "Observability, OTEL a incident management (Sentry, BetterStack, Datadog, New Relic, PagerDuty)",
+          "Bezvýpadkové nasazení"
+        ]
+      },
+      {
+        "icon": "lightbulb",
+        "color": "secondary",
+        "label": "Produktové myšlení",
+        "items": [
+          {
+            "title": "Kontinuální discovery",
+            "description": "Analytika, support tickety, dogfooding a pravidelný kontakt s uživateli."
+          },
+          {
+            "title": "„Proč“ za „co“",
+            "description": "Zkoumat, jaký skutečný úkol za požadavkem stojí, ne jen postavit, co bylo vysloveno."
+          },
+          {
+            "title": "User disengagement",
+            "description": "Nejlepší UX je takové, které uživatel nikdy nemusí otevřít. Vynést anomálie na povrch a uvolnit člověka."
+          }
+        ]
       }
     ]
   },
@@ -56,23 +196,23 @@
       {
         "side": "right",
         "date": "Čer 2025 — Současnost",
-        "role": "CTO",
+        "role": "Lead Engineer (CTO)",
         "company": "tickadoo",
-        "description": "Zodpovědný za celkovou architekturu systému, návrh featur a způsoby práce."
+        "description": "Hands-on role vedoucí single-pizza tým, který staví aplikaci pro prodej vstupenek od externích poskytovatelů.\n\nZodpovídám za celkovou architekturu systému, návrh featur, prioritizaci backlogu a způsoby práce — a zároveň každý den píšu produkční kód."
       },
       {
         "side": "left",
         "date": "Úno 2025 — Srp 2025",
         "role": "Staff Software Engineer",
         "company": "Outreach",
-        "description": "Moc jsem se neohřál, odešel jsem za skvělou příležitostí jako CTO v tickadoo."
+        "description": "Moc jsem se neohřál, odešel jsem za skvělou příležitostí jako Lead Engineer v tickadoo."
       },
       {
         "side": "right",
         "date": "Dub 2024 — Led 2025",
         "role": "Tribe Lead",
         "company": "Rossum",
-        "description": "Vedl jsem třetinu engineeringu, restrukturalizoval týmy na produktově zaměřené a koučoval nové lídry."
+        "description": "Moje jediná hands-off role — middle management. Vedl jsem zhruba třetinu engineeringu — tým 15 lidí.\n\nVedl jsem iniciativu, která sladila strukturu týmů se strukturou produktu, aby inženýři mohli mít end-to-end vlastnictví své domény. Zavedl jsem principy a procesy, které zajistily, že technická kvalita nepadla za oběť napjatým termínům. Postavil jsem transparentní roadmapu, abych řídil očekávání stakeholderů ohledně dodávek a otevřel diskuzi o personálních potřebách. Najímal a koučoval jsem nové lídry."
       },
       {
         "side": "left",
@@ -103,7 +243,7 @@
         "date": "Dub 2016 — Úno 2018",
         "role": "Software Developer",
         "company": "ZENTITY a.s.",
-        "description": "Správa ASP.NET webové aplikace; později migrace z SQL reportingu na vlastní d3.js/Vue.js reporting."
+        "description": "Vlastnil jsem ASP.NET webovou aplikaci end-to-end, včetně Azure infrastruktury, na které běžela — Azure SQL, Azure Table Storage a Azure Active Directory. Nahradil jsem zastaralé SSRS reporty interaktivním Vue.js frontendem, který tahal data z dedikovaného API a vykresloval responzivní d3.js grafy, doplněné bočním filtrem, díky kterému si uživatelé mohli data sami krájet podle potřeby."
       },
       {
         "side": "left",

@@ -44,8 +44,9 @@ const c = commonTranslations[lang];
     </div>
   </section>
 
-  <!-- Login prompt -->
-  <section id="login-prompt" class="hidden max-w-5xl mx-auto px-8 mb-16">
+  <!-- Login prompt. `signed-out-only` hooks Layout's pre-paint CSS so this
+       is shown immediately for signed-out users, before supabase loads. -->
+  <section id="login-prompt" class="signed-out-only hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
       <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
@@ -64,8 +65,9 @@ const c = commonTranslations[lang];
     </div>
   </section>
 
-  <!-- Offers list -->
-  <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
+  <!-- Offers list. `signed-in-only` keeps it visible for signed-in users
+       during the supabase init delay. -->
+  <section id="offers-list-section" class="signed-in-only hidden max-w-5xl mx-auto px-8 mb-16">
     <!-- Status filter dropdown -->
     <div id="status-filter" class="relative mb-6">
       <button

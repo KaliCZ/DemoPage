@@ -11,22 +11,17 @@
   "cards": {
     "about": {
       "title": "O mně",
-      "description": "Co mě jako inženýra pohání.",
+      "description": [
+        "Co mě jako inženýra žene vpřed — a pár věcí o mně mimo klávesnici.",
+        "Technologie, se kterými pracuji, kariérní cesta, která mě sem dovedla, a pohled na život mimo IDE."
+      ],
       "cta": "Číst dále"
-    },
-    "project": {
-      "title": "Projekt",
-      "description": "Od jednoduché stránky až po pokročilé funkce. Sledujte plán do budoucna.",
-      "cta": "Zobrazit plán"
     }
   },
   "whatsHere": {
     "title": "Co je tato stránka?",
     "siteName": "kalandra.tech",
-    "paragraph1": " je moje osobní webová stránka, a zároveň i experiment. Stavím ji transparentě — každá verze, každé architektonické rozhodnutí, každý deployment je veřejný.",
-    "paragraph2prefix": "Další projekty přibudou časem. Zatím je tu jediný projekt — ",
-    "paragraph2link": "meta-projekt stavby tohoto webu",
-    "paragraph2suffix": ". Sledujte novinky."
+    "paragraph1": " je moje osobní webová stránka, a zároveň i experiment. Stavím ji transparentě — každá verze, každé architektonické rozhodnutí, každý deployment je veřejný."
   },
   "qrCode": {
     "label": "Klikni a sdílej",

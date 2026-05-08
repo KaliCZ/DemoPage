@@ -25,7 +25,7 @@
     "description": "Job Description",
     "descriptionPlaceholder": "Tell me about the role, team, and what makes it exciting...",
     "salaryRange": "Salary Range (optional)",
-    "salaryRangePlaceholder": "e.g. $150k – $200k",
+    "salaryRangePlaceholder": "e.g. $120k – $130k",
     "location": "Location (optional)",
     "locationPlaceholder": "e.g. Prague, CZ",
     "isRemote": "Remote position",
@@ -38,6 +38,18 @@
     "submitting": "Submitting...",
     "successTitle": "Offer Submitted!",
     "successMessage": "Thank you for your interest. I'll review your offer and get back to you via email. You can track its status on the Job Offers page.",
+    "confirmIncomplete": {
+      "title": "Submit with missing details?",
+      "description": "You didn't fill in the following optional information. Do you still want to submit?",
+      "fields": {
+        "salaryRange": "Salary range",
+        "location": "Location",
+        "additionalNotes": "Additional notes",
+        "attachments": "Attachments"
+      },
+      "confirmButton": "Submit anyway",
+      "cancelButton": "Go back"
+    },
     "captchaError": "Please complete the CAPTCHA verification.",
     "captchaRequiredError": "You've submitted several offers recently. Please verify you're human and try again.",
     "errorMessage": "Something went wrong. Please try again.",

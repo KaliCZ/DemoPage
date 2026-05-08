@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "title": "Projects | kalandra.tech",
+    "description": "Pavel Kalandra's software projects — kalandra.tech itself, built in public, and StrongTypes, a C# NuGet package for safer types."
+  },
+  "hero": {
+    "title": "Projects",
+    "subtitle": "What I'm building, in public. Pick one to dive in."
+  },
+  "items": {
+    "thisSite": {
+      "title": "How I built this site",
+      "description": [
+        "kalandra.tech itself — built in public, with every architecture decision, deployment, and lesson learned written down as it happens. The site is the artifact.",
+        "Covers the webpage and its hosting, the API and its hosting, the database with event sourcing, the CI/CD pipeline with E2E tests. And more."
+      ],
+      "cta": "View roadmap"
+    },
+    "strongTypes": {
+      "title": "StrongTypes",
+      "description": [
+        "A C# NuGet package that pushes invariants into the type system: NonEmptyString, NonEmptyEnumerable, validated numerics, Maybe and Result.",
+        "Enable no-code validations enforced by the compiler."
+      ],
+      "cta": "Explore the library"
+    }
+  }
+}

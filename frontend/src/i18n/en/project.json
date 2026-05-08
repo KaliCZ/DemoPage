@@ -106,7 +106,9 @@
     "pipelineDeployBackend": "BE deploy to VPS",
     "pipelineDeployFrontend": "FE deploy to Cloudflare",
     "notifications": "NOTIFICATIONS",
-    "observability": "OBSERVABILITY"
+    "observability": "OBSERVABILITY",
+    "downloadPng": "Download PNG",
+    "downloadAriaLabel": "Download architecture diagram as PNG"
   },
   "decisions": {
     "title": "Architecture Decisions",

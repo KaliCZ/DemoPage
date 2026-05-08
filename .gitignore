@@ -420,3 +420,4 @@ supabase/.temp
 
 # Local scripts
 scripts/
+!frontend/scripts/
