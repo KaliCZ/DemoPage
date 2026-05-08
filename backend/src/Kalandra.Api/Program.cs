@@ -5,6 +5,7 @@ using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OpenApi;
+using StrongTypes.OpenApi.Swashbuckle;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.AddStrongTypes();
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

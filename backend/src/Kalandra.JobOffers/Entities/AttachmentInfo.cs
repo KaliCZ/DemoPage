@@ -1,7 +1,9 @@
+using StrongTypes;
+
 namespace Kalandra.JobOffers.Entities;
 
 public record AttachmentInfo(
-    string FileName,
+    NonEmptyString FileName,
     string StoragePath,
     long FileSize,
-    string ContentType);
+    NonEmptyString ContentType);

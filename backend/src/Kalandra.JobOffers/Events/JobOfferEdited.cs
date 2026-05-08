@@ -1,3 +1,5 @@
+using StrongTypes;
+
 namespace Kalandra.JobOffers.Events;
 
 /// <summary>
@@ -7,12 +9,12 @@ namespace Kalandra.JobOffers.Events;
 /// </summary>
 public record JobOfferEdited(
     Guid EditedByUserId,
-    string EditedByEmail,
-    string? CompanyName,
-    string? ContactName,
-    string? ContactEmail,
-    string? JobTitle,
-    string? Description,
+    Email EditedByEmail,
+    NonEmptyString? CompanyName,
+    NonEmptyString? ContactName,
+    Email? ContactEmail,
+    NonEmptyString? JobTitle,
+    NonEmptyString? Description,
     string? SalaryRange,
     string? Location,
     bool? IsRemote,

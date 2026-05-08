@@ -1,8 +1,10 @@
+using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Commands;
 
@@ -18,7 +20,7 @@ public record CreateJobOfferCommand(
     CurrentUser User,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
-    NonEmptyString ContactEmail,
+    MailAddress ContactEmail,
     NonEmptyString JobTitle,
     NonEmptyString Description,
     string? SalaryRange,
@@ -46,19 +48,18 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         "image/webp",
     };
 
-    public async Task<Try<Guid, CreateJobOfferError>> HandleAsync(
+    public async Task<Result<Guid, CreateJobOfferError>> HandleAsync(
         CreateJobOfferCommand command, CancellationToken ct)
     {
         // Validate attachments
         if (command.Files.Count > MaxAttachments)
-            return Try.Error<Guid, CreateJobOfferError>(CreateJobOfferError.TooManyAttachments);
+            return CreateJobOfferError.TooManyAttachments;
 
         if (command.Files.Sum(f => f.FileSize) > MaxTotalBytes)
-            return Try.Error<Guid, CreateJobOfferError>(CreateJobOfferError.TotalSizeTooLarge);
+            return CreateJobOfferError.TotalSizeTooLarge;
 
-        var disallowed = command.Files.FirstOrDefault(f => !AllowedContentTypes.Contains(f.ContentType.Value));
-        if (disallowed != null)
-            return Try.Error<Guid, CreateJobOfferError>(CreateJobOfferError.DisallowedContentType);
+        if (command.Files.Any(f => !AllowedContentTypes.Contains(f.ContentType)))
+            return CreateJobOfferError.DisallowedContentType;
 
         // Upload attachments
         var streamId = Guid.NewGuid();
@@ -68,24 +69,28 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         {
             var folderPrefix = $"{command.User.Id}/{streamId}/";
             var items = command.Files
-                .Select(f => new FileUploadItem(f.FileName.Value, f.FileSize, f.ContentType.Value, f.Content))
+                .Select(f => new FileUploadItem(f.FileName, f.FileSize, f.ContentType, f.Content))
                 .ToList();
 
             var uploaded = await storageService.UploadAsync(folderPrefix, items, ct);
             uploadedAttachments = uploaded
-                .Select(f => new AttachmentInfo(f.FileName, f.StoragePath, f.FileSize, f.ContentType))
+                .Select(f => new AttachmentInfo(
+                    FileName: f.FileName,
+                    StoragePath: f.StoragePath,
+                    FileSize: f.FileSize,
+                    ContentType: f.ContentType))
                 .ToList();
         }
 
         // Create event
         var submitted = new JobOfferSubmitted(
             UserId: command.User.Id,
-            UserEmail: command.User.Email.Address,
-            CompanyName: command.CompanyName.Value,
-            ContactName: command.ContactName.Value,
-            ContactEmail: command.ContactEmail.Value,
-            JobTitle: command.JobTitle.Value,
-            Description: command.Description.Value,
+            UserEmail: command.User.Email,
+            CompanyName: command.CompanyName,
+            ContactName: command.ContactName,
+            ContactEmail: command.ContactEmail,
+            JobTitle: command.JobTitle,
+            Description: command.Description,
             SalaryRange: command.SalaryRange,
             Location: command.Location,
             IsRemote: command.IsRemote,
@@ -95,6 +100,6 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
 
         session.Events.StartStream<JobOffer>(streamId, submitted);
         await session.SaveChangesAsync(ct);
-        return Try.Success<Guid, CreateJobOfferError>(streamId);
+        return streamId;
     }
 }

@@ -4,28 +4,14 @@ Language-level rules that apply across all backend projects.
 
 ## Parse, don't validate
 
-Prefer strong types that make invalid states unrepresentable. Use the `Kalicz.StrongTypes` library (`NonEmptyString`, etc.) and BCL types over raw primitives:
+Use `Kalicz.StrongTypes` and BCL types over raw primitives:
 
-- `NonEmptyString` instead of `string` for required text fields.
-- `MailAddress` instead of `string` for emails.
-- `Guid` (or a typed ID) instead of `string` for identifiers.
-- `DateTimeOffset` instead of `string` for timestamps.
+- `NonEmptyString` for required text (use `NonEmptyString?` for PATCH "no change" semantics). Cap length with `[MaxLength(N)]`.
+- `Email` at serialization boundaries (request/response DTOs, events, aggregate state). Self-validates format + 254-char cap — don't layer `[MaxLength]` or `[EmailAddress]` on top.
+- `MailAddress` everywhere else (commands, `CurrentUser`, decision-method parameters). `MailAddress` → `Email` is implicit; `Email.Value` is the `MailAddress`.
+- `Guid` for IDs, `DateTimeOffset` for timestamps.
 
-Parse at the boundary (API layer), then pass the strong type through commands and into the domain. If parsing fails, the error is caught at the edge — the domain never has to check for empty strings or malformed emails.
-
-```csharp
-// Good — parsed at the API boundary, domain receives NonEmptyString
-var command = new CreateJobOfferCommand(
-    CompanyName: request.CompanyName.AsNonEmpty().Get(),
-    ContactEmail: new MailAddress(request.ContactEmail),
-    ...);
-
-// Bad — raw string passed through, domain has to validate
-var command = new CreateJobOfferCommand(
-    CompanyName: request.CompanyName,  // might be empty
-    ContactEmail: request.ContactEmail, // might not be an email
-    ...);
-```
+`.AsNonEmpty()` / `.ToNonEmpty()` only when crossing from a loose primitive string you don't control — config values, JWT claims, `IFormFile.FileName` / `ContentType`. For request-time inputs (multipart files), use `.AsNonEmpty()` and feed nulls into `ModelState` so empty values surface as RFC 7807 400, not as a thrown exception.
 
 ## Named arguments
 
@@ -44,15 +30,16 @@ var (success, error, edited) = offer.Edit(
 var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
 ```
 
-## `Try<TSuccess, TError>` result type
+## `Result<TSuccess, TError>` type
 
-`Try<TSuccess, TError>` is a discriminated-union-like result type from the `Kalicz.StrongTypes` package (available via `global using StrongTypes;`). Use it for handler and entity methods whose "failure" is a business decision, not an exception.
+`Result<TSuccess, TError>` is a discriminated-union-like result type from the `Kalicz.StrongTypes` package (available via `global using StrongTypes;`). Use it for handler and entity methods whose "failure" is a business decision, not an exception.
 
-- `Try.Success<TSuccess, TError>(value)` — successful case.
-- `Try.Error<TSuccess, TError>(error)` — business-logic failure.
-- `result.IsError`, `result.Success.Get()`, `result.Error.Get()` — interrogation.
+- Return the success value directly — the implicit operator wraps it: `return newId;` or `return offer;`.
+- Return the error value directly — the implicit operator wraps it: `return EditJobOfferError.NotAuthorized;`.
+- Unwrap via pattern matching: `if (result.Error is { } error) return Map(error);` then read success as `result.Success!` (`!.Value` for value-type payloads).
+- `result.IsSuccess` / `result.IsError` are available when you don't need the payload.
 
-Exceptions are reserved for truly exceptional conditions (storage failures, DB outages, concurrency conflicts). A user trying to edit someone else's job offer is not an exception — it's a `Try.Error`.
+Exceptions are reserved for truly exceptional conditions (storage failures, DB outages, concurrency conflicts). A user trying to edit someone else's job offer is not an exception — it's a domain error carried by the `Result`.
 
 ## Enum switches: no default branch
 

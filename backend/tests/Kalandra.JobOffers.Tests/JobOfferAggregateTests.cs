@@ -2,6 +2,7 @@ using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Tests;
 
@@ -13,9 +14,9 @@ public class JobOfferAggregateTests
     private static readonly Guid OtherId = new("22222222-2222-2222-2222-222222222222");
     private static readonly Guid AdminId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-    private static readonly CurrentUser Owner = new(OwnerId, new MailAddress("owner@test.com"), "Owner", []);
-    private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), "Other", []);
-    private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), "Admin", [UserRole.Admin]);
+    private static readonly CurrentUser Owner = new(OwnerId, new MailAddress("owner@test.com"), "Owner".ToNonEmpty(), []);
+    private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), "Other".ToNonEmpty(), []);
+    private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), "Admin".ToNonEmpty(), [UserRole.Admin]);
 
     private static JobOffer CreateSubmittedOffer(Guid? userId = null)
     {
@@ -23,12 +24,12 @@ public class JobOfferAggregateTests
         var offer = new JobOffer();
         offer.Apply(new JobOfferSubmitted(
             UserId: id,
-            UserEmail: $"{id}@test.com",
-            CompanyName: "Acme",
-            ContactName: "John",
-            ContactEmail: "john@acme.com",
-            JobTitle: "Dev",
-            Description: "Desc",
+            UserEmail: Email.Create($"{id}@test.com"),
+            CompanyName: "Acme".ToNonEmpty(),
+            ContactName: "John".ToNonEmpty(),
+            ContactEmail: Email.Create("john@acme.com"),
+            JobTitle: "Dev".ToNonEmpty(),
+            Description: "Desc".ToNonEmpty(),
             SalaryRange: null,
             Location: "Prague",
             IsRemote: true,
@@ -46,11 +47,11 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
             user: Owner,
-            companyName: "NewCo",
-            contactName: "Jane",
-            contactEmail: "jane@co.com",
-            jobTitle: "CTO",
-            description: "New desc",
+            companyName: "NewCo".ToNonEmpty(),
+            contactName: "Jane".ToNonEmpty(),
+            contactEmail: new MailAddress("jane@co.com"),
+            jobTitle: "CTO".ToNonEmpty(),
+            description: "New desc".ToNonEmpty(),
             salaryRange: null,
             location: null,
             isRemote: true,
@@ -58,8 +59,8 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsSuccess);
-        var evt = result.Success.Get();
-        Assert.Equal("NewCo", evt.CompanyName);
+        var evt = result.Success!;
+        Assert.Equal("NewCo", evt.CompanyName?.Value);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class JobOfferAggregateTests
             companyName: null,    // no change
             contactName: null,    // no change
             contactEmail: null,   // no change
-            jobTitle: "CTO",      // changed
+            jobTitle: "CTO".ToNonEmpty(),  // changed
             description: null,    // no change
             salaryRange: null,    // no change
             location: null,       // no change
@@ -80,13 +81,13 @@ public class JobOfferAggregateTests
             timestamp: Now.AddHours(1));
 
         Assert.True(result.IsSuccess);
-        var evt = result.Success.Get();
+        var evt = result.Success!;
 
         // Only jobTitle should be emitted as changed
         Assert.Null(evt.CompanyName);
         Assert.Null(evt.ContactName);
         Assert.Null(evt.ContactEmail);
-        Assert.Equal("CTO", evt.JobTitle);
+        Assert.Equal("CTO", evt.JobTitle?.Value);
         Assert.Null(evt.Description);
         Assert.Null(evt.SalaryRange);
         Assert.Null(evt.Location);
@@ -107,11 +108,11 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
             user: Other,
-            companyName: "Co",
-            contactName: "J",
-            contactEmail: "j@co.com",
-            jobTitle: "Dev",
-            description: "Desc",
+            companyName: "Co".ToNonEmpty(),
+            contactName: "J".ToNonEmpty(),
+            contactEmail: new MailAddress("j@co.com"),
+            jobTitle: "Dev".ToNonEmpty(),
+            description: "Desc".ToNonEmpty(),
             salaryRange: null,
             location: null,
             isRemote: false,
@@ -119,7 +120,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsError);
-        Assert.Equal(EditJobOfferError.NotAuthorized, result.Error.Get());
+        Assert.Equal(EditJobOfferError.NotAuthorized, result.Error!);
     }
 
     [Fact]
@@ -128,17 +129,17 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com",
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: null,
             Timestamp: Now));
 
         var result = offer.Edit(
             user: Owner,
-            companyName: "Co",
-            contactName: "J",
-            contactEmail: "j@co.com",
-            jobTitle: "Dev",
-            description: "Desc",
+            companyName: "Co".ToNonEmpty(),
+            contactName: "J".ToNonEmpty(),
+            contactEmail: new MailAddress("j@co.com"),
+            jobTitle: "Dev".ToNonEmpty(),
+            description: "Desc".ToNonEmpty(),
             salaryRange: null,
             location: null,
             isRemote: false,
@@ -146,7 +147,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsError);
-        Assert.Equal(EditJobOfferError.NotSubmittedStatus, result.Error.Get());
+        Assert.Equal(EditJobOfferError.NotSubmittedStatus, result.Error!);
     }
 
     // --- Cancel ---
@@ -169,7 +170,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -186,7 +187,7 @@ public class JobOfferAggregateTests
         var result = offer.Cancel(user: Other, reason: null, timestamp: Now);
 
         Assert.True(result.IsError);
-        Assert.Equal(CancelJobOfferError.NotAuthorized, result.Error.Get());
+        Assert.Equal(CancelJobOfferError.NotAuthorized, result.Error!);
     }
 
     [Fact]
@@ -195,7 +196,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.LetsTalk,
             Notes: null,
@@ -203,7 +204,7 @@ public class JobOfferAggregateTests
 
         var result = offer.Cancel(user: Owner, reason: null, timestamp: Now);
         Assert.True(result.IsError);
-        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get());
+        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error!);
     }
 
     [Fact]
@@ -212,13 +213,13 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com",
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: null,
             Timestamp: Now));
 
         var result = offer.Cancel(user: Owner, reason: null, timestamp: Now);
         Assert.True(result.IsError);
-        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error.Get());
+        Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error!);
     }
 
     // --- ChangeStatus ---
@@ -234,7 +235,7 @@ public class JobOfferAggregateTests
             timestamp: Now);
 
         Assert.True(result.IsSuccess);
-        var evt = result.Success.Get();
+        var evt = result.Success!;
         Assert.Equal(JobOfferStatus.Submitted, evt.OldStatus);
         Assert.Equal(JobOfferStatus.InReview, evt.NewStatus);
     }
@@ -276,7 +277,7 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(
             UpdateJobOfferStatusError.InvalidTransition,
-            result.Error.Get());
+            result.Error!);
     }
 
     [Fact]
@@ -285,7 +286,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -305,7 +306,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: null,
@@ -325,7 +326,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.LetsTalk,
             Notes: null,
@@ -345,7 +346,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.Declined,
             Notes: null,
@@ -365,7 +366,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com",
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: null,
             Timestamp: Now));
 
@@ -390,7 +391,7 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(
             UpdateJobOfferStatusError.InvalidTransition,
-            result.Error.Get());
+            result.Error!);
     }
 
     // --- Apply ---
@@ -402,12 +403,12 @@ public class JobOfferAggregateTests
         var offer = new JobOffer();
         offer.Apply(new JobOfferSubmitted(
             UserId: u1,
-            UserEmail: "u1@test.com",
-            CompanyName: "Co",
-            ContactName: "Name",
-            ContactEmail: "c@co.com",
-            JobTitle: "Dev",
-            Description: "Desc",
+            UserEmail: Email.Create("u1@test.com"),
+            CompanyName: "Co".ToNonEmpty(),
+            ContactName: "Name".ToNonEmpty(),
+            ContactEmail: Email.Create("c@co.com"),
+            JobTitle: "Dev".ToNonEmpty(),
+            Description: "Desc".ToNonEmpty(),
             SalaryRange: "$100k",
             Location: "NYC",
             IsRemote: true,
@@ -427,12 +428,12 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferEdited(
             EditedByUserId: OwnerId,
-            EditedByEmail: "owner@test.com",
-            CompanyName: "NewCo",
-            ContactName: "Jane",
-            ContactEmail: "jane@co.com",
-            JobTitle: "CTO",
-            Description: "New",
+            EditedByEmail: Email.Create("owner@test.com"),
+            CompanyName: "NewCo".ToNonEmpty(),
+            ContactName: "Jane".ToNonEmpty(),
+            ContactEmail: Email.Create("jane@co.com"),
+            JobTitle: "CTO".ToNonEmpty(),
+            Description: "New".ToNonEmpty(),
             SalaryRange: "$200k",
             Location: "Remote",
             IsRemote: false,
@@ -457,11 +458,11 @@ public class JobOfferAggregateTests
 
         offer.Apply(new JobOfferEdited(
             EditedByUserId: OwnerId,
-            EditedByEmail: "owner@test.com",
+            EditedByEmail: Email.Create("owner@test.com"),
             CompanyName: null,
             ContactName: null,
             ContactEmail: null,
-            JobTitle: "CTO", // the only field actually edited
+            JobTitle: "CTO".ToNonEmpty(), // the only field actually edited
             Description: null,
             SalaryRange: null,
             Location: null,
@@ -483,23 +484,23 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
             user: Owner,
-            companyName: "Acme",           // unchanged
-            contactName: "John",           // unchanged
-            contactEmail: "john@acme.com", // unchanged
-            jobTitle: "Senior Dev",        // changed (was "Dev")
-            description: "Desc",           // unchanged
-            salaryRange: null,             // unchanged (was null)
-            location: "Prague",            // unchanged
-            isRemote: true,                // unchanged
-            additionalNotes: null,         // unchanged (was null)
+            companyName: "Acme".ToNonEmpty(),           // unchanged
+            contactName: "John".ToNonEmpty(),           // unchanged
+            contactEmail: new MailAddress("john@acme.com"), // unchanged
+            jobTitle: "Senior Dev".ToNonEmpty(),        // changed (was "Dev")
+            description: "Desc".ToNonEmpty(),           // unchanged
+            salaryRange: null,                 // unchanged (was null)
+            location: "Prague",                // unchanged
+            isRemote: true,                    // unchanged
+            additionalNotes: null,             // unchanged (was null)
             timestamp: Now.AddHours(1));
 
         Assert.True(result.IsSuccess);
-        var evt = result.Success.Get();
+        var evt = result.Success!;
         Assert.Null(evt.CompanyName);
         Assert.Null(evt.ContactName);
         Assert.Null(evt.ContactEmail);
-        Assert.Equal("Senior Dev", evt.JobTitle);
+        Assert.Equal("Senior Dev", evt.JobTitle?.Value);
         Assert.Null(evt.Description);
         Assert.Null(evt.SalaryRange);
         Assert.Null(evt.Location);
@@ -513,7 +514,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferStatusChanged(
             ChangedByUserId: AdminId,
-            ChangedByEmail: "admin@test.com",
+            ChangedByEmail: Email.Create("admin@test.com"),
             OldStatus: JobOfferStatus.Submitted,
             NewStatus: JobOfferStatus.InReview,
             Notes: "Reviewing",
@@ -528,7 +529,7 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         offer.Apply(new JobOfferCancelled(
             CancelledByUserId: OwnerId,
-            CancelledByEmail: "owner@test.com",
+            CancelledByEmail: Email.Create("owner@test.com"),
             Reason: "Reason",
             Timestamp: Now));
 

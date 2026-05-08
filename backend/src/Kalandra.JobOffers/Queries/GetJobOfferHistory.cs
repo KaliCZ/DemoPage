@@ -64,7 +64,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                         EventType: "Submitted",
                         Description: "Job offer submitted",
                         ActorUserId: s.UserId,
-                        ActorEmail: s.UserEmail,
+                        ActorEmail: s.UserEmail.Address,
                         Timestamp: s.Timestamp));
                     break;
 
@@ -78,7 +78,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                         EventType: "Edited",
                         Description: "Job offer edited",
                         ActorUserId: ed.EditedByUserId,
-                        ActorEmail: ed.EditedByEmail,
+                        ActorEmail: ed.EditedByEmail.Address,
                         Timestamp: ed.Timestamp,
                         Changes: changes));
                     break;
@@ -90,7 +90,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                         Description: $"Status changed from {FormatStatus(sc.OldStatus)} to {FormatStatus(sc.NewStatus)}"
                             + (sc.Notes != null ? $" — {sc.Notes}" : ""),
                         ActorUserId: sc.ChangedByUserId,
-                        ActorEmail: sc.ChangedByEmail,
+                        ActorEmail: sc.ChangedByEmail.Address,
                         Timestamp: sc.Timestamp));
                     break;
 
@@ -100,7 +100,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                         EventType: "Cancelled",
                         Description: "Job offer cancelled" + (c.Reason != null ? $" — {c.Reason}" : ""),
                         ActorUserId: c.CancelledByUserId,
-                        ActorEmail: c.CancelledByEmail,
+                        ActorEmail: c.CancelledByEmail.Address,
                         Timestamp: c.Timestamp));
                     break;
             }
@@ -115,7 +115,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
                     EventType: "Comment",
                     Description: cm.Content,
                     ActorUserId: cm.UserId,
-                    ActorEmail: cm.UserEmail,
+                    ActorEmail: cm.UserEmail.Address,
                     Timestamp: cm.Timestamp));
             }
         }
@@ -151,7 +151,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         public static FieldSnapshot From(JobOffer offer) => new(
             CompanyName: offer.CompanyName,
             ContactName: offer.ContactName,
-            ContactEmail: offer.ContactEmail,
+            ContactEmail: offer.ContactEmail.Address,
             JobTitle: offer.JobTitle,
             Description: offer.Description,
             SalaryRange: offer.SalaryRange,

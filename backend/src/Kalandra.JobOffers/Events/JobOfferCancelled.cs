@@ -1,7 +1,9 @@
+using StrongTypes;
+
 namespace Kalandra.JobOffers.Events;
 
 public record JobOfferCancelled(
     Guid CancelledByUserId,
-    string CancelledByEmail,
+    Email CancelledByEmail,
     string? Reason,
     DateTimeOffset Timestamp);

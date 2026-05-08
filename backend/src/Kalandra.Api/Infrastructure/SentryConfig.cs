@@ -9,7 +9,7 @@ public record SentryConfig(
     {
         var section = configuration.GetSection("Sentry");
 
-        if (section["Dsn"].AsNonEmpty().GetOrNull() is not { } dsn)
+        if (section["Dsn"].AsNonEmpty() is not { } dsn)
             return null;
 
         var config = new SentryConfig(Dsn: dsn);

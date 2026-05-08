@@ -12,6 +12,7 @@ using Kalandra.JobOffers.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using StrongTypes;
 
 namespace Kalandra.Api.Features.JobOffers;
 
@@ -55,22 +56,35 @@ public class JobOffersController(
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
             return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
-        // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request
-        var files = (attachments ?? [])
-            .Select(f => new CreateJobOfferFile(
-                FileName: f.FileName.AsNonEmpty().Get(),
+        // ContentType isn't validated separately — browsers always set it. .ToNonEmpty()
+        // throwing here would mean a malformed request with no Content-Type on the file
+        // part, where a 500 is fine.
+        // OpenReadStream() wraps the framework's request buffer — disposed at end of request.
+        var files = new List<CreateJobOfferFile>(attachments?.Count ?? 0);
+        foreach (var (i, f) in (attachments ?? []).Index())
+        {
+            if (f.FileName.AsNonEmpty() is not { } fileName)
+            {
+                ModelState.AddModelError($"attachments[{i}].FileName", "FileName must be non-empty.");
+                continue;
+            }
+
+            files.Add(new CreateJobOfferFile(
+                FileName: fileName,
                 FileSize: f.Length,
-                ContentType: f.ContentType.AsNonEmpty().Get(),
-                Content: f.OpenReadStream()))
-            .ToList();
+                ContentType: f.ContentType.ToNonEmpty(),
+                Content: f.OpenReadStream()));
+        }
+        if (!ModelState.IsValid)
+            return ValidationProblem();
 
         var command = new CreateJobOfferCommand(
             User: AppUser,
-            CompanyName: request.CompanyName.AsNonEmpty().Get(),
-            ContactName: request.ContactName.AsNonEmpty().Get(),
-            ContactEmail: request.ContactEmail.AsNonEmpty().Get(),
-            JobTitle: request.JobTitle.AsNonEmpty().Get(),
-            Description: request.Description.AsNonEmpty().Get(),
+            CompanyName: request.CompanyName,
+            ContactName: request.ContactName,
+            ContactEmail: request.ContactEmail.Value,
+            JobTitle: request.JobTitle,
+            Description: request.Description,
             SalaryRange: request.SalaryRange,
             Location: request.Location,
             IsRemote: request.IsRemote,
@@ -80,9 +94,9 @@ public class JobOffersController(
 
         var result = await createHandler.HandleAsync(command, ct);
 
-        if (result.IsError)
+        if (result.Error is { } error)
         {
-            return result.Error.Get() switch
+            return error switch
             {
                 CreateJobOfferError.TooManyAttachments => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
                 CreateJobOfferError.TotalSizeTooLarge => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
@@ -90,7 +104,7 @@ public class JobOffersController(
             };
         }
 
-        var streamId = result.Success.Get();
+        var streamId = result.Success!.Value;
 
         var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
         var offer = await getDetailHandler.HandleAsync(query, ct);
@@ -117,11 +131,11 @@ public class JobOffersController(
             var command = new EditJobOfferCommand(
                 Id: id,
                 User: AppUser,
-                CompanyName: request.CompanyName is { } cn ? cn.AsNonEmpty().Get() : null,
-                ContactName: request.ContactName is { } ctn ? ctn.AsNonEmpty().Get() : null,
-                ContactEmail: request.ContactEmail is { } ce ? ce.AsNonEmpty().Get() : null,
-                JobTitle: request.JobTitle is { } jt ? jt.AsNonEmpty().Get() : null,
-                Description: request.Description is { } d ? d.AsNonEmpty().Get() : null,
+                CompanyName: request.CompanyName,
+                ContactName: request.ContactName,
+                ContactEmail: request.ContactEmail?.Value,
+                JobTitle: request.JobTitle,
+                Description: request.Description,
                 SalaryRange: request.SalaryRange,
                 Location: request.Location,
                 IsRemote: request.IsRemote,
@@ -130,9 +144,9 @@ public class JobOffersController(
 
             var result = await editHandler.HandleAsync(command, ct);
 
-            if (result.IsError)
+            if (result.Error is { } error)
             {
-                return result.Error.Get() switch
+                return error switch
                 {
                     EditJobOfferError.NotFound => NotFound(),
                     EditJobOfferError.NotAuthorized => Forbid(),
@@ -140,8 +154,7 @@ public class JobOffersController(
                 };
             }
 
-            var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer);
+            return GetJobOfferDetailResponse.Serialize(result.Success!);
         });
     }
 
@@ -169,9 +182,9 @@ public class JobOffersController(
 
             var result = await cancelHandler.HandleAsync(command, ct);
 
-            if (result.IsError)
+            if (result.Error is { } error)
             {
-                return result.Error.Get() switch
+                return error switch
                 {
                     CancelJobOfferError.NotFound => NotFound(),
                     CancelJobOfferError.NotAuthorized => Forbid(),
@@ -179,8 +192,7 @@ public class JobOffersController(
                 };
             }
 
-            var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer);
+            return GetJobOfferDetailResponse.Serialize(result.Success!);
         });
     }
 
@@ -210,9 +222,9 @@ public class JobOffersController(
 
             var result = await updateStatusHandler.HandleAsync(command, ct);
 
-            if (result.IsError)
+            if (result.Error is { } error)
             {
-                return result.Error.Get() switch
+                return error switch
                 {
                     UpdateJobOfferStatusError.NotFound => NotFound(),
                     UpdateJobOfferStatusError.InvalidTransition =>
@@ -220,8 +232,7 @@ public class JobOffersController(
                 };
             }
 
-            var offer = result.Success.Get();
-            return GetJobOfferDetailResponse.Serialize(offer);
+            return GetJobOfferDetailResponse.Serialize(result.Success!);
         });
     }
 
@@ -241,22 +252,21 @@ public class JobOffersController(
         var command = new AddCommentCommand(
             JobOfferId: id,
             User: AppUser,
-            Content: request.Content.Trim().AsNonEmpty().Get(),
+            Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
         var result = await addCommentHandler.HandleAsync(command, ct);
 
-        if (result.IsError)
+        if (result.Error is { } error)
         {
-            return result.Error.Get() switch
+            return error switch
             {
                 AddCommentError.NotFound => NotFound(),
                 AddCommentError.NotAuthorized => Forbid(),
             };
         }
 
-        var commentEvent = result.Success.Get();
-        return CommentResponse.Serialize(commentEvent);
+        return CommentResponse.Serialize(result.Success!);
     }
 
     // ───── List ─────

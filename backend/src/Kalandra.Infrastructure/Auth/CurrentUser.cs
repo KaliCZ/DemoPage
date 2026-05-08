@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Net.Mail;
+using StrongTypes;
 
 namespace Kalandra.Infrastructure.Auth;
 
@@ -11,7 +12,7 @@ public enum UserRole
 public record CurrentUser(
     Guid Id,
     MailAddress Email,
-    string FullName,
+    NonEmptyString FullName,
     ImmutableArray<UserRole> Roles,
     Uri? AvatarUrl = null)
 {

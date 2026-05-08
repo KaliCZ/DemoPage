@@ -1,21 +1,22 @@
 using Kalandra.JobOffers.Entities;
+using StrongTypes;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
 public record GetJobOfferDetailResponse(
     Guid Id,
-    string CompanyName,
-    string ContactName,
-    string ContactEmail,
-    string JobTitle,
-    string Description,
+    NonEmptyString CompanyName,
+    NonEmptyString ContactName,
+    Email ContactEmail,
+    NonEmptyString JobTitle,
+    NonEmptyString Description,
     string? SalaryRange,
     string? Location,
     bool IsRemote,
     string? AdditionalNotes,
     IReadOnlyList<AttachmentInfo> Attachments,
     JobOfferStatus Status,
-    string UserEmail,
+    Email UserEmail,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt)
 {

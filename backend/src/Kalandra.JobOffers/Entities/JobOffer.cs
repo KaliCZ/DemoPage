@@ -1,5 +1,7 @@
+using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Events;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Entities;
 
@@ -16,13 +18,16 @@ public class JobOffer
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    public string UserEmail { get; set; } = string.Empty;
+    // These are populated by Apply(JobOfferSubmitted) before any read.
+    // Marten rehydrates via the parameterless constructor and replays events;
+    // a partially-constructed JobOffer is never observed outside that window.
+    public Email UserEmail { get; set; } = null!;
 
-    public string CompanyName { get; set; } = string.Empty;
-    public string ContactName { get; set; } = string.Empty;
-    public string ContactEmail { get; set; } = string.Empty;
-    public string JobTitle { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    public NonEmptyString CompanyName { get; set; } = null!;
+    public NonEmptyString ContactName { get; set; } = null!;
+    public Email ContactEmail { get; set; } = null!;
+    public NonEmptyString JobTitle { get; set; } = null!;
+    public NonEmptyString Description { get; set; } = null!;
     public string? SalaryRange { get; set; }
     public string? Location { get; set; }
     public bool IsRemote { get; set; }
@@ -33,13 +38,13 @@ public class JobOffer
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
-    public Try<JobOfferEdited, EditJobOfferError> Edit(
+    public Result<JobOfferEdited, EditJobOfferError> Edit(
         CurrentUser user,
-        string? companyName,
-        string? contactName,
-        string? contactEmail,
-        string? jobTitle,
-        string? description,
+        NonEmptyString? companyName,
+        NonEmptyString? contactName,
+        MailAddress? contactEmail,
+        NonEmptyString? jobTitle,
+        NonEmptyString? description,
         string? salaryRange,
         string? location,
         bool? isRemote,
@@ -47,10 +52,10 @@ public class JobOffer
         DateTimeOffset timestamp)
     {
         if (UserId != user.Id)
-            return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotAuthorized);
+            return EditJobOfferError.NotAuthorized;
 
         if (Status != JobOfferStatus.Submitted)
-            return Try.Error<JobOfferEdited, EditJobOfferError>(EditJobOfferError.NotSubmittedStatus);
+            return EditJobOfferError.NotSubmittedStatus;
 
         // Null on a parameter means "no change" (PATCH semantics). Null on the
         // emitted event field means the same thing — unchanged fields stay null
@@ -59,55 +64,55 @@ public class JobOffer
         // Clearing a previously-set optional field is NOT supported: when the
         // caller passes null for SalaryRange / Location / AdditionalNotes we
         // treat it as "leave this field alone" rather than "set it to null".
-        return Try.Success<JobOfferEdited, EditJobOfferError>(new JobOfferEdited(
+        return new JobOfferEdited(
             EditedByUserId: user.Id,
-            EditedByEmail: user.Email.Address,
+            EditedByEmail: user.Email,
             CompanyName: companyName is not null && companyName != CompanyName ? companyName : null,
             ContactName: contactName is not null && contactName != ContactName ? contactName : null,
-            ContactEmail: contactEmail is not null && contactEmail != ContactEmail ? contactEmail : null,
+            ContactEmail: contactEmail is not null && contactEmail.Address != ContactEmail.Address ? new Email(contactEmail) : null,
             JobTitle: jobTitle is not null && jobTitle != JobTitle ? jobTitle : null,
             Description: description is not null && description != Description ? description : null,
             SalaryRange: salaryRange is not null && salaryRange != SalaryRange ? salaryRange : null,
             Location: location is not null && location != Location ? location : null,
             IsRemote: isRemote.HasValue && isRemote.Value != IsRemote ? isRemote.Value : null,
             AdditionalNotes: additionalNotes is not null && additionalNotes != AdditionalNotes ? additionalNotes : null,
-            Timestamp: timestamp));
+            Timestamp: timestamp);
     }
 
-    public Try<JobOfferCancelled, CancelJobOfferError> Cancel(
+    public Result<JobOfferCancelled, CancelJobOfferError> Cancel(
         CurrentUser user,
         string? reason,
         DateTimeOffset timestamp)
     {
         if (UserId != user.Id)
-            return Try.Error<JobOfferCancelled, CancelJobOfferError>(CancelJobOfferError.NotAuthorized);
+            return CancelJobOfferError.NotAuthorized;
 
         if (Status is not (JobOfferStatus.Submitted or JobOfferStatus.InReview))
-            return Try.Error<JobOfferCancelled, CancelJobOfferError>(CancelJobOfferError.InvalidStatus);
+            return CancelJobOfferError.InvalidStatus;
 
-        return Try.Success<JobOfferCancelled, CancelJobOfferError>(new JobOfferCancelled(
+        return new JobOfferCancelled(
             CancelledByUserId: user.Id,
-            CancelledByEmail: user.Email.Address,
+            CancelledByEmail: user.Email,
             Reason: reason,
-            Timestamp: timestamp));
+            Timestamp: timestamp);
     }
 
-    public Try<JobOfferStatusChanged, UpdateJobOfferStatusError> ChangeStatus(
+    public Result<JobOfferStatusChanged, UpdateJobOfferStatusError> ChangeStatus(
         JobOfferStatus newStatus,
         CurrentUser user,
         string? notes,
         DateTimeOffset timestamp)
     {
         if (newStatus == Status || !CanTransitionTo(newStatus))
-            return Try.Error<JobOfferStatusChanged, UpdateJobOfferStatusError>(UpdateJobOfferStatusError.InvalidTransition);
+            return UpdateJobOfferStatusError.InvalidTransition;
 
-        return Try.Success<JobOfferStatusChanged, UpdateJobOfferStatusError>(new JobOfferStatusChanged(
+        return new JobOfferStatusChanged(
             ChangedByUserId: user.Id,
-            ChangedByEmail: user.Email.Address,
+            ChangedByEmail: user.Email,
             OldStatus: Status,
             NewStatus: newStatus,
             Notes: notes,
-            Timestamp: timestamp));
+            Timestamp: timestamp);
     }
 
     public void Apply(JobOfferSubmitted e)
@@ -140,7 +145,7 @@ public class JobOffer
         // Null means "not edited" — preserve the current value for that field.
         if (e.CompanyName != null) CompanyName = e.CompanyName;
         if (e.ContactName != null) ContactName = e.ContactName;
-        if (e.ContactEmail != null) ContactEmail = e.ContactEmail;
+        if (e.ContactEmail is { } contactEmail) ContactEmail = contactEmail;
         if (e.JobTitle != null) JobTitle = e.JobTitle;
         if (e.Description != null) Description = e.Description;
         if (e.SalaryRange != null) SalaryRange = e.SalaryRange;
