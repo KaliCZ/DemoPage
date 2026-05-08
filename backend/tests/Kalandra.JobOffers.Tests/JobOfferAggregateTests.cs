@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
@@ -13,9 +14,9 @@ public class JobOfferAggregateTests
     private static readonly Guid OtherId = new("22222222-2222-2222-2222-222222222222");
     private static readonly Guid AdminId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-    private static readonly CurrentUser Owner = new(OwnerId, Email.Create("owner@test.com"), "Owner".ToNonEmpty(), []);
-    private static readonly CurrentUser Other = new(OtherId, Email.Create("other@test.com"), "Other".ToNonEmpty(), []);
-    private static readonly CurrentUser Admin = new(AdminId, Email.Create("admin@test.com"), "Admin".ToNonEmpty(), [UserRole.Admin]);
+    private static readonly CurrentUser Owner = new(OwnerId, new MailAddress("owner@test.com"), "Owner".ToNonEmpty(), []);
+    private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), "Other".ToNonEmpty(), []);
+    private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), "Admin".ToNonEmpty(), [UserRole.Admin]);
 
     private static JobOffer CreateSubmittedOffer(Guid? userId = null)
     {
@@ -48,7 +49,7 @@ public class JobOfferAggregateTests
             user: Owner,
             companyName: "NewCo".ToNonEmpty(),
             contactName: "Jane".ToNonEmpty(),
-            contactEmail: Email.Create("jane@co.com"),
+            contactEmail: new MailAddress("jane@co.com"),
             jobTitle: "CTO".ToNonEmpty(),
             description: "New desc".ToNonEmpty(),
             salaryRange: null,
@@ -109,7 +110,7 @@ public class JobOfferAggregateTests
             user: Other,
             companyName: "Co".ToNonEmpty(),
             contactName: "J".ToNonEmpty(),
-            contactEmail: Email.Create("j@co.com"),
+            contactEmail: new MailAddress("j@co.com"),
             jobTitle: "Dev".ToNonEmpty(),
             description: "Desc".ToNonEmpty(),
             salaryRange: null,
@@ -136,7 +137,7 @@ public class JobOfferAggregateTests
             user: Owner,
             companyName: "Co".ToNonEmpty(),
             contactName: "J".ToNonEmpty(),
-            contactEmail: Email.Create("j@co.com"),
+            contactEmail: new MailAddress("j@co.com"),
             jobTitle: "Dev".ToNonEmpty(),
             description: "Desc".ToNonEmpty(),
             salaryRange: null,
@@ -485,7 +486,7 @@ public class JobOfferAggregateTests
             user: Owner,
             companyName: "Acme".ToNonEmpty(),           // unchanged
             contactName: "John".ToNonEmpty(),           // unchanged
-            contactEmail: Email.Create("john@acme.com"), // unchanged
+            contactEmail: new MailAddress("john@acme.com"), // unchanged
             jobTitle: "Senior Dev".ToNonEmpty(),        // changed (was "Dev")
             description: "Desc".ToNonEmpty(),           // unchanged
             salaryRange: null,                 // unchanged (was null)

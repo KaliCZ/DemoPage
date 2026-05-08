@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Events;
 using StrongTypes;
@@ -41,7 +42,7 @@ public class JobOffer
         CurrentUser user,
         NonEmptyString? companyName,
         NonEmptyString? contactName,
-        Email? contactEmail,
+        MailAddress? contactEmail,
         NonEmptyString? jobTitle,
         NonEmptyString? description,
         string? salaryRange,
@@ -65,10 +66,10 @@ public class JobOffer
         // treat it as "leave this field alone" rather than "set it to null".
         return new JobOfferEdited(
             EditedByUserId: user.Id,
-            EditedByEmail: user.Email,
+            EditedByEmail: new Email(user.Email),
             CompanyName: companyName is not null && companyName != CompanyName ? companyName : null,
             ContactName: contactName is not null && contactName != ContactName ? contactName : null,
-            ContactEmail: contactEmail is not null && contactEmail != ContactEmail ? contactEmail : null,
+            ContactEmail: contactEmail is not null && contactEmail.Address != ContactEmail.Address ? new Email(contactEmail) : null,
             JobTitle: jobTitle is not null && jobTitle != JobTitle ? jobTitle : null,
             Description: description is not null && description != Description ? description : null,
             SalaryRange: salaryRange is not null && salaryRange != SalaryRange ? salaryRange : null,
@@ -91,7 +92,7 @@ public class JobOffer
 
         return new JobOfferCancelled(
             CancelledByUserId: user.Id,
-            CancelledByEmail: user.Email,
+            CancelledByEmail: new Email(user.Email),
             Reason: reason,
             Timestamp: timestamp);
     }
@@ -107,7 +108,7 @@ public class JobOffer
 
         return new JobOfferStatusChanged(
             ChangedByUserId: user.Id,
-            ChangedByEmail: user.Email,
+            ChangedByEmail: new Email(user.Email),
             OldStatus: Status,
             NewStatus: newStatus,
             Notes: notes,

@@ -1,8 +1,10 @@
+using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Commands;
 
@@ -18,7 +20,7 @@ public record CreateJobOfferCommand(
     CurrentUser User,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
-    Email ContactEmail,
+    MailAddress ContactEmail,
     NonEmptyString JobTitle,
     NonEmptyString Description,
     string? SalaryRange,
@@ -83,10 +85,10 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         // Create event
         var submitted = new JobOfferSubmitted(
             UserId: command.User.Id,
-            UserEmail: command.User.Email,
+            UserEmail: new Email(command.User.Email),
             CompanyName: command.CompanyName,
             ContactName: command.ContactName,
-            ContactEmail: command.ContactEmail,
+            ContactEmail: new Email(command.ContactEmail),
             JobTitle: command.JobTitle,
             Description: command.Description,
             SalaryRange: command.SalaryRange,

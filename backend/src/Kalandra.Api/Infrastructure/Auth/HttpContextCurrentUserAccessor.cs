@@ -4,7 +4,6 @@ using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
 using Kalandra.Infrastructure.Auth;
-using StrongTypes;
 
 namespace Kalandra.Api.Infrastructure.Auth;
 
@@ -24,15 +23,15 @@ public class HttpContextCurrentUserAccessor(
         var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
         var emailStr = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
 
-        if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var mailAddress))
+        if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var email))
             return null;
 
         var userMetadata = principal.FindFirstValue("user_metadata");
-        var (fullName, avatarUrl) = ExtractUserMetadata(userMetadata, mailAddress);
+        var (fullName, avatarUrl) = ExtractUserMetadata(userMetadata, email);
 
         return new CurrentUser(
             Id: userId,
-            Email: new Email(mailAddress),
+            Email: email,
             FullName: fullName,
             Roles: ExtractRoles(principal),
             AvatarUrl: avatarUrl

@@ -2,6 +2,7 @@ using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
+using StrongTypes;
 
 namespace Kalandra.JobOffers.Commands;
 
@@ -26,7 +27,7 @@ public class AddCommentHandler(IDocumentSession session)
         var commentEvent = new JobOfferCommentAdded(
             CommentId: Guid.NewGuid(),
             UserId: command.User.Id,
-            UserEmail: command.User.Email,
+            UserEmail: new Email(command.User.Email),
             UserName: command.User.FullName,
             Content: command.Content,
             Timestamp: command.Timestamp);

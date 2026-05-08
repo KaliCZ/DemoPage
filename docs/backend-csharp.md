@@ -7,30 +7,34 @@ Language-level rules that apply across all backend projects.
 Prefer strong types that make invalid states unrepresentable. Use the `Kalicz.StrongTypes` library and BCL types over raw primitives:
 
 - `NonEmptyString` instead of `string` for required text fields.
-- `Email` (from `Kalicz.StrongTypes`) instead of `string` or `MailAddress` for emails.
+- `MailAddress` instead of `string` for emails in in-memory plumbing — commands, `CurrentUser`, decision-method parameters.
+- `Email` (from `Kalicz.StrongTypes`) for serialization boundaries — request / response DTOs, events, aggregate state. The wire form is the address string; the wrapper just buys validation, length cap, and a typed Swagger schema.
 - `Guid` (or a typed ID) instead of `string` for identifiers.
 - `DateTimeOffset` instead of `string` for timestamps.
 
-Parse at the boundary (API layer), then pass the strong type through commands and into the domain. The boundary is the DTO itself — required text fields are typed as `NonEmptyString` (or `NonEmptyString?` for PATCH "no change" semantics), email fields as `Email`, so the controller can pass them straight through to the command:
+Parse at the boundary (API layer), then pass the strong type through commands and into the domain. Required text fields stay `NonEmptyString` (or `NonEmptyString?` for PATCH "no change" semantics) end-to-end. Emails arrive as `Email` on the request DTO, are unwrapped to `MailAddress` for the command, and re-wrapped to `Email` when the handler / aggregate emits an event:
 
 ```csharp
-// Good — DTO holds the strong type; controller has no boilerplate
+// Request DTO — Email validates format + 254-char cap at deserialisation
 public record CreateJobOfferRequest(
     [MaxLength(200)] NonEmptyString CompanyName,
     Email ContactEmail,
     ...);
 
+// Controller unwraps Email to MailAddress for the command
 var command = new CreateJobOfferCommand(
     CompanyName: request.CompanyName,
-    ContactEmail: request.ContactEmail,
+    ContactEmail: request.ContactEmail.Value,  // Email.Value is MailAddress
     ...);
 
-// Bad — raw string passed through, domain has to validate
-var command = new CreateJobOfferCommand(
-    CompanyName: request.CompanyName,  // might be empty
-    ContactEmail: request.ContactEmail, // might not be an email
+// Handler / aggregate re-wraps to Email when emitting the event
+var submitted = new JobOfferSubmitted(
+    UserEmail: new Email(command.User.Email),
+    ContactEmail: new Email(command.ContactEmail),
     ...);
 ```
+
+The split keeps `Email`'s 254-char cap and parse contract on every boundary that round-trips through JSON / Marten without forcing every in-memory consumer to depend on it. `MailAddress` is the natural BCL type for code that just needs to read `.Address`, `.User`, or `.Host` — it's already what `Supabase.Gotrue` and friends hand you back.
 
 `Kalicz.StrongTypes` ships `[JsonConverter]`s and `IParsable<T>` implementations on every wrapper, so each type binds end-to-end out of the box: empty / malformed JSON bodies fail through the converter, and `[FromForm]` / `[FromQuery]` / `[FromRoute]` / `[FromHeader]` inputs flow through ASP.NET's built-in `IParsable` model binder. Either path surfaces a bad value as an RFC 7807 400 with the field name — no project-level binder, attribute, or extension is needed.
 

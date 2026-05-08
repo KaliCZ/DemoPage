@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Marten;
@@ -9,7 +10,7 @@ public record EditJobOfferCommand(
     CurrentUser User,
     NonEmptyString? CompanyName,
     NonEmptyString? ContactName,
-    Email? ContactEmail,
+    MailAddress? ContactEmail,
     NonEmptyString? JobTitle,
     NonEmptyString? Description,
     string? SalaryRange,
