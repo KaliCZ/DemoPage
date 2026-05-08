@@ -56,21 +56,21 @@ public class JobOffersController(
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
             return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
-        // IFormFile.FileName / ContentType are loose strings from ASP.NET Core's multipart binder.
-        // Validate at the API boundary so the command sees fully-typed NonEmptyString fields.
-        // OpenReadStream() wraps ASP.NET Core's internal buffer — disposed by the framework at end of request.
+        // OpenReadStream() wraps the framework's request buffer — disposed at end of request.
         var files = new List<CreateJobOfferFile>(attachments?.Count ?? 0);
         for (var i = 0; i < (attachments?.Count ?? 0); i++)
         {
             var f = attachments![i];
-            var fileName = f.FileName.AsNonEmpty();
-            var contentType = f.ContentType.AsNonEmpty();
-            if (fileName is null)
+            if (f.FileName.AsNonEmpty() is not { } fileName)
+            {
                 ModelState.AddModelError($"attachments[{i}].FileName", "FileName must be non-empty.");
-            if (contentType is null)
-                ModelState.AddModelError($"attachments[{i}].ContentType", "ContentType must be non-empty.");
-            if (fileName is null || contentType is null)
                 continue;
+            }
+            if (f.ContentType.AsNonEmpty() is not { } contentType)
+            {
+                ModelState.AddModelError($"attachments[{i}].ContentType", "ContentType must be non-empty.");
+                continue;
+            }
 
             files.Add(new CreateJobOfferFile(
                 FileName: fileName,
