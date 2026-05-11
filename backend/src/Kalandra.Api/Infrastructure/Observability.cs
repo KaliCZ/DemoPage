@@ -60,7 +60,11 @@ public static class Observability
 
     private static void AddOpenTelemetry(WebApplicationBuilder builder, BetterStackConfig? config)
     {
-        if (config is null)
+        // Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT (and friends) when the API is
+        // launched under the AppHost. The default AddOtlpExporter() reads those.
+        var aspireEnabled = !string.IsNullOrEmpty(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+
+        if (config is null && !aspireEnabled)
         {
             if (builder.Environment.IsProduction())
                 throw new InvalidOperationException("BetterStack:SourceToken and BetterStack:OtlpEndpoint must be configured in production.");
@@ -73,43 +77,64 @@ public static class Observability
                 .AddService(
                     serviceName: ServiceName,
                     serviceVersion: AppVersion.InformationalVersion))
-            .WithTracing(tracing => tracing
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation(options =>
-                {
-                    options.FilterHttpRequestMessage = request =>
-                        request.RequestUri is not { Host: var host }
-                        || !host.EndsWith("betterstackdata.com", StringComparison.OrdinalIgnoreCase);
-                })
-                .AddSource("Marten")
-                .AddOtlpExporter(otlp =>
-                {
-                    otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/traces");
-                    otlp.Headers = config.AuthorizationHeader;
-                    otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                }))
-            .WithMetrics(metrics => metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation()
-                .AddMeter("Marten")
-                .AddOtlpExporter(otlp =>
-                {
-                    otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/metrics");
-                    otlp.Headers = config.AuthorizationHeader;
-                    otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                }));
+            .WithTracing(tracing =>
+            {
+                tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation(options =>
+                    {
+                        options.FilterHttpRequestMessage = request =>
+                            request.RequestUri is not { Host: var host }
+                            || !host.EndsWith("betterstackdata.com", StringComparison.OrdinalIgnoreCase);
+                    })
+                    .AddSource("Marten");
+
+                if (config is not null)
+                    tracing.AddOtlpExporter(otlp =>
+                    {
+                        otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/traces");
+                        otlp.Headers = config.AuthorizationHeader;
+                        otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    });
+
+                if (aspireEnabled)
+                    tracing.AddOtlpExporter();
+            })
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .AddMeter("Marten");
+
+                if (config is not null)
+                    metrics.AddOtlpExporter(otlp =>
+                    {
+                        otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/metrics");
+                        otlp.Headers = config.AuthorizationHeader;
+                        otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    });
+
+                if (aspireEnabled)
+                    metrics.AddOtlpExporter();
+            });
 
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeScopes = true;
             logging.IncludeFormattedMessage = true;
-            logging.AddOtlpExporter(otlp =>
-            {
-                otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/logs");
-                otlp.Headers = config.AuthorizationHeader;
-                otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-            });
+
+            if (config is not null)
+                logging.AddOtlpExporter(otlp =>
+                {
+                    otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/logs");
+                    otlp.Headers = config.AuthorizationHeader;
+                    otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                });
+
+            if (aspireEnabled)
+                logging.AddOtlpExporter();
         });
     }
 }

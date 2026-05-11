@@ -10,6 +10,7 @@
     "dev:db": "cd backend && docker compose up db -d --wait",
     "dev:supabase": "supabase start",
     "dev:services": "concurrently --kill-others --names backend,frontend --prefix-colors blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:aspire": "npm run dev:infra && dotnet run --project aspire/Kalandra.AppHost",
     "dev:backend": "cd backend/src/Kalandra.Api && dotnet watch run",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:frontend:claudePreview": "cd frontend && npm run dev:claudePreview",
