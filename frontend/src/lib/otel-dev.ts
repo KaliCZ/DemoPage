@@ -100,9 +100,21 @@ if (!endpoint) {
   const pageSpan = tracer.startSpan(`page ${location.pathname}`, { kind: SpanKind.INTERNAL });
   contextManager.setPageContext(trace.setSpan(contextManager.active(), pageSpan));
 
-  // End the page span when the page unloads so the trace flushes. `pagehide`
-  // fires for both regular navigations and back/forward cache evictions.
-  window.addEventListener("pagehide", () => pageSpan.end(), { once: true });
+  // End the page span as soon as the page finishes loading rather than at
+  // pagehide. The trace root has to exist for the dashboard to render
+  // anything, but BatchSpanProcessor doesn't export pageSpan until it
+  // ends — so leaving it open for the whole session meant the trace only
+  // showed up after the user navigated away (and even then orphaned fetch
+  // spans appeared as their own "HTTP GET" traces). Ending early is fine:
+  // the context manager still serves pageContext as active, so subsequent
+  // fetches inherit pageSpan's trace ID and continue to appear in the same
+  // trace, even though pageSpan itself is closed.
+  const endPageSpan = () => pageSpan.end();
+  if (document.readyState === "complete") {
+    endPageSpan();
+  } else {
+    window.addEventListener("load", endPageSpan, { once: true });
+  }
 
   (window as unknown as { __otelDev: { initialized: boolean } }).__otelDev.initialized = true;
   console.info(`[otel-dev] OpenTelemetry initialized → ${endpoint}, page=${location.pathname}`);
