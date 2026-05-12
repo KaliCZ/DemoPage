@@ -152,7 +152,7 @@ Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns 
 
 #### Parallel worktrees
 
-Just run `npm run aspire` in each. `aspire/dev-aspire.mjs` asks the OS for a free port for each AppHost-owned endpoint (dashboard, OTLP, resource service), so collisions are impossible. dcp handles API and frontend ports the same way internally. Read the dashboard URL from the script's startup output.
+Just run `npm run aspire` in each. The AppHost asks the OS for a free port for each AppHost-owned endpoint (dashboard, OTLP, resource service), so collisions are impossible. dcp handles API and frontend ports the same way internally. Read the dashboard URL from the AppHost's startup output.
 
 Supabase remains shared between worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
 
