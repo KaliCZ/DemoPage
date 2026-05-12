@@ -56,6 +56,16 @@ if (!endpoint) {
         // fetches, which is usually fine in dev since the Vite proxy keeps
         // /api/* on the page origin.
         propagateTraceHeaderCorsUrls: [/^https?:\/\/localhost(:\d+)?\//, /^https?:\/\/127\.0\.0\.1(:\d+)?\//],
+        // Drop telemetry-of-telemetry: don't create spans for the OTLP
+        // exporter's own POSTs (would self-loop) or for BetterStack /
+        // Sentry ingestion. Endpoints that aren't application traffic
+        // just add noise to the dashboard.
+        ignoreUrls: [
+          new RegExp("^" + (endpoint ?? "").replace(/[/.]/g, "\\$&")),
+          /betterstackdata\.com\//,
+          /betterstack\.net\//,
+          /sentry\.io\//,
+        ],
       }),
     ],
   });
