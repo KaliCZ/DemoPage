@@ -6,7 +6,6 @@ using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
-using Marten.Services;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -37,12 +36,6 @@ public static class ServiceCollectionExtensions
             {
                 options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }
-
-            // Emit session/operation-level spans. Observability.cs already
-            // subscribes via AddSource("Marten"); without this Marten is
-            // silent.
-            options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
-            options.OpenTelemetry.TrackEventCounters();
         })
         .UseLightweightSessions();
 

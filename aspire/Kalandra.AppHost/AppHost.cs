@@ -2,11 +2,13 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 
-// AppHost-owned endpoints (dashboard / OTLP exporter / resource service)
-// start at their defaults and walk up by 1 until a free port is found, so
-// the first instance lands on 15036/19200/20056 and a second parallel
-// AppHost picks 15037/19201/20057, etc. Set KALANDRA_PORT_OFFSET=<int> to
-// pin to a specific offset instead.
+// AppHost-owned endpoints (dashboard / OTLP gRPC / OTLP HTTP / resource
+// service) start at their defaults and walk up by 1 until a free port is
+// found, so the first instance lands on 15036/19200/19400/20056 and a
+// second parallel AppHost picks 15037/19201/19401/20057, etc. Set
+// KALANDRA_PORT_OFFSET=<int> to pin to a specific offset instead.
+// OTLP HTTP is separate from OTLP gRPC because browsers can only speak
+// OTLP-HTTP, and the dashboard wires CORS to that endpoint only.
 //
 // Reservation strategy: bind a TcpListener on each chosen port the moment
 // we pick it, keep it bound through AppHost setup (so siblings probing
@@ -18,15 +20,15 @@ using Microsoft.Extensions.Hosting;
 const string PortMutexName = "Kalandra-Aspire-Ports";
 using var portMutex = new Mutex(initiallyOwned: false, PortMutexName);
 
-int dashboardPort, otlpPort, resourcePort;
+int dashboardPort, otlpPort, otlpHttpPort, resourcePort;
 string portSource;
-TcpListener? dashboardListener, otlpListener, resourceListener;
+TcpListener? dashboardListener, otlpListener, otlpHttpListener, resourceListener;
 
 AcquireMutex(portMutex);
 try
 {
-    (dashboardPort, otlpPort, resourcePort, portSource,
-        dashboardListener, otlpListener, resourceListener) = ResolveAppHostPorts();
+    (dashboardPort, otlpPort, otlpHttpPort, resourcePort, portSource,
+        dashboardListener, otlpListener, otlpHttpListener, resourceListener) = ResolveAppHostPorts();
 }
 finally
 {
@@ -35,12 +37,19 @@ finally
 
 Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{dashboardPort}");
 Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", $"http://localhost:{otlpPort}");
+Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL", $"http://localhost:{otlpHttpPort}");
 Environment.SetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL", $"http://localhost:{resourcePort}");
 Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
+// Let the browser send OTLP-HTTP from the Astro dev origin (any localhost
+// port — dcp picks it) to the dashboard's OTLP HTTP endpoint. CORS only
+// applies to the HTTP endpoint; the gRPC one ignores it.
+Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
+Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
 Console.WriteLine($"Aspire ({portSource}):");
 Console.WriteLine($"  Dashboard:        http://localhost:{dashboardPort}");
-Console.WriteLine($"  OTLP exporter:    http://localhost:{otlpPort}");
+Console.WriteLine($"  OTLP gRPC:        http://localhost:{otlpPort}");
+Console.WriteLine($"  OTLP HTTP:        http://localhost:{otlpHttpPort}");
 Console.WriteLine($"  Resource service: http://localhost:{resourcePort}");
 Console.WriteLine($"  API + frontend:   allocated by Aspire — see dashboard");
 
@@ -61,9 +70,11 @@ var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: nu
     .WithHttpEndpoint()
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
 
+var otlpTracesUrl = $"http://localhost:{otlpHttpPort}/v1/traces";
 builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
     .WithHttpEndpoint(env: "PORT")
     .WithReference(api)
+    .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
     .WithExternalHttpEndpoints()
     .WaitFor(api);
 
@@ -97,8 +108,9 @@ try
 {
     dashboardListener?.Stop();
     otlpListener?.Stop();
+    otlpHttpListener?.Stop();
     resourceListener?.Stop();
-    dashboardListener = otlpListener = resourceListener = null;
+    dashboardListener = otlpListener = otlpHttpListener = resourceListener = null;
     app.StartAsync().GetAwaiter().GetResult();
 }
 finally
@@ -122,12 +134,13 @@ static void AcquireMutex(Mutex mutex)
     }
 }
 
-static (int Dashboard, int Otlp, int Resource, string Source,
-        TcpListener? DashboardListener, TcpListener? OtlpListener, TcpListener? ResourceListener)
+static (int Dashboard, int Otlp, int OtlpHttp, int Resource, string Source,
+        TcpListener? DashboardListener, TcpListener? OtlpListener, TcpListener? OtlpHttpListener, TcpListener? ResourceListener)
     ResolveAppHostPorts()
 {
     const int DashboardDefault = 15036;
     const int OtlpDefault = 19200;
+    const int OtlpHttpDefault = 19400;
     const int ResourceDefault = 20056;
 
     var offsetEnv = Environment.GetEnvironmentVariable("KALANDRA_PORT_OFFSET");
@@ -138,17 +151,18 @@ static (int Dashboard, int Otlp, int Resource, string Source,
             Console.Error.WriteLine($"KALANDRA_PORT_OFFSET must be an integer, got: {offsetEnv}");
             Environment.Exit(1);
         }
-        return (DashboardDefault + offset, OtlpDefault + offset, ResourceDefault + offset,
-            $"KALANDRA_PORT_OFFSET={offset}", null, null, null);
+        return (DashboardDefault + offset, OtlpDefault + offset, OtlpHttpDefault + offset, ResourceDefault + offset,
+            $"KALANDRA_PORT_OFFSET={offset}", null, null, null, null);
     }
 
     var (dashboard, dashboardListener) = ReserveFreePortFrom(DashboardDefault, "dashboard");
     var (otlp, otlpListener) = ReserveFreePortFrom(OtlpDefault, "otlp");
+    var (otlpHttp, otlpHttpListener) = ReserveFreePortFrom(OtlpHttpDefault, "otlp-http");
     var (resource, resourceListener) = ReserveFreePortFrom(ResourceDefault, "resource");
-    var source = dashboard == DashboardDefault && otlp == OtlpDefault && resource == ResourceDefault
+    var source = dashboard == DashboardDefault && otlp == OtlpDefault && otlpHttp == OtlpHttpDefault && resource == ResourceDefault
         ? "default ports"
         : "default ports, stepped past in-use";
-    return (dashboard, otlp, resource, source, dashboardListener, otlpListener, resourceListener);
+    return (dashboard, otlp, otlpHttp, resource, source, dashboardListener, otlpListener, otlpHttpListener, resourceListener);
 }
 
 // Walks up from `start` and binds the first port it can grab. The returned

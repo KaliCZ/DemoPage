@@ -5,7 +5,6 @@ import Navbar from "../components/Navbar.astro";
 import Snackbar from "../components/Snackbar.astro";
 import Footer from "../components/Footer.astro";
 import BetterStack from "../components/BetterStack.astro";
-import TraceContext from "../components/TraceContext.astro";
 import type { Locale } from "../i18n/utils";
 
 import enCommon from "../i18n/en/common.json";
@@ -104,8 +103,19 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <title>{title}</title>
 
-    <TraceContext />
     <BetterStack />
+
+    <script>
+      // Dev-only OpenTelemetry: emit browser-side spans (page load, fetch)
+      // straight to the Aspire dashboard's OTLP endpoint. The dynamic
+      // import is gated on import.meta.env.DEV, which is a compile-time
+      // constant, so Vite tree-shakes the entire module and its
+      // @opentelemetry/* deps out of the production bundle. In prod,
+      // BetterStack/Sentry owns observability.
+      if (import.meta.env.DEV) {
+        import("../lib/otel-dev");
+      }
+    </script>
 
     {
       /* Per-page head injection. Pages can add <link>/<meta>/<script> tags

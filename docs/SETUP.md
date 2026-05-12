@@ -139,14 +139,15 @@ The AppHost prefers a known default port for each of its endpoints and walks up 
 | Resource | First instance | Picked by |
 |----------|----------------|-----------|
 | Aspire dashboard | `15036` | starts at default, +1 until free |
-| OTLP exporter (dashboard ingest) | `19200` | starts at default, +1 until free |
+| OTLP gRPC (backend ingest) | `19200` | starts at default, +1 until free |
+| OTLP HTTP (browser ingest) | `19400` | starts at default, +1 until free |
 | Resource service | `20056` | starts at default, +1 until free |
 | Backend API | — | allocated by dcp — see dashboard |
 | Frontend | — | allocated by dcp — see dashboard |
 
 The actual ports are printed on AppHost startup. The API and frontend live behind dcp; the dashboard lists every resource with a clickable URL. Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
 
-Want to pin a non-default offset (e.g. for bookmarks)? Set `KALANDRA_PORT_OFFSET=<int>` — the three AppHost-owned ports then pin to `15036 / 19200 / 20056 + offset`.
+Want to pin a non-default offset (e.g. for bookmarks)? Set `KALANDRA_PORT_OFFSET=<int>` — the four AppHost-owned ports then pin to `15036 / 19200 / 19400 / 20056 + offset`.
 
 Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Keep using `npm run dev:infra` (run automatically by `npm run aspire`) to start and stop the Supabase stack.
 
