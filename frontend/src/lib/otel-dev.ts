@@ -89,15 +89,31 @@ if (!endpoint) {
         ],
         // Default span name is "HTTP GET" plus status — useless for picking
         // out which endpoint took 800ms in a list. Rename to "<METHOD> <path>"
-        // (query string dropped — too noisy and rarely the interesting bit).
-        applyCustomAttributesOnSpan: (span, request) => {
-          try {
-            const rawUrl = typeof request === "string" ? request : (request as Request).url;
-            const method = typeof request === "string" ? "GET" : ((request as Request).method ?? "GET");
-            const url = new URL(rawUrl, location.href);
-            span.updateName(`${method} ${url.pathname}`);
-          } catch {
-            /* fall back to the default name */
+        // via requestHook (fires before the request goes out, so the name
+        // is set before any other code path can read it). Handles Request,
+        // URL, and plain-string inputs; query string is dropped.
+        requestHook: (span, request) => {
+          let rawUrl: string | null = null;
+          let method = "GET";
+          if (typeof request === "string") {
+            rawUrl = request;
+          } else if (request instanceof URL) {
+            rawUrl = request.toString();
+          } else if (request && typeof request === "object") {
+            if ("url" in request && typeof (request as Request).url === "string") {
+              rawUrl = (request as Request).url;
+            }
+            if ("method" in request && typeof (request as Request).method === "string") {
+              method = (request as Request).method;
+            }
+          }
+          if (rawUrl) {
+            try {
+              const url = new URL(rawUrl, location.href);
+              span.updateName(`${method} ${url.pathname}`);
+            } catch {
+              /* fall back to the default name */
+            }
           }
         },
       }),
