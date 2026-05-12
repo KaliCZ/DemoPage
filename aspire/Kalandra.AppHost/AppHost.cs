@@ -72,7 +72,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 // without a port lets Aspire allocate a free one.
 var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
     .WithHttpEndpoint()
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    .WithIconName("Server");
 
 var otlpTracesUrl = $"http://localhost:{otlpHttpPort}/v1/traces";
 builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
@@ -80,6 +81,7 @@ builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
     .WithReference(api)
     .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
     .WithExternalHttpEndpoints()
+    .WithIconName("Globe")
     .WaitFor(api);
 
 // Temporal — community integration once we wire it in. Add the package
