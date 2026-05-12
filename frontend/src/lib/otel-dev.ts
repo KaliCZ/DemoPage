@@ -7,7 +7,7 @@
 // by the AppHost via PUBLIC_OTLP_TRACES_ENDPOINT (it varies per AppHost
 // instance because the OTLP port is dynamically reserved).
 
-import { context, trace } from "@opentelemetry/api";
+import { context, SpanKind, trace } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
@@ -44,10 +44,20 @@ if (!endpoint) {
     ],
   });
 
-  // Tag the global tracer with a fingerprint so it's obvious in console
-  // that the init ran (helpful when debugging "why no spans?").
-  // eslint-disable-next-line no-console
-  console.info("[otel-dev] OpenTelemetry initialized → " + endpoint);
-  void context;
-  void trace;
+  // Start a deliberate page-view span as the trace root, then bind window.fetch
+  // to a context where it's the active span. Without this, the first fetch on
+  // the page (typically the /health warm-up) becomes the trace root and every
+  // subsequent fetch chains under it — the trace ends up named "GET /health"
+  // for every page. Now every fetch on the page is a child of the page span,
+  // so the trace is named after the route the user is actually on.
+  const tracer = trace.getTracer("kalandra-frontend");
+  const pageSpan = tracer.startSpan(`page ${location.pathname}`, { kind: SpanKind.INTERNAL });
+  const pageContext = trace.setSpan(context.active(), pageSpan);
+  window.fetch = context.bind(pageContext, window.fetch);
+
+  // End the page span when the page unloads so the trace flushes. `pagehide`
+  // fires for both regular navigations and back/forward cache evictions.
+  window.addEventListener("pagehide", () => pageSpan.end(), { once: true });
+
+  console.info(`[otel-dev] OpenTelemetry initialized → ${endpoint}, page=${location.pathname}`);
 }
