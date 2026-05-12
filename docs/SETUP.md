@@ -134,40 +134,27 @@ npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launc
 
 The AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard URL is printed on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
 
-Port layout (offset is derived per-worktree — see [Parallel worktrees](#parallel-worktrees) below):
+Every port is allocated dynamically by default, so parallel worktrees never clash:
 
-| Resource | Port |
-|----------|------|
-| Aspire dashboard | `15036 + offset` |
-| OTLP exporter (dashboard ingest) | `19200 + offset` |
-| Resource service | `20056 + offset` |
-| Backend API | allocated by Aspire — see dashboard |
-| Frontend | allocated by Aspire — see dashboard |
+| Resource | How the port is picked |
+|----------|------------------------|
+| Aspire dashboard | OS-allocated (`listen(0)`) — printed on startup |
+| OTLP exporter (dashboard ingest) | OS-allocated — printed on startup |
+| Resource service | OS-allocated — printed on startup |
+| Backend API | allocated by dcp — see dashboard |
+| Frontend | allocated by dcp — see dashboard |
 
-The API and frontend ports are picked dynamically by dcp at startup. The dashboard lists every resource with a clickable URL; for the frontend, click through from there. Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
+The API and frontend live behind dcp; the dashboard lists every resource with a clickable URL. Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
+
+Want a stable, bookmarkable dashboard URL? Set `KALANDRA_PORT_OFFSET=<int>` — the three AppHost-owned ports then pin to `15036 / 19200 / 20056 + offset`.
 
 Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns its own Docker containers and would leak them on AppHost shutdown. Keep using `npm run dev:infra` (run automatically by `npm run aspire`) to manage the Supabase stack.
 
 #### Parallel worktrees
 
-Aspire fails silently when two AppHosts try to bind the same dashboard / OTLP / resource-service ports (the second one reports "listening" but never actually spawns its child resources). To avoid this, `aspire/dev-aspire.mjs` derives a port offset from a SHA-256 of the worktree's absolute path (mod 800), so each worktree gets a stable, distinct offset automatically. API and frontend ports are dynamic via dcp and can't clash either way.
+Just run `npm run aspire` in each. `aspire/dev-aspire.mjs` asks the OS for a free port for each AppHost-owned endpoint (dashboard, OTLP, resource service), so collisions are impossible. dcp handles API and frontend ports the same way internally. Read the dashboard URL from the script's startup output.
 
-```bash
-# Worktree A
-npm run aspire
-
-# Worktree B (different folder → different hash → different offset)
-npm run aspire
-```
-
-The offset is printed on startup ("derived from worktree path"). Set `KALANDRA_PORT_OFFSET=<int>` to override — useful on the rare hash collision, or to pin a memorable port:
-
-```bash
-KALANDRA_PORT_OFFSET=100 npm run aspire           # bash / git bash
-$env:KALANDRA_PORT_OFFSET=100; npm run aspire     # PowerShell
-```
-
-Supabase remains shared between both worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
+Supabase remains shared between worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
 
 ---
 
