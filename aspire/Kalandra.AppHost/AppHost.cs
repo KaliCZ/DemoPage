@@ -89,7 +89,7 @@ builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
 // surface the endpoints on the dashboard as external services for visibility
 // and one-click access. Ports come from supabase/config.toml.
 builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
-builder.AddExternalService("supabase-storage", "http://127.0.0.1:54321/storage/v1");
+builder.AddExternalService("supabase-storage", "http://127.0.0.1:54321/storage/v1/");
 builder.AddExternalService("supabase-postgres", "postgresql://127.0.0.1:54322");
 builder.AddExternalService("supabase-studio", "http://127.0.0.1:54323");
 builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
