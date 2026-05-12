@@ -1,11 +1,11 @@
 using System.Net;
 using System.Net.Sockets;
 
-// AppHost-owned endpoints (dashboard / OTLP exporter / resource service) get
-// OS-allocated ports by default, so two AppHosts can run in parallel without
-// clashing. Set KALANDRA_PORT_OFFSET=<int> to pin to a deterministic offset
-// (dashboard 15036 / OTLP 19200 / resource 20056 + offset) when you want a
-// bookmarkable dashboard URL.
+// AppHost-owned endpoints (dashboard / OTLP exporter / resource service)
+// start at their defaults and walk up by 1 until a free port is found, so
+// the first instance lands on 15036/19200/20056 and a second parallel
+// AppHost picks 15037/19201/20057, etc. Set KALANDRA_PORT_OFFSET=<int> to
+// pin to a specific offset instead.
 var (dashboardPort, otlpPort, resourcePort, portSource) = ResolveAppHostPorts();
 
 Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{dashboardPort}");
@@ -49,6 +49,10 @@ builder.Build().Run();
 
 static (int Dashboard, int Otlp, int Resource, string Source) ResolveAppHostPorts()
 {
+    const int DashboardDefault = 15036;
+    const int OtlpDefault = 19200;
+    const int ResourceDefault = 20056;
+
     var offsetEnv = Environment.GetEnvironmentVariable("KALANDRA_PORT_OFFSET");
     if (!string.IsNullOrEmpty(offsetEnv))
     {
@@ -57,21 +61,36 @@ static (int Dashboard, int Otlp, int Resource, string Source) ResolveAppHostPort
             Console.Error.WriteLine($"KALANDRA_PORT_OFFSET must be an integer, got: {offsetEnv}");
             Environment.Exit(1);
         }
-        return (15036 + offset, 19200 + offset, 20056 + offset, $"KALANDRA_PORT_OFFSET={offset}");
+        return (DashboardDefault + offset, OtlpDefault + offset, ResourceDefault + offset, $"KALANDRA_PORT_OFFSET={offset}");
     }
-    return (FindFreePort(), FindFreePort(), FindFreePort(), "OS-allocated");
+
+    var dashboard = FindFreePortFrom(DashboardDefault);
+    var otlp = FindFreePortFrom(OtlpDefault);
+    var resource = FindFreePortFrom(ResourceDefault);
+    var source = dashboard == DashboardDefault && otlp == OtlpDefault && resource == ResourceDefault
+        ? "default ports"
+        : "default ports, stepped past in-use";
+    return (dashboard, otlp, resource, source);
 }
 
-static int FindFreePort()
+static int FindFreePortFrom(int start, int maxAttempts = 100)
 {
-    var listener = new TcpListener(IPAddress.Loopback, 0);
-    listener.Start();
-    try
+    for (var port = start; port < start + maxAttempts; port++)
     {
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
+        var listener = new TcpListener(IPAddress.Loopback, port);
+        try
+        {
+            listener.Start();
+            return port;
+        }
+        catch (SocketException)
+        {
+            // Port in use — try the next one.
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
-    finally
-    {
-        listener.Stop();
-    }
+    throw new InvalidOperationException($"No free port found in range {start}..{start + maxAttempts - 1}");
 }
