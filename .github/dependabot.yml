@@ -12,8 +12,9 @@ updates:
           - "*"
 
   # Backend — NuGet packages across all csproj files in the solution.
+  # Points at repo root so Dependabot picks up DemoPage.slnx as the entry point.
   - package-ecosystem: nuget
-    directory: /backend
+    directory: /
     schedule:
       interval: weekly
     groups:
