@@ -18,8 +18,19 @@ import { BatchSpanProcessor, WebTracerProvider } from "@opentelemetry/sdk-trace-
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 const endpoint = import.meta.env.PUBLIC_OTLP_TRACES_ENDPOINT;
+
+// Surface state on window so you can poke at it from devtools — `import.meta`
+// can't be evaluated from the console, so this is the easy way to check.
+(window as unknown as { __otelDev: unknown }).__otelDev = {
+  envDev: import.meta.env.DEV,
+  endpoint: endpoint ?? null,
+  initialized: false,
+};
+
 if (!endpoint) {
-  console.warn("[otel-dev] PUBLIC_OTLP_TRACES_ENDPOINT is not set — frontend spans will not be emitted.");
+  console.warn(
+    "[otel-dev] PUBLIC_OTLP_TRACES_ENDPOINT is not set — frontend spans will not be emitted. Check `window.__otelDev` and verify the AppHost is injecting the env var.",
+  );
 } else {
   // Surface SDK internals — export attempts, exporter errors, CORS
   // rejections — straight to the browser console. Dev-only, so verbosity
@@ -64,5 +75,6 @@ if (!endpoint) {
   // fires for both regular navigations and back/forward cache evictions.
   window.addEventListener("pagehide", () => pageSpan.end(), { once: true });
 
+  (window as unknown as { __otelDev: { initialized: boolean } }).__otelDev.initialized = true;
   console.info(`[otel-dev] OpenTelemetry initialized → ${endpoint}, page=${location.pathname}`);
 }
