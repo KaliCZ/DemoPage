@@ -87,6 +87,19 @@ if (!endpoint) {
           /betterstack\.net\//,
           /sentry\.io\//,
         ],
+        // Default span name is "HTTP GET" plus status — useless for picking
+        // out which endpoint took 800ms in a list. Rename to "<METHOD> <path>"
+        // (query string dropped — too noisy and rarely the interesting bit).
+        applyCustomAttributesOnSpan: (span, request) => {
+          try {
+            const rawUrl = typeof request === "string" ? request : (request as Request).url;
+            const method = typeof request === "string" ? "GET" : ((request as Request).method ?? "GET");
+            const url = new URL(rawUrl, location.href);
+            span.updateName(`${method} ${url.pathname}`);
+          } catch {
+            /* fall back to the default name */
+          }
+        },
       }),
     ],
   });
