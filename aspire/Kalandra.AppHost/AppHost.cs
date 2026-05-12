@@ -42,7 +42,10 @@ Environment.SetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL", $"htt
 Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
 // Let the browser send OTLP-HTTP from the Astro dev origin (any localhost
 // port — dcp picks it) to the dashboard's OTLP HTTP endpoint. CORS only
-// applies to the HTTP endpoint; the gRPC one ignores it.
+// applies to the HTTP endpoint; the gRPC one ignores it. AuthMode is
+// also Unsecured so the browser exporter doesn't have to send an API
+// key — Aspire's default ApiKey mode would otherwise 401 every request.
+Environment.SetEnvironmentVariable("DASHBOARD__OTLP__AUTHMODE", "Unsecured");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
