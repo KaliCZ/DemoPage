@@ -88,6 +88,7 @@ public static class Observability
                             request.RequestUri is not { Host: var host }
                             || !host.EndsWith("betterstackdata.com", StringComparison.OrdinalIgnoreCase);
                     })
+                    .AddSource("Marten")
                     .AddNpgsql();
 
                 if (config is not null)
@@ -106,7 +107,8 @@ public static class Observability
                 metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddMeter("Marten");
 
                 if (config is not null)
                     metrics.AddOtlpExporter(otlp =>

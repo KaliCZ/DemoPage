@@ -6,6 +6,7 @@ using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
+using Marten.Services;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -36,6 +37,13 @@ public static class ServiceCollectionExtensions
             {
                 options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }
+
+            // Emit Marten session/batch spans so the connection-acquisition
+            // and query-batch wait time shows up on the dashboard instead of
+            // looking like an unexplained gap between the supabase calls and
+            // the individual Npgsql command spans.
+            options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
+            options.OpenTelemetry.TrackEventCounters();
         })
         .UseLightweightSessions();
 
