@@ -1,12 +1,37 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Hosting;
 
 // AppHost-owned endpoints (dashboard / OTLP exporter / resource service)
 // start at their defaults and walk up by 1 until a free port is found, so
 // the first instance lands on 15036/19200/20056 and a second parallel
 // AppHost picks 15037/19201/20057, etc. Set KALANDRA_PORT_OFFSET=<int> to
 // pin to a specific offset instead.
-var (dashboardPort, otlpPort, resourcePort, portSource) = ResolveAppHostPorts();
+//
+// Reservation strategy: bind a TcpListener on each chosen port the moment
+// we pick it, keep it bound through AppHost setup (so siblings probing
+// those ports get SocketException and walk past), then release the
+// listeners and let Aspire bind the dashboard in the same critical
+// section. A named Mutex serializes the two narrow windows (probe-and-bind
+// + release-and-handoff) across parallel AppHosts; the long middle phase
+// runs without holding the lock.
+const string PortMutexName = "Kalandra-Aspire-Ports";
+using var portMutex = new Mutex(initiallyOwned: false, PortMutexName);
+
+int dashboardPort, otlpPort, resourcePort;
+string portSource;
+TcpListener? dashboardListener, otlpListener, resourceListener;
+
+portMutex.WaitOne();
+try
+{
+    (dashboardPort, otlpPort, resourcePort, portSource,
+        dashboardListener, otlpListener, resourceListener) = ResolveAppHostPorts();
+}
+finally
+{
+    portMutex.ReleaseMutex();
+}
 
 Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{dashboardPort}");
 Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", $"http://localhost:{otlpPort}");
@@ -27,12 +52,14 @@ var builder = DistributedApplication.CreateBuilder(args);
 // passes the allocated frontend port to Astro via PORT, which astro.config.mjs
 // reads.
 //
-// Clearing TargetPort drops the :5000 inherited from launchSettings.json — we
-// keep that there for `npm run dev` and the e2e tests (which hit :5000
-// directly), but under Aspire we want Kestrel itself on a dynamic port so two
-// parallel AppHosts can coexist.
-var api = builder.AddProject<Projects.Kalandra_Api>("api")
-    .WithEndpoint("http", e => e.TargetPort = null);
+// launchProfileName: null skips launchSettings.json entirely — the profile
+// hardcodes http://localhost:5000, which two parallel AppHosts can't share.
+// `npm run dev` and the e2e tests use `dotnet run` directly and still rely
+// on :5000 from launchSettings; we only bypass it here. WithHttpEndpoint
+// without a port lets Aspire allocate a free one.
+var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
+    .WithHttpEndpoint()
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
 
 builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
     .WithHttpEndpoint(env: "PORT")
@@ -54,9 +81,32 @@ builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
 builder.AddExternalService("supabase-studio", "http://127.0.0.1:54323");
 builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
 
-builder.Build().Run();
+var app = builder.Build();
 
-static (int Dashboard, int Otlp, int Resource, string Source) ResolveAppHostPorts()
+// Hand-off window: re-acquire the mutex, release our bound listeners so the
+// kernel will let Aspire have the ports, and start the app while still
+// holding the lock. StartAsync returns once the dashboard is up, so the
+// close-then-bind sequence is atomic against any sibling AppHost doing its
+// own hand-off at the same instant.
+portMutex.WaitOne();
+try
+{
+    dashboardListener?.Stop();
+    otlpListener?.Stop();
+    resourceListener?.Stop();
+    dashboardListener = otlpListener = resourceListener = null;
+    await app.StartAsync();
+}
+finally
+{
+    portMutex.ReleaseMutex();
+}
+
+await app.WaitForShutdownAsync();
+
+static (int Dashboard, int Otlp, int Resource, string Source,
+        TcpListener? DashboardListener, TcpListener? OtlpListener, TcpListener? ResourceListener)
+    ResolveAppHostPorts()
 {
     const int DashboardDefault = 15036;
     const int OtlpDefault = 19200;
@@ -70,19 +120,26 @@ static (int Dashboard, int Otlp, int Resource, string Source) ResolveAppHostPort
             Console.Error.WriteLine($"KALANDRA_PORT_OFFSET must be an integer, got: {offsetEnv}");
             Environment.Exit(1);
         }
-        return (DashboardDefault + offset, OtlpDefault + offset, ResourceDefault + offset, $"KALANDRA_PORT_OFFSET={offset}");
+        return (DashboardDefault + offset, OtlpDefault + offset, ResourceDefault + offset,
+            $"KALANDRA_PORT_OFFSET={offset}", null, null, null);
     }
 
-    var dashboard = FindFreePortFrom(DashboardDefault);
-    var otlp = FindFreePortFrom(OtlpDefault);
-    var resource = FindFreePortFrom(ResourceDefault);
+    var (dashboard, dashboardListener) = ReserveFreePortFrom(DashboardDefault, "dashboard");
+    var (otlp, otlpListener) = ReserveFreePortFrom(OtlpDefault, "otlp");
+    var (resource, resourceListener) = ReserveFreePortFrom(ResourceDefault, "resource");
     var source = dashboard == DashboardDefault && otlp == OtlpDefault && resource == ResourceDefault
         ? "default ports"
         : "default ports, stepped past in-use";
-    return (dashboard, otlp, resource, source);
+    return (dashboard, otlp, resource, source, dashboardListener, otlpListener, resourceListener);
 }
 
-static int FindFreePortFrom(int start, int maxAttempts = 100)
+// Walks up from `start` and binds the first port it can grab. The returned
+// listener stays bound — keep it alive until you want Aspire to take the
+// port, then Stop() and let Aspire bind. The TCP bind itself is what
+// reserves the port; the outer Mutex only serializes the probe phase and
+// the close→Aspire-bind hand-off so two AppHosts can't race in those
+// narrow windows.
+static (int Port, TcpListener Listener) ReserveFreePortFrom(int start, string label, int maxAttempts = 100)
 {
     for (var port = start; port < start + maxAttempts; port++)
     {
@@ -90,16 +147,12 @@ static int FindFreePortFrom(int start, int maxAttempts = 100)
         try
         {
             listener.Start();
-            return port;
+            return (port, listener);
         }
         catch (SocketException)
         {
             // Port in use — try the next one.
         }
-        finally
-        {
-            listener.Stop();
-        }
     }
-    throw new InvalidOperationException($"No free port found in range {start}..{start + maxAttempts - 1}");
+    throw new InvalidOperationException($"No free {label} port found in range {start}..{start + maxAttempts - 1}");
 }
