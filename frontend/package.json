@@ -6,8 +6,8 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev --open",
-    "dev:claudePreview": "cross-env VITE_STRICT_PORT=1 astro dev",
+    "dev": "cross-env NODE_ENV=development astro dev --open",
+    "dev:claudePreview": "cross-env NODE_ENV=development VITE_STRICT_PORT=1 astro dev",
     "prebuild": "playwright install chromium && node scripts/generate-cv-pdf.mjs",
     "build": "astro build",
     "build:cv": "node scripts/generate-cv-pdf.mjs",
