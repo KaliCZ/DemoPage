@@ -22,7 +22,7 @@ int dashboardPort, otlpPort, resourcePort;
 string portSource;
 TcpListener? dashboardListener, otlpListener, resourceListener;
 
-portMutex.WaitOne();
+AcquireMutex(portMutex);
 try
 {
     (dashboardPort, otlpPort, resourcePort, portSource,
@@ -88,14 +88,18 @@ var app = builder.Build();
 // holding the lock. StartAsync returns once the dashboard is up, so the
 // close-then-bind sequence is atomic against any sibling AppHost doing its
 // own hand-off at the same instant.
-portMutex.WaitOne();
+//
+// Block synchronously on StartAsync: Mutex has thread affinity, and an
+// `await` here would let the continuation resume on a different thread, so
+// ReleaseMutex would throw ApplicationException.
+AcquireMutex(portMutex);
 try
 {
     dashboardListener?.Stop();
     otlpListener?.Stop();
     resourceListener?.Stop();
     dashboardListener = otlpListener = resourceListener = null;
-    await app.StartAsync();
+    app.StartAsync().GetAwaiter().GetResult();
 }
 finally
 {
@@ -103,6 +107,20 @@ finally
 }
 
 await app.WaitForShutdownAsync();
+
+// AbandonedMutexException means a previous AppHost crashed while holding
+// the lock. The kernel hands ownership to us anyway — just swallow the
+// exception and proceed.
+static void AcquireMutex(Mutex mutex)
+{
+    try
+    {
+        mutex.WaitOne();
+    }
+    catch (AbandonedMutexException)
+    {
+    }
+}
 
 static (int Dashboard, int Otlp, int Resource, string Source,
         TcpListener? DashboardListener, TcpListener? OtlpListener, TcpListener? ResourceListener)
