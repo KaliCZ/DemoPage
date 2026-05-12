@@ -148,7 +148,7 @@ The actual ports are printed on AppHost startup. The API and frontend live behin
 
 Want to pin a non-default offset (e.g. for bookmarks)? Set `KALANDRA_PORT_OFFSET=<int>` — the three AppHost-owned ports then pin to `15036 / 19200 / 20056 + offset`.
 
-Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns its own Docker containers and would leak them on AppHost shutdown. Keep using `npm run dev:infra` (run automatically by `npm run aspire`) to manage the Supabase stack.
+Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Keep using `npm run dev:infra` (run automatically by `npm run aspire`) to start and stop the Supabase stack.
 
 #### Parallel worktrees
 

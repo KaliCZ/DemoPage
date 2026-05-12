@@ -40,10 +40,13 @@ builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
 //   var temporal = builder.AddTemporalServerContainer("temporal");
 //   api.WithReference(temporal).WaitFor(temporal);
 //
-// Supabase stays outside Aspire. The CLI manages its own Docker containers
-// and would leak them on AppHost shutdown (no automatic `supabase stop` hook),
-// so we keep using `npm run dev:infra` to start Postgres + Supabase before
-// launching the AppHost.
+// Supabase containers are owned by the Supabase CLI (`npm run dev:infra`),
+// not Aspire — that way `Ctrl+C`-ing the AppHost doesn't leak them. We
+// surface the endpoints on the dashboard as external services for visibility
+// and one-click access. Ports come from supabase/config.toml.
+builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
+builder.AddExternalService("supabase-studio", "http://127.0.0.1:54323");
+builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
 
 builder.Build().Run();
 
