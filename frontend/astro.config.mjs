@@ -51,6 +51,9 @@ function getPageLastmod(url) {
 // https://astro.build/config
 export default defineConfig({
   site,
+  server: {
+    port: process.env.KALANDRA_FRONTEND_PORT ? Number(process.env.KALANDRA_FRONTEND_PORT) : undefined,
+  },
   build: {
     inlineStylesheets: "always",
   },
@@ -81,8 +84,8 @@ export default defineConfig({
     server: {
       strictPort: !!process.env.VITE_STRICT_PORT,
       proxy: {
-        "/api": "http://localhost:5000",
-        "/health": "http://localhost:5000",
+        "/api": `http://localhost:${process.env.KALANDRA_API_PORT ?? 5000}`,
+        "/health": `http://localhost:${process.env.KALANDRA_API_PORT ?? 5000}`,
       },
     },
   },

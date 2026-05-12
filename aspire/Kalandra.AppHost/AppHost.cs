@@ -1,19 +1,26 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Backend API — pinned to :5000 with the proxy disabled so the existing Vite
-// proxy in frontend/astro.config.mjs (which targets http://localhost:5000)
-// keeps working without changes.
+// Parallel envs across worktrees: scripts/dev-aspire.mjs computes per-worktree
+// ports from KALANDRA_PORT_OFFSET and exports them. Defaults match the
+// single-instance values so `dotnet run` from an IDE still works on its own.
+var apiPort = int.TryParse(Environment.GetEnvironmentVariable("KALANDRA_API_PORT"), out var p1) ? p1 : 5000;
+var frontendPort = int.TryParse(Environment.GetEnvironmentVariable("KALANDRA_FRONTEND_PORT"), out var p2) ? p2 : 4321;
+
+// Backend API — proxy disabled so the Vite proxy in astro.config.mjs hits
+// Kestrel directly on the configured port.
 var api = builder.AddProject<Projects.Kalandra_Api>("api")
     .WithEndpoint("http", endpoint =>
     {
-        endpoint.Port = 5000;
+        endpoint.Port = apiPort;
         endpoint.IsProxied = false;
     });
 
-// Frontend — Astro dev server on :4321. dev:claudePreview skips the browser
-// pop-up and fails fast if the port is taken.
+// Frontend — Astro reads KALANDRA_API_PORT / KALANDRA_FRONTEND_PORT from env
+// (see astro.config.mjs) for proxy upstream and bind port respectively.
 builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
-    .WithHttpEndpoint(port: 4321, isProxied: false)
+    .WithHttpEndpoint(port: frontendPort, isProxied: false)
+    .WithEnvironment("KALANDRA_API_PORT", apiPort.ToString())
+    .WithEnvironment("KALANDRA_FRONTEND_PORT", frontendPort.ToString())
     .WithExternalHttpEndpoints()
     .WaitFor(api);
 
