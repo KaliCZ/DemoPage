@@ -1,26 +1,16 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Parallel envs across worktrees: scripts/dev-aspire.mjs computes per-worktree
-// ports from KALANDRA_PORT_OFFSET and exports them. Defaults match the
-// single-instance values so `dotnet run` from an IDE still works on its own.
-var apiPort = int.TryParse(Environment.GetEnvironmentVariable("KALANDRA_API_PORT"), out var p1) ? p1 : 5000;
-var frontendPort = int.TryParse(Environment.GetEnvironmentVariable("KALANDRA_FRONTEND_PORT"), out var p2) ? p2 : 4321;
+// API and frontend ports are picked by Aspire/dcp and discovered dynamically.
+// WithReference(api) injects services__api__http__0 into the npm app so the
+// Vite proxy in astro.config.mjs knows where Kestrel landed. WithHttpEndpoint
+// passes the allocated frontend port to Astro via PORT, which astro.config.mjs
+// reads. Only the AppHost-owned ports (dashboard / OTLP / resource service)
+// need a deterministic offset — see aspire/dev-aspire.mjs.
+var api = builder.AddProject<Projects.Kalandra_Api>("api");
 
-// Backend API — proxy disabled so the Vite proxy in astro.config.mjs hits
-// Kestrel directly on the configured port.
-var api = builder.AddProject<Projects.Kalandra_Api>("api")
-    .WithEndpoint("http", endpoint =>
-    {
-        endpoint.Port = apiPort;
-        endpoint.IsProxied = false;
-    });
-
-// Frontend — Astro reads KALANDRA_API_PORT / KALANDRA_FRONTEND_PORT from env
-// (see astro.config.mjs) for proxy upstream and bind port respectively.
 builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
-    .WithHttpEndpoint(port: frontendPort, isProxied: false)
-    .WithEnvironment("KALANDRA_API_PORT", apiPort.ToString())
-    .WithEnvironment("KALANDRA_FRONTEND_PORT", frontendPort.ToString())
+    .WithHttpEndpoint(env: "PORT")
+    .WithReference(api)
     .WithExternalHttpEndpoints()
     .WaitFor(api);
 

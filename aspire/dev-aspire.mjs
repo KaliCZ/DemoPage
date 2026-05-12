@@ -2,10 +2,11 @@
 // Boots the Aspire AppHost with per-worktree ports.
 //
 // Set KALANDRA_PORT_OFFSET to a non-zero integer when running a second
-// worktree in parallel. Every port the AppHost owns gets the offset added
-// (dashboard, OTLP, resource service, API, frontend) so two worktrees can
-// run side by side without clashing on anything except Supabase, which is
-// intentionally shared via a single `npm run dev:infra`.
+// worktree in parallel. Only the AppHost-owned ports get the offset added
+// (dashboard, OTLP exporter, resource service). API and frontend ports are
+// allocated dynamically by dcp and discovered via service discovery, so they
+// can't clash across worktrees. Supabase is intentionally shared via a
+// single `npm run dev:infra`.
 
 import { spawn } from "node:child_process";
 
@@ -19,22 +20,17 @@ const ports = {
     dashboard: 15036 + offset,
     otlp: 19200 + offset,
     resource: 20056 + offset,
-    api: 5000 + offset,
-    frontend: 4321 + offset,
 };
 
 console.log(`Aspire (KALANDRA_PORT_OFFSET=${offset}):`);
 console.log(`  Dashboard:        http://localhost:${ports.dashboard}`);
 console.log(`  OTLP exporter:    http://localhost:${ports.otlp}`);
 console.log(`  Resource service: http://localhost:${ports.resource}`);
-console.log(`  API:              http://localhost:${ports.api}`);
-console.log(`  Frontend:         http://localhost:${ports.frontend}`);
+console.log(`  API + frontend:   allocated by Aspire — see dashboard`);
 
 const env = {
     ...process.env,
     KALANDRA_PORT_OFFSET: String(offset),
-    KALANDRA_API_PORT: String(ports.api),
-    KALANDRA_FRONTEND_PORT: String(ports.frontend),
     ASPNETCORE_URLS: `http://localhost:${ports.dashboard}`,
     ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL: `http://localhost:${ports.otlp}`,
     ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL: `http://localhost:${ports.resource}`,

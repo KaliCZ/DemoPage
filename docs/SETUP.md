@@ -140,14 +140,17 @@ Default ports (single instance):
 |----------|-----|
 | Aspire dashboard | `http://localhost:15036` |
 | OTLP exporter (dashboard ingest) | `http://localhost:19200` |
-| Backend API | `http://localhost:5000` |
-| Frontend | `http://localhost:4321` |
+| Resource service | `http://localhost:20056` |
+| Backend API | allocated by Aspire — see dashboard |
+| Frontend | allocated by Aspire — see dashboard |
+
+The API and frontend ports are picked dynamically by dcp at startup. The dashboard lists every resource with a clickable URL; for the frontend, click through from there. Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
 
 Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns its own Docker containers and would leak them on AppHost shutdown. Keep using `npm run dev:infra` (run automatically by `dev:aspire`) to manage the Supabase stack.
 
 #### Parallel worktrees
 
-Aspire fails silently when two AppHosts try to bind the same ports (the second one reports "listening" but never actually spawns its child resources). To run two worktrees side by side, set `KALANDRA_PORT_OFFSET` in the second one — every port the AppHost owns shifts by that amount:
+Aspire fails silently when two AppHosts try to bind the same dashboard / OTLP / resource-service ports (the second one reports "listening" but never actually spawns its child resources). To run two worktrees side by side, set `KALANDRA_PORT_OFFSET` in the second one — the three AppHost-owned ports shift by that amount; API and frontend ports are dynamic and can't clash:
 
 ```bash
 # Worktree A — default offset 0
@@ -158,7 +161,7 @@ KALANDRA_PORT_OFFSET=100 npm run dev:aspire           # bash / git bash
 $env:KALANDRA_PORT_OFFSET=100; npm run dev:aspire     # PowerShell
 ```
 
-With offset 100 the second stack lives at dashboard `:15136`, API `:5100`, frontend `:4421`, OTLP `:19300`. Supabase remains shared between both worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
+With offset 100 the second stack lives at dashboard `:15136`, OTLP `:19300`, resource service `:20156`. Supabase remains shared between both worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
 
 ---
 
