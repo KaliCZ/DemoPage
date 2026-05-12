@@ -1,0 +1,46 @@
+<script is:inline>
+  // W3C Trace Context propagation: attach `traceparent` to every fetch the
+  // browser makes to our own origin or to api.kalandra.tech. The backend's
+  // OpenTelemetry middleware reads the header and uses it as the trace ID
+  // for the request span, so frontend-initiated requests land on the Aspire
+  // dashboard (and prod telemetry) with a stable, copy-able trace ID.
+  //
+  // In production the BetterStack/Sentry SDK also injects traceparent, but
+  // it boots asynchronously — early fetches would miss it. This inline
+  // patch runs during HTML parse, before any module fetches, so dev and
+  // prod both get a trace ID on every backend request. If BetterStack
+  // later wraps fetch, it sees the existing header and leaves it alone.
+  (function () {
+    function hex(n) {
+      var b = new Uint8Array(n);
+      crypto.getRandomValues(b);
+      var s = "";
+      for (var i = 0; i < n; i++) s += b[i].toString(16).padStart(2, "0");
+      return s;
+    }
+    function newTraceparent() {
+      return "00-" + hex(16) + "-" + hex(8) + "-01";
+    }
+    function shouldTrace(url) {
+      try {
+        var u = new URL(url, location.href);
+        if (u.origin === location.origin) return true;
+        if (u.hostname === "api.kalandra.tech") return true;
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }
+    var origFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var url = typeof input === "string" ? input : (input && input.url) || "";
+      if (!shouldTrace(url)) return origFetch(input, init);
+      var headers = new Headers((init && init.headers) || (input && input.headers) || undefined);
+      if (!headers.has("traceparent")) {
+        headers.set("traceparent", newTraceparent());
+      }
+      var nextInit = Object.assign({}, init || {}, { headers: headers });
+      return origFetch(input, nextInit);
+    };
+  })();
+</script>
