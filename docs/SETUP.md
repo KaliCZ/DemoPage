@@ -129,7 +129,7 @@ npm run dev:wipe     # Stop and delete all data (clean slate)
 `npm run dev` is the simplest path — it spawns backend and frontend with `concurrently` and interleaves their logs in one terminal. For unified observability (logs, traces, metrics across services) or to run multiple worktrees in parallel, use the .NET Aspire AppHost instead:
 
 ```bash
-npm run dev:aspire   # Starts PostgreSQL + local Supabase, then launches the Aspire AppHost
+npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launches the Aspire AppHost
 ```
 
 The AppHost orchestrates the API and frontend and exposes the Aspire dashboard at `http://localhost:15036` — per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
@@ -146,7 +146,7 @@ Default ports (single instance):
 
 The API and frontend ports are picked dynamically by dcp at startup. The dashboard lists every resource with a clickable URL; for the frontend, click through from there. Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
 
-Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns its own Docker containers and would leak them on AppHost shutdown. Keep using `npm run dev:infra` (run automatically by `dev:aspire`) to manage the Supabase stack.
+Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns its own Docker containers and would leak them on AppHost shutdown. Keep using `npm run dev:infra` (run automatically by `npm run aspire`) to manage the Supabase stack.
 
 #### Parallel worktrees
 
@@ -154,11 +154,11 @@ Aspire fails silently when two AppHosts try to bind the same dashboard / OTLP / 
 
 ```bash
 # Worktree A — default offset 0
-npm run dev:aspire
+npm run aspire
 
 # Worktree B — pick any non-overlapping integer (100 shifts everything by 100)
-KALANDRA_PORT_OFFSET=100 npm run dev:aspire           # bash / git bash
-$env:KALANDRA_PORT_OFFSET=100; npm run dev:aspire     # PowerShell
+KALANDRA_PORT_OFFSET=100 npm run aspire           # bash / git bash
+$env:KALANDRA_PORT_OFFSET=100; npm run aspire     # PowerShell
 ```
 
 With offset 100 the second stack lives at dashboard `:15136`, OTLP `:19300`, resource service `:20156`. Supabase remains shared between both worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
