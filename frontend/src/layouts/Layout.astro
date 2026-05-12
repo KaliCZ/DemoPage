@@ -112,7 +112,14 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       // constant, so Vite tree-shakes the entire module and its
       // @opentelemetry/* deps out of the production bundle. In prod,
       // BetterStack/Sentry owns observability.
-      console.info("[otel-dev] gate", { dev: import.meta.env.DEV });
+      console.info("[otel-dev] gate", {
+        DEV: import.meta.env.DEV,
+        PROD: import.meta.env.PROD,
+        MODE: import.meta.env.MODE,
+        BASE_URL: import.meta.env.BASE_URL,
+        // Sanity: was the endpoint env var injected too?
+        endpoint: import.meta.env.PUBLIC_OTLP_TRACES_ENDPOINT ?? null,
+      });
       if (import.meta.env.DEV) {
         import("../lib/otel-dev").catch((err) => {
           console.error("[otel-dev] dynamic import failed:", err);
