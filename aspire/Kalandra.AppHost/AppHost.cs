@@ -26,7 +26,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Vite proxy in astro.config.mjs knows where Kestrel landed. WithHttpEndpoint
 // passes the allocated frontend port to Astro via PORT, which astro.config.mjs
 // reads.
-var api = builder.AddProject<Projects.Kalandra_Api>("api");
+//
+// Clearing TargetPort drops the :5000 inherited from launchSettings.json — we
+// keep that there for `npm run dev` and the e2e tests (which hit :5000
+// directly), but under Aspire we want Kestrel itself on a dynamic port so two
+// parallel AppHosts can coexist.
+var api = builder.AddProject<Projects.Kalandra_Api>("api")
+    .WithEndpoint("http", e => e.TargetPort = null);
 
 builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
     .WithHttpEndpoint(env: "PORT")
