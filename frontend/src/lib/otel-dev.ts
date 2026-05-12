@@ -39,7 +39,7 @@ if (!endpoint) {
 
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: "kalandra-frontend",
+      [ATTR_SERVICE_NAME]: "web",
     }),
     spanProcessors: [new BatchSpanProcessor(new OTLPTraceExporter({ url: endpoint }))],
   });

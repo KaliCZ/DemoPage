@@ -75,7 +75,7 @@ var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: nu
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
 
 var otlpTracesUrl = $"http://localhost:{otlpHttpPort}/v1/traces";
-builder.AddNpmApp("frontend", "../../frontend", "dev:claudePreview")
+builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
     .WithHttpEndpoint(env: "PORT")
     .WithReference(api)
     .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)

@@ -10,7 +10,7 @@ namespace Kalandra.Api.Infrastructure;
 
 public static class Observability
 {
-    private const string ServiceName = "kalandra-api";
+    private const string ServiceName = "api";
 
     public static void Add(WebApplicationBuilder builder)
     {
