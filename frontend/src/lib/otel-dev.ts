@@ -7,7 +7,7 @@
 // by the AppHost via PUBLIC_OTLP_TRACES_ENDPOINT (it varies per AppHost
 // instance because the OTLP port is dynamically reserved).
 
-import { context, SpanKind, trace } from "@opentelemetry/api";
+import { context, DiagConsoleLogger, DiagLogLevel, diag, SpanKind, trace } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
@@ -21,6 +21,11 @@ const endpoint = import.meta.env.PUBLIC_OTLP_TRACES_ENDPOINT;
 if (!endpoint) {
   console.warn("[otel-dev] PUBLIC_OTLP_TRACES_ENDPOINT is not set — frontend spans will not be emitted.");
 } else {
+  // Surface SDK internals — export attempts, exporter errors, CORS
+  // rejections — straight to the browser console. Dev-only, so verbosity
+  // is fine.
+  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
+
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: "kalandra-frontend",
