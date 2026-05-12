@@ -7,11 +7,11 @@
 // by the AppHost via PUBLIC_OTLP_TRACES_ENDPOINT (it varies per AppHost
 // instance because the OTLP port is dynamically reserved).
 
-import { context, DiagConsoleLogger, DiagLogLevel, diag, SpanKind, trace } from "@opentelemetry/api";
+import type { Context } from "@opentelemetry/api";
+import { DiagConsoleLogger, DiagLogLevel, diag, SpanKind, trace } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
-import { DocumentLoadInstrumentation } from "@opentelemetry/instrumentation-document-load";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchSpanProcessor, WebTracerProvider } from "@opentelemetry/sdk-trace-web";
@@ -37,6 +37,28 @@ if (!endpoint) {
   // is fine.
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
+  // Context manager that falls back to the page span whenever nothing
+  // else is active. Without this, fetches that happen outside an
+  // explicit `context.with(pageContext, ...)` scope (most of them) start
+  // their own root span and the trace gets named "HTTP GET ..." instead
+  // of "page /...". By keeping pageContext as the implicit floor, every
+  // fetch and every async continuation that lacks its own parent gets
+  // pageSpan as its parent instead.
+  class PageRootContextManager extends ZoneContextManager {
+    private pageContext: Context | null = null;
+    setPageContext(ctx: Context) {
+      this.pageContext = ctx;
+    }
+    override active(): Context {
+      const ctx = super.active();
+      if (this.pageContext && !trace.getSpan(ctx)) {
+        return this.pageContext;
+      }
+      return ctx;
+    }
+  }
+  const contextManager = new PageRootContextManager();
+
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: "web",
@@ -44,12 +66,11 @@ if (!endpoint) {
     spanProcessors: [new BatchSpanProcessor(new OTLPTraceExporter({ url: endpoint }))],
   });
   provider.register({
-    contextManager: new ZoneContextManager(),
+    contextManager,
   });
 
   registerInstrumentations({
     instrumentations: [
-      new DocumentLoadInstrumentation(),
       new FetchInstrumentation({
         // Same-origin (Astro dev proxy) and our backend. Without this list
         // the auto-instrumentation only adds traceparent to same-origin
@@ -70,16 +91,14 @@ if (!endpoint) {
     ],
   });
 
-  // Start a deliberate page-view span as the trace root, then bind window.fetch
-  // to a context where it's the active span. Without this, the first fetch on
-  // the page (typically the /health warm-up) becomes the trace root and every
-  // subsequent fetch chains under it — the trace ends up named "GET /health"
-  // for every page. Now every fetch on the page is a child of the page span,
-  // so the trace is named after the route the user is actually on.
-  const tracer = trace.getTracer("kalandra-frontend");
+  // Start a deliberate page-view span and feed it to the context manager as
+  // the implicit floor. Every fetch, every async continuation that doesn't
+  // already have its own parent now lands under this span — so the trace
+  // root is always "page /<pathname>" instead of whichever fetch happened
+  // to fire first.
+  const tracer = trace.getTracer("web");
   const pageSpan = tracer.startSpan(`page ${location.pathname}`, { kind: SpanKind.INTERNAL });
-  const pageContext = trace.setSpan(context.active(), pageSpan);
-  window.fetch = context.bind(pageContext, window.fetch);
+  contextManager.setPageContext(trace.setSpan(contextManager.active(), pageSpan));
 
   // End the page span when the page unloads so the trace flushes. `pagehide`
   // fires for both regular navigations and back/forward cache evictions.
