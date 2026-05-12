@@ -93,14 +93,15 @@ export default defineConfig({
         "/health": aspireApiUrl ?? "http://localhost:5000",
       },
     },
-    // Our otel-dev module is a dynamic import gated on import.meta.env.DEV,
-    // so Vite doesn't see its @opentelemetry/* deps at cold start — it
-    // discovers them mid-page-load and triggers a re-optimize, which 504s
-    // any in-flight dep request (including Astro's dev toolbar) until it
-    // finishes. Pre-declaring them here makes Vite bundle them up front
-    // and skips the disruptive mid-flight optimize.
+    // Pre-declare every dependency that's only reached via a dynamic
+    // import (supabase.ts uses import("@supabase/supabase-js"); Layout
+    // uses import("../lib/otel-dev")). Without this Vite discovers them
+    // mid-page-load and triggers a re-optimize, which 504s any in-flight
+    // dep request — including Astro's dev toolbar — until it finishes.
+    // Pre-bundling them at cold start avoids the disruptive interrupt.
     optimizeDeps: {
       include: [
+        "@supabase/supabase-js",
         "@opentelemetry/api",
         "@opentelemetry/context-zone",
         "@opentelemetry/exporter-trace-otlp-http",
