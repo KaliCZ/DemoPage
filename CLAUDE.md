@@ -22,6 +22,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). See
 ```bash
 npm install            # Root + frontend deps (via postinstall)
 npm run dev            # Docker PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev)
+npm run dev:aspire     # Same stack under the Aspire AppHost — dashboard at :15036; supports parallel worktrees via KALANDRA_PORT_OFFSET
 npm test               # All tests: backend + frontend + E2E
 dotnet build           # Backend only
 npm run build:frontend # Frontend only
