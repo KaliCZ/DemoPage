@@ -132,15 +132,15 @@ npm run dev:wipe     # Stop and delete all data (clean slate)
 npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launches the Aspire AppHost
 ```
 
-The AppHost orchestrates the API and frontend and exposes the Aspire dashboard at `http://localhost:15036` — per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
+The AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard URL is printed on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
 
-Default ports (single instance):
+Port layout (offset is derived per-worktree — see [Parallel worktrees](#parallel-worktrees) below):
 
-| Resource | URL |
-|----------|-----|
-| Aspire dashboard | `http://localhost:15036` |
-| OTLP exporter (dashboard ingest) | `http://localhost:19200` |
-| Resource service | `http://localhost:20056` |
+| Resource | Port |
+|----------|------|
+| Aspire dashboard | `15036 + offset` |
+| OTLP exporter (dashboard ingest) | `19200 + offset` |
+| Resource service | `20056 + offset` |
 | Backend API | allocated by Aspire — see dashboard |
 | Frontend | allocated by Aspire — see dashboard |
 
@@ -150,18 +150,24 @@ Supabase is intentionally **not** managed by Aspire — the Supabase CLI spawns 
 
 #### Parallel worktrees
 
-Aspire fails silently when two AppHosts try to bind the same dashboard / OTLP / resource-service ports (the second one reports "listening" but never actually spawns its child resources). To run two worktrees side by side, set `KALANDRA_PORT_OFFSET` in the second one — the three AppHost-owned ports shift by that amount; API and frontend ports are dynamic and can't clash:
+Aspire fails silently when two AppHosts try to bind the same dashboard / OTLP / resource-service ports (the second one reports "listening" but never actually spawns its child resources). To avoid this, `aspire/dev-aspire.mjs` derives a port offset from a SHA-256 of the worktree's absolute path (mod 800), so each worktree gets a stable, distinct offset automatically. API and frontend ports are dynamic via dcp and can't clash either way.
 
 ```bash
-# Worktree A — default offset 0
+# Worktree A
 npm run aspire
 
-# Worktree B — pick any non-overlapping integer (100 shifts everything by 100)
+# Worktree B (different folder → different hash → different offset)
+npm run aspire
+```
+
+The offset is printed on startup ("derived from worktree path"). Set `KALANDRA_PORT_OFFSET=<int>` to override — useful on the rare hash collision, or to pin a memorable port:
+
+```bash
 KALANDRA_PORT_OFFSET=100 npm run aspire           # bash / git bash
 $env:KALANDRA_PORT_OFFSET=100; npm run aspire     # PowerShell
 ```
 
-With offset 100 the second stack lives at dashboard `:15136`, OTLP `:19300`, resource service `:20156`. Supabase remains shared between both worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
+Supabase remains shared between both worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
 
 ---
 
