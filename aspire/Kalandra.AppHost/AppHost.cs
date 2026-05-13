@@ -2,23 +2,18 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 
-// AppHost-owned endpoints (dashboard / OTLP gRPC / OTLP HTTP / resource
-// service) start at their defaults and walk up by 1 until a free port is
-// found, so the first instance lands on 15036/19200/19400/20056 and a
-// second parallel AppHost picks 15037/19201/19401/20057, etc. Set
-// KALANDRA_PORT_OFFSET=<int> to pin to a specific offset instead.
-// OTLP HTTP is separate from OTLP gRPC because browsers can only speak
-// OTLP-HTTP, and the dashboard wires CORS to that endpoint only.
+// AppHost-owned ports (dashboard, OTLP gRPC, OTLP HTTP, resource service)
+// start at their defaults and walk up by 1 until free, so a second parallel
+// AppHost lands one above the first. KALANDRA_PORT_OFFSET=<int> pins to a
+// fixed offset instead. OTLP HTTP exists separately from gRPC because the
+// browser exporter can only speak HTTP.
 //
-// Reservation strategy: bind a TcpListener on each chosen port the moment
-// we pick it, keep it bound through AppHost setup (so siblings probing
-// those ports get SocketException and walk past), then release the
-// listeners and let Aspire bind the dashboard in the same critical
-// section. A named Mutex serializes the two narrow windows (probe-and-bind
-// + release-and-handoff) across parallel AppHosts; the long middle phase
-// runs without holding the lock.
-const string PortMutexName = "Kalandra-Aspire-Ports";
-using var portMutex = new Mutex(initiallyOwned: false, PortMutexName);
+// To make port pickup race-free across parallel AppHosts, we bind a
+// TcpListener on each chosen port immediately (siblings probing it then
+// see SocketException and step past), and a named Mutex serializes only
+// the two narrow critical sections: the initial probe-and-bind, and the
+// later release-and-hand-off to Aspire.
+using var portMutex = new Mutex(initiallyOwned: false, "Kalandra-Aspire-Ports");
 
 int dashboardPort, otlpPort, otlpHttpPort, resourcePort;
 string portSource;
@@ -40,36 +35,28 @@ Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", $"http:
 Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL", $"http://localhost:{otlpHttpPort}");
 Environment.SetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL", $"http://localhost:{resourcePort}");
 Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
-// Let the browser send OTLP-HTTP from the Astro dev origin (any localhost
-// port — dcp picks it) to the dashboard's OTLP HTTP endpoint. CORS only
-// applies to the HTTP endpoint; the gRPC one ignores it.
-// DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS turns off both dashboard-UI
-// auth and OTLP API-key auth, so the browser exporter doesn't have to
-// send credentials. Dev-only — the AppHost is local-loopback.
+// Disable dashboard auth + OTLP API-key auth and open CORS so the browser
+// OTLP exporter can POST from the Astro dev origin without credentials.
+// Dev-only; the AppHost is bound to loopback.
 Environment.SetEnvironmentVariable("DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS", "true");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
 Console.WriteLine($"Aspire ({portSource}):");
 Console.WriteLine($"  Dashboard:        http://localhost:{dashboardPort}");
-Console.WriteLine($"  OTLP gRPC:        http://localhost:{otlpPort}");
-Console.WriteLine($"  OTLP HTTP:        http://localhost:{otlpHttpPort}");
 Console.WriteLine($"  Resource service: http://localhost:{resourcePort}");
 Console.WriteLine($"  API + frontend:   allocated by Aspire — see dashboard");
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// API and frontend ports are picked by dcp and discovered dynamically.
-// WithReference(api) injects services__api__http__0 into the npm app so the
-// Vite proxy in astro.config.mjs knows where Kestrel landed. WithHttpEndpoint
-// passes the allocated frontend port to Astro via PORT, which astro.config.mjs
-// reads.
+// Aspire allocates API and frontend ports dynamically. WithReference(api)
+// injects services__api__http__0 into the npm app (read by astro.config.mjs
+// for the Vite proxy); WithHttpEndpoint(env: "PORT") passes the frontend's
+// allocated port to Astro via $PORT.
 //
-// launchProfileName: null skips launchSettings.json entirely — the profile
-// hardcodes http://localhost:5000, which two parallel AppHosts can't share.
-// `npm run dev` and the e2e tests use `dotnet run` directly and still rely
-// on :5000 from launchSettings; we only bypass it here. WithHttpEndpoint
-// without a port lets Aspire allocate a free one.
+// launchProfileName: null bypasses launchSettings.json (which hardcodes
+// :5000 and would block parallel AppHosts). `npm run dev` and the e2e
+// tests still use that profile directly.
 var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
     .WithHttpEndpoint()
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
@@ -84,16 +71,10 @@ builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
     .WithIconName("Globe")
     .WaitFor(api);
 
-// Temporal — community integration once we wire it in. Add the package
-// CommunityToolkit.Aspire.Hosting.Temporal and uncomment:
-//
-//   var temporal = builder.AddTemporalServerContainer("temporal");
-//   api.WithReference(temporal).WaitFor(temporal);
-//
 // Supabase containers are owned by the Supabase CLI (`npm run dev:infra`),
-// not Aspire — that way `Ctrl+C`-ing the AppHost doesn't leak them. We
-// surface the endpoints on the dashboard as external services for visibility
-// and one-click access. Ports come from supabase/config.toml.
+// not Aspire — Ctrl+C-ing the AppHost would otherwise leak them. Surface
+// them on the dashboard as external services (display-only, no lifecycle).
+// Ports come from supabase/config.toml.
 builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
 builder.AddExternalService("supabase-storage", "http://127.0.0.1:54321/storage/v1/");
 builder.AddExternalService("supabase-postgres", "postgresql://127.0.0.1:54322");
@@ -102,15 +83,10 @@ builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
 
 var app = builder.Build();
 
-// Hand-off window: re-acquire the mutex, release our bound listeners so the
-// kernel will let Aspire have the ports, and start the app while still
-// holding the lock. StartAsync returns once the dashboard is up, so the
-// close-then-bind sequence is atomic against any sibling AppHost doing its
-// own hand-off at the same instant.
-//
-// Block synchronously on StartAsync: Mutex has thread affinity, and an
-// `await` here would let the continuation resume on a different thread, so
-// ReleaseMutex would throw ApplicationException.
+// Hand-off: re-acquire the mutex, drop our placeholder listeners, and let
+// Aspire bind the ports before another instance can race in. StartAsync
+// is awaited synchronously because Mutex has thread affinity — an `await`
+// could resume on a different thread and break ReleaseMutex.
 AcquireMutex(portMutex);
 try
 {
@@ -128,9 +104,8 @@ finally
 
 await app.WaitForShutdownAsync();
 
-// AbandonedMutexException means a previous AppHost crashed while holding
-// the lock. The kernel hands ownership to us anyway — just swallow the
-// exception and proceed.
+// AbandonedMutexException means a prior AppHost crashed holding the lock.
+// The OS still hands ownership to us, so swallow it and continue.
 static void AcquireMutex(Mutex mutex)
 {
     try
@@ -173,12 +148,9 @@ static (int Dashboard, int Otlp, int OtlpHttp, int Resource, string Source,
     return (dashboard, otlp, otlpHttp, resource, source, dashboardListener, otlpListener, otlpHttpListener, resourceListener);
 }
 
-// Walks up from `start` and binds the first port it can grab. The returned
-// listener stays bound — keep it alive until you want Aspire to take the
-// port, then Stop() and let Aspire bind. The TCP bind itself is what
-// reserves the port; the outer Mutex only serializes the probe phase and
-// the close→Aspire-bind hand-off so two AppHosts can't race in those
-// narrow windows.
+// Bind the first free port at or above `start` and return the live
+// listener — the caller keeps it bound (which reserves the port) until
+// it's ready to hand off, then calls Stop() so Aspire can take over.
 static (int Port, TcpListener Listener) ReserveFreePortFrom(int start, string label, int maxAttempts = 100)
 {
     for (var port = start; port < start + maxAttempts; port++)

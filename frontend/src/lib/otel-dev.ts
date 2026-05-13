@@ -32,18 +32,13 @@ if (!endpoint) {
     "[otel-dev] PUBLIC_OTLP_TRACES_ENDPOINT is not set — frontend spans will not be emitted. Check `window.__otelDev` and verify the AppHost is injecting the env var.",
   );
 } else {
-  // Surface SDK internals — export attempts, exporter errors, CORS
-  // rejections — straight to the browser console. Dev-only, so verbosity
-  // is fine.
-  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
+  // Surface exporter errors and CORS rejections to the browser console.
+  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.WARN);
 
-  // Context manager that falls back to the page span whenever nothing
-  // else is active. Without this, fetches that happen outside an
-  // explicit `context.with(pageContext, ...)` scope (most of them) start
-  // their own root span and the trace gets named "HTTP GET ..." instead
-  // of "page /...". By keeping pageContext as the implicit floor, every
-  // fetch and every async continuation that lacks its own parent gets
-  // pageSpan as its parent instead.
+  // Context manager that hands out pageContext whenever nothing else is
+  // active, so fetches outside an explicit `context.with(...)` scope
+  // inherit the page span as their parent instead of starting their own
+  // root and producing one "HTTP GET" trace per request.
   class PageRootContextManager extends ZoneContextManager {
     private pageContext: Context | null = null;
     setPageContext(ctx: Context) {
@@ -72,26 +67,15 @@ if (!endpoint) {
   registerInstrumentations({
     instrumentations: [
       new FetchInstrumentation({
-        // Same-origin (Astro dev proxy) and our backend. Without this list
-        // the auto-instrumentation only adds traceparent to same-origin
-        // fetches, which is usually fine in dev since the Vite proxy keeps
-        // /api/* on the page origin.
+        // Propagate traceparent to anything on localhost — covers the
+        // Astro dev proxy and direct backend hits in dev.
         propagateTraceHeaderCorsUrls: [/^https?:\/\/localhost(:\d+)?\//, /^https?:\/\/127\.0\.0\.1(:\d+)?\//],
-        // Drop telemetry-of-telemetry: don't create spans for the OTLP
-        // exporter's own POSTs (would self-loop) or for BetterStack /
-        // Sentry ingestion. Endpoints that aren't application traffic
-        // just add noise to the dashboard.
-        ignoreUrls: [
-          new RegExp("^" + (endpoint ?? "").replace(/[/.]/g, "\\$&")),
-          /betterstackdata\.com\//,
-          /betterstack\.net\//,
-          /sentry\.io\//,
-        ],
-        // Default span name is "HTTP GET" plus status — useless for picking
-        // out which endpoint took 800ms in a list. Rename to "<METHOD> <path>"
-        // via requestHook (fires before the request goes out, so the name
-        // is set before any other code path can read it). Handles Request,
-        // URL, and plain-string inputs; query string is dropped.
+        // Skip telemetry-of-telemetry: the exporter's own POSTs (would
+        // self-loop) and BetterStack/Sentry ingestion.
+        ignoreUrls: [new RegExp("^" + endpoint.replace(/[/.]/g, "\\$&")), /betterstackdata\.com\//, /betterstack\.net\//, /sentry\.io\//],
+        // Rename spans from the default "HTTP GET" to "<METHOD> <path>"
+        // so the dashboard list is scannable. Handles Request, URL, and
+        // plain-string inputs; the query string is dropped.
         requestHook: (span, request) => {
           let rawUrl: string | null = null;
           let method = "GET";
@@ -120,24 +104,17 @@ if (!endpoint) {
     ],
   });
 
-  // Start a deliberate page-view span and feed it to the context manager as
-  // the implicit floor. Every fetch, every async continuation that doesn't
-  // already have its own parent now lands under this span — so the trace
-  // root is always "page /<pathname>" instead of whichever fetch happened
-  // to fire first.
+  // Start the page-view span and install it as the context manager's
+  // implicit floor — so every trace roots at "page /<pathname>" instead
+  // of whichever fetch fires first.
   const tracer = trace.getTracer("web");
   const pageSpan = tracer.startSpan(`page ${location.pathname}`, { kind: SpanKind.INTERNAL });
   contextManager.setPageContext(trace.setSpan(contextManager.active(), pageSpan));
 
-  // End the page span as soon as the page finishes loading rather than at
-  // pagehide. The trace root has to exist for the dashboard to render
-  // anything, but BatchSpanProcessor doesn't export pageSpan until it
-  // ends — so leaving it open for the whole session meant the trace only
-  // showed up after the user navigated away (and even then orphaned fetch
-  // spans appeared as their own "HTTP GET" traces). Ending early is fine:
-  // the context manager still serves pageContext as active, so subsequent
-  // fetches inherit pageSpan's trace ID and continue to appear in the same
-  // trace, even though pageSpan itself is closed.
+  // End pageSpan at `load`, not at pagehide: BatchSpanProcessor only
+  // exports a span once it ends, so an open page span would delay the
+  // whole trace until navigation away. The context manager keeps serving
+  // pageContext after end(), so later fetches still inherit its trace ID.
   const endPageSpan = () => pageSpan.end();
   if (document.readyState === "complete") {
     endPageSpan();
