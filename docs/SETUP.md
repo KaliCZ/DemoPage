@@ -132,28 +132,27 @@ npm run dev:wipe     # Stop and delete all data (clean slate)
 npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launches the Aspire AppHost
 ```
 
-The AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard URL is printed on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
+The AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard, API, and frontend URLs are printed (clickably, in supporting terminals) on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
 
-The AppHost prefers a known default port for each of its endpoints and walks up by 1 if it's taken — same idea as Astro picking 4321, 4322, … locally. The first running instance lands on the defaults; a second parallel one shifts to the next free port:
+The AppHost prefers known default ports for the endpoints it owns and walks up by 1 if any is taken — same idea as Astro picking 4321, 4322, … locally. The first running instance lands on the defaults; a second parallel one shifts to the next free port:
 
-| Resource | First instance | Picked by |
+| Endpoint | First instance | Picked by |
 |----------|----------------|-----------|
 | Aspire dashboard | `15036` | starts at default, +1 until free |
 | OTLP gRPC (backend ingest) | `19200` | starts at default, +1 until free |
 | OTLP HTTP (browser ingest) | `19400` | starts at default, +1 until free |
-| Resource service | `20056` | starts at default, +1 until free |
-| Backend API | — | allocated by dcp — see dashboard |
-| Frontend | — | allocated by dcp — see dashboard |
+| Backend API | — | allocated by dcp, printed on start |
+| Frontend | — | allocated by dcp, printed on start |
 
-The actual ports are printed on AppHost startup. The API and frontend live behind dcp; the dashboard lists every resource with a clickable URL. Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
+Service discovery wires the Vite proxy to the API automatically (`services__api__http__0` env var → `astro.config.mjs`).
 
-Want to pin a non-default offset (e.g. for bookmarks)? Set `KALANDRA_PORT_OFFSET=<int>` — the four AppHost-owned ports then pin to `15036 / 19200 / 19400 / 20056 + offset`.
+Want to pin a fixed offset (e.g. for bookmarkable URLs)? Set `KALANDRA_PORT_OFFSET=<int>` — the AppHost-owned ports then pin to `default + offset`. The AppHost bind-tests each pinned port at startup and exits with a clear message if any is already in use.
 
 Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Keep using `npm run dev:infra` (run automatically by `npm run aspire`) to start and stop the Supabase stack.
 
 #### Parallel worktrees
 
-Just run `npm run aspire` in each. The AppHost walks the dashboard / OTLP / resource-service ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. Read the dashboard URL from the AppHost's startup output.
+Just run `npm run aspire` in each. The AppHost walks the dashboard / OTLP ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. The startup output prints clickable URLs for the dashboard, API, and frontend.
 
 Supabase remains shared between worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
 

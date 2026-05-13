@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
+using Aspire.Hosting.ApplicationModel;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 // AppHost-owned ports (dashboard, OTLP gRPC, OTLP HTTP, resource service)
@@ -42,10 +44,9 @@ Environment.SetEnvironmentVariable("DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS",
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
+var dashboardUrl = $"http://localhost:{dashboardPort}";
 Console.WriteLine($"Aspire ({portSource}):");
-Console.WriteLine($"  Dashboard:        http://localhost:{dashboardPort}");
-Console.WriteLine($"  Resource service: http://localhost:{resourcePort}");
-Console.WriteLine($"  API + frontend:   allocated by Aspire — see dashboard");
+Console.WriteLine($"  Dashboard: {Hyperlink(dashboardUrl)}");
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -102,7 +103,34 @@ finally
     portMutex.ReleaseMutex();
 }
 
+// Print each resource's external URL the moment it goes Running. Aspire
+// also logs these, but interleaved with framework output; this gives a
+// clean, clickable list at the top of the terminal.
+var notifications = app.Services.GetRequiredService<ResourceNotificationService>();
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+var printed = new HashSet<string>();
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await foreach (var evt in notifications.WatchAsync(lifetime.ApplicationStopping))
+        {
+            if (evt.Snapshot.State?.Text != KnownResourceStates.Running) continue;
+            var urls = evt.Snapshot.Urls.Where(u => !u.IsInternal).ToList();
+            if (urls.Count == 0 || !printed.Add(evt.Resource.Name)) continue;
+            foreach (var url in urls)
+                Console.WriteLine($"  {evt.Resource.Name}: {Hyperlink(url.Url)}");
+        }
+    }
+    catch (OperationCanceledException) { }
+});
+
 await app.WaitForShutdownAsync();
+
+// OSC 8 hyperlink escape — Windows Terminal, VS Code, JetBrains, and most
+// modern Unix terminals render this as a clickable link; others show the
+// raw URL as the visible text, so nothing is lost.
+static string Hyperlink(string url) => $"\x1b]8;;{url}\x1b\\{url}\x1b]8;;\x1b\\";
 
 // AbandonedMutexException means a prior AppHost crashed holding the lock.
 // The OS still hands ownership to us, so swallow it and continue.
@@ -134,8 +162,33 @@ static (int Dashboard, int Otlp, int OtlpHttp, int Resource, string Source,
             Console.Error.WriteLine($"KALANDRA_PORT_OFFSET must be an integer, got: {offsetEnv}");
             Environment.Exit(1);
         }
-        return (DashboardDefault + offset, OtlpDefault + offset, OtlpHttpDefault + offset, ResourceDefault + offset,
-            $"KALANDRA_PORT_OFFSET={offset}", null, null, null, null);
+        // Bind-test each port at the requested offset so we fail loudly
+        // here instead of crashing deep in Aspire startup. If any one is
+        // taken, release the rest and exit with a clear message.
+        var pinned = new (int Port, string Label)[]
+        {
+            (DashboardDefault + offset, "dashboard"),
+            (OtlpDefault + offset, "otlp"),
+            (OtlpHttpDefault + offset, "otlp-http"),
+            (ResourceDefault + offset, "resource"),
+        };
+        var pinnedListeners = new TcpListener[pinned.Length];
+        for (var i = 0; i < pinned.Length; i++)
+        {
+            try
+            {
+                pinnedListeners[i] = new TcpListener(IPAddress.Loopback, pinned[i].Port);
+                pinnedListeners[i].Start();
+            }
+            catch (SocketException)
+            {
+                for (var j = 0; j < i; j++) pinnedListeners[j].Stop();
+                Console.Error.WriteLine($"KALANDRA_PORT_OFFSET={offset}: {pinned[i].Label} port {pinned[i].Port} is already in use");
+                Environment.Exit(1);
+            }
+        }
+        return (pinned[0].Port, pinned[1].Port, pinned[2].Port, pinned[3].Port,
+            $"KALANDRA_PORT_OFFSET={offset}", pinnedListeners[0], pinnedListeners[1], pinnedListeners[2], pinnedListeners[3]);
     }
 
     var (dashboard, dashboardListener) = ReserveFreePortFrom(DashboardDefault, "dashboard");
