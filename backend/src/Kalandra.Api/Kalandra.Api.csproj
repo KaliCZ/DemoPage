@@ -19,15 +19,15 @@
     <PackageReference Include="Kalicz.StrongTypes" Version="1.1.0" />
     <PackageReference Include="Kalicz.StrongTypes.OpenApi.Swashbuckle" Version="1.1.0" />
     <PackageReference Include="Marten" Version="8.37.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.2" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageReference Include="Npgsql.OpenTelemetry" Version="9.0.3" />
-    <PackageReference Include="Sentry.AspNetCore" Version="6.3.1" />
-    <PackageReference Include="Sentry.OpenTelemetry" Version="6.3.1" />
+    <PackageReference Include="Sentry.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Sentry.OpenTelemetry" Version="6.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
