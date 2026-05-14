@@ -5,7 +5,7 @@
   "scripts": {
     "postinstall": "cd frontend && npm install",
     "prepare": "git config core.hooksPath frontend/.githooks",
-    "aspire": "dotnet run --project aspire/Kalandra.AppHost --no-launch-profile",
+    "aspire": "dotnet run --project aspire/Kalandra.AppHost",
     "dev:infra": "npm run dev:db && npm run dev:supabase",
     "dev:db": "cd backend && docker compose up db -d --wait",
     "dev:supabase": "supabase start",

@@ -61,8 +61,6 @@ npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launc
 
 The Aspire AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard, API, and frontend URLs are printed (clickably, in supporting terminals) on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
 
-JetBrains users can run the same thing via the `Aspire` run configuration in `.run/`.
-
 The AppHost prefers known default ports for the endpoints it owns and walks up by 1 if any is taken — same idea as Astro picking 4321, 4322, … locally. The first running instance lands on the defaults; a second parallel one shifts to the next free port:
 
 | Endpoint | First instance | Picked by |
