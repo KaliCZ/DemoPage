@@ -75,7 +75,9 @@ Service discovery wires the Vite proxy to the API automatically (`services__api_
 
 Want to pin a fixed offset (e.g. for bookmarkable URLs)? Set `KALANDRA_PORT_OFFSET=<int>` — the AppHost-owned ports then pin to `default + offset`. The AppHost bind-tests each pinned port at startup and exits with a clear message if any is already in use.
 
-Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Use `npm run dev:stop` / `npm run dev:wipe` to manage the Supabase stack.
+Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Use `supabase stop` to halt the stack, or `supabase stop --no-backup` to discard data.
+
+The Marten Postgres is the opposite story: Aspire owns it via `AddPostgres`, so each worktree gets its own container + named volume (`kalandra-pgdata-<repo-folder>`). Ctrl+C stops the container; the volume persists across runs.
 
 ### 1.4 Local Supabase
 
@@ -118,16 +120,20 @@ Turnstile__SecretKey=your-real-secret-key
 
 ### 1.6 Stopping Services
 
+Aspire owns the Marten Postgres — Ctrl+C-ing the AppHost stops the container, but the named volume (`kalandra-pgdata-<repo-folder>`) keeps the data for next time.
+
+Supabase is shared machine-wide and outlives the AppHost. To halt it:
+
 ```bash
-npm run dev:stop     # Stop PostgreSQL + local Supabase
-npm run dev:wipe     # Stop and delete all data (clean slate)
+supabase stop                 # Stop containers (preserves data)
+supabase stop --no-backup     # Stop and wipe Supabase state
 ```
 
 ### 1.7 Parallel Worktrees
 
-Just run `npm run aspire` in each. The AppHost walks the dashboard / OTLP ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. The startup output prints clickable URLs for the dashboard, API, and frontend.
+Just run `npm run aspire` in each. The AppHost walks the dashboard / OTLP ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. The startup output prints clickable URLs for the dashboard and frontend.
 
-Supabase remains shared between worktrees (same `supabase_*_DemoPage` containers, same database) — parallel envs reuse the same auth and DB state.
+Marten Postgres is per-worktree (Aspire scopes the data volume to the repo-folder name), so each worktree has its own DB state. Supabase is shared (one machine-level instance), so auth users and storage objects are visible across worktrees — that's fine for fixtures.
 
 ---
 
@@ -142,7 +148,7 @@ npm test               # Runs all tests: backend + frontend + E2E
 Requires Docker (Testcontainers spins up a real PostgreSQL container):
 
 ```bash
-npm run test:backend
+dotnet test
 ```
 
 ### 2.2 Frontend Page Tests
@@ -150,7 +156,7 @@ npm run test:backend
 Builds the static site, serves it, and verifies page rendering, navigation, i18n, and dark mode:
 
 ```bash
-npm run test:frontend  # Installs Playwright browsers automatically
+npm --prefix frontend test  # Installs Playwright browsers automatically
 ```
 
 ### 2.3 E2E Tests

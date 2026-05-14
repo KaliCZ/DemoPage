@@ -2,21 +2,21 @@ using System.Diagnostics;
 
 namespace Kalandra.AppHost;
 
-// Ensures every dev-time prerequisite is in place before Aspire builds:
+// Ensures dev-time prerequisites Aspire doesn't own are in place before
+// the distributed app builds:
 //
-//   - npm dependencies (root + frontend via the postinstall hook)
-//   - Postgres via `docker compose`
-//   - Supabase via the Supabase CLI
+//   - npm dependencies (root + frontend via the postinstall hook),
+//     unless we're already under `npm run` (parent npm handles it).
+//   - The Supabase local stack via the Supabase CLI.
 //
-// All three commands are idempotent — calling them when nothing has
-// changed is a fast no-op — so running this every AppHost boot is cheap
-// and removes "I forgot to start the DB" footguns. Any entry point that
-// runs the AppHost (IDE click, plain `dotnet run`) gets a working stack
-// with no prerequisites.
+// Postgres for Marten is NOT handled here — Aspire owns that container
+// (see AppHost.cs) so each AppHost run gets its own isolated database.
+// Supabase is shared machine-wide because the CLI manages a single
+// instance; that's fine since auth + storage are stateless test fixtures.
 //
-// We deliberately don't stop the containers on shutdown: Ctrl+C-ing the
-// AppHost leaves them running so dev DB state survives across runs.
-// `npm run dev:stop` is the explicit cleanup.
+// Supabase isn't stopped on shutdown: Ctrl+C-ing the AppHost leaves the
+// containers running so subsequent runs are fast. There's no explicit
+// `dev:stop` script anymore — `supabase stop` does it directly.
 internal static class DevInfrastructure
 {
     public static void EnsureRunning()
@@ -33,8 +33,23 @@ internal static class DevInfrastructure
             RunNpm(repoRoot, "install");
         }
 
-        Console.WriteLine("Starting dev infrastructure (Postgres + Supabase)...");
-        RunNpm(repoRoot, "run", "dev:infra");
+        Console.WriteLine("Starting Supabase...");
+        RunSupabase(repoRoot, "start");
+    }
+
+    // Walks up from the build output directory until package.json is found.
+    // Robust to how the AppHost is launched (dotnet run from anywhere, IDE,
+    // dotnet exec on a published binary). Public so AppHost.cs can derive a
+    // per-worktree Postgres volume name from it.
+    internal static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "package.json")))
+        {
+            dir = dir.Parent;
+        }
+        return dir?.FullName ?? throw new InvalidOperationException(
+            $"Couldn't find repo root: no package.json above {AppContext.BaseDirectory}");
     }
 
     private static void RunNpm(string repoRoot, params string[] args)
@@ -64,6 +79,28 @@ internal static class DevInfrastructure
         }
     }
 
+    private static void RunSupabase(string repoRoot, params string[] args)
+    {
+        // Supabase CLI is installed as an npm devDependency, so it lives
+        // in node_modules/.bin. Resolving it directly (rather than going
+        // through `npm run`) avoids spawning a nested npm process from
+        // inside the AppHost, which we already saw cause env-pollution
+        // failures earlier.
+        var supabase = ResolveLocalBin(repoRoot, OperatingSystem.IsWindows() ? "supabase.cmd" : "supabase");
+        var psi = new ProcessStartInfo(supabase, args)
+        {
+            WorkingDirectory = repoRoot,
+            UseShellExecute = false,
+        };
+        using var process = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {supabase}");
+        process.WaitForExit();
+        if (process.ExitCode != 0)
+        {
+            Console.Error.WriteLine($"`supabase {string.Join(" ", args)}` exited with code {process.ExitCode}");
+            Environment.Exit(process.ExitCode);
+        }
+    }
+
     // Returns the absolute path to npm. Resolving it ourselves (instead of
     // letting Process.Start search PATH from a relative "npm.cmd") matters
     // on Windows: when cmd.exe runs a relative .cmd name, `%~dp0` inside
@@ -83,17 +120,14 @@ internal static class DevInfrastructure
         throw new InvalidOperationException($"Couldn't find {exe} on PATH");
     }
 
-    // Walks up from the build output directory until package.json is found.
-    // Robust to how the AppHost is launched (dotnet run from anywhere, IDE,
-    // dotnet exec on a published binary).
-    private static string FindRepoRoot()
+    private static string ResolveLocalBin(string repoRoot, string exe)
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "package.json")))
+        var path = Path.Combine(repoRoot, "node_modules", ".bin", exe);
+        if (!File.Exists(path))
         {
-            dir = dir.Parent;
+            throw new InvalidOperationException(
+                $"Couldn't find {exe} at {path}. Run `npm install` from the repo root.");
         }
-        return dir?.FullName ?? throw new InvalidOperationException(
-            $"Couldn't find repo root: no package.json above {AppContext.BaseDirectory}");
+        return path;
     }
 }

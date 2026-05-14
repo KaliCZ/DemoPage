@@ -20,14 +20,14 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). See
 ## Commands (from repo root)
 
 ```bash
-npm install            # Root + frontend deps (via postinstall)
-npm run aspire         # PostgreSQL + local Supabase + backend + frontend, all orchestrated by the Aspire AppHost (dashboard, traces, metrics). Supports parallel worktrees via KALANDRA_PORT_OFFSET.
-npm test               # All tests: backend + frontend + E2E
-dotnet build           # Backend only
-npm run build:frontend # Frontend only
+npm install                          # Root + frontend deps (via postinstall)
+npm run aspire                       # PostgreSQL (Aspire-owned, per-worktree) + local Supabase + backend + frontend, all orchestrated by the Aspire AppHost (dashboard, traces, metrics). Supports parallel worktrees via KALANDRA_PORT_OFFSET.
+npm test                             # All tests: backend + frontend + E2E
+dotnet build                         # Backend only
+npm --prefix frontend run build      # Frontend only
 ```
 
-**Always run `npm test` to verify changes.** Do not run subsets (`dotnet test`, `npm run test:frontend`, etc.) as a substitute — always run the full suite.
+**Always run `npm test` to verify changes.** Do not run subsets (`dotnet test`, `npm --prefix frontend test`, etc.) as a substitute — always run the full suite.
 
 ## Design Principles
 

@@ -3,10 +3,10 @@ using Kalandra.AppHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-// Bring up dev infra (Postgres + Supabase) before anything else. These
-// commands are idempotent, so any entry point — `npm run aspire`, the
-// IDE's auto-generated AppHost config, or plain `dotnet run` — gets a
-// working stack without external prerequisites.
+// Bring up Supabase (auth + storage) before Aspire builds. Postgres for
+// Marten is provisioned by Aspire below — see AddPostgres — so each
+// AppHost run gets its own isolated DB. Supabase is shared machine-wide
+// because the Supabase CLI manages a single instance.
 DevInfrastructure.EnsureRunning();
 
 // AppHost-owned ports (dashboard, OTLP gRPC, OTLP HTTP, resource service)
@@ -49,6 +49,18 @@ if (ports.Source != "default ports")
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Aspire owns the Marten Postgres container. WithDataVolume scopes the
+// volume to the worktree path so parallel AppHosts (run from different
+// checkouts) get independent data; runs from the same checkout reuse it.
+// connectionName: "DefaultConnection" makes Aspire inject the connection
+// string as ConnectionStrings__DefaultConnection, which is the name the
+// API's appsettings.json + Marten config already read.
+var repoRoot = DevInfrastructure.FindRepoRoot();
+var volumeSuffix = Path.GetFileName(repoRoot).ToLowerInvariant();
+var postgres = builder.AddPostgres("postgres")
+    .WithDataVolume($"kalandra-pgdata-{volumeSuffix}");
+var kalandraDb = postgres.AddDatabase("kalandra");
+
 // Aspire allocates API and frontend ports dynamically. WithReference(api)
 // injects services__api__http__0 into the npm app (read by astro.config.mjs
 // for the Vite proxy); WithHttpEndpoint(env: "PORT") passes the frontend's
@@ -58,6 +70,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 // :5000 and would block parallel AppHosts). The e2e tests still use
 // :5000 via `dotnet run` directly.
 var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
+    .WithReference(kalandraDb, connectionName: "DefaultConnection")
+    .WaitFor(kalandraDb)
     .WithHttpEndpoint()
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
     .WithIconName("Server");
@@ -71,13 +85,11 @@ builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
     .WithIconName("Globe")
     .WaitFor(api);
 
-// We start Supabase at boot (see DevInfrastructure) but don't own its
-// lifecycle — Ctrl+C-ing the AppHost leaves the containers running so
-// dev DB state survives across runs. Surface them on the dashboard as
-// external services (display-only). Ports come from supabase/config.toml.
+// Supabase services are started by the CLI (see DevInfrastructure) and
+// shared machine-wide. Surface them on the dashboard as external services
+// (display-only, no lifecycle). Ports come from supabase/config.toml.
 builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
 builder.AddExternalService("supabase-storage", "http://127.0.0.1:54321/storage/v1/");
-builder.AddExternalService("supabase-postgres", "postgresql://127.0.0.1:54322");
 builder.AddExternalService("supabase-studio", "http://127.0.0.1:54323");
 builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
 

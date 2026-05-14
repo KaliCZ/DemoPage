@@ -6,19 +6,8 @@
     "postinstall": "cd frontend && npm install",
     "prepare": "git config core.hooksPath frontend/.githooks",
     "aspire": "npm install && dotnet run --project aspire/Kalandra.AppHost",
-    "dev:infra": "npm run dev:db && npm run dev:supabase",
-    "dev:db": "cd backend && docker compose up db -d --wait",
-    "dev:supabase": "supabase start",
-    "dev:stop": "cd backend && docker compose down && supabase stop",
-    "dev:wipe": "cd backend && docker compose down -v && supabase stop --no-backup",
-    "build:frontend": "cd frontend && npm run build",
-    "format": "cd frontend && npm run format",
-    "format:check": "cd frontend && npm run format:check",
-    "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
-    "test:backend": "dotnet test --verbosity normal",
-    "test:frontend": "cd frontend && npm run test:install && npm test",
-    "test:e2e:build": "cd frontend && cross-env PUBLIC_API_URL=http://localhost:5000 npm run build",
-    "test:e2e": "npm run dev:db && npm run dev:supabase && npm run test:e2e:build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"wait-on http://localhost:5000/health && serve frontend/dist -l 4321\" \"wait-on http://localhost:5000/health && wait-on http://localhost:4321 && cd frontend && npm run test:e2e\""
+    "test": "dotnet test --verbosity normal && npm --prefix frontend run test:install && npm --prefix frontend test && npm run test:e2e",
+    "test:e2e": "supabase start && cross-env PUBLIC_API_URL=http://localhost:5000 npm --prefix frontend run build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"wait-on http://localhost:5000/health && serve frontend/dist -l 4321\" \"wait-on http://localhost:5000/health && wait-on http://localhost:4321 && npm --prefix frontend run test:e2e\""
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
