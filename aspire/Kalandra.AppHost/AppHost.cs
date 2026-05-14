@@ -56,8 +56,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 // allocated port to Astro via $PORT.
 //
 // launchProfileName: null bypasses launchSettings.json (which hardcodes
-// :5000 and would block parallel AppHosts). `npm run dev` and the e2e
-// tests still use that profile directly.
+// :5000 and would block parallel AppHosts). The e2e tests still use
+// :5000 via `dotnet run` directly.
 var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
     .WithHttpEndpoint()
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
