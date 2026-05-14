@@ -39,8 +39,13 @@ Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*")
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
 var dashboardUrl = $"http://localhost:{ports.Dashboard.Port}";
-Console.WriteLine($"Aspire ({ports.Source}):");
-Console.WriteLine($"  Dashboard: {Hyperlink(dashboardUrl)}");
+// Only surface port-source info when it isn't the default — i.e. when
+// KALANDRA_PORT_OFFSET is pinning ports or we walked past a collision.
+// In the common case, no extra noise before Aspire's own boot logs.
+if (ports.Source != "default ports")
+{
+    Console.WriteLine($"Aspire ports: {ports.Source}");
+}
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -93,23 +98,26 @@ finally
     portMutex.ReleaseMutex();
 }
 
-// Print each resource's external URL the moment it goes Running. Aspire
-// also logs these, but interleaved with framework output; this gives a
-// clean, clickable list at the top of the terminal.
+// Print Web + Dashboard URLs as the last thing once the frontend goes
+// Running. Aspire logs each URL too, but interleaved with framework
+// output; this gives a clean, clickable summary at the bottom. The API,
+// OTLP endpoints, and Supabase external services are intentionally not
+// printed here — the dashboard is the entry point for all of them.
 var notifications = app.Services.GetRequiredService<ResourceNotificationService>();
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-var printed = new HashSet<string>();
 _ = Task.Run(async () =>
 {
     try
     {
         await foreach (var evt in notifications.WatchAsync(lifetime.ApplicationStopping))
         {
+            if (evt.Resource.Name != "web") continue;
             if (evt.Snapshot.State?.Text != KnownResourceStates.Running) continue;
-            var urls = evt.Snapshot.Urls.Where(u => !u.IsInternal).ToList();
-            if (urls.Count == 0 || !printed.Add(evt.Resource.Name)) continue;
-            foreach (var url in urls)
-                Console.WriteLine($"  {evt.Resource.Name}: {Hyperlink(url.Url)}");
+            var url = evt.Snapshot.Urls.FirstOrDefault(u => !u.IsInternal);
+            if (url is null) continue;
+            Console.WriteLine($"  Web:    {Hyperlink(url.Url)}");
+            Console.WriteLine($"  Aspire: {Hyperlink(dashboardUrl)}");
+            return;
         }
     }
     catch (OperationCanceledException) { }
