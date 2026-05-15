@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Aspire.Hosting.ApplicationModel;
 using Kalandra.AppHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,16 +51,30 @@ if (ports.Source != "default ports")
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Aspire owns the Marten Postgres container. WithDataVolume scopes the
-// volume to the worktree path so parallel AppHosts (run from different
-// checkouts) get independent data; runs from the same checkout reuse it.
-// connectionName: "DefaultConnection" makes Aspire inject the connection
-// string as ConnectionStrings__DefaultConnection, which is the name the
-// API's appsettings.json + Marten config already read.
+// Per-worktree namespace key derived from the absolute repo path (each
+// git worktree has a unique path). Used to scope the postgres data
+// volume and the Docker Desktop group label so two parallel `npm run
+// aspire` runs in different worktrees don't share state or collapse
+// into the same row in Docker Desktop. Same worktree → same id across
+// restarts; different worktrees → different ids.
 var repoRoot = DevInfrastructure.FindRepoRoot();
-var volumeSuffix = Path.GetFileName(repoRoot).ToLowerInvariant();
+var worktreeId = Convert.ToHexString(SHA256.HashData(
+    Encoding.UTF8.GetBytes(Path.GetFullPath(repoRoot))))[..8].ToLowerInvariant();
+
+// Stamp every Aspire-managed container with com.docker.compose.project
+// so Docker Desktop groups them under one collapsible row. Supabase is
+// stamped separately via supabase/config.toml's project_id; the two
+// stacks end up in distinct DemoPage-Supabase / DemoPage-Aspire-<id>
+// rows so it's obvious at a glance which side owns each container.
+var dockerGroup = $"DemoPage-Aspire-{worktreeId}";
+
+// Aspire owns the Marten Postgres container. The data volume is scoped
+// by worktreeId so parallel AppHosts get independent databases; same
+// worktree reuses its volume across restarts. connectionName:
+// "DefaultConnection" matches the key in the API's appsettings.json.
 var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume($"kalandra-pgdata-{volumeSuffix}");
+    .WithDataVolume($"kalandra-pgdata-{worktreeId}")
+    .WithDockerGroup(dockerGroup);
 var kalandraDb = postgres.AddDatabase("kalandra");
 
 // Aspire allocates API and frontend ports dynamically. WithReference(api)
