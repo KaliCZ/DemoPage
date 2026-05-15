@@ -37,6 +37,8 @@ When making decisions, **choose the approach you'd use in a professional team en
 
 Comments are for the people who read the code the first time. They explain why the code exists — describe some high-level purpose. They don't describe what the algorithm does — the reader can see that. The comments don't assume prior knowledge of the code, they don't assume knowledge of other parts of the codebase — they explain why the code exists and if needed, how it relates to some other part.
 
+**Keep comments simple and short.** One line is almost always enough. Don't write paragraphs, don't restate the code, don't enumerate every edge case — a brief note pointing at the "why" beats a verbose explanation. If a comment is growing past a line or two, it's usually a sign the code itself needs a clearer name or shape.
+
 ## GitHub Workflow
 
 **Never close issues directly.** Always create a pull request with `Closes #N` in the PR body and let the merge close the issue. An issue without a merged PR has no reviewable change trail.
