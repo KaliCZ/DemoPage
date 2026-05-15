@@ -5,12 +5,10 @@ namespace Kalandra.AppHost;
 
 internal sealed record ReservedPort(int Port, TcpListener Listener);
 
-// One reserved port per AppHost-owned endpoint. The dashboard, OTLP gRPC,
-// OTLP HTTP, and resource service each get their own; OTLP HTTP exists
-// separately from gRPC because the browser exporter can only speak HTTP.
-// `Source` is a human-readable label printed at startup so it's obvious
-// whether ports came from KALANDRA_PORT_OFFSET, the defaults, or the
-// step-past-in-use fallback.
+// One reserved port per AppHost-owned endpoint. Dashboard, OTLP gRPC,
+// OTLP HTTP, and the dashboard's internal resource service each need
+// their own. OTLP HTTP is separate from gRPC because the browser
+// exporter can only speak HTTP.
 internal sealed record AppHostPorts(
     ReservedPort Dashboard,
     ReservedPort Otlp,
@@ -122,7 +120,6 @@ internal static class PortReservation
             }
             catch (SocketException)
             {
-                // Port in use — try the next one.
             }
         }
         throw new InvalidOperationException($"No free {label} port found in range {start}..{start + maxAttempts - 1}");

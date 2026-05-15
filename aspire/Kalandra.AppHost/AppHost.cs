@@ -51,12 +51,9 @@ if (ports.Source != "default ports")
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Per-worktree namespace key derived from the absolute repo path (each
-// git worktree has a unique path). Used to scope the postgres data
-// volume and the Docker Desktop group label so two parallel `npm run
-// aspire` runs in different worktrees don't share state or collapse
-// into the same row in Docker Desktop. Same worktree → same id across
-// restarts; different worktrees → different ids.
+// Per-worktree namespace key (hash of the absolute repo path). Scopes the
+// postgres data volume and the Docker Desktop group label, so parallel
+// worktrees can't share state or collapse into one row in Docker Desktop.
 var repoRoot = DevInfrastructure.FindRepoRoot();
 var worktreeId = Convert.ToHexString(SHA256.HashData(
     Encoding.UTF8.GetBytes(Path.GetFullPath(repoRoot))))[..8].ToLowerInvariant();
@@ -77,14 +74,11 @@ var postgres = builder.AddPostgres("postgres")
     .WithDockerGroup(dockerGroup);
 var kalandraDb = postgres.AddDatabase("kalandra");
 
-// Aspire allocates API and frontend ports dynamically. WithReference(api)
-// injects services__api__http__0 into the npm app (read by astro.config.mjs
-// for the Vite proxy); WithHttpEndpoint(env: "PORT") passes the frontend's
-// allocated port to Astro via $PORT.
-//
-// launchProfileName: null bypasses launchSettings.json (which hardcodes
-// :5000 and would block parallel AppHosts). The e2e tests still use
-// :5000 via `dotnet run` directly.
+// launchProfileName: null bypasses launchSettings.json's hardcoded :5000
+// so parallel AppHosts get distinct API ports. Aspire then allocates a
+// free port for WithHttpEndpoint() and WithReference(api) wires it into
+// the npm app as services__api__http__0 (read by astro.config.mjs for the
+// Vite proxy). The e2e tests still rely on :5000 via `dotnet run`.
 var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
     .WithReference(kalandraDb, connectionName: "DefaultConnection")
     .WaitFor(kalandraDb)
@@ -133,11 +127,10 @@ finally
     portMutex.ReleaseMutex();
 }
 
-// Print Web + Dashboard URLs as the last thing once the frontend goes
-// Running. Aspire logs each URL too, but interleaved with framework
-// output; this gives a clean, clickable summary at the bottom. The API,
-// OTLP endpoints, and Supabase external services are intentionally not
-// printed here — the dashboard is the entry point for all of them.
+// Once the frontend goes Running, print Web + Dashboard as a clean,
+// clickable summary at the bottom of the log. Aspire emits the same
+// URLs inline with framework output, but they're easy to miss there.
+// Everything else (API, OTLP, Supabase) is reachable from the dashboard.
 var notifications = app.Services.GetRequiredService<ResourceNotificationService>();
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 _ = Task.Run(async () =>

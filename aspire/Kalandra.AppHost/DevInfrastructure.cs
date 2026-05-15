@@ -2,21 +2,11 @@ using System.Diagnostics;
 
 namespace Kalandra.AppHost;
 
-// Ensures dev-time prerequisites Aspire doesn't own are in place before
-// the distributed app builds:
-//
-//   - npm dependencies (root + frontend via the postinstall hook),
-//     unless we're already under `npm run` (parent npm handles it).
-//   - The Supabase local stack via the Supabase CLI.
-//
-// Postgres for Marten is NOT handled here — Aspire owns that container
-// (see AppHost.cs) so each AppHost run gets its own isolated database.
-// Supabase is shared machine-wide because the CLI manages a single
-// instance; that's fine since auth + storage are stateless test fixtures.
-//
-// Supabase isn't stopped on shutdown: Ctrl+C-ing the AppHost leaves the
-// containers running so subsequent runs are fast. There's no explicit
-// `dev:stop` script anymore — `supabase stop` does it directly.
+// Runs the dev-time prerequisites Aspire doesn't own before the distributed
+// app builds: npm install and the Supabase CLI stack. Marten's Postgres is
+// declared in AppHost.cs so each run gets its own isolated database;
+// Supabase is shared machine-wide (the CLI manages a single instance,
+// and auth + storage are stateless test fixtures).
 internal static class DevInfrastructure
 {
     public static void EnsureRunning()
@@ -39,8 +29,8 @@ internal static class DevInfrastructure
 
     // Walks up from the build output directory until package.json is found.
     // Robust to how the AppHost is launched (dotnet run from anywhere, IDE,
-    // dotnet exec on a published binary). Public so AppHost.cs can derive a
-    // per-worktree Postgres volume name from it.
+    // dotnet exec on a published binary). AppHost.cs uses the result to
+    // derive a per-worktree hash for volume and container-group names.
     internal static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
