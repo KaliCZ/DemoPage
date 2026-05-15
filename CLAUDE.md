@@ -33,6 +33,10 @@ npm --prefix frontend run build      # Frontend only
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
 
+## Comments
+
+Comments are for the people who read the code the first time. They explain why the code exists — describe some high-level purpose. They don't describe what the algorithm does — the reader can see that. The comments don't assume prior knowledge of the code, they don't assume knowledge of other parts of the codebase — they explain why the code exists and if needed, how it relates to some other part.
+
 ## GitHub Workflow
 
 **Never close issues directly.** Always create a pull request with `Closes #N` in the PR body and let the merge close the issue. An issue without a merged PR has no reviewable change trail.
