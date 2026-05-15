@@ -54,9 +54,8 @@ internal static class PortReservation
         return ReservePinned(offset);
     }
 
-    // KALANDRA_PORT_OFFSET path: every port must land at exactly default+offset.
-    // Bind-test each one so we fail loudly here instead of crashing deep in
-    // Aspire startup. If any one is taken, release the rest and exit.
+    // Fail loudly up-front if any pinned port is taken, instead of crashing
+    // deep in Aspire startup with a less actionable error.
     private static AppHostPorts ReservePinned(int offset)
     {
         var pinned = new (int Port, string Label)[]

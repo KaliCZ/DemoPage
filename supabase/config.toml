@@ -1,10 +1,10 @@
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
-# project_id namespaces the supabase CLI's docker containers and is also
-# stamped as com.docker.compose.project, so all Supabase containers land
-# in a "DemoPage-Supabase" row in Docker Desktop. The Aspire AppHost uses
-# a sibling "DemoPage-Aspire-<worktree-id>" row for its containers, so it
-# stays obvious which stack owns which container.
+# Keep Supabase containers visually distinct from the Aspire-owned ones in
+# Docker Desktop. The Supabase CLI stamps every container with
+# com.docker.compose.project=<project_id>; AppHost.cs labels its own
+# containers as "DemoPage-Aspire-<worktree-id>" so the two stacks land in
+# clearly-named sibling rows.
 project_id = "DemoPage-Supabase"
 
 [api]

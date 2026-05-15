@@ -5,10 +5,11 @@ using Kalandra.AppHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-// Bring up Supabase (auth + storage) before Aspire builds. Postgres for
-// Marten is provisioned by Aspire below — see AddPostgres — so each
-// AppHost run gets its own isolated DB. Supabase is shared machine-wide
-// because the Supabase CLI manages a single instance.
+// Supabase (auth + storage) is owned by its CLI, not Aspire — the CLI
+// keeps a single shared instance machine-wide. Aspire only references
+// Supabase's endpoints as external services, so we bootstrap them here
+// before the distributed app builds. Marten's Postgres goes the other
+// way: Aspire owns the container so each run gets an isolated DB.
 DevInfrastructure.EnsureRunning();
 
 // AppHost-owned ports (dashboard, OTLP gRPC, OTLP HTTP, resource service)
@@ -33,17 +34,17 @@ Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", $"http:
 Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL", $"http://localhost:{ports.OtlpHttp.Port}");
 Environment.SetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL", $"http://localhost:{ports.Resource.Port}");
 Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
-// Disable dashboard auth + OTLP API-key auth and open CORS so the browser
-// OTLP exporter can POST from the Astro dev origin without credentials.
-// Dev-only; the AppHost is bound to loopback.
+// Let the browser OTLP exporter POST cross-origin from the Astro dev
+// server without credentials. Safe because the AppHost binds to loopback;
+// would be unacceptable on any real network.
 Environment.SetEnvironmentVariable("DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS", "true");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
 Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
 var dashboardUrl = $"http://localhost:{ports.Dashboard.Port}";
-// Only surface port-source info when it isn't the default — i.e. when
-// KALANDRA_PORT_OFFSET is pinning ports or we walked past a collision.
-// In the common case, no extra noise before Aspire's own boot logs.
+// Stay quiet in the common case so Aspire's own boot logs aren't drowned
+// out; surface the port-source label only when something unusual happened
+// (offset pinning or stepped past a collision).
 if (ports.Source != "default ports")
 {
     Console.WriteLine($"Aspire ports: {ports.Source}");
@@ -75,10 +76,9 @@ var postgres = builder.AddPostgres("postgres")
 var kalandraDb = postgres.AddDatabase("kalandra");
 
 // launchProfileName: null bypasses launchSettings.json's hardcoded :5000
-// so parallel AppHosts get distinct API ports. Aspire then allocates a
-// free port for WithHttpEndpoint() and WithReference(api) wires it into
-// the npm app as services__api__http__0 (read by astro.config.mjs for the
-// Vite proxy). The e2e tests still rely on :5000 via `dotnet run`.
+// so parallel AppHosts get distinct API ports. astro.config.mjs reads
+// services__api__http__0 (injected by WithReference(api) below) to wire
+// its Vite proxy. The e2e tests still rely on :5000 via `dotnet run`.
 var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
     .WithReference(kalandraDb, connectionName: "DefaultConnection")
     .WaitFor(kalandraDb)

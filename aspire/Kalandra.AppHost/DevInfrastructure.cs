@@ -27,10 +27,10 @@ internal static class DevInfrastructure
         RunSupabase(repoRoot, "start");
     }
 
-    // Walks up from the build output directory until package.json is found.
-    // Robust to how the AppHost is launched (dotnet run from anywhere, IDE,
-    // dotnet exec on a published binary). AppHost.cs uses the result to
-    // derive a per-worktree hash for volume and container-group names.
+    // Robust to how the AppHost is launched (dotnet run from anywhere,
+    // IDE, dotnet exec on a published binary) — none of those have a
+    // reliable working directory. AppHost.cs uses the result to derive
+    // a per-worktree hash for volume and container-group names.
     internal static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
