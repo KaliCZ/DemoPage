@@ -81,6 +81,13 @@ builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
     .WithHttpEndpoint(env: "PORT")
     .WithReference(api)
     .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
+    // Force the API URL empty so `fetch(apiUrl + "/api/...")` produces a
+    // relative URL and goes through Vite's /api proxy → Aspire's API.
+    // Vite's loadEnv merges process.env after .env* files, so this wins
+    // over any stale PUBLIC_API_URL=https://api.kalandra.tech that a
+    // contributor may have left in their gitignored .env.local from
+    // testing against prod.
+    .WithEnvironment("PUBLIC_API_URL", "")
     .WithExternalHttpEndpoints()
     .WithIconName("Globe")
     .WaitFor(api);
