@@ -5,10 +5,7 @@ namespace Kalandra.AppHost;
 
 internal sealed record ReservedPort(int Port, TcpListener Listener);
 
-// One reserved port per AppHost-owned endpoint. Dashboard, OTLP gRPC,
-// OTLP HTTP, and the dashboard's internal resource service each need
-// their own. OTLP HTTP is separate from gRPC because the browser
-// exporter can only speak HTTP.
+// One port per AppHost-owned endpoint. OTLP HTTP is separate from gRPC because the browser exporter speaks HTTP only.
 internal sealed record AppHostPorts(
     ReservedPort Dashboard,
     ReservedPort Otlp,
@@ -16,8 +13,7 @@ internal sealed record AppHostPorts(
     ReservedPort Resource,
     string Source)
 {
-    // Drop the placeholder listeners so Aspire can bind the same ports.
-    // Call this under the same mutex that guarded reservation.
+    // Drops the placeholder listeners so Aspire can bind; call under the reservation mutex.
     public void StopListeners()
     {
         Dashboard.Listener.Stop();
@@ -27,10 +23,7 @@ internal sealed record AppHostPorts(
     }
 }
 
-// Picks AppHost-owned ports and binds a TcpListener on each so siblings
-// probing the same port see SocketException and step past. The caller
-// holds a named mutex across the reservation to serialize the bind race
-// between parallel AppHosts.
+// Reserves AppHost ports by holding a TcpListener on each so parallel AppHosts step past in-use ports.
 internal static class PortReservation
 {
     private const int DashboardDefault = 15036;
@@ -54,8 +47,7 @@ internal static class PortReservation
         return ReservePinned(offset);
     }
 
-    // Fail loudly up-front if any pinned port is taken, instead of crashing
-    // deep in Aspire startup with a less actionable error.
+    // Fail early with a clear message if a pinned port is taken.
     private static AppHostPorts ReservePinned(int offset)
     {
         var pinned = new (int Port, string Label)[]
@@ -88,8 +80,7 @@ internal static class PortReservation
             Source: $"KALANDRA_PORT_OFFSET={offset}");
     }
 
-    // No offset: start at each default and walk up by 1 until free, so a
-    // second parallel AppHost lands one above the first.
+    // No offset: walk up from each default until a free port is found.
     private static AppHostPorts ReserveAuto()
     {
         var dashboard = ReserveFreePortFrom(DashboardDefault, "dashboard");
@@ -104,9 +95,7 @@ internal static class PortReservation
             Source: allAtDefault ? "default ports" : "default ports, stepped past in-use");
     }
 
-    // Bind the first free port at or above `start` and return the live
-    // listener — the caller keeps it bound (which reserves the port) until
-    // it's ready to hand off, then calls Stop() so Aspire can take over.
+    // Binds the first free port at or above `start`; caller keeps the listener until hand-off.
     private static ReservedPort ReserveFreePortFrom(int start, string label, int maxAttempts = 100)
     {
         for (var port = start; port < start + maxAttempts; port++)

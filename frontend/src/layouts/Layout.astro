@@ -106,9 +106,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <BetterStack />
 
     <script>
-      // Dev-only OpenTelemetry. The DEV gate is a compile-time constant,
-      // so Vite drops this branch — and its ~100 KB of @opentelemetry/*
-      // deps — from the production bundle. Prod uses BetterStack/Sentry.
+      // Dev-only OTel; the DEV constant lets Vite drop this branch (and its ~100 KB of deps) from prod.
       if (import.meta.env.DEV) {
         import("../lib/otel-dev").catch((err) => {
           console.error("[otel-dev] dynamic import failed:", err);

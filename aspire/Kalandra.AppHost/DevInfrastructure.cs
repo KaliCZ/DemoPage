@@ -2,21 +2,14 @@ using System.Diagnostics;
 
 namespace Kalandra.AppHost;
 
-// Runs the dev-time prerequisites Aspire doesn't own before the distributed
-// app builds: npm install and the Supabase CLI stack. Marten's Postgres is
-// declared in AppHost.cs so each run gets its own isolated database;
-// Supabase is shared machine-wide (the CLI manages a single instance,
-// and auth + storage are stateless test fixtures).
+// Brings up the dev prerequisites Aspire doesn't own: npm install and the Supabase CLI stack.
 internal static class DevInfrastructure
 {
     public static void EnsureRunning()
     {
         var repoRoot = FindRepoRoot();
 
-        // When invoked under `npm run`, the user is already managing npm
-        // themselves (`npm run aspire` chains `npm install` ahead of us).
-        // Skip the nested install in that case to avoid running npm from
-        // inside another npm process.
+        // Skip when launched under `npm run` — the parent npm already ran install.
         if (Environment.GetEnvironmentVariable("npm_lifecycle_event") is null)
         {
             Console.WriteLine("Installing npm dependencies (root + frontend)...");
@@ -27,10 +20,7 @@ internal static class DevInfrastructure
         RunSupabase(repoRoot, "start");
     }
 
-    // Robust to how the AppHost is launched (dotnet run from anywhere,
-    // IDE, dotnet exec on a published binary) — none of those have a
-    // reliable working directory. AppHost.cs uses the result to derive
-    // a per-worktree hash for volume and container-group names.
+    // Works regardless of how the AppHost is launched, since the cwd isn't reliable across launchers.
     internal static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -50,11 +40,7 @@ internal static class DevInfrastructure
             WorkingDirectory = repoRoot,
             UseShellExecute = false,
         };
-        // When the AppHost is launched via `npm run aspire`, the parent
-        // npm injects npm_execpath / npm_config_* into our env. Forwarded
-        // to a nested npm, those can point the child at the wrong CLI and
-        // produce confusing "Cannot find module npm-prefix.js" failures.
-        // Strip them so the child boots from a clean slate.
+        // Inherited npm_* vars from a parent `npm run` can misdirect the nested CLI; strip them.
         foreach (var key in psi.Environment.Keys.Where(k => k.StartsWith("npm_", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             psi.Environment.Remove(key);
@@ -71,11 +57,7 @@ internal static class DevInfrastructure
 
     private static void RunSupabase(string repoRoot, params string[] args)
     {
-        // Supabase CLI is installed as an npm devDependency, so it lives
-        // in node_modules/.bin. Resolving it directly (rather than going
-        // through `npm run`) avoids spawning a nested npm process from
-        // inside the AppHost, which we already saw cause env-pollution
-        // failures earlier.
+        // Resolve the CLI directly from node_modules/.bin to avoid spawning a nested npm.
         var supabase = ResolveLocalBin(repoRoot, OperatingSystem.IsWindows() ? "supabase.cmd" : "supabase");
         var psi = new ProcessStartInfo(supabase, args)
         {
@@ -91,12 +73,7 @@ internal static class DevInfrastructure
         }
     }
 
-    // Returns the absolute path to npm. Resolving it ourselves (instead of
-    // letting Process.Start search PATH from a relative "npm.cmd") matters
-    // on Windows: when cmd.exe runs a relative .cmd name, `%~dp0` inside
-    // the script evaluates against the working directory rather than the
-    // script's actual location, so npm.cmd ends up looking for npm-cli.js
-    // next to the repo root and fails. Passing an absolute path fixes it.
+    // Returns an absolute npm path; on Windows, launching npm.cmd by name breaks `%~dp0` inside the script.
     private static string ResolveNpm()
     {
         var exe = OperatingSystem.IsWindows() ? "npm.cmd" : "npm";

@@ -61,8 +61,7 @@ public static class Observability
 
     private static void AddOpenTelemetry(WebApplicationBuilder builder, BetterStackConfig? config)
     {
-        // Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT (and friends) when the API is
-        // launched under the AppHost. The default AddOtlpExporter() reads those.
+        // Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT; the default AddOtlpExporter() picks it up.
         var aspireEnabled = !string.IsNullOrEmpty(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
         if (config is null && !aspireEnabled)

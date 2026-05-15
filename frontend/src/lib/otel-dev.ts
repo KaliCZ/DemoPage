@@ -1,11 +1,5 @@
-// Dev-only OpenTelemetry initialization. Imported via a dynamic import
-// gated on import.meta.env.DEV in Layout.astro, so Vite tree-shakes the
-// whole module — and its ~100KB of @opentelemetry/* deps — out of the
-// production bundle. In prod, BetterStack/Sentry owns observability.
-//
-// Emits to the Aspire dashboard's OTLP HTTP endpoint. The URL is injected
-// by the AppHost via PUBLIC_OTLP_TRACES_ENDPOINT (it varies per AppHost
-// instance because the OTLP port is dynamically reserved).
+// Dev-only OTel: dynamic-imported under import.meta.env.DEV so Vite tree-shakes it out of prod (BetterStack/Sentry own prod).
+// Emits to the Aspire dashboard via PUBLIC_OTLP_TRACES_ENDPOINT, which the AppHost injects per-instance.
 
 import type { Context } from "@opentelemetry/api";
 import { DiagConsoleLogger, DiagLogLevel, diag, SpanKind, trace } from "@opentelemetry/api";
@@ -19,8 +13,7 @@ import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 const endpoint = import.meta.env.PUBLIC_OTLP_TRACES_ENDPOINT;
 
-// Surface state on window so you can poke at it from devtools — `import.meta`
-// can't be evaluated from the console, so this is the easy way to check.
+// Exposed on window for devtools inspection — import.meta isn't reachable from the console.
 (window as unknown as { __otelDev: unknown }).__otelDev = {
   envDev: import.meta.env.DEV,
   endpoint: endpoint ?? null,
@@ -35,10 +28,7 @@ if (!endpoint) {
   // Surface exporter errors and CORS rejections to the browser console.
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.WARN);
 
-  // Context manager that hands out pageContext whenever nothing else is
-  // active, so fetches outside an explicit `context.with(...)` scope
-  // inherit the page span as their parent instead of starting their own
-  // root and producing one "HTTP GET" trace per request.
+  // Hands out pageContext when nothing else is active so stray fetches inherit the page span instead of starting new roots.
   class PageRootContextManager extends ZoneContextManager {
     private pageContext: Context | null = null;
     setPageContext(ctx: Context) {
@@ -67,15 +57,11 @@ if (!endpoint) {
   registerInstrumentations({
     instrumentations: [
       new FetchInstrumentation({
-        // Propagate traceparent to anything on localhost — covers the
-        // Astro dev proxy and direct backend hits in dev.
+        // Propagate traceparent to anything on localhost (Vite proxy + direct backend hits).
         propagateTraceHeaderCorsUrls: [/^https?:\/\/localhost(:\d+)?\//, /^https?:\/\/127\.0\.0\.1(:\d+)?\//],
-        // Skip telemetry-of-telemetry: the exporter's own POSTs (would
-        // self-loop) and BetterStack/Sentry ingestion.
+        // Skip telemetry-of-telemetry to avoid self-loops.
         ignoreUrls: [new RegExp("^" + endpoint.replace(/[/.]/g, "\\$&")), /betterstackdata\.com\//, /betterstack\.net\//, /sentry\.io\//],
-        // Rename spans from the default "HTTP GET" to "<METHOD> <path>"
-        // so the dashboard list is scannable. Handles Request, URL, and
-        // plain-string inputs; the query string is dropped.
+        // Rename "HTTP GET" → "<METHOD> <path>" so the dashboard list is scannable.
         requestHook: (span, request) => {
           let rawUrl: string | null = null;
           let method = "GET";
@@ -104,17 +90,12 @@ if (!endpoint) {
     ],
   });
 
-  // Start the page-view span and install it as the context manager's
-  // implicit floor — so every trace roots at "page /<pathname>" instead
-  // of whichever fetch fires first.
+  // Page-view span becomes the implicit root so every trace is "page /<pathname>" instead of the first fetch.
   const tracer = trace.getTracer("web");
   const pageSpan = tracer.startSpan(`page ${location.pathname}`, { kind: SpanKind.INTERNAL });
   contextManager.setPageContext(trace.setSpan(contextManager.active(), pageSpan));
 
-  // End pageSpan at `load`, not at pagehide: BatchSpanProcessor only
-  // exports a span once it ends, so an open page span would delay the
-  // whole trace until navigation away. The context manager keeps serving
-  // pageContext after end(), so later fetches still inherit its trace ID.
+  // End at `load`, not pagehide — BatchSpanProcessor only exports closed spans, and the manager still serves pageContext after end().
   const endPageSpan = () => pageSpan.end();
   if (document.readyState === "complete") {
     endPageSpan();

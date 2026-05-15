@@ -48,10 +48,7 @@ function getPageLastmod(url) {
   return getLastModified(...files);
 }
 
-// https://astro.build/config
-// When launched under Aspire, AppHost injects PORT (the allocated frontend
-// port) and services__api__http__0 (the API's discovery URL). Outside Aspire
-// both are undefined and Astro/Vite fall back to their normal defaults.
+// Aspire injects PORT and services__api__http__0; both are undefined outside Aspire.
 const aspireApiUrl = process.env.services__api__http__0;
 
 export default defineConfig({
@@ -93,12 +90,7 @@ export default defineConfig({
         "/health": aspireApiUrl ?? "http://localhost:5000",
       },
     },
-    // Pre-declare every dependency that's only reached via a dynamic
-    // import (supabase.ts uses import("@supabase/supabase-js"); Layout
-    // uses import("../lib/otel-dev")). Without this Vite discovers them
-    // mid-page-load and triggers a re-optimize, which 504s any in-flight
-    // dep request — including Astro's dev toolbar — until it finishes.
-    // Pre-bundling them at cold start avoids the disruptive interrupt.
+    // Pre-bundle deps that are only reached via dynamic import — avoids a mid-load re-optimize that 504s in-flight requests.
     optimizeDeps: {
       include: [
         "@supabase/supabase-js",

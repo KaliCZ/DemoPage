@@ -38,10 +38,7 @@ public static class ServiceCollectionExtensions
                 options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }
 
-            // Emit Marten session/batch spans so the connection-acquisition
-            // and query-batch wait time shows up on the dashboard instead of
-            // looking like an unexplained gap between the supabase calls and
-            // the individual Npgsql command spans.
+            // Emit Marten session/batch spans so connection + batch wait time isn't a blind gap on the trace.
             options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
             options.OpenTelemetry.TrackEventCounters();
         })
@@ -126,9 +123,7 @@ public static class ServiceCollectionExtensions
     {
         if (environment.IsDevelopment())
         {
-            // Skip the Cloudflare round-trip locally so dev works offline.
-            // The test secret key would have made Cloudflare rubber-stamp
-            // the response anyway; this just removes the network call.
+            // Skip the Cloudflare round-trip locally so dev works offline; the test key would have rubber-stamped it anyway.
             services.AddSingleton<ITurnstileValidator, AlwaysPassTurnstileValidator>();
         }
         else
