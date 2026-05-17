@@ -1,0 +1,73 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../../layouts/Layout.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
+import { allPosts } from "../../../blog/posts";
+import enBlog from "../../../i18n/en/blog.json";
+import csBlog from "../../../i18n/cs/blog.json";
+
+const translations = { en: enBlog, cs: csBlog };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+
+const dateFmt = new Intl.DateTimeFormat(lang === "cs" ? "cs-CZ" : "en-US", { dateStyle: "long" });
+---
+
+<Layout title={t.meta.indexTitle} description={t.meta.indexDescription} activePage="blog" rssUrl="/rss.xml" lang={lang}>
+  <section class="max-w-3xl mx-auto px-4 md:px-8">
+    <header class="mb-12">
+      <h1 class="font-headline text-5xl md:text-6xl font-extrabold tracking-tighter leading-[1.1] mb-4">
+        {t.index.heading}
+      </h1>
+      <p class="font-body text-lg text-on-surface-variant leading-relaxed">
+        {t.index.intro}
+        <a href="/rss.xml" class="text-primary hover:underline inline-flex items-center gap-1" rel="alternate" type="application/rss+xml">
+          <Icon name="material-symbols:rss-feed" class="size-4" aria-hidden="true" />
+          {t.index.rssLink}
+        </a>.
+      </p>
+    </header>
+
+    {
+      allPosts.length === 0 ? (
+        <p class="text-on-surface-variant">{t.index.empty}</p>
+      ) : (
+        <ol class="space-y-8" aria-label={t.index.heading}>
+          {allPosts.map((post) => (
+            <li class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 hover:border-primary/30 transition-colors">
+              <a href={localePath(lang, `blog/${post.slug}`)} class="group block">
+                <div class="flex items-center gap-3 text-xs text-on-surface-variant mb-2">
+                  <time datetime={post.pubDate}>{dateFmt.format(new Date(post.pubDate))}</time>
+                  {post.tags.length > 0 && (
+                    <ul class="flex flex-wrap gap-2" aria-label={t.post.tagsLabel}>
+                      {post.tags.map((tag) => (
+                        <li class="font-label uppercase tracking-widest px-2 py-0.5 rounded-md bg-surface-container-high">{tag}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <h2 class="font-headline text-2xl font-bold mb-2 group-hover:text-primary transition-colors">{post.title[lang]}</h2>
+                <p class="text-on-surface-variant leading-relaxed mb-4">{post.summary[lang]}</p>
+                <span class="font-label text-sm uppercase tracking-widest text-primary inline-flex items-center gap-1">
+                  {t.index.readMore}
+                  <Icon
+                    name="material-symbols:arrow-forward"
+                    class="size-4 group-hover:translate-x-1 transition-transform"
+                    aria-hidden="true"
+                  />
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </section>
+</Layout>

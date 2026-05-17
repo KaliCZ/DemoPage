@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Blog;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -45,6 +46,7 @@ builder.Services.AddTurnstile();
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
+builder.Services.AddBlogDomain();
 RateLimits.Add(builder.Services, builder.Environment);
 
 builder.Services.AddResponseCompression(options =>

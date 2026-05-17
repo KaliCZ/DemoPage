@@ -1,0 +1,170 @@
+---
+import type { Locale } from "../i18n/utils";
+
+interface Props {
+  slug: string;
+  lang: Locale;
+  t: {
+    heading: string;
+    signedOutHint: string;
+    loadFailed: string;
+    submitFailed: string;
+    labels: Record<string, string>;
+  };
+}
+
+const { slug, lang, t } = Astro.props;
+
+// Mirrors Kalandra.Blog.Entities.BlogReactionEmoji on the backend.
+// The character is purely presentational and lives on the frontend so the
+// API contract stays a stable enum name (e.g. "ThumbsUp"), not Unicode.
+const reactions = [
+  { code: "ThumbsUp", char: "👍" },
+  { code: "Heart", char: "❤️" },
+  { code: "Rocket", char: "🚀" },
+  { code: "Eyes", char: "👀" },
+  { code: "Tada", char: "🎉" },
+  { code: "Laugh", char: "😄" },
+] as const;
+
+// In dev (npm run dev), PUBLIC_API_URL is empty and Vite proxies /api → backend.
+// In built dists this is the absolute backend origin (e.g. https://api.kalandra.tech).
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
+---
+
+<section
+  class="border-t border-outline-variant/20 pt-8 mt-12"
+  data-blog-reactions
+  data-slug={slug}
+  data-api-url={apiUrl}
+  data-load-failed={t.loadFailed}
+  data-submit-failed={t.submitFailed}
+  aria-labelledby="reactions-heading"
+>
+  <h2 id="reactions-heading" class="font-headline text-xl font-bold mb-4">{t.heading}</h2>
+
+  <div class="flex flex-wrap gap-3" role="group" aria-label={t.heading}>
+    {
+      reactions.map((r) => (
+        <button
+          type="button"
+          data-reaction={r.code}
+          aria-pressed="false"
+          aria-label={t.labels[r.code]}
+          title={t.labels[r.code]}
+          class="reaction-btn flex items-center gap-2 px-3 py-1.5 rounded-full border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-high transition-colors text-sm font-label cursor-pointer"
+        >
+          <span aria-hidden="true" class="text-base leading-none">
+            {r.char}
+          </span>
+          <span data-reaction-count class="text-on-surface-variant">
+            0
+          </span>
+        </button>
+      ))
+    }
+  </div>
+
+  <p class="signed-out-only mt-3 text-sm text-on-surface-variant">{t.signedOutHint}</p>
+</section>
+
+<style>
+  .reaction-btn[aria-pressed="true"] {
+    background-color: color-mix(in oklab, var(--color-primary) 12%, transparent);
+    border-color: color-mix(in oklab, var(--color-primary) 50%, transparent);
+    color: var(--color-primary);
+  }
+</style>
+
+<script>
+  // Fetches reaction state for the current post and wires click-to-toggle on
+  // every emoji button. Unauthenticated viewers get counts only — clicking a
+  // button opens the auth dialog instead of submitting.
+  async function setupReactions(section: HTMLElement) {
+    const slug = section.dataset.slug!;
+    const apiBase = section.dataset.apiUrl ?? "";
+    const loadFailedMsg = section.dataset.loadFailed || "Could not load reactions.";
+    const submitFailedMsg = section.dataset.submitFailed || "Reaction failed.";
+
+    const buttons = section.querySelectorAll<HTMLButtonElement>("[data-reaction]");
+
+    function getCountEl(emoji: string) {
+      const btn = section.querySelector<HTMLButtonElement>(`[data-reaction="${emoji}"]`);
+      return btn?.querySelector<HTMLElement>("[data-reaction-count]") ?? null;
+    }
+
+    function getButton(emoji: string) {
+      return section.querySelector<HTMLButtonElement>(`[data-reaction="${emoji}"]`) ?? null;
+    }
+
+    async function loadState() {
+      try {
+        const token = await (window as any).__getAccessToken?.();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/reactions`, { headers });
+        if (!res.ok) throw new Error("load failed");
+        const body = (await res.json()) as {
+          counts: Array<{ emoji: string; count: number }>;
+          userReactions: string[];
+        };
+        for (const c of body.counts) {
+          const el = getCountEl(c.emoji);
+          if (el) el.textContent = String(c.count);
+        }
+        const myReactions = new Set(body.userReactions);
+        for (const btn of buttons) {
+          btn.setAttribute("aria-pressed", myReactions.has(btn.dataset.reaction!) ? "true" : "false");
+        }
+      } catch {
+        (window as any).__showSnackbar?.(loadFailedMsg, "error");
+      }
+    }
+
+    async function toggle(emoji: string) {
+      const token = await (window as any).__getAccessToken?.();
+      if (!token) {
+        (window as any).__openAuthDialog?.();
+        return;
+      }
+
+      const btn = getButton(emoji);
+      const countEl = getCountEl(emoji);
+      if (!btn || !countEl) return;
+
+      // Optimistic update — reverted on failure.
+      const wasPressed = btn.getAttribute("aria-pressed") === "true";
+      const prevCount = parseInt(countEl.textContent || "0", 10);
+      btn.setAttribute("aria-pressed", wasPressed ? "false" : "true");
+      countEl.textContent = String(wasPressed ? Math.max(prevCount - 1, 0) : prevCount + 1);
+
+      try {
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/reactions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ emoji }),
+        });
+        if (!res.ok) throw new Error("submit failed");
+      } catch {
+        // Revert
+        btn.setAttribute("aria-pressed", wasPressed ? "true" : "false");
+        countEl.textContent = String(prevCount);
+        (window as any).__showSnackbar?.(submitFailedMsg, "error");
+      }
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => toggle(btn.dataset.reaction!));
+    });
+
+    await loadState();
+
+    // Refresh state when auth changes — counts are anonymous-readable, so
+    // signing in must show the user's own reactions immediately.
+    window.addEventListener("auth-change", loadState);
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-blog-reactions]").forEach((section) => {
+    setupReactions(section);
+  });
+</script>

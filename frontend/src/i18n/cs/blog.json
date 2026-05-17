@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "indexTitle": "Blog | Pavel Kalandra",
+    "indexDescription": "Články o vývoji, leadershipu a nástrojích, které tvořím."
+  },
+  "index": {
+    "heading": "Blog",
+    "intro": "Poznámky o inženýrských rozhodnutích, vydáních a nástrojích, které vyvíjím. Odebírejte přes",
+    "rssLink": "RSS",
+    "empty": "Zatím tu nic není — první článek dorazí brzy.",
+    "readMore": "Přečíst článek",
+    "draftLabel": "Koncept"
+  },
+  "post": {
+    "publishedOn": "Publikováno",
+    "updatedOn": "Aktualizováno",
+    "tagsLabel": "Štítky"
+  },
+  "reactions": {
+    "heading": "Reakce",
+    "signedOutHint": "Pro reakci se přihlaste",
+    "loadFailed": "Nepodařilo se načíst reakce.",
+    "submitFailed": "Reakce selhala. Zkuste to prosím znovu.",
+    "labels": {
+      "ThumbsUp": "Líbí",
+      "Heart": "Miluju",
+      "Rocket": "Raketa",
+      "Eyes": "Oči",
+      "Tada": "Oslava",
+      "Laugh": "Smích"
+    }
+  },
+  "comments": {
+    "heading": "Komentáře",
+    "empty": "Buďte první, kdo zanechá komentář.",
+    "signedOutHint": "Pro psaní komentáře se přihlaste.",
+    "signedOutSignInCta": "Přihlásit se",
+    "placeholder": "Napište svůj komentář…",
+    "submit": "Odeslat komentář",
+    "submitting": "Odesílání…",
+    "submitted": "Komentář byl publikován.",
+    "loadFailed": "Nepodařilo se načíst komentáře.",
+    "errors": {
+      "content": {
+        "ContentRequired": "Komentář nesmí být prázdný."
+      },
+      "slug": {
+        "InvalidSlug": "Tento článek nyní nepřijímá komentáře."
+      }
+    }
+  }
+}

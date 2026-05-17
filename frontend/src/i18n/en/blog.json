@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "indexTitle": "Blog | Pavel Kalandra",
+    "indexDescription": "Posts on engineering, leadership, and tools I'm building."
+  },
+  "index": {
+    "heading": "Blog",
+    "intro": "Notes on engineering decisions, releases, and tools I'm building. Subscribe via",
+    "rssLink": "RSS",
+    "empty": "Nothing here yet — first post coming soon.",
+    "readMore": "Read post",
+    "draftLabel": "Draft"
+  },
+  "post": {
+    "publishedOn": "Published",
+    "updatedOn": "Updated",
+    "tagsLabel": "Tags"
+  },
+  "reactions": {
+    "heading": "Reactions",
+    "signedOutHint": "Sign in to react",
+    "loadFailed": "Could not load reactions.",
+    "submitFailed": "Reaction failed. Please try again.",
+    "labels": {
+      "ThumbsUp": "Like",
+      "Heart": "Love",
+      "Rocket": "Rocket",
+      "Eyes": "Eyes",
+      "Tada": "Celebrate",
+      "Laugh": "Laugh"
+    }
+  },
+  "comments": {
+    "heading": "Comments",
+    "empty": "Be the first to leave a comment.",
+    "signedOutHint": "Sign in to post a comment.",
+    "signedOutSignInCta": "Sign in",
+    "placeholder": "Share your thoughts…",
+    "submit": "Post comment",
+    "submitting": "Posting…",
+    "submitted": "Comment posted.",
+    "loadFailed": "Could not load comments.",
+    "errors": {
+      "content": {
+        "ContentRequired": "Comment can't be empty."
+      },
+      "slug": {
+        "InvalidSlug": "This post can't accept comments right now."
+      }
+    }
+  }
+}

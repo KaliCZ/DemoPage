@@ -1,0 +1,201 @@
+---
+import type { Locale } from "../i18n/utils";
+
+interface Props {
+  slug: string;
+  lang: Locale;
+  t: {
+    heading: string;
+    empty: string;
+    signedOutHint: string;
+    signedOutSignInCta: string;
+    placeholder: string;
+    submit: string;
+    submitting: string;
+    submitted: string;
+    loadFailed: string;
+    errors: Record<string, Record<string, string>>;
+  };
+}
+
+const { slug, lang, t } = Astro.props;
+
+// Empty in dev (Vite proxies /api → backend); absolute backend origin in built dists.
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
+---
+
+<section
+  class="border-t border-outline-variant/20 pt-8 mt-12"
+  data-blog-comments
+  data-slug={slug}
+  data-lang={lang}
+  data-api-url={apiUrl}
+  data-load-failed={t.loadFailed}
+  data-submitted={t.submitted}
+  data-error-map={JSON.stringify(t.errors)}
+  aria-labelledby="comments-heading"
+>
+  <h2 id="comments-heading" class="font-headline text-xl font-bold mb-4">{t.heading}</h2>
+
+  <ol data-comments-list class="space-y-4 mb-6"></ol>
+  <p data-comments-empty class="hidden text-sm text-on-surface-variant mb-6">{t.empty}</p>
+
+  <!-- Signed-in form -->
+  <form data-comment-form class="signed-in-only space-y-3">
+    <label class="sr-only" for="comment-textarea">{t.placeholder}</label>
+    <textarea
+      id="comment-textarea"
+      data-comment-textarea
+      required
+      maxlength="5000"
+      rows="3"
+      placeholder={t.placeholder}
+      class="w-full rounded-xl border border-outline-variant/40 bg-surface-container-lowest px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-primary/60"
+    ></textarea>
+    <p data-comment-error class="hidden text-sm text-error" role="alert"></p>
+    <div class="flex justify-end">
+      <button
+        type="submit"
+        data-comment-submit
+        data-label-submit={t.submit}
+        data-label-submitting={t.submitting}
+        class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold font-label hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+      >
+        {t.submit}
+      </button>
+    </div>
+  </form>
+
+  <!-- Signed-out CTA -->
+  <div class="signed-out-only flex items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3">
+    <p class="text-sm text-on-surface-variant flex-1">{t.signedOutHint}</p>
+    <button
+      type="button"
+      data-comment-signin
+      class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-sm font-semibold font-label hover:bg-primary/90 transition-colors cursor-pointer"
+    >
+      {t.signedOutSignInCta}
+    </button>
+  </div>
+</section>
+
+<script>
+  import { getApiError } from "../lib/api-errors";
+
+  interface BlogCommentDto {
+    id: string;
+    userId: string;
+    userEmail: string;
+    userName: string;
+    content: string;
+    createdAt: string;
+  }
+
+  function escapeHtml(s: string): string {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function setupComments(section: HTMLElement) {
+    const slug = section.dataset.slug!;
+    const lang = section.dataset.lang as "en" | "cs";
+    const apiBase = section.dataset.apiUrl ?? "";
+    const loadFailedMsg = section.dataset.loadFailed || "Could not load comments.";
+    const submittedMsg = section.dataset.submitted || "Comment posted.";
+    const errorMap = JSON.parse(section.dataset.errorMap || "{}") as Record<string, Record<string, string>>;
+
+    const list = section.querySelector<HTMLOListElement>("[data-comments-list]")!;
+    const emptyState = section.querySelector<HTMLElement>("[data-comments-empty]")!;
+    const form = section.querySelector<HTMLFormElement>("[data-comment-form]")!;
+    const textarea = section.querySelector<HTMLTextAreaElement>("[data-comment-textarea]")!;
+    const submit = section.querySelector<HTMLButtonElement>("[data-comment-submit]")!;
+    const errorEl = section.querySelector<HTMLElement>("[data-comment-error]")!;
+    const signInBtn = section.querySelector<HTMLButtonElement>("[data-comment-signin]")!;
+
+    const dateFmt = new Intl.DateTimeFormat(lang === "cs" ? "cs-CZ" : "en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+    function renderComment(c: BlogCommentDto): string {
+      const when = dateFmt.format(new Date(c.createdAt));
+      return `
+        <li class="rounded-xl bg-surface-container-lowest border border-outline-variant/20 px-4 py-3">
+          <div class="flex items-center justify-between gap-3 mb-1">
+            <span class="font-label text-sm text-on-surface">${escapeHtml(c.userName)}</span>
+            <time class="text-xs text-on-surface-variant" datetime="${escapeHtml(c.createdAt)}">${escapeHtml(when)}</time>
+          </div>
+          <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(c.content)}</p>
+        </li>`;
+    }
+
+    function renderAll(comments: BlogCommentDto[]) {
+      list.innerHTML = comments.map(renderComment).join("");
+      emptyState.classList.toggle("hidden", comments.length > 0);
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/comments`);
+        if (!res.ok) throw new Error("load failed");
+        const body = (await res.json()) as { comments: BlogCommentDto[] };
+        renderAll(body.comments);
+      } catch {
+        (window as any).__showSnackbar?.(loadFailedMsg, "error");
+      }
+    }
+
+    async function onSubmit(e: SubmitEvent) {
+      e.preventDefault();
+      errorEl.classList.add("hidden");
+
+      const content = textarea.value.trim();
+      if (!content) {
+        errorEl.textContent = errorMap?.content?.ContentRequired || "Comment can't be empty.";
+        errorEl.classList.remove("hidden");
+        return;
+      }
+
+      const token = await (window as any).__getAccessToken?.();
+      if (!token) {
+        (window as any).__openAuthDialog?.();
+        return;
+      }
+
+      submit.disabled = true;
+      submit.textContent = submit.dataset.labelSubmitting || "Posting…";
+
+      try {
+        const res = await fetch(`${apiBase}/api/blog/${encodeURIComponent(slug)}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ content }),
+        });
+
+        if (!res.ok) {
+          const apiError = await getApiError(res, errorMap);
+          if (apiError?.message) {
+            errorEl.textContent = apiError.message;
+            errorEl.classList.remove("hidden");
+          } else {
+            (window as any).__showSnackbar?.("Comment failed. Please try again.", "error");
+          }
+          return;
+        }
+
+        textarea.value = "";
+        (window as any).__showSnackbar?.(submittedMsg, "success");
+        await load();
+      } finally {
+        submit.disabled = false;
+        submit.textContent = submit.dataset.labelSubmit || "Post comment";
+      }
+    }
+
+    form.addEventListener("submit", onSubmit);
+    signInBtn.addEventListener("click", () => (window as any).__openAuthDialog?.());
+
+    load();
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-blog-comments]").forEach(setupComments);
+</script>

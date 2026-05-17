@@ -15,7 +15,8 @@ type ActivePage =
   | "admin/test-errors"
   | "profile"
   | "privacy"
-  | "terms";
+  | "terms"
+  | "blog";
 
 interface Props {
   activePage: ActivePage;
@@ -28,6 +29,7 @@ interface Props {
       projectThisSite: string;
       projectStrongTypes: string;
       hireMe: string;
+      blog: string;
       mySubmissions: string;
       admin: string;
       adminTestErrors: string;
@@ -56,6 +58,11 @@ const { activePage, lang, t } = Astro.props;
 // child's page is. That keeps the nav highlight on "Projects" while the user
 // is on /projects, /project, or /strong-types — the page-level breadcrumb
 // then tells them which specific project.
+//
+// Blog post pages still highlight the "Blog" nav link — same shape as
+// admin/* pages, where the parent section stays current.
+const isPageActive = (page: ActivePage) => activePage === page || activePage.startsWith(`${page}/`);
+
 type NavLeaf = {
   label: string;
   page: ActivePage;
@@ -78,6 +85,7 @@ const navItems: NavItem[] = [
       { label: t.nav.projectStrongTypes, page: "strong-types", icon: "package-2", active: activePage === "strong-types" },
     ],
   },
+  { label: t.nav.blog, page: "blog", active: isPageActive("blog") },
   { label: t.nav.hireMe, page: "hire-me", active: activePage === "hire-me" },
 ];
 ---

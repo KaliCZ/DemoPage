@@ -53,6 +53,41 @@ test.describe("Page rendering", () => {
     await page.goto("/strong-types");
     await expect(page).toHaveTitle(/StrongTypes/);
   });
+
+  test("blog index lists posts and links to RSS", async ({ page }) => {
+    await page.goto("/blog");
+    await expect(page).toHaveTitle(/Blog/);
+    await expect(page.getByRole("heading", { name: "Blog", level: 1 })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Shipping StrongTypes 1\.0/ })).toBeVisible();
+    await expect(page.locator('link[rel="alternate"][type="application/rss+xml"]')).toHaveAttribute("href", "/rss.xml");
+  });
+
+  test("blog post renders chrome and signed-out reaction hint", async ({ page }) => {
+    await page.goto("/blog/strongtypes-1-0");
+    await expect(page).toHaveTitle(/StrongTypes 1\.0/);
+    await expect(page.getByRole("heading", { name: "Reactions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Comments" })).toBeVisible();
+    await expect(page.getByText("Sign in to react")).toBeVisible();
+    await expect(page.getByText("Sign in to post a comment.")).toBeVisible();
+  });
+
+  test("blog post links to upstream StrongTypes diagrams", async ({ page }) => {
+    await page.goto("/blog/strongtypes-1-0");
+    const diagramImg = page.locator('img[src*="github.com/KaliCZ/StrongTypes/raw/main/docs/diagrams/"]').first();
+    await expect(diagramImg).toBeVisible();
+  });
+
+  test("rss feed includes the StrongTypes post", async ({ request }) => {
+    const res = await request.get("/rss.xml");
+    expect(res.status()).toBe(200);
+    // Static hosts serve .xml as application/xml; the live edge config can
+    // upgrade it to application/rss+xml. Either is valid for RSS readers.
+    expect(res.headers()["content-type"]).toMatch(/application\/(rss\+)?xml/);
+    const xml = await res.text();
+    expect(xml).toContain("<rss");
+    expect(xml).toContain("Shipping StrongTypes 1.0");
+    expect(xml).toContain("https://www.kalandra.tech/blog/strongtypes-1-0");
+  });
 });
 
 test.describe("Navigation", () => {
