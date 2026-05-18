@@ -8,87 +8,91 @@ using Microsoft.Extensions.Hosting;
 // Supabase is shared machine-wide via its CLI; Aspire owns Marten's Postgres so each run gets an isolated DB.
 DevInfrastructure.EnsureRunning();
 
-// Serialize port reservation across parallel AppHosts.
+// Prevents two aspires to bind into the same ports.
 using var portMutex = new Mutex(initiallyOwned: false, "Kalandra-Aspire-Ports");
-
-AppHostPorts ports;
 AcquireMutex(portMutex);
+
+DistributedApplication app;
+string dashboardUrl;
 try
 {
-    ports = PortReservation.Reserve();
-}
-finally
-{
-    portMutex.ReleaseMutex();
-}
+    var ports = PortReservation.Reserve();
 
-Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{ports.Dashboard.Port}");
-Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", $"http://localhost:{ports.Otlp.Port}");
-Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL", $"http://localhost:{ports.OtlpHttp.Port}");
-Environment.SetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL", $"http://localhost:{ports.Resource.Port}");
-Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
-// Loopback-only dev dashboard; allow the browser OTLP exporter to POST cross-origin from the Astro dev server.
-Environment.SetEnvironmentVariable("DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS", "true");
-Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
-Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
+    Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{ports.Dashboard.Port}");
+    Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", $"http://localhost:{ports.Otlp.Port}");
+    Environment.SetEnvironmentVariable("ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL", $"http://localhost:{ports.OtlpHttp.Port}");
+    Environment.SetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL", $"http://localhost:{ports.Resource.Port}");
+    Environment.SetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT", "true");
+    // Loopback-only dev dashboard; allow the browser OTLP exporter to POST cross-origin from the Astro dev server.
+    Environment.SetEnvironmentVariable("DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS", "true");
+    Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDORIGINS", "*");
+    Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
-var dashboardUrl = $"http://localhost:{ports.Dashboard.Port}";
-// Only announce non-default port assignments.
-if (ports.Source != "default ports")
-{
-    Console.WriteLine($"Aspire ports: {ports.Source}");
-}
+    dashboardUrl = $"http://localhost:{ports.Dashboard.Port}";
+    // Only announce non-default port assignments.
+    if (ports.Source != "default ports")
+    {
+        Console.WriteLine($"Aspire ports: {ports.Source}");
+    }
 
-var builder = DistributedApplication.CreateBuilder(args);
+    var builder = DistributedApplication.CreateBuilder(args);
 
-// Per-worktree key: scopes the Postgres volume and the Docker Desktop group so parallel worktrees stay isolated.
-var repoRoot = DevInfrastructure.FindRepoRoot();
-var worktreeId = Convert.ToHexString(SHA256.HashData(
-    Encoding.UTF8.GetBytes(Path.GetFullPath(repoRoot))))[..8].ToLowerInvariant();
+    // Per-worktree key: scopes the Postgres volume and the Docker Desktop group so parallel worktrees stay isolated.
+    var repoRoot = DevInfrastructure.FindRepoRoot();
+    var worktreeId = Convert.ToHexString(SHA256.HashData(
+        Encoding.UTF8.GetBytes(Path.GetFullPath(repoRoot))))[..8].ToLowerInvariant();
 
-// Docker Desktop collapses containers sharing this label into one row.
-var dockerGroup = $"DemoPage-Aspire-{worktreeId}";
+    // Docker Desktop collapses containers sharing this label into one row.
+    var dockerGroup = $"DemoPage-Aspire-{worktreeId}";
 
-// connectionName matches the key in the API's appsettings.json.
-var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume($"kalandra-pgdata-{worktreeId}")
-    .WithDockerGroup(dockerGroup);
-var kalandraDb = postgres.AddDatabase("kalandra");
+    // Fixed local-dev password: Postgres bakes POSTGRES_PASSWORD into the volume on first init,
+    // so a rotating value would break auth on every subsequent run.
+    var pgPassword = builder.AddParameter("postgres-password", () => "kalandra-local-dev", secret: true);
 
-// launchProfileName: null bypasses launchSettings.json's :5000 so parallel AppHosts get distinct API ports.
-var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
-    .WithReference(kalandraDb, connectionName: "DefaultConnection")
-    .WaitFor(kalandraDb)
-    .WithHttpEndpoint()
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
-    .WithIconName("Server");
+    // connectionName matches the key in the API's appsettings.json.
+    var postgres = builder.AddPostgres("postgres", password: pgPassword)
+        .WithDataVolume($"kalandra-pgdata-{worktreeId}")
+        .WithDockerGroup(dockerGroup);
+    var kalandraDb = postgres.AddDatabase("kalandra");
 
-var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
-builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
-    .WithHttpEndpoint(env: "PORT")
-    .WithReference(api)
-    .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
-    // Empty PUBLIC_API_URL forces relative fetches through Vite's /api proxy, overriding any stale .env.local.
-    .WithEnvironment("PUBLIC_API_URL", "")
-    .WithExternalHttpEndpoints()
-    .WithIconName("Globe")
-    .WaitFor(api);
+    // launchProfileName: null bypasses launchSettings.json's :5000 so parallel AppHosts get distinct API ports.
+    var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
+        .WithReference(kalandraDb, connectionName: "DefaultConnection")
+        .WaitFor(kalandraDb)
+        .WithHttpEndpoint()
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+        .WithIconName("Server");
 
-// Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
-builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
-builder.AddExternalService("supabase-storage", "http://127.0.0.1:54321/storage/v1/");
-builder.AddExternalService("supabase-studio", "http://127.0.0.1:54323");
-builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
+    var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
+    builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
+        .WithHttpEndpoint(env: "PORT")
+        .WithReference(api)
+        .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
+        // Empty PUBLIC_API_URL forces relative fetches through Vite's /api proxy, overriding any stale .env.local.
+        .WithEnvironment("PUBLIC_API_URL", "")
+        .WithExternalHttpEndpoints()
+        .WithIconName("Globe")
+        .WaitFor(api);
 
-var app = builder.Build();
+    // Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
+    builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
+    builder.AddExternalService("supabase-storage", "http://127.0.0.1:54321/storage/v1/");
+    builder.AddExternalService("supabase-studio", "http://127.0.0.1:54323");
+    builder.AddExternalService("supabase-mailpit", "http://127.0.0.1:54324");
 
-// Hand off the reserved ports to Aspire under the same mutex.
-// Synchronous wait: Mutex has thread affinity, so an `await` could resume on a different thread and break ReleaseMutex.
-AcquireMutex(portMutex);
-try
-{
+    app = builder.Build();
+
     ports.StopListeners();
-    app.StartAsync().GetAwaiter().GetResult();
+    try
+    {
+        // Sync wait: Mutex has thread affinity, so an `await` could resume on a different thread and break ReleaseMutex.
+        app.StartAsync().WaitAsync(TimeSpan.FromSeconds(20)).GetAwaiter().GetResult();
+    }
+    catch (TimeoutException)
+    {
+        Console.Error.WriteLine("AppHost startup timed out after 20s — a resource (likely Postgres) failed to become healthy. Check `docker ps` and the Aspire dashboard.");
+        Environment.Exit(1);
+    }
 }
 finally
 {
