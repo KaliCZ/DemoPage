@@ -340,11 +340,12 @@ jobs:
           BETTERSTACK_SOURCE_TOKEN: ${{ secrets.BETTERSTACK_BACKEND_SOURCETOKEN }}
           SENTRY_DSN: ${{ secrets.BACKEND_SENTRY_DSN }}
           IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+          EXPECTED_SHA: ${{ github.sha }}
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,BETTERSTACK_SOURCE_TOKEN,SENTRY_DSN,IMAGE
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,BETTERSTACK_SOURCE_TOKEN,SENTRY_DSN,IMAGE,EXPECTED_SHA
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -414,16 +415,21 @@ jobs:
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
             # ----- 3. Start the new slot -----
-            # The Quadlet-generated service does `podman run --rm`, so each
-            # start creates a fresh container from the (just-pulled) image.
+            # Stop first so the Quadlet `podman run --rm` actually recreates
+            # the container from the just-pulled image. Without the stop, a
+            # still-running slot from a prior deploy makes `start` a no-op
+            # and the old binary keeps serving.
             # Quadlet units cannot be `enable`d — boot autostart comes from
             # [Install] WantedBy=default.target in the .container file.
+            systemctl --user stop "kalandra-api-${NEW}.service" || true
             systemctl --user start "kalandra-api-${NEW}.service"
 
             # ----- 4. Health check the new slot directly (bypassing Caddy) -----
-            echo "Waiting for new slot on port $NEW_PORT..."
+            # Match the deployed commit, not just any healthy response, so
+            # a stale container from an earlier deploy can't pass this gate.
+            echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
             ATTEMPTS=0
-            until curl -sf "http://localhost:${NEW_PORT}/health" > /dev/null 2>&1; do
+            until curl -sf "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -qF "$EXPECTED_SHA"; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
                 echo "New slot failed to start. Container logs:"
