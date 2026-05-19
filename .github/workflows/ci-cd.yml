@@ -415,10 +415,10 @@ jobs:
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
             # ----- 3. Start the new slot -----
-            # Stop first so the Quadlet `podman run --rm` actually recreates
-            # the container from the just-pulled image. Without the stop, a
-            # still-running slot from a prior deploy makes `start` a no-op
-            # and the old binary keeps serving.
+            # Stop first: if the unit is already active from a prior deploy,
+            # `systemctl start` is a no-op and the old container keeps
+            # serving the old binary. Cycling the unit forces ExecStart to
+            # fire and create a new container from the just-pulled image.
             # Quadlet units cannot be `enable`d — boot autostart comes from
             # [Install] WantedBy=default.target in the .container file.
             systemctl --user stop "kalandra-api-${NEW}.service" || true
