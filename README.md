@@ -16,6 +16,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - **Backend**: ASP.NET Core (.NET 10) with Marten (event sourcing), deployed to Oracle Cloud
 - **Auth**: Supabase Auth (email/password + Google OAuth)
 - **Database**: PostgreSQL (Supabase in production, Docker locally)
+- **Observability**: [Sentry](https://sentry.io) for errors, traces, and logs (backend via the OpenTelemetry bridge; frontend via the CDN loader script behind a provider-agnostic abstraction)
 - **CI/CD**: GitHub Actions
 
 Architecture decisions, technical roadmap, and the full decision log are documented on the [Project page](https://www.kalandra.tech/project). The page includes goals, an architecture overview diagram, collapsible Architecture Decision Records (ADRs), and a version-by-version roadmap with progress tracking.

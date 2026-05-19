@@ -34,6 +34,9 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
   - [4.3 Container Registry Auth](#43-container-registry-auth)
+- [5. Observability](#5-observability)
+  - [5.1 Sentry Projects](#51-sentry-projects)
+  - [5.2 Local Development](#52-local-development)
 
 ---
 
@@ -59,7 +62,7 @@ npm install            # Installs root + frontend dependencies (via postinstall)
 npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launches the Aspire AppHost
 ```
 
-The Aspire AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard and frontend URLs are printed (clickably, in supporting terminals) on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
+The Aspire AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard and frontend URLs are printed (clickably, in supporting terminals) on startup. Production telemetry is routed to **Sentry** via the OTEL bridge (see [Observability](#observability)); nothing about that changes when running locally under Aspire.
 
 Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Use `supabase stop` to halt the stack, or `supabase stop --no-backup` to discard data.
 
@@ -409,6 +412,8 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase dashboard (mapped to `PUBLIC_SUPABASE_PUBLISHABLE_KEY` at frontend build time) |
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key (from [Turnstile dashboard](https://dash.cloudflare.com/?to=/:account/turnstile)) — used by backend to verify CAPTCHA tokens |
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
+| `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
+| `FRONTEND_SENTRY_DSN` | DSN from the Sentry **frontend (Browser JavaScript)** project — mapped to `PUBLIC_SENTRY_DSN` at frontend build time. Optional; if empty, the Sentry loader script isn't injected. |
 
 ### 4.2 GitHub Actions Environment
 
@@ -421,3 +426,58 @@ The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
 automatic for the build/push step. The OCI VM also pulls from GHCR — see
 [Authenticate to GHCR](#authenticate-to-ghcr) under §3.2 for the manual
 `podman login` step.
+
+---
+
+## 5. Observability
+
+Production errors, traces, and logs are sent to [Sentry](https://sentry.io). The
+backend uses `Sentry.AspNetCore` + `Sentry.OpenTelemetry` to bridge its
+existing OTEL pipeline; the frontend uses Sentry's CDN loader script and an
+[abstraction layer](../frontend/src/lib/observability.ts) so the underlying
+provider can change without rewriting call sites.
+
+A nullable BetterStack OTLP exporter is still wired into the backend
+(`BetterStackConfig`) and the frontend (`Observability.astro`). It is not used
+in the default deployment but can be re-enabled by populating the corresponding
+secrets — useful if you want to dual-write during a provider migration.
+
+### 5.1 Sentry Projects
+
+Create **two separate projects** in your Sentry organisation — the platforms
+differ, so the DSNs and source-map / release tooling won't be interchangeable:
+
+| Project | Platform | DSN goes to |
+|---------|----------|-------------|
+| Backend API | .NET → ASP.NET Core | GitHub secret `BACKEND_SENTRY_DSN` |
+| Frontend site | JavaScript → Browser | GitHub secret `FRONTEND_SENTRY_DSN` |
+
+For each project:
+
+1. Sentry dashboard → **Projects → Create Project** → pick the platform above.
+2. Copy the **DSN** from the project's **Settings → Client Keys (DSN)** page.
+3. Paste it into the matching GitHub repository secret (see §4.1).
+
+Sentry's free tier is sufficient for low-traffic personal projects; bump it
+later if you outgrow the event quota.
+
+### 5.2 Local Development
+
+You don't need a Sentry DSN to run the stack locally. The Aspire AppHost
+already routes OTEL traces/metrics/logs to its built-in dashboard, which is
+the better experience while iterating.
+
+To exercise the production code path locally, drop a DSN into a gitignored
+override:
+
+```bash
+# backend — user-secrets
+dotnet user-secrets --project backend/src/Kalandra.Api set "Sentry:Dsn" "<your-dsn>"
+
+# frontend — frontend/.env.local
+PUBLIC_SENTRY_DSN=<your-dsn>
+```
+
+> The backend only **requires** a DSN when `ASPNETCORE_ENVIRONMENT=Production`.
+> In `Development` (the AppHost default) it is optional, so a missing
+> configuration won't break local runs.

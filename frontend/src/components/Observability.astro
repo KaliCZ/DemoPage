@@ -1,0 +1,70 @@
+---
+// Observability loader — injects the Sentry loader script and/or BetterStack JS tag
+// based on which env vars are set at build time. Behaviour is fanned out at call
+// sites via `src/lib/observability.ts`.
+
+const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN;
+const betterstackToken = import.meta.env.PUBLIC_BETTERSTACK_TOKEN;
+const mode = import.meta.env.MODE;
+
+// Sentry's CDN loader URL embeds the DSN's public key (the URL username).
+let sentryLoaderUrl = "";
+if (sentryDsn) {
+  try {
+    sentryLoaderUrl = `https://js.sentry-cdn.com/${new URL(sentryDsn).username}.min.js`;
+  } catch {
+    // Bad DSN → skip; Sentry stays disabled rather than 404ing the loader.
+  }
+}
+---
+
+{
+  sentryLoaderUrl && (
+    <>
+      <script is:inline src={sentryLoaderUrl} crossorigin="anonymous" />
+      <script is:inline define:vars={{ dsn: sentryDsn, env: mode }}>
+        {`
+          window.Sentry && window.Sentry.onLoad(function () {
+            window.Sentry.init({
+              dsn: dsn,
+              environment: env,
+              release: undefined,
+              tracesSampleRate: 1.0,
+              tracePropagationTargets: ["localhost", /^\\/api\\//, "https://api.kalandra.tech"],
+              integrations: function (defaults) {
+                return defaults.filter(function (i) {
+                  // The OTLP fetches in dev would otherwise create self-referential breadcrumbs.
+                  return i.name !== "Replay" || env !== "development";
+                });
+              },
+            });
+          });
+        `}
+      </script>
+    </>
+  )
+}
+
+{
+  betterstackToken && (
+    <script is:inline define:vars={{ bsToken: betterstackToken, env: mode }}>
+      {`
+        !(function (b, e, t, r) {
+          b[t] = b[t] || function () { (b[t].q = b[t].q || []).push(arguments); };
+          b[t].l = +new Date();
+          var s = e.createElement("script");
+          s.async = 1;
+          s.crossOrigin = "anonymous";
+          s.src = "https://betterstack.net/b.js?t=" + r;
+          (e.head || e.getElementsByTagName("head")[0]).appendChild(s);
+        })(window, document, "betterstack", bsToken);
+        betterstack("config", {
+          sentry: {
+            tracePropagationTargets: ["localhost", /^\\/api\\//, "https://api.kalandra.tech"],
+          },
+        });
+        betterstack("init", { environment: env });
+      `}
+    </script>
+  )
+}

@@ -1,5 +1,10 @@
 namespace Kalandra.Api.Infrastructure;
 
+/// <summary>
+/// Configuration for the BetterStack OTLP exporter.
+/// Not currently used — observability has been consolidated onto Sentry (see <see cref="SentryConfig"/>).
+/// Kept as nullable/optional so the wiring can be re-enabled without re-introducing the plumbing.
+/// </summary>
 public record BetterStackConfig(
     NonEmptyString SourceToken,
     Uri OtlpEndpoint)

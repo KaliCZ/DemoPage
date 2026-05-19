@@ -4,7 +4,7 @@ import AuthDialog from "../components/AuthDialog.astro";
 import Navbar from "../components/Navbar.astro";
 import Snackbar from "../components/Snackbar.astro";
 import Footer from "../components/Footer.astro";
-import BetterStack from "../components/BetterStack.astro";
+import Observability from "../components/Observability.astro";
 import type { Locale } from "../i18n/utils";
 
 import enCommon from "../i18n/en/common.json";
@@ -103,7 +103,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <title>{title}</title>
 
-    <BetterStack />
+    <Observability />
 
     <script>
       // Dev-only OTel; the DEV constant lets Vite drop this branch (and its ~100 KB of deps) from prod.
@@ -284,7 +284,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <script>
       import "../lib/api-errors";
-      import { identifyUser } from "../lib/betterstack";
+      import { identifyUser } from "../lib/observability";
       import { getSupabaseClient } from "../lib/supabase";
 
       function setAvatarOrInitial(imgEl: HTMLImageElement | null, name: string, avatarUrl: string) {
