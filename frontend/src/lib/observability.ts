@@ -16,7 +16,6 @@ type EventData = Record<string, unknown>;
 interface Provider {
   identifyUser(user: AuthUser | null): void;
   track(event: string, data?: EventData): void;
-  captureException(err: unknown, context?: EventData): void;
 }
 
 // The Sentry loader script (https://js.sentry-cdn.com/<key>.min.js) exposes a `window.Sentry`
@@ -43,9 +42,6 @@ const sentryProvider: Provider = {
       data: data ?? {},
     });
   },
-  captureException(err, context) {
-    (window as any).Sentry?.captureException?.(err, context ? { extra: context } : undefined);
-  },
 };
 
 const betterStackProvider: Provider = {
@@ -59,9 +55,6 @@ const betterStackProvider: Provider = {
   },
   track(event, data) {
     (window as any).betterstack?.("track", event, data ?? {});
-  },
-  captureException() {
-    // BetterStack auto-captures uncaught errors via its script — no explicit API.
   },
 };
 
@@ -79,20 +72,14 @@ export function track(event: string, data?: EventData): void {
   for (const p of providers) p.track(event, data);
 }
 
-/** Explicitly capture an exception. Uncaught errors are reported automatically. */
-export function captureException(err: unknown, context?: EventData): void {
-  for (const p of providers) p.captureException(err, context);
-}
-
 // Exposed for `define:vars` inline scripts in Astro pages, which can't import ES modules.
-(window as any).__obs = { identifyUser, track, captureException };
+(window as any).__obs = { identifyUser, track };
 
 declare global {
   interface Window {
     __obs?: {
       identifyUser: typeof identifyUser;
       track: typeof track;
-      captureException: typeof captureException;
     };
   }
 }
