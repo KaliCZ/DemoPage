@@ -1,8 +1,11 @@
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
-# A string used to distinguish different Supabase projects on the same host. Defaults to the
-# working directory name when running `supabase init`.
-project_id = "DemoPage"
+# Keep Supabase containers visually distinct from the Aspire-owned ones in
+# Docker Desktop. The Supabase CLI stamps every container with
+# com.docker.compose.project=<project_id>; AppHost.cs labels its own
+# containers as "DemoPage-Aspire-<worktree-id>" so the two stacks land in
+# clearly-named sibling rows.
+project_id = "DemoPage-Supabase"
 
 [api]
 enabled = true

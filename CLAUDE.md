@@ -20,18 +20,24 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). See
 ## Commands (from repo root)
 
 ```bash
-npm install            # Root + frontend deps (via postinstall)
-npm run dev            # Docker PostgreSQL + local Supabase + backend (dotnet watch) + frontend (astro dev)
-npm test               # All tests: backend + frontend + E2E
-dotnet build           # Backend only
-npm run build:frontend # Frontend only
+npm install                          # Root + frontend deps (via postinstall)
+npm run aspire                       # PostgreSQL (Aspire-owned, per-worktree) + local Supabase + backend + frontend, all orchestrated by the Aspire AppHost (dashboard, traces, metrics). Supports parallel worktrees via KALANDRA_PORT_OFFSET.
+npm test                             # All tests: backend + frontend + E2E
+dotnet build                         # Backend only
+npm --prefix frontend run build      # Frontend only
 ```
 
-**Always run `npm test` to verify changes.** Do not run subsets (`dotnet test`, `npm run test:frontend`, etc.) as a substitute — always run the full suite.
+**Always run `npm test` to verify changes.** Do not run subsets (`dotnet test`, `npm --prefix frontend test`, etc.) as a substitute — always run the full suite.
 
 ## Design Principles
 
 When making decisions, **choose the approach you'd use in a professional team environment**, not the simplest one that works for the current scale. This project is a showcase of engineering skill — every choice should reflect production-grade thinking.
+
+## Comments
+
+Comments are for the people who read the code the first time. They explain why the code exists — describe some high-level purpose. They don't describe what the algorithm does — the reader can see that. The comments don't assume prior knowledge of the code, they don't assume knowledge of other parts of the codebase — they explain why the code exists and if needed, how it relates to some other part.
+
+**Keep comments simple and short.** One line is almost always enough. Don't write paragraphs, don't restate the code, don't enumerate every edge case — a brief note pointing at the "why" beats a verbose explanation. If a comment is growing past a line or two, it's usually a sign the code itself needs a clearer name or shape.
 
 ## GitHub Workflow
 

@@ -105,6 +105,15 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <BetterStack />
 
+    <script>
+      // Dev-only OTel; the DEV constant lets Vite drop this branch (and its ~100 KB of deps) from prod.
+      if (import.meta.env.DEV) {
+        import("../lib/otel-dev").catch((err) => {
+          console.error("[otel-dev] dynamic import failed:", err);
+        });
+      }
+    </script>
+
     {
       /* Per-page head injection. Pages can add <link>/<meta>/<script> tags
         that need to be in <head> (e.g. preconnect to per-page third-party

@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="aspire/Kalandra.AppHost/Kalandra.AppHost.csproj" />
   <Project Path="backend/src/Kalandra.Api/Kalandra.Api.csproj" />
   <Project Path="backend/src/Kalandra.Infrastructure/Kalandra.Infrastructure.csproj" />
   <Project Path="backend/src/Kalandra.JobOffers/Kalandra.JobOffers.csproj" />

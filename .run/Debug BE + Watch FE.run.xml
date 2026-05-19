@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Debug BE + Watch FE" type="CompoundRunConfigurationType">
-    <toRun name="Backend" type="DotNetProject" />
-    <toRun name="Frontend" type="js.build_tools.npm" />
-    <method v="2" />
-  </configuration>
-</component>

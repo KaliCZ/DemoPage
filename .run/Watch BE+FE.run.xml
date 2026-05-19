@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Watch BE+FE" type="CompoundRunConfigurationType">
-    <toRun name="Watch Backend" type="js.build_tools.npm" />
-    <toRun name="Frontend" type="js.build_tools.npm" />
-    <method v="2" />
-  </configuration>
-</component>

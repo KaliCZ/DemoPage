@@ -6,6 +6,7 @@ using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
+using Marten.Services;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -36,6 +37,10 @@ public static class ServiceCollectionExtensions
             {
                 options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }
+
+            // Emit Marten session/batch spans so connection + batch wait time isn't a blind gap on the trace.
+            options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
+            options.OpenTelemetry.TrackEventCounters();
         })
         .UseLightweightSessions();
 
@@ -112,9 +117,19 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddTurnstile(this IServiceCollection services)
+    public static IServiceCollection AddTurnstile(
+        this IServiceCollection services,
+        IWebHostEnvironment environment)
     {
-        services.AddHttpClient<ITurnstileValidator, TurnstileValidator>();
+        if (environment.IsDevelopment())
+        {
+            // Skip the Cloudflare round-trip locally so dev works offline; the test key would have rubber-stamped it anyway.
+            services.AddSingleton<ITurnstileValidator, AlwaysPassTurnstileValidator>();
+        }
+        else
+        {
+            services.AddHttpClient<ITurnstileValidator, TurnstileValidator>();
+        }
 
         return services;
     }

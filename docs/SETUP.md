@@ -11,11 +11,11 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
 - [1. Local Development](#1-local-development)
   - [1.1 Prerequisites](#11-prerequisites)
   - [1.2 Install Dependencies](#12-install-dependencies)
-  - [1.3 JetBrains Run Configurations (recommended)](#13-jetbrains-run-configurations-recommended)
-  - [1.4 CLI Alternative](#14-cli-alternative)
-  - [1.5 Local Supabase](#15-local-supabase)
-  - [1.6 Frontend Environment](#16-frontend-environment)
-  - [1.7 Stopping Services](#17-stopping-services)
+  - [1.3 Start Everything](#13-start-everything)
+  - [1.4 Local Supabase](#14-local-supabase)
+  - [1.5 Frontend Environment](#15-frontend-environment)
+  - [1.6 Stopping Services](#16-stopping-services)
+  - [1.7 Parallel Worktrees](#17-parallel-worktrees)
 - [2. Running Tests](#2-running-tests)
   - [2.1 Backend Integration Tests](#21-backend-integration-tests)
   - [2.2 Frontend Page Tests](#22-frontend-page-tests)
@@ -53,31 +53,19 @@ Run once after cloning (or when dependencies change):
 npm install            # Installs root + frontend dependencies (via postinstall)
 ```
 
-### 1.3 JetBrains Run Configurations (recommended)
-
-The `.run/` directory contains shared run configurations that handle dependency installation and infrastructure startup automatically:
-
-- **Debug Backend** — launches the .NET backend with debugger attached + Astro dev server. Infrastructure (PostgreSQL + local Supabase) starts automatically as a before-launch step. Use this when you need to set breakpoints in the backend.
-- **Watch BE+FE** — launches `dotnet watch` + `astro dev` side-by-side with separate log panels. Both backend and frontend hot-reload on file changes. Use this for everyday development.
-
-Both configurations run `npm install` as a before-launch step, so dependencies are always up to date.
-
-> The remaining configurations in `.run/` (`Backend`, `Frontend`, `Watch Backend`) are building blocks used by the compound configs above.
-
-### 1.4 CLI Alternative
+### 1.3 Start Everything
 
 ```bash
-# From the repo root — starts PostgreSQL, local Supabase, backend (dotnet watch), and frontend (astro dev)
-npm run dev
+npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launches the Aspire AppHost
 ```
 
-This starts:
-- **PostgreSQL** (port 5432) — backend event store
-- **Local Supabase** (port 54321) — auth, API gateway, Studio dashboard
-- **Backend** (port 5000) — .NET API with hot reload
-- **Frontend** (port 4321) — Astro dev server
+The Aspire AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard and frontend URLs are printed (clickably, in supporting terminals) on startup. The backend's existing BetterStack OTLP exporter continues to work in parallel; nothing about production telemetry changes.
 
-### 1.5 Local Supabase
+Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Use `supabase stop` to halt the stack, or `supabase stop --no-backup` to discard data.
+
+Application data lives in a **separate Postgres** owned by Aspire (`AddPostgres`) — not Supabase's bundled DB. Each worktree gets its own container and named volume (`kalandra-pgdata-<repo-folder>`); Ctrl+C stops the container, the volume persists across runs.
+
+### 1.4 Local Supabase
 
 The project includes a `supabase/config.toml` that configures a local Supabase instance with email/password auth (no email confirmation required). On first run, `supabase start` downloads the required Docker images (~2-3 min).
 
@@ -91,17 +79,18 @@ Local services:
 Local credentials (well-known dev values, not secrets):
 - **Publishable key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
 
-### 1.6 Frontend Environment
+### 1.5 Frontend Environment
 
 The committed `frontend/.env` has local Supabase defaults — ready to use out of the box.
 
-To point at a different Supabase instance, create `frontend/.env.local` (gitignored) to override:
+To override any frontend env vars locally, create `frontend/.env.local` (gitignored). Common overrides:
 ```
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-PUBLIC_API_URL=http://localhost:5000
 PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
 ```
+
+> `PUBLIC_API_URL` is intentionally empty in dev — the Aspire AppHost forces it to `""` so all API calls flow through Vite's `/api` proxy (see [`astro.config.mjs`](../frontend/astro.config.mjs)). Setting it in `.env.local` has no effect under `npm run aspire`. It's only meaningful at production build time (e.g. `https://api.kalandra.tech`).
 
 #### Cloudflare Turnstile (CAPTCHA)
 
@@ -116,12 +105,22 @@ PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
 Turnstile__SecretKey=your-real-secret-key
 ```
 
-### 1.7 Stopping Services
+### 1.6 Stopping Services
+
+Aspire owns the application Postgres — Ctrl+C-ing the AppHost stops the container, but the named volume (`kalandra-pgdata-<repo-folder>`) keeps the data for next time.
+
+Supabase is shared machine-wide and outlives the AppHost. To halt it:
 
 ```bash
-npm run dev:stop     # Stop PostgreSQL + local Supabase
-npm run dev:wipe     # Stop and delete all data (clean slate)
+supabase stop                 # Stop containers (preserves data)
+supabase stop --no-backup     # Stop and wipe Supabase state
 ```
+
+### 1.7 Parallel Worktrees
+
+Just run `npm run aspire` in each. The AppHost walks the dashboard / OTLP ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. The startup output prints clickable URLs for the dashboard and frontend.
+
+The application Postgres is per-worktree (Aspire scopes the data volume to the repo-folder name), so each worktree has its own DB state. Supabase is shared (one machine-level instance), so auth users and storage objects are visible across worktrees — that's fine for fixtures.
 
 ---
 
@@ -136,7 +135,7 @@ npm test               # Runs all tests: backend + frontend + E2E
 Requires Docker (Testcontainers spins up a real PostgreSQL container):
 
 ```bash
-npm run test:backend
+dotnet test
 ```
 
 ### 2.2 Frontend Page Tests
@@ -144,7 +143,7 @@ npm run test:backend
 Builds the static site, serves it, and verifies page rendering, navigation, i18n, and dark mode:
 
 ```bash
-npm run test:frontend  # Installs Playwright browsers automatically
+npm --prefix frontend test  # Installs Playwright browsers automatically
 ```
 
 ### 2.3 E2E Tests
@@ -420,5 +419,5 @@ Create a `production` environment in **Settings → Environments**:
 
 The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
 automatic for the build/push step. The OCI VM also pulls from GHCR — see
-[3.3 Container Setup](#33-container-setup-quadlet--systemd) for the manual
+[Authenticate to GHCR](#authenticate-to-ghcr) under §3.2 for the manual
 `podman login` step.

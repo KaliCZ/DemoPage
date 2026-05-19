@@ -2,7 +2,7 @@
   import.meta.env.PUBLIC_BETTERSTACK_TOKEN && (
     <script
       is:inline
-      define:vars={{ bsToken: import.meta.env.PUBLIC_BETTERSTACK_TOKEN }}
+      define:vars={{ bsToken: import.meta.env.PUBLIC_BETTERSTACK_TOKEN, env: import.meta.env.MODE }}
     >
       !(function (b, e, t, r) {
         b[t] =
@@ -24,7 +24,7 @@
           tracePropagationTargets: ["localhost", /^\/api\//, "https://api.kalandra.tech"],
         },
       });
-      betterstack("init", { environment: "production" });
+      betterstack("init", { environment: env });
     </script>
   )
 }

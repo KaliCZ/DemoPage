@@ -41,7 +41,7 @@ Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
 builder.Services.AddStorageServices();
-builder.Services.AddTurnstile();
+builder.Services.AddTurnstile(builder.Environment);
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();

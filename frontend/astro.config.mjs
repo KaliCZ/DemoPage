@@ -48,9 +48,14 @@ function getPageLastmod(url) {
   return getLastModified(...files);
 }
 
-// https://astro.build/config
+// Aspire injects PORT and services__api__http__0; both are undefined outside Aspire.
+const aspireApiUrl = process.env.services__api__http__0;
+
 export default defineConfig({
   site,
+  server: {
+    port: process.env.PORT ? Number(process.env.PORT) : undefined,
+  },
   build: {
     inlineStylesheets: "always",
   },
@@ -81,9 +86,24 @@ export default defineConfig({
     server: {
       strictPort: !!process.env.VITE_STRICT_PORT,
       proxy: {
-        "/api": "http://localhost:5000",
-        "/health": "http://localhost:5000",
+        "/api": aspireApiUrl ?? "http://localhost:5000",
+        "/health": aspireApiUrl ?? "http://localhost:5000",
       },
+    },
+    // Pre-bundle deps that are only reached via dynamic import — avoids a mid-load re-optimize that 504s in-flight requests.
+    optimizeDeps: {
+      include: [
+        "@supabase/supabase-js",
+        "@opentelemetry/api",
+        "@opentelemetry/context-zone",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-document-load",
+        "@opentelemetry/instrumentation-fetch",
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-trace-web",
+        "@opentelemetry/semantic-conventions",
+      ],
     },
   },
 });

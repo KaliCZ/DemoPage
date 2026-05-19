@@ -6,7 +6,6 @@
 # User-specific files
 .claude/*
 !.claude/settings.json
-!.claude/launch.json
 .idea/
 .astro/
 *.rsuser
