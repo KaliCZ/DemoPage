@@ -17,7 +17,7 @@ Image=ghcr.io/kalicz/demopage/api:latest
 ContainerName=kalandra-api-blue
 Network=host
 EnvironmentFile=%h/kalandra-api.env
-Environment=ASPNETCORE_URLS=http://+:8080
+Environment=ASPNETCORE_HTTP_PORTS=8080
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Pull=missing
 
