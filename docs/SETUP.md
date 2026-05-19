@@ -97,13 +97,14 @@ Local credentials (well-known dev values, not secrets):
 
 The committed `frontend/.env` has local Supabase defaults — ready to use out of the box.
 
-To point at a different Supabase instance, create `frontend/.env.local` (gitignored) to override:
+To override any frontend env vars locally, create `frontend/.env.local` (gitignored). Common overrides:
 ```
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-PUBLIC_API_URL=http://localhost:5000
 PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
 ```
+
+> `PUBLIC_API_URL` is intentionally empty in dev — the Aspire AppHost forces it to `""` so all API calls flow through Vite's `/api` proxy (see [`astro.config.mjs`](../frontend/astro.config.mjs)). Setting it in `.env.local` has no effect under `npm run aspire`. It's only meaningful at production build time (e.g. `https://api.kalandra.tech`).
 
 #### Cloudflare Turnstile (CAPTCHA)
 
@@ -432,5 +433,5 @@ Create a `production` environment in **Settings → Environments**:
 
 The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
 automatic for the build/push step. The OCI VM also pulls from GHCR — see
-[3.3 Container Setup](#33-container-setup-quadlet--systemd) for the manual
+[Authenticate to GHCR](#authenticate-to-ghcr) under §3.2 for the manual
 `podman login` step.
