@@ -525,7 +525,7 @@ jobs:
           PUBLIC_SENTRY_DSN: ${{ secrets.FRONTEND_SENTRY_DSN }}
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
