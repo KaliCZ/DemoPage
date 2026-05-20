@@ -1,4 +1,4 @@
-// Dev-only OTel: dynamic-imported under import.meta.env.DEV so Vite tree-shakes it out of prod (BetterStack/Sentry own prod).
+// Dev-only OTel: dynamic-imported under import.meta.env.DEV so Vite tree-shakes it out of prod (Sentry's loader owns prod).
 // Emits to the Aspire dashboard via PUBLIC_OTLP_TRACES_ENDPOINT, which the AppHost injects per-instance.
 
 import type { Context } from "@opentelemetry/api";

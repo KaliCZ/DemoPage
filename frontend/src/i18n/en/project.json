@@ -440,7 +440,7 @@
         "title": "Emails, Slack & Observability",
         "done": false,
         "faded": true,
-        "description": "Email confirmations and Slack notifications on job offer submissions and status changes. Full observability stack: Sentry for error tracking, PostHog for product analytics, BetterStack for logging and uptime.",
+        "description": "Email confirmations and Slack notifications on job offer submissions and status changes. Full observability stack: Sentry for errors, traces, and logs, PostHog for product analytics.",
         "side": "left"
       },
       {

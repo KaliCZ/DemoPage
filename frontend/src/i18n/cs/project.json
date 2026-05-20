@@ -440,7 +440,7 @@
         "title": "Emaily, Slack a observabilita",
         "done": false,
         "faded": true,
-        "description": "Emailová potvrzení a Slack notifikace při podání pracovních nabídek a změnách stavu. Kompletní observability stack: Sentry pro error tracking, PostHog pro produktovou analytiku, BetterStack pro logování a uptime.",
+        "description": "Emailová potvrzení a Slack notifikace při podání pracovních nabídek a změnách stavu. Kompletní observability stack: Sentry pro chyby, traces a logy, PostHog pro produktovou analytiku.",
         "side": "left"
       },
       {
