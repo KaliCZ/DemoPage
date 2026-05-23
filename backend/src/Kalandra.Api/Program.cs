@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Api.Infrastructure.DataProtection;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -37,6 +38,7 @@ var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Confi
 TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
+builder.Services.AddAppDataProtection();
 Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
