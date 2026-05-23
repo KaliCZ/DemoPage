@@ -6,11 +6,12 @@
 const betterstackToken = import.meta.env.PUBLIC_BETTERSTACK_TOKEN;
 const mode = import.meta.env.MODE;
 
-// Build-time safety: production deploys must ship with Sentry wired up. Missing DSN in dev is fine —
-// `npm run dev` / Aspire runs without one so contributors don't need a Sentry account to iterate.
-if (import.meta.env.PROD && !import.meta.env.PUBLIC_SENTRY_DSN) {
+// Build-time safety: deploy builds must ship with Sentry wired up. The CI deploy job opts in via
+// the KALANDRA_DEPLOY_BUILD env var. Dev (`npm run dev` / Aspire) and CI test builds (which also
+// run `astro build` to produce a fixture for Playwright) intentionally stay permissive.
+if (process.env.KALANDRA_DEPLOY_BUILD === "1" && !import.meta.env.PUBLIC_SENTRY_DSN) {
   throw new Error(
-    "PUBLIC_SENTRY_DSN must be set when building for production. " +
+    "PUBLIC_SENTRY_DSN must be set for deploy builds. " +
       "CI provides it via the FRONTEND_SENTRY_DSN GitHub secret; for a local prod build, set it in frontend/.env.local.",
   );
 }

@@ -523,6 +523,9 @@ jobs:
           PUBLIC_API_URL: https://api.kalandra.tech
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           PUBLIC_SENTRY_DSN: ${{ secrets.FRONTEND_SENTRY_DSN }}
+          # Opts this build in to the strict observability check in Observability.astro.
+          # Test-job builds don't set this, so they remain permissive without a DSN.
+          KALANDRA_DEPLOY_BUILD: "1"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
