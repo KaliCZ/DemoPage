@@ -39,7 +39,9 @@ public static class Observability
             options.DisableDiagnosticSourceIntegration();
             options.DisableSentryHttpMessageHandler = true;
 
-            // Logs ride to Sentry via the OTEL logging exporter; events fire only on Warning+.
+            // EnableLogs wires Sentry.AspNetCore's structured logger provider so ILogger calls flow into
+            // Sentry's Logs product. Issues fire from Warning+ and unhandled exceptions; Info+ becomes
+            // breadcrumbs attached to those issues; everything Info+ also lands as a structured log.
             options.EnableLogs = true;
             options.MinimumEventLevel = LogLevel.Warning;
             options.MinimumBreadcrumbLevel = LogLevel.Information;

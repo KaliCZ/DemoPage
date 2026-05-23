@@ -103,6 +103,7 @@ export default defineConfig({
         "@opentelemetry/resources",
         "@opentelemetry/sdk-trace-web",
         "@opentelemetry/semantic-conventions",
+        "@sentry/browser",
       ],
     },
   },

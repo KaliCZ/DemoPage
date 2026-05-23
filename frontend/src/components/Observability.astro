@@ -1,49 +1,16 @@
 ---
-// Observability loader — injects the Sentry loader script and/or BetterStack JS tag
-// based on which env vars are set at build time. Behaviour is fanned out at call
-// sites via `src/lib/observability.ts`.
+// Observability loader — Sentry is initialised via the @sentry/browser npm SDK from
+// src/lib/observability.ts (imported by Layout.astro). This component now only handles
+// BetterStack's loader script, kept as an opt-in dual-write path via PUBLIC_BETTERSTACK_TOKEN.
 
-const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN;
 const betterstackToken = import.meta.env.PUBLIC_BETTERSTACK_TOKEN;
 const mode = import.meta.env.MODE;
-
-// Sentry's CDN loader URL embeds the DSN's public key (the URL username).
-let sentryLoaderUrl = "";
-if (sentryDsn) {
-  try {
-    sentryLoaderUrl = `https://js.sentry-cdn.com/${new URL(sentryDsn).username}.min.js`;
-  } catch {
-    // Bad DSN → skip; Sentry stays disabled rather than 404ing the loader.
-  }
-}
 ---
 
-{
-  sentryLoaderUrl && (
-    <>
-      <script is:inline src={sentryLoaderUrl} crossorigin="anonymous" />
-      <script is:inline define:vars={{ dsn: sentryDsn, env: mode }}>
-        {`
-          window.Sentry && window.Sentry.onLoad(function () {
-            window.Sentry.init({
-              dsn: dsn,
-              environment: env,
-              release: undefined,
-              tracesSampleRate: 1.0,
-              tracePropagationTargets: ["localhost", /^\\/api\\//, "https://api.kalandra.tech"],
-              integrations: function (defaults) {
-                return defaults.filter(function (i) {
-                  // The OTLP fetches in dev would otherwise create self-referential breadcrumbs.
-                  return i.name !== "Replay" || env !== "development";
-                });
-              },
-            });
-          });
-        `}
-      </script>
-    </>
-  )
-}
+{/* Side-effect import — initialises Sentry as early as Astro will hoist this <head> script. */}
+<script>
+  import "../lib/observability";
+</script>
 
 {
   betterstackToken && (
