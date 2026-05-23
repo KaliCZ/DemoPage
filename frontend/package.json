@@ -32,6 +32,7 @@
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-trace-web": "^2.7.1",
     "@opentelemetry/semantic-conventions": "^1.40.0",
+    "@sentry/browser": "^10.53.1",
     "@supabase/supabase-js": "^2.106.0",
     "@tailwindcss/vite": "^4.3.0",
     "astro": "^6.3.5",

@@ -17,8 +17,11 @@ public static class Observability
         var sentryConfig = SentryConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
         var betterStackConfig = BetterStackConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
 
+        if (sentryConfig is null && builder.Environment.IsProduction())
+            throw new InvalidOperationException("Sentry:Dsn must be configured in production.");
+
         AddSentry(builder, sentryConfig);
-        AddOpenTelemetry(builder, betterStackConfig);
+        AddOpenTelemetry(builder, sentryConfig, betterStackConfig);
     }
 
     private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config)
@@ -31,14 +34,17 @@ public static class Observability
             options.Dsn = config.Dsn.Value;
             options.Release = AppVersion.InformationalVersion;
 
-            // Bridge with the existing OTEL pipeline so Sentry and OTEL share trace context.
+            // Bridge with the OTEL pipeline so Sentry receives spans through Sentry.OpenTelemetry.
             options.UseOpenTelemetry();
             options.DisableDiagnosticSourceIntegration();
             options.DisableSentryHttpMessageHandler = true;
 
-            // Logging — only capture warnings and above; info-level goes to BetterStack via OTEL.
+            // EnableLogs wires Sentry.AspNetCore's structured logger provider so ILogger calls flow into
+            // Sentry's Logs product. Issues fire from Warning+ and unhandled exceptions; Info+ becomes
+            // breadcrumbs attached to those issues; everything Info+ also lands as a structured log.
             options.EnableLogs = true;
             options.MinimumEventLevel = LogLevel.Warning;
+            options.MinimumBreadcrumbLevel = LogLevel.Information;
 
             options.TracesSampleRate = 1.0;
             options.SampleRate = 1.0f;
@@ -59,18 +65,13 @@ public static class Observability
         });
     }
 
-    private static void AddOpenTelemetry(WebApplicationBuilder builder, BetterStackConfig? config)
+    private static void AddOpenTelemetry(WebApplicationBuilder builder, SentryConfig? sentryConfig, BetterStackConfig? betterStackConfig)
     {
         // Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT; the default AddOtlpExporter() picks it up.
         var aspireEnabled = !string.IsNullOrEmpty(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
-        if (config is null && !aspireEnabled)
-        {
-            if (builder.Environment.IsProduction())
-                throw new InvalidOperationException("BetterStack:SourceToken and BetterStack:OtlpEndpoint must be configured in production.");
-
+        if (sentryConfig is null && betterStackConfig is null && !aspireEnabled)
             return;
-        }
 
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
@@ -85,16 +86,21 @@ public static class Observability
                     {
                         options.FilterHttpRequestMessage = request =>
                             request.RequestUri is not { Host: var host }
-                            || !host.EndsWith("betterstackdata.com", StringComparison.OrdinalIgnoreCase);
+                            || (!host.EndsWith("betterstackdata.com", StringComparison.OrdinalIgnoreCase)
+                                && !host.EndsWith("sentry.io", StringComparison.OrdinalIgnoreCase)
+                                && !host.EndsWith("ingest.sentry.io", StringComparison.OrdinalIgnoreCase));
                     })
                     .AddSource("Marten")
                     .AddNpgsql();
 
-                if (config is not null)
+                if (sentryConfig is not null)
+                    tracing.AddSentry();
+
+                if (betterStackConfig is not null)
                     tracing.AddOtlpExporter(otlp =>
                     {
-                        otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/traces");
-                        otlp.Headers = config.AuthorizationHeader;
+                        otlp.Endpoint = new Uri(betterStackConfig.OtlpEndpoint, "v1/traces");
+                        otlp.Headers = betterStackConfig.AuthorizationHeader;
                         otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                     });
 
@@ -109,11 +115,11 @@ public static class Observability
                     .AddRuntimeInstrumentation()
                     .AddMeter("Marten");
 
-                if (config is not null)
+                if (betterStackConfig is not null)
                     metrics.AddOtlpExporter(otlp =>
                     {
-                        otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/metrics");
-                        otlp.Headers = config.AuthorizationHeader;
+                        otlp.Endpoint = new Uri(betterStackConfig.OtlpEndpoint, "v1/metrics");
+                        otlp.Headers = betterStackConfig.AuthorizationHeader;
                         otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                     });
 
@@ -126,11 +132,11 @@ public static class Observability
             logging.IncludeScopes = true;
             logging.IncludeFormattedMessage = true;
 
-            if (config is not null)
+            if (betterStackConfig is not null)
                 logging.AddOtlpExporter(otlp =>
                 {
-                    otlp.Endpoint = new Uri(config.OtlpEndpoint, "v1/logs");
-                    otlp.Headers = config.AuthorizationHeader;
+                    otlp.Endpoint = new Uri(betterStackConfig.OtlpEndpoint, "v1/logs");
+                    otlp.Headers = betterStackConfig.AuthorizationHeader;
                     otlp.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                 });
 

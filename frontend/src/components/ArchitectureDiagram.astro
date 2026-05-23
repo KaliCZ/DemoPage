@@ -446,8 +446,8 @@ const { t, class: className, ...rest } = Astro.props;
           {t.observability}
         </text>
 
-        <!-- Sentry (planned) -->
-        <g opacity="0.4">
+        <!-- Sentry -->
+        <g>
           <rect
             x="730"
             y="198"
@@ -456,8 +456,7 @@ const { t, class: className, ...rest } = Astro.props;
             rx="8"
             fill="var(--color-surface-container)"
             stroke="var(--color-outline-variant)"
-            stroke-width="1"
-            stroke-dasharray="4,3"></rect>
+            stroke-width="1"></rect>
           <text
             x="790"
             y="219"
@@ -469,12 +468,6 @@ const { t, class: className, ...rest } = Astro.props;
           >
             Sentry
           </text>
-          <g transform="translate(838, 214)">
-            <g class="planned-spinner">
-              <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
-              <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
-            </g>
-          </g>
         </g>
 
         <!-- PostHog (planned) -->
@@ -501,37 +494,6 @@ const { t, class: className, ...rest } = Astro.props;
             PostHog
           </text>
           <g transform="translate(838, 256)">
-            <g class="planned-spinner">
-              <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
-              <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
-            </g>
-          </g>
-        </g>
-
-        <!-- BetterStack (planned) -->
-        <g opacity="0.4">
-          <rect
-            x="730"
-            y="282"
-            width="120"
-            height="32"
-            rx="8"
-            fill="var(--color-surface-container)"
-            stroke="var(--color-outline-variant)"
-            stroke-width="1"
-            stroke-dasharray="4,3"></rect>
-          <text
-            x="790"
-            y="303"
-            text-anchor="middle"
-            fill="var(--color-on-surface)"
-            font-family="var(--font-body)"
-            font-size="11"
-            font-weight="600"
-          >
-            BetterStack
-          </text>
-          <g transform="translate(838, 298)">
             <g class="planned-spinner">
               <circle cx="0" cy="0" r="5" fill="none" stroke="var(--color-outline-variant)" stroke-width="1.2"></circle>
               <path d="M0,-5 A5,5 0 0,1 5,0" fill="none" stroke="var(--color-tertiary)" stroke-width="1.2" stroke-linecap="round"></path>
@@ -613,6 +575,9 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
       </g>
+
+      <!-- Arrow: Backend API → Sentry -->
+      <path d="M578,138 L723,214" fill="none" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#arrow)"></path>
 
       <!-- Arrow: Backend API → Slack (planned, dashed) -->
       <path
