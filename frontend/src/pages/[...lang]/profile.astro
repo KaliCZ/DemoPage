@@ -478,7 +478,7 @@ const t = translations[lang];
         var { data: userData } = await supabase.auth.getUser();
         if (userData?.user) populateProfile(userData.user);
 
-        window.__obs?.track("google-unlinked");
+        window.observability?.track("google-unlinked");
         window.__showSnackbar?.(strings.provider.unlinkGoogleSuccess, "success");
       } catch (err) {
         window.__showSnackbar?.(err.message || strings.provider.unlinkGoogleError, "error");
@@ -512,7 +512,7 @@ const t = translations[lang];
         });
         if (result.error) throw result.error;
 
-        window.__obs?.track("display-name-updated");
+        window.observability?.track("display-name-updated");
         window.__showSnackbar?.(strings.displayName.success, "success");
       } catch (err) {
         window.__showSnackbar?.(err.message || strings.displayName.error, "error");
@@ -542,7 +542,7 @@ const t = translations[lang];
         var result = await supabase.auth.updateUser({ email: newEmail });
         if (result.error) throw result.error;
 
-        window.__obs?.track("email-updated");
+        window.observability?.track("email-updated");
         window.__showSnackbar?.(strings.email.success, "success");
       } catch (err) {
         window.__showSnackbar?.(err.message || strings.email.error, "error");
@@ -601,7 +601,7 @@ const t = translations[lang];
         });
         if (result.error) throw result.error;
 
-        window.__obs?.track("password-changed");
+        window.observability?.track("password-changed");
         window.__showSnackbar?.(strings.password.success, "success");
 
         document.getElementById("current-password").value = "";
@@ -701,7 +701,7 @@ const t = translations[lang];
           localStorage.setItem("userInfoCache", JSON.stringify(uiCache));
         } catch {}
 
-        window.__obs?.track("avatar-updated");
+        window.observability?.track("avatar-updated");
         window.__showSnackbar?.(strings.avatar.success, "success");
       } catch (err) {
         window.__showSnackbar?.(err.message || strings.avatar.error, "error");

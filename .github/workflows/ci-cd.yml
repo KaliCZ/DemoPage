@@ -101,6 +101,8 @@ jobs:
           PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
           PUBLIC_API_URL: "http://localhost:5000"
+          # Tag CI-emitted Sentry events so they filter out of prod dashboards.
+          PUBLIC_SENTRY_ENVIRONMENT: ci
 
       - name: Serve frontend
         run: npm run serve &
@@ -238,6 +240,9 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+        env:
+          # Tag CI-emitted Sentry events so they filter out of prod dashboards.
+          PUBLIC_SENTRY_ENVIRONMENT: ci
 
       - name: Get Playwright version
         id: playwright-version
@@ -522,10 +527,6 @@ jobs:
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-          PUBLIC_SENTRY_DSN: ${{ secrets.FRONTEND_SENTRY_DSN }}
-          # Opts this build in to the strict observability check in Observability.astro.
-          # Test-job builds don't set this, so they remain permissive without a DSN.
-          KALANDRA_DEPLOY_BUILD: "1"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4

@@ -1,12 +1,13 @@
-// Observability abstraction — picks the configured backend(s) and fans calls out to them.
+// Sentry browser SDK init + thin abstraction for identifyUser / track.
 //
 // Configured via env at build time:
-//   - PUBLIC_SENTRY_DSN          → Sentry browser SDK (@sentry/browser, dynamic-imported on module load).
-//   - PUBLIC_BETTERSTACK_TOKEN   → BetterStack JS tag injected by Observability.astro.
-// If both are set, calls go to both. If neither, calls are no-ops.
+//   - PUBLIC_SENTRY_DSN          → required for any of this to run. Committed in frontend/.env.
+//   - PUBLIC_SENTRY_ENVIRONMENT  → optional override for Sentry's `environment` tag. Defaults to
+//                                  Vite's MODE ("development" in `astro dev`, "production" in builds).
+//                                  CI test jobs pass "ci" so their events filter out of prod views.
 //
-// The Sentry import is dynamic and gated on a build-time env check; Vite tree-shakes the
-// entire `@sentry/browser` chunk out of the bundle when PUBLIC_SENTRY_DSN is empty.
+// The Sentry import is dynamic and gated on PUBLIC_SENTRY_DSN at build time, so Vite tree-shakes the
+// entire `@sentry/browser` chunk out of the bundle when the DSN is empty.
 
 type AuthUser = {
   id: string;
@@ -16,21 +17,16 @@ type AuthUser = {
 
 type EventData = Record<string, unknown>;
 
-interface Provider {
-  identifyUser(user: AuthUser | null): void;
-  track(event: string, data?: EventData): void;
-}
-
 const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN;
-const mode = import.meta.env.MODE;
+const environment = import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env.MODE;
 
 // Resolves to the loaded SDK once init completes; null when no DSN is configured.
-// Provider methods chain off this promise so calls made before the SDK arrives still land.
+// Calls below chain off this promise so anything fired before the SDK arrives still lands.
 const sentryReady: Promise<typeof import("@sentry/browser")> | null = sentryDsn
   ? import("@sentry/browser").then((Sentry) => {
       Sentry.init({
         dsn: sentryDsn,
-        environment: mode,
+        environment,
         tracesSampleRate: 1.0,
         tracePropagationTargets: ["localhost", /^\/api\//, "https://api.kalandra.tech"],
         // Lets Sentry's ingest server attach the client IP (derived from the connection) to events and logs.
@@ -99,63 +95,36 @@ const sentryReady: Promise<typeof import("@sentry/browser")> | null = sentryDsn
     })
   : null;
 
-const sentryProvider: Provider = {
-  identifyUser(user) {
-    sentryReady?.then((Sentry) =>
-      Sentry.setUser(
-        user
-          ? {
-              id: user.id,
-              email: user.email ?? "",
-              username: (user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "",
-            }
-          : null,
-      ),
-    );
-  },
-  track(event, data) {
-    sentryReady?.then((Sentry) => {
-      // Breadcrumb: visible on captured issues; structured log: visible in the Logs tab regardless.
-      Sentry.addBreadcrumb({ category: "app", message: event, level: "info", data: data ?? {} });
-      Sentry.logger.info(event, data ?? {});
-    });
-  },
-};
-
-const betterStackProvider: Provider = {
-  identifyUser(user) {
-    if (!user) return;
-    (window as any).betterstack?.("user", {
-      id: user.id,
-      email: user.email ?? "",
-      username: (user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "",
-    });
-  },
-  track(event, data) {
-    (window as any).betterstack?.("track", event, data ?? {});
-  },
-};
-
-const providers: Provider[] = [];
-if (sentryDsn) providers.push(sentryProvider);
-if (import.meta.env.PUBLIC_BETTERSTACK_TOKEN) providers.push(betterStackProvider);
-
 /** Identify the current user. Call on sign-in and on auth state changes. */
 export function identifyUser(user: AuthUser | null): void {
-  for (const p of providers) p.identifyUser(user);
+  sentryReady?.then((Sentry) =>
+    Sentry.setUser(
+      user
+        ? {
+            id: user.id,
+            email: user.email ?? "",
+            username: (user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "",
+          }
+        : null,
+    ),
+  );
 }
 
 /** Record a named application event with optional metadata. */
 export function track(event: string, data?: EventData): void {
-  for (const p of providers) p.track(event, data);
+  sentryReady?.then((Sentry) => {
+    // Breadcrumb: visible on captured issues; structured log: visible in the Logs tab regardless.
+    Sentry.addBreadcrumb({ category: "app", message: event, level: "info", data: data ?? {} });
+    Sentry.logger.info(event, data ?? {});
+  });
 }
 
 // Exposed for `define:vars` inline scripts in Astro pages, which can't import ES modules.
-(window as any).__obs = { identifyUser, track };
+(window as any).observability = { identifyUser, track };
 
 declare global {
   interface Window {
-    __obs?: {
+    observability?: {
       identifyUser: typeof identifyUser;
       track: typeof track;
     };

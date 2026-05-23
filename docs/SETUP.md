@@ -36,7 +36,8 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [4.3 Container Registry Auth](#43-container-registry-auth)
 - [5. Observability](#5-observability)
   - [5.1 Sentry Projects](#51-sentry-projects)
-  - [5.2 Local Development](#52-local-development)
+  - [5.2 Environments and CI noise](#52-environments-and-ci-noise)
+  - [5.3 Local Development](#53-local-development)
 
 ---
 
@@ -413,7 +414,10 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key (from [Turnstile dashboard](https://dash.cloudflare.com/?to=/:account/turnstile)) — used by backend to verify CAPTCHA tokens |
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 | `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
-| `FRONTEND_SENTRY_DSN` | DSN from the Sentry **frontend (Browser JavaScript)** project — mapped to `PUBLIC_SENTRY_DSN` at frontend build time. Optional; if empty, the Sentry loader script isn't injected. |
+
+The **frontend** Sentry DSN is committed in `frontend/.env` — browser DSNs are public credentials
+(protected by the per-project Allowed Domains list in Sentry, not by secrecy) so a GitHub secret
+adds no value.
 
 ### 4.2 GitHub Actions Environment
 
@@ -431,16 +435,12 @@ automatic for the build/push step. The OCI VM also pulls from GHCR — see
 
 ## 5. Observability
 
-Production errors, traces, and logs are sent to [Sentry](https://sentry.io). The
-backend uses `Sentry.AspNetCore` + `Sentry.OpenTelemetry` to bridge its
-existing OTEL pipeline; the frontend uses Sentry's CDN loader script and an
-[abstraction layer](../frontend/src/lib/observability.ts) so the underlying
-provider can change without rewriting call sites.
-
-A nullable BetterStack OTLP exporter is still wired into the backend
-(`BetterStackConfig`) and the frontend (`Observability.astro`). It is not used
-in the default deployment but can be re-enabled by populating the corresponding
-secrets — useful if you want to dual-write during a provider migration.
+Errors, structured logs, traces, and session replays are sent to
+[Sentry](https://sentry.io). The backend uses `Sentry.AspNetCore` +
+`Sentry.OpenTelemetry` to bridge its existing OTEL pipeline; the frontend uses
+`@sentry/browser` (npm SDK), dynamic-imported from
+[`src/lib/observability.ts`](../frontend/src/lib/observability.ts) so the
+chunk tree-shakes out when no DSN is configured.
 
 ### 5.1 Sentry Projects
 
@@ -450,34 +450,43 @@ differ, so the DSNs and source-map / release tooling won't be interchangeable:
 | Project | Platform | DSN goes to |
 |---------|----------|-------------|
 | Backend API | .NET → ASP.NET Core | GitHub secret `BACKEND_SENTRY_DSN` |
-| Frontend site | JavaScript → Browser | GitHub secret `FRONTEND_SENTRY_DSN` |
+| Frontend site | JavaScript → Browser | `frontend/.env` (committed, public credential) |
 
 For each project:
 
 1. Sentry dashboard → **Projects → Create Project** → pick the platform above.
 2. Copy the **DSN** from the project's **Settings → Client Keys (DSN)** page.
-3. Paste it into the matching GitHub repository secret (see §4.1).
+3. On the same page, set **Allowed Domains** to `https://www.kalandra.tech`,
+   `http://localhost:*`, `http://127.0.0.1:*`. This is what protects the
+   public frontend DSN from being abused by anyone who scrapes it from the bundle.
+4. Paste the backend DSN into the matching GitHub repository secret (§4.1);
+   paste the frontend DSN into `frontend/.env`.
 
 Sentry's free tier is sufficient for low-traffic personal projects; bump it
 later if you outgrow the event quota.
 
-### 5.2 Local Development
+### 5.2 Environments and CI noise
 
-You don't need a Sentry DSN to run the stack locally. The Aspire AppHost
-already routes OTEL traces/metrics/logs to its built-in dashboard, which is
-the better experience while iterating.
+The frontend tags Sentry events with an `environment` derived from Vite's
+build mode by default (`development` in `astro dev`, `production` in
+`astro build`). CI Playwright jobs override this via `PUBLIC_SENTRY_ENVIRONMENT=ci`
+in [.github/workflows/ci-cd.yml](../.github/workflows/ci-cd.yml) so their
+events filter out of production dashboards — add `!environment:ci` as a saved
+filter in Sentry for clean prod views.
 
-To exercise the production code path locally, drop a DSN into a gitignored
-override:
+### 5.3 Local Development
+
+You don't need a Sentry DSN to run the stack locally — but the frontend DSN
+is committed, so by default any `npm run aspire` session will emit
+`environment: development` events to Sentry. That's intentional (lets you
+verify changes against real Sentry). To opt out locally, set
+`PUBLIC_SENTRY_DSN=` in `frontend/.env.local`.
+
+The backend, by contrast, only **requires** a DSN when
+`ASPNETCORE_ENVIRONMENT=Production`. In `Development` (the AppHost default)
+it's optional; a missing configuration won't break local runs. To exercise
+the production path locally:
 
 ```bash
-# backend — user-secrets
 dotnet user-secrets --project backend/src/Kalandra.Api set "Sentry:Dsn" "<your-dsn>"
-
-# frontend — frontend/.env.local
-PUBLIC_SENTRY_DSN=<your-dsn>
 ```
-
-> The backend only **requires** a DSN when `ASPNETCORE_ENVIRONMENT=Production`.
-> In `Development` (the AppHost default) it is optional, so a missing
-> configuration won't break local runs.

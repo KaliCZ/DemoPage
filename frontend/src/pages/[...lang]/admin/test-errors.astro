@@ -133,7 +133,7 @@ const c = commons[lang];
 
   document.getElementById("btn-throw")?.addEventListener("click", async () => {
     // Emit a tracked event — verifies frontend → Sentry Logs delivery alongside the backend exception.
-    window.__obs?.track("admin.test-errors.throw-clicked");
+    window.observability?.track("admin.test-errors.throw-clicked");
     try {
       const res = await callApi("POST", "/test-errors/throw");
       if (!res) return;
