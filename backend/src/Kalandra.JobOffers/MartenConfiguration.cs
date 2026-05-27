@@ -1,6 +1,6 @@
+using JasperFx.Events.Projections;
 using Kalandra.JobOffers.Entities;
 using Marten;
-using Marten.Events.Projections;
 
 namespace Kalandra.JobOffers;
 

@@ -1,4 +1,5 @@
 using JasperFx;
+using JasperFx.OpenTelemetry;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
