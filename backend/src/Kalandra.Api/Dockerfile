@@ -14,10 +14,9 @@ COPY src/Kalandra.JobOffers/Kalandra.JobOffers.csproj src/Kalandra.JobOffers/
 
 RUN dotnet restore src/Kalandra.Api/Kalandra.Api.csproj -a $TARGETARCH
 
-# Now copy the rest of the sources and publish. The .editorconfig sits at the
-# context root so analyzer severities (e.g. CS8509 as error) apply in-container.
-COPY .editorconfig .
-COPY src/ src/
+# Copy the rest of the context (sources + root config such as .editorconfig, so
+# analyzer severities apply in-container). .dockerignore defines what's excluded.
+COPY . .
 RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -c Release \
     -a $TARGETARCH \
