@@ -102,7 +102,7 @@ jobs:
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
           PUBLIC_API_URL: "http://localhost:5000"
           # Tag CI-emitted Sentry events so they filter out of prod dashboards.
-          PUBLIC_SENTRY_ENVIRONMENT: ci
+          PUBLIC_SENTRY_ENV: ci
 
       - name: Serve frontend
         run: npm run serve &
@@ -242,7 +242,7 @@ jobs:
         working-directory: frontend
         env:
           # Tag CI-emitted Sentry events so they filter out of prod dashboards.
-          PUBLIC_SENTRY_ENVIRONMENT: ci
+          PUBLIC_SENTRY_ENV: ci
 
       - name: Get Playwright version
         id: playwright-version

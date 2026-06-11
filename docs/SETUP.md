@@ -469,7 +469,7 @@ later if you outgrow the event quota.
 
 The frontend tags Sentry events with an `environment` derived from Vite's
 build mode by default (`development` in `astro dev`, `production` in
-`astro build`). CI Playwright jobs override this via `PUBLIC_SENTRY_ENVIRONMENT=ci`
+`astro build`). CI Playwright jobs override this via `PUBLIC_SENTRY_ENV=ci`
 in [.github/workflows/ci-cd.yml](../.github/workflows/ci-cd.yml) so their
 events filter out of production dashboards — add `!environment:ci` as a saved
 filter in Sentry for clean prod views.

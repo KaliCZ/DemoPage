@@ -2,7 +2,7 @@
 //
 // Configured via env at build time:
 //   - PUBLIC_SENTRY_DSN          → required for any of this to run. Committed in frontend/.env.
-//   - PUBLIC_SENTRY_ENVIRONMENT  → optional override for Sentry's `environment` tag. Defaults to
+//   - PUBLIC_SENTRY_ENV          → optional override for Sentry's `environment` tag. Defaults to
 //                                  Vite's MODE ("development" in `astro dev`, "production" in builds).
 //                                  CI test jobs pass "ci" so their events filter out of prod views.
 //
@@ -18,7 +18,7 @@ type AuthUser = {
 type EventData = Record<string, unknown>;
 
 const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN;
-const environment = import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env.MODE;
+const environment = import.meta.env.PUBLIC_SENTRY_ENV || import.meta.env.MODE;
 
 // Resolves to the loaded SDK once init completes; null when no DSN is configured.
 // Calls below chain off this promise so anything fired before the SDK arrives still lands.
