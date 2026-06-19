@@ -424,10 +424,8 @@ Plus these repository **variables** (Settings → Variables → Actions) used by
 | `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. |
 | `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project |
 
-The deploy job also sets `SENTRY_URL=https://de.sentry.io/` (hardcoded in the workflow) because the
-org lives in Sentry's EU region — the DSN host is `ingest.de.sentry.io`. The org auth token is
-region-aware for the upload itself, but the plugin's release API calls default to the US silo, so
-the endpoint is pinned explicitly. Change it only if the project moves regions.
+The org lives in Sentry's EU region (the DSN host is `ingest.de.sentry.io`), but no `SENTRY_URL` is
+set — the org auth token embeds its own region endpoint and the upload routes there automatically.
 
 The **frontend** Sentry DSN is committed in `frontend/.env` — browser DSNs are public credentials
 (protected by the per-project Allowed Domains list in Sentry, not by secrecy) so a GitHub secret
@@ -518,7 +516,6 @@ Inputs (see §4.1):
 
 - `SENTRY_CI_TOKEN` (secret, mapped to `SENTRY_AUTH_TOKEN` at build time) — required for upload. Missing → upload is skipped silently.
 - `SENTRY_PROJECT` (and optionally `SENTRY_ORG`) repo vars — point the upload at the right Sentry project.
-- `SENTRY_URL` (hardcoded in the workflow) — pins the EU region endpoint.
 
 `astro.config.mjs` sets `build.sourcemap: 'hidden'` only when the auth
 token is present, so dev (`npm run aspire`) and CI builds don't generate

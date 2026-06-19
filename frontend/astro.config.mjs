@@ -66,11 +66,6 @@ export default defineConfig({
   },
   build: {
     inlineStylesheets: "always",
-    // 'hidden' emits .map files but strips the sourceMappingURL comment from the bundle, so the
-    // browser doesn't request them. Sentry resolves stack traces via the uploaded copies instead.
-    // Only meaningful when the Sentry upload plugin is active — otherwise the .map files would be
-    // generated and thrown away. Keep `false` in dev/CI to skip the cost.
-    sourcemap: sentryAuthToken ? "hidden" : false,
   },
   integrations: [
     icon(),
@@ -95,6 +90,13 @@ export default defineConfig({
     },
   },
   vite: {
+    build: {
+      // 'hidden' emits .map files but strips the sourceMappingURL comment from the bundle, so the
+      // browser never requests them; Sentry resolves stack traces via the uploaded copies (matched
+      // by debug ID). Must live under `vite.build` — Astro's own `build` key ignores `sourcemap`.
+      // Only meaningful when the upload plugin below is active; keep `false` in dev/CI to skip the cost.
+      sourcemap: sentryAuthToken ? "hidden" : false,
+    },
     plugins: [
       tailwindcss(),
       ...(sentryAuthToken && sentryOrg && sentryProject
