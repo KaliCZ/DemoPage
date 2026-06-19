@@ -415,14 +415,19 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key (from [Turnstile dashboard](https://dash.cloudflare.com/?to=/:account/turnstile)) — used by backend to verify CAPTCHA tokens |
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 | `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
-| `SENTRY_AUTH_TOKEN` | Sentry user auth token used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **User Settings → Auth Tokens** with scopes `project:releases` and `org:read`. Omitting the secret silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
+| `SENTRY_CI_TOKEN` | Sentry **organization auth token** (scope `org:ci`) used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **Settings → Auth Tokens** (org level). Mapped to `SENTRY_AUTH_TOKEN` at build time. Omitting it silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
 
-Plus two repository **variables** (Settings → Variables → Actions) used by the same source-map upload step:
+Plus these repository **variables** (Settings → Variables → Actions) used by the same source-map upload step:
 
 | Variable | Value |
 |----------|-------|
-| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`) |
+| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. |
 | `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project |
+
+The deploy job also sets `SENTRY_URL=https://de.sentry.io/` (hardcoded in the workflow) because the
+org lives in Sentry's EU region — the DSN host is `ingest.de.sentry.io`. The org auth token is
+region-aware for the upload itself, but the plugin's release API calls default to the US silo, so
+the endpoint is pinned explicitly. Change it only if the project moves regions.
 
 The **frontend** Sentry DSN is committed in `frontend/.env` — browser DSNs are public credentials
 (protected by the per-project Allowed Domains list in Sentry, not by secrecy) so a GitHub secret
@@ -511,9 +516,10 @@ instead of the original `.astro` / `.ts` source line.
 
 Inputs (see §4.1):
 
-- `SENTRY_AUTH_TOKEN` (secret) — required for upload. Missing → upload is skipped silently.
-- `SENTRY_ORG` / `SENTRY_PROJECT` (repo vars) — point the upload at the right Sentry project.
+- `SENTRY_CI_TOKEN` (secret, mapped to `SENTRY_AUTH_TOKEN` at build time) — required for upload. Missing → upload is skipped silently.
+- `SENTRY_PROJECT` (and optionally `SENTRY_ORG`) repo vars — point the upload at the right Sentry project.
+- `SENTRY_URL` (hardcoded in the workflow) — pins the EU region endpoint.
 
-`astro.config.mjs` sets `build.sourcemap: 'hidden'` only when
-`SENTRY_AUTH_TOKEN` is present, so dev (`npm run aspire`) and CI builds
-don't generate `.map` files at all.
+`astro.config.mjs` sets `build.sourcemap: 'hidden'` only when the auth
+token is present, so dev (`npm run aspire`) and CI builds don't generate
+`.map` files at all.

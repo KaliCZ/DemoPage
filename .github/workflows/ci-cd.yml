@@ -530,11 +530,15 @@ jobs:
           PUBLIC_API_URL: https://api.kalandra.tech
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           # @sentry/vite-plugin uploads source maps + tags the release with the deploy commit so
-          # Sentry resolves prod stack traces to original source. Omitting SENTRY_AUTH_TOKEN
-          # silently skips the upload (see astro.config.mjs).
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Sentry resolves prod stack traces to original source. Omitting the token silently
+          # skips the upload (see astro.config.mjs). The plugin reads SENTRY_AUTH_TOKEN by name;
+          # the org auth token lives in the SENTRY_CI_TOKEN secret.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_CI_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          # Org is in Sentry's EU region; the plugin's API calls default to the US silo, so point
+          # them at the EU endpoint explicitly (the DSN host is ingest.de.sentry.io).
+          SENTRY_URL: https://de.sentry.io/
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
