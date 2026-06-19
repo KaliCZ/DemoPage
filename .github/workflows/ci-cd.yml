@@ -536,8 +536,6 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_CI_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
-          # No SENTRY_URL: the org auth token embeds its own region endpoint and routes there
-          # automatically. Setting one is ignored (and warns) — the EU project resolves via the token.
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
