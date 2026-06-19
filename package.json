@@ -10,10 +10,10 @@
     "test:e2e": "supabase start && cross-env PUBLIC_API_URL=http://localhost:5000 npm --prefix frontend run build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"wait-on http://localhost:5000/health && serve frontend/dist -l 4321\" \"wait-on http://localhost:5000/health && wait-on http://localhost:4321 && npm --prefix frontend run test:e2e\""
   },
   "devDependencies": {
-    "concurrently": "^9.1.0",
+    "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
     "serve": "^14.2.6",
-    "supabase": "^2.100.1",
+    "supabase": "^2.106.0",
     "wait-on": "^9.0.10"
   }
 }
