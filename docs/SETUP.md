@@ -38,6 +38,7 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [5.1 Sentry Projects](#51-sentry-projects)
   - [5.2 Environments and CI noise](#52-environments-and-ci-noise)
   - [5.3 Local Development](#53-local-development)
+  - [5.4 Source Maps](#54-source-maps)
 
 ---
 
@@ -414,6 +415,19 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key (from [Turnstile dashboard](https://dash.cloudflare.com/?to=/:account/turnstile)) — used by backend to verify CAPTCHA tokens |
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 | `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
+| `SENTRY_CI_TOKEN` | Sentry **organization auth token** (scope `org:ci`) used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **Settings → Auth Tokens** (org level). Mapped to `SENTRY_AUTH_TOKEN` at build time. Omitting it silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
+
+Plus these repository **variables** (Settings → Variables → Actions) used by the same source-map upload step:
+
+| Variable | Value |
+|----------|-------|
+| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. |
+| `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project |
+
+The deploy job also sets `SENTRY_URL=https://de.sentry.io/` (hardcoded in the workflow) because the
+org lives in Sentry's EU region — the DSN host is `ingest.de.sentry.io`. The org auth token is
+region-aware for the upload itself, but the plugin's release API calls default to the US silo, so
+the endpoint is pinned explicitly. Change it only if the project moves regions.
 
 The **frontend** Sentry DSN is committed in `frontend/.env` — browser DSNs are public credentials
 (protected by the per-project Allowed Domains list in Sentry, not by secrecy) so a GitHub secret
@@ -469,10 +483,11 @@ later if you outgrow the event quota.
 
 The frontend tags Sentry events with an `environment` derived from Vite's
 build mode by default (`development` in `astro dev`, `production` in
-`astro build`). CI Playwright jobs override this via `PUBLIC_SENTRY_ENVIRONMENT=ci`
-in [.github/workflows/ci-cd.yml](../.github/workflows/ci-cd.yml) so their
-events filter out of production dashboards — add `!environment:ci` as a saved
-filter in Sentry for clean prod views.
+`astro build`). CI Playwright jobs build with `PUBLIC_SENTRY_DSN=""` in
+[.github/workflows/ci-cd.yml](../.github/workflows/ci-cd.yml), which makes
+Vite tree-shake the `@sentry/browser` chunk out of the bundle at build
+time — so CI emits zero Sentry events and prod dashboards stay clean
+without needing an `!environment:ci` filter.
 
 ### 5.3 Local Development
 
@@ -490,3 +505,21 @@ the production path locally:
 ```bash
 dotnet user-secrets --project backend/src/Kalandra.Api set "Sentry:Dsn" "<your-dsn>"
 ```
+
+### 5.4 Source Maps
+
+The `frontend-deploy` job runs `@sentry/vite-plugin` after `astro build`
+to upload the generated `.map` files to Sentry and tag the upload with
+the deploy commit (`GITHUB_SHA`). Without this, stack traces in Sentry
+point at minified chunk names like `_astro/Layout…QS3rhwpU.js:1:42`
+instead of the original `.astro` / `.ts` source line.
+
+Inputs (see §4.1):
+
+- `SENTRY_CI_TOKEN` (secret, mapped to `SENTRY_AUTH_TOKEN` at build time) — required for upload. Missing → upload is skipped silently.
+- `SENTRY_PROJECT` (and optionally `SENTRY_ORG`) repo vars — point the upload at the right Sentry project.
+- `SENTRY_URL` (hardcoded in the workflow) — pins the EU region endpoint.
+
+`astro.config.mjs` sets `build.sourcemap: 'hidden'` only when the auth
+token is present, so dev (`npm run aspire`) and CI builds don't generate
+`.map` files at all.
