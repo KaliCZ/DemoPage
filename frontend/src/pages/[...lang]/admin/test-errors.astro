@@ -92,6 +92,23 @@ const c = commons[lang];
           {t.buttons.crashAfterData}
         </button>
       </div>
+
+      <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <Icon name="material-symbols:code" class="size-6 text-error" aria-hidden="true" />
+          <h2 class="font-headline text-xl font-bold text-on-surface">{t.buttons.crashBundled}</h2>
+        </div>
+        <p class="text-on-surface-variant font-body text-sm mb-6">{t.buttons.crashBundledDescription}</p>
+        <button
+          id="btn-crash-bundled"
+          type="button"
+          data-triggered-msg={t.results.triggered}
+          class="inline-flex items-center gap-2 px-6 py-3 bg-error text-on-error rounded-full font-body font-medium hover:bg-error/90 transition-colors cursor-pointer"
+        >
+          <Icon name="material-symbols:bolt" class="size-[18px]" aria-hidden="true" />
+          {t.buttons.crashBundled}
+        </button>
+      </div>
     </div>
   </section>
 </Layout>
@@ -162,4 +179,20 @@ const c = commons[lang];
       if (err instanceof Error && err.message.startsWith("Test client-side")) throw err;
     }
   });
+</script>
+
+<!-- Separate processed script. The throw must originate in a Vite-minified `_astro/*.js`
+     chunk (the case Sentry source maps fix), not this page's inline `define:vars` block.
+     The dynamic import is a Vite split point, so test-errors.ts becomes its own external
+     chunk — an inline import would get folded into the page and resolve to the HTML URL. -->
+<script>
+  const btn = document.getElementById("btn-crash-bundled");
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      window.observability?.track("admin.test-errors.crash-bundled-clicked");
+      window.__showSnackbar?.(btn.dataset.triggeredMsg ?? "", "success", 2000);
+      const { crashFromBundledModule } = await import("../../../lib/test-errors");
+      crashFromBundledModule();
+    });
+  }
 </script>

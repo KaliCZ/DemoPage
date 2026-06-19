@@ -16,7 +16,9 @@
     "throwError": "Vyvolat výjimku",
     "throwErrorDescription": "Volá POST /api/test-errors/throw — server okamžitě vyhodí výjimku.",
     "crashAfterData": "Chyba klienta po API volání",
-    "crashAfterDataDescription": "Načte GET /api/job-offers?pageSize=1, poté vyhodí JavaScript chybu na straně klienta."
+    "crashAfterDataDescription": "Načte GET /api/job-offers?pageSize=1, poté vyhodí JavaScript chybu na straně klienta.",
+    "crashBundled": "Chyba klienta ze sbaleného kódu",
+    "crashBundledDescription": "Vyhodí chybu z importovaného modulu minifikovaného Vite — případ, který v Sentry vyžaduje nahrané zdrojové mapy."
   },
   "results": {
     "triggered": "Chyba vyvolána — zkontrolujte dashboard sledování.",
