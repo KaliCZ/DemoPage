@@ -22,7 +22,9 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [2.3 E2E Tests](#23-e2e-tests)
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
-  - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
+  - [3.2 Oracle Cloud VM (Ubuntu)](#32-oracle-cloud-vm-ubuntu)
+    - [Automatic Security Updates](#enable-automatic-security-updates)
+    - [Reboot Survival](#reboot-survival)
   - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
     - [3.3.1 Create Cloudflare Origin Certificate](#331-create-cloudflare-origin-certificate)
     - [3.3.2 Upload Certificate to VM](#332-upload-certificate-to-vm)
@@ -215,25 +217,47 @@ SET raw_app_meta_data = raw_app_meta_data || '{"roles": ["admin"]}'::jsonb
 WHERE email = 'your@email.com';
 ```
 
-### 3.2 Oracle Cloud VM
+### 3.2 Oracle Cloud VM (Ubuntu)
 
-#### Create Always Free VM
+#### Create the VM
 
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
-   - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Oracle Linux 8 aarch64 (ARM image for A1 shape)
+   - Shape: `VM.Standard.A1.Flex` (ARM, Always Free up to 4 OCPU / 24 GB RAM — size it to what you need; the shape can be resized later from the Console)
+   - Image: **Canonical Ubuntu 24.04 LTS** (aarch64) or newer. Quadlet needs podman ≥ 4.4, which 24.04 ships (4.9).
    - Add your SSH public key
-3. Note the **public IP address**
+3. Note the **public IP address**. The default login user is **`ubuntu`** (Oracle Linux used `opc`) — update the `OCI_USERNAME` GitHub variable accordingly (see §4.1).
 
 #### Install podman
 
-Oracle Linux ships with rootless `podman`. The `podman-docker` shim makes
-the `docker` CLI an alias for `podman` so existing scripts work unchanged.
+Unlike Oracle Linux, Ubuntu doesn't preinstall podman — pull it from the archive:
 
 ```bash
-sudo dnf install -y podman podman-docker
+sudo apt update
+sudo apt install -y podman
+podman --version   # confirm >= 4.4 for Quadlet support
 ```
+
+> The deploy script calls `podman` directly, so the `podman-docker` (`docker` CLI alias) shim is optional. Install it with `sudo apt install -y podman-docker` only if you want the `docker` command on the box.
+
+#### Enable automatic security updates
+
+Ubuntu applies security patches automatically through `unattended-upgrades`:
+
+```bash
+sudo apt install -y unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades   # answer "Yes"
+```
+
+Out of the box it installs the **security pocket only** — the conservative choice for a server — and it never reboots on its own. Some updates (kernel, glibc, systemd) only take effect after a reboot. Because the app comes back automatically after any restart (see [Reboot Survival](#reboot-survival)), it's safe to let unattended-upgrades reboot during a quiet window. Add to `/etc/apt/apt.conf.d/50unattended-upgrades`:
+
+```
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+```
+
+`Automatic-Reboot-WithUsers "true"` lets the reboot proceed even though linger (below) keeps a user manager alive. The reboot only fires after a batch of updates finishes, at the configured time, and only if one of them flagged a reboot as required.
 
 #### Authenticate to GHCR
 
@@ -244,7 +268,11 @@ Personal Access Token with `read:packages` scope and log in once:
 echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
 ```
 
+The credentials are stored under `~/.config/containers/auth.json`, which persists across reboots.
+
 #### Configure firewall
+
+OCI's Ubuntu images ship the same `iptables` + `netfilter-persistent` setup Oracle Linux used, so these commands are unchanged:
 
 ```bash
 # Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
@@ -261,29 +289,34 @@ Also add ingress rules in OCI Console:
 #### API containers (Quadlet + systemd)
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
-`kalandra-api-green` (port 8081) — managed as systemd user services via
-Quadlet. At most one slot is enabled and running at a time; the CI/CD
+`kalandra-api-green` (port 8081) — managed as systemd **user** services via
+Quadlet. At most one slot is the active upstream at a time; the CI/CD
 deploy script swaps slots on each release. Caddy (set up in §3.3) proxies
-to whichever port the active slot is on.
+to whichever port the active slot is on. None of this is Oracle-Linux-specific
+— podman, Quadlet, and `systemd --user` behave identically on Ubuntu, so the
+deploy job and the blue-green flow are unchanged across the OS switch.
 
 **Nothing to do here manually.** The Quadlet unit files live in
 [`infra/quadlet/`](../infra/quadlet) and are pushed to the VM by the CI/CD
 deploy job, which also writes `~/kalandra-api.env` from GitHub secrets,
-runs `systemctl --user daemon-reload`, removes any leftover ad-hoc
-containers, and starts the chosen slot. The first deploy after this VM
-is provisioned will fully bootstrap the setup.
+runs `systemctl --user daemon-reload`, and starts the chosen slot. The first
+deploy after this VM is provisioned will fully bootstrap the setup.
 
-> **About linger:** the deploy job runs `sudo loginctl enable-linger opc`
-> as part of its bootstrap. Linger keeps the `opc` user's systemd instance
-> running across SSH logouts and across reboots, which is what makes the
-> enabled slot come back automatically when the VM restarts. Without it,
-> the user manager would only exist while someone is logged in, and any
-> `--user` service would die on logout. The setting is idempotent and
-> safe to re-apply on every deploy.
+#### Reboot Survival
+
+The blue-green setup comes back on its own after **any** restart — an
+unattended-upgrades reboot, a crash, or OCI host maintenance — with no manual
+step. Three pieces make that work, all established by the first deploy:
+
+- **Linger** — the deploy job runs `sudo loginctl enable-linger "$USER"` (the `ubuntu` user). This keeps that user's `systemd --user` instance running across SSH logouts *and* across reboots; without it, `--user` services only exist while someone is logged in. Idempotent and safe to re-apply on every deploy.
+- **Quadlet `[Install] WantedBy=default.target`** in each `.container` file — makes the generated systemd units start on boot.
+- **Persisted `~/Caddyfile` and `~/kalandra-api.env`** — they live in the home directory, so after a reboot Caddy comes back pointing at the last-active slot and the API starts with its secrets.
+
+On a cold boot both slots start (each on its own port); Caddy routes to whichever was active before the reboot, and the next deploy reconciles back to a single slot. No traffic is lost.
 
 ### 3.3 Reverse Proxy (Caddy)
 
-Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `opc` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
+Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `ubuntu` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
 
 #### 3.3.1 Create Cloudflare Origin Certificate
 
@@ -369,7 +402,7 @@ In **Security Lists** (or your Network Security Group), add:
 
 #### 3.4.6 Verify IPv6 on the VM
 
-SSH into the VM (`ssh opc@<public-ip>`) and verify:
+SSH into the VM (`ssh ubuntu@<public-ip>`) and verify:
 
 ```bash
 # Verify IPv6 is not disabled (should return 0)
@@ -382,11 +415,11 @@ ip -6 addr show
 curl -6 -v --connect-timeout 5 https://ipv6.google.com 2>&1 | head -5
 ```
 
-Oracle Linux uses `firewalld`. If ICMPv6 is needed for debugging:
+Ubuntu manages the firewall with `iptables` / `netfilter-persistent` (same as the IPv4 rules in §3.2). If ICMPv6 is needed for debugging:
 
 ```bash
-sudo firewall-cmd --add-protocol=ipv6-icmp --permanent
-sudo firewall-cmd --reload
+sudo ip6tables -I INPUT -p ipv6-icmp -j ACCEPT
+sudo netfilter-persistent save
 ```
 
 > **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
@@ -406,7 +439,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | Secret | Value |
 |--------|-------|
 | `OCI_HOST` | Your OCI VM public IP |
-| `OCI_USERNAME` | SSH username (`opc` for Oracle Linux) |
+| `OCI_USERNAME` | SSH username (`ubuntu` for Ubuntu; `opc` on the old Oracle Linux VM) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |

@@ -451,9 +451,10 @@ jobs:
             echo "New slot is healthy on port $NEW_PORT."
 
             # ----- 5. Swap Caddy upstream to the new port -----
-            # Caddy runs as a rootless Quadlet container under the opc
-            # user, so the bind-mounted Caddyfile is read with the same
-            # SELinux label opc owns it with — no chcon needed.
+            # Caddy bind-mounts ~/Caddyfile from the same user that owns it,
+            # so the rootless container reads it directly. (On the old
+            # SELinux host the matching label made chcon unnecessary; Ubuntu
+            # uses AppArmor, where podman's :Z relabel flag is a no-op.)
             cat > "$HOME/Caddyfile" << EOF
             api.kalandra.tech {
                 reverse_proxy localhost:${NEW_PORT}

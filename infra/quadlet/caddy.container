@@ -1,11 +1,11 @@
 # Quadlet unit for the Caddy reverse proxy.
 #
 # Synced to ~/.config/containers/systemd/caddy.container by the CI/CD
-# deploy job and managed by `systemd --user` (rootless under the opc user).
+# deploy job and managed by `systemd --user` (rootless under the ubuntu user).
 #
 # Caddy reads ~/Caddyfile (rewritten by the deploy script on each slot
 # swap) and the Cloudflare Origin Certificate from ~/certs/. Both are
-# bind-mounted from the opc user's home directory.
+# bind-mounted from the ubuntu user's home directory.
 #
 # Binding to ports 80/443 from a rootless container requires the host
 # sysctl `net.ipv4.ip_unprivileged_port_start=80`. The deploy job sets
