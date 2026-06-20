@@ -334,10 +334,12 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          # App slot units only. The shared Caddy units live under infra/host/
-          # and are host-managed (SETUP.md §3.3), not synced by CI.
+          # App slot units only (the shared Caddy units live under infra/host/,
+          # host-managed per SETUP.md §3.3). Land them in a staging dir; the
+          # deploy installs only the slot it's deploying to, leaving the other
+          # slot's live unit (and its pinned production image) untouched.
           source: "infra/quadlet/*.container"
-          target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          target: "/home/${{ vars.OCI_USERNAME }}/quadlet-staging/"
           strip_components: 2
 
       - name: Sync Caddy routing fragment to VM
@@ -373,6 +375,7 @@ jobs:
             set -euo pipefail
             MAX_ATTEMPTS=40
             UNIT_DIR="$HOME/.config/containers/systemd"
+            STAGING="$HOME/quadlet-staging"
             SITE_CONF=/srv/caddy/sites/kalandra.caddy
 
             # ----- 0. Preconditions: shared infra must already exist -----
@@ -398,19 +401,7 @@ jobs:
             Sentry__Dsn=${SENTRY_DSN}
             EOF
 
-            # ----- 1. Pin both slot units to the digest just built -----
-            # The synced .container files ship :latest as a default; rewrite to
-            # the verified digest so any (re)start — including a reboot — runs
-            # exactly this build, then reload Quadlet to regenerate the units.
-            sed -i "s|^Image=.*|Image=${IMAGE_REF}|" \
-              "$UNIT_DIR/kalandra-api-blue.container" \
-              "$UNIT_DIR/kalandra-api-green.container"
-            systemctl --user daemon-reload
-
-            # ----- 2. Pull the digest-pinned image -----
-            podman pull "$IMAGE_REF"
-
-            # ----- 3. Determine which slot is currently active -----
+            # ----- 1. Determine which slot is currently active -----
             # Active = whichever slot's service is running now. Cold start → blue.
             if systemctl --user is-active --quiet kalandra-api-blue.service; then
               OLD=blue; NEW=green; NEW_PORT=8081
@@ -420,6 +411,21 @@ jobs:
               OLD=""; NEW=blue; NEW_PORT=8080
             fi
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
+
+            # ----- 2. Install + pin ONLY the slot we're deploying to -----
+            # Copy just the new slot's unit from staging and pin its Image= to the
+            # digest just built. The active slot's unit is deliberately left
+            # untouched, so its pinned (production) image stays put — if the host
+            # crashes or reboots mid-deploy, production comes back on the verified
+            # build, not this unproven one. Promotion happens only at the Caddy
+            # swap below. Digest, never :latest, so a restart can't drift.
+            mkdir -p "$UNIT_DIR"
+            cp "$STAGING/kalandra-api-${NEW}.container" "$UNIT_DIR/kalandra-api-${NEW}.container"
+            sed -i "s|^Image=.*|Image=${IMAGE_REF}|" "$UNIT_DIR/kalandra-api-${NEW}.container"
+            systemctl --user daemon-reload
+
+            # ----- 3. Pull the digest-pinned image -----
+            podman pull "$IMAGE_REF"
 
             # ----- 4. Start the new slot -----
             # Stop first: if the unit is already active from a prior deploy,
@@ -449,12 +455,14 @@ jobs:
             done
             echo "New slot is healthy on port $NEW_PORT."
 
-            # ----- 6. Point our shared-Caddy site at the new port and reload -----
-            # Render Kalandra's routing from its committed template (synced to
-            # ~/kalandra.caddy), filling in the active port. We own only this one
-            # fragment in /srv/caddy/sites; other apps' fragments are untouched.
-            # `caddy reload` is graceful and re-reads the whole imported config,
-            # so no other site drops traffic.
+            # ----- 6. Point our site at the new port (promotion) and reload -----
+            # We write ONLY our own fragment, /srv/caddy/sites/kalandra.caddy —
+            # never the shared /srv/caddy/Caddyfile, which is set up once at host
+            # provisioning and only `import`s each app's fragment. The reload
+            # below points at that root config because that's how Caddy reloads
+            # (it re-reads the root + all imports and applies gracefully); it does
+            # not modify the file. This is the promotion step — until now Caddy
+            # was still routing to the old (production) slot.
             sed "s/__PORT__/${NEW_PORT}/" "$HOME/kalandra.caddy" > "$SITE_CONF"
             # Oracle Linux enforces SELinux; relabel the freshly-written fragment
             # so the Caddy container can read it (the unit's :z relabel only runs

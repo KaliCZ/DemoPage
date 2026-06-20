@@ -386,13 +386,15 @@ each release. The shared Caddy proxy (§3.3) routes `api.kalandra.tech` to
 whichever port the active slot is on.
 
 **Nothing to do here manually** — but the deploy *assumes* §3.2 and §3.3 are
-already done, and aborts with a pointer if not. The deploy job syncs the
-`.container` files to `~/.config/containers/systemd/`, writes
-`~/kalandra-api.env` (the app secrets, read via `EnvironmentFile=`), rewrites
-each unit's `Image=` to the **digest** it just built (`…@sha256:…`, never
-`:latest`, so a restart can't silently run a different build), reloads Quadlet,
-pulls that image, and starts the target slot. It then renders this app's routing
-rules from the committed template
+already done, and aborts with a pointer if not. The deploy job stages the
+`.container` files, writes `~/kalandra-api.env` (the app secrets, read via
+`EnvironmentFile=`), then installs **only the slot it's deploying to** into
+`~/.config/containers/systemd/` and pins that unit's `Image=` to the **digest**
+it just built (`…@sha256:…`, never `:latest`). The other slot's unit is left
+untouched, so its pinned production image survives a crash or reboot mid-deploy —
+the active slot only changes version when Caddy is swapped. The job then reloads
+Quadlet, pulls the image, starts the new slot, and once it's healthy renders this
+app's routing rules from the committed template
 [`infra/quadlet/kalandra.caddy`](../infra/quadlet/kalandra.caddy) (filling in the
 active port), installs them at `/srv/caddy/sites/kalandra.caddy`, and reloads the
 shared Caddy.
