@@ -444,11 +444,12 @@ jobs:
               $COMPOSE stop "kalandra-api-${OLD}" || true
             fi
 
-            # ----- 7. Prune images no longer referenced by any container -----
-            # The running slot, the stopped previous slot, and Caddy keep
-            # their images; older digests are removed so the boot disk doesn't
-            # grow with every deploy. (Images are only ever created by deploys.)
-            sudo docker image prune -af
+            # ----- 7. Prune only THIS app's old images -----
+            # The box is shared, so scope the prune to our ownership label
+            # (set in the Dockerfile) — never touch other apps' images or the
+            # shared Caddy image. The running slot and the stopped previous
+            # slot still reference their digests, so only older ones go.
+            sudo docker image prune -af --filter "label=tech.kalandra.app=demopage"
 
             echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
 
