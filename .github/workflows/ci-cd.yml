@@ -471,13 +471,20 @@ jobs:
             command -v chcon >/dev/null 2>&1 && chcon -t container_file_t "$SITE_CONF" || true
             podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # ----- 7. Stop the old slot -----
-            # Both slot units have WantedBy=default.target, so a cold reboot
-            # starts both; Caddy routes to the port in the persisted fragment,
-            # and the next deploy reconciles back to one. Stopping here just
-            # frees the old slot now.
+            # ----- 7. Retire the old slot -----
+            # Stop it AND remove its unit file, so only the production slot's
+            # unit remains on disk. Quadlet derives boot-start from the unit's
+            # presence + WantedBy=default.target (generated units can't be
+            # `systemctl disable`d), so removing the file is what guarantees a
+            # cold reboot starts exactly one container — the one Caddy routes to.
+            # The next deploy recreates this slot from staging (step 2), so
+            # blue/green still alternates. Safe as the final step: until now the
+            # old unit stayed on disk, so a crash/reboot mid-deploy still brings
+            # production back on its verified, pinned image.
             if [ -n "$OLD" ]; then
               systemctl --user stop "kalandra-api-${OLD}.service" || true
+              rm -f "$UNIT_DIR/kalandra-api-${OLD}.container"
+              systemctl --user daemon-reload
             fi
 
             # ----- 8. Prune only THIS app's old images -----

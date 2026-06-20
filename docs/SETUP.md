@@ -406,10 +406,10 @@ you trigger, a crash, or OCI host maintenance — with no manual step. Three
 pieces make that work, all established by host setup / the first deploy:
 
 - **Linger** (`sudo loginctl enable-linger opc`, set in host setup) keeps the `opc` user's `systemd --user` instance running across SSH logouts *and* reboots; without it, `--user` services only exist while someone is logged in.
-- **Quadlet `[Install] WantedBy=default.target`** in each `.container` file makes the generated units start on boot — the shared Caddy and both API slots.
-- **Persisted on-disk state** — `~/kalandra-api.env` (secrets) and the digest baked into each unit's `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
+- **Quadlet `[Install] WantedBy=default.target`** in each `.container` file makes the generated units start on boot — the shared Caddy and the live API slot. A completed deploy removes the retired slot's unit file, so only the production slot's unit is present at rest.
+- **Persisted on-disk state** — `~/kalandra-api.env` (secrets) and the digest baked into the live slot's unit `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
 
-On a cold boot both slots start (each on its own port); Caddy routes to whichever the persisted fragment names, and the next deploy reconciles back to one. No traffic is lost.
+On a cold boot exactly one slot starts — the production slot, since the deploy removed the other slot's unit — and Caddy routes to the port its persisted fragment names. No traffic is lost. (If a reboot interrupts a deploy before the swap, the old unit is still present and comes back as production; the next deploy recreates the other slot.)
 
 ### 3.3 Shared Caddy Reverse Proxy
 
