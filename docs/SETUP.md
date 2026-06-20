@@ -34,6 +34,7 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
     - [3.3.5 Configure Cloudflare SSL Mode](#335-configure-cloudflare-ssl-mode)
   - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
   - [3.5 DNS](#35-dns)
+  - [3.6 Migrating an Existing Box](#36-migrating-an-existing-box-one-time)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -317,14 +318,22 @@ own (see [Reboot Survival](#reboot-survival)).
 ##### Optional: push the alert to Slack
 
 The banner only helps once you log in. To get *pushed* a message the day a
-reboot becomes due, install the daily timer from [`infra/host/`](../infra/host):
+reboot becomes due, create a Slack webhook and install the daily timer.
+
+First, create the webhook in Slack (one-time, in the Slack UI):
+
+1. <https://api.slack.com/apps> → **Create New App** → *From scratch* (or reuse an app).
+2. **Incoming Webhooks** → toggle **On** → **Add New Webhook to Workspace** → pick the channel.
+3. Copy the **Webhook URL** (`https://hooks.slack.com/services/…`).
+
+Then install the timer from [`infra/host/`](../infra/host):
 
 ```bash
 sudo cp infra/host/reboot-notify.sh /usr/local/bin/reboot-notify.sh
 sudo chmod +x /usr/local/bin/reboot-notify.sh
 sudo cp infra/host/reboot-notify.service infra/host/reboot-notify.timer /etc/systemd/system/
 
-# Slack incoming-webhook URL (Slack → your app → Incoming Webhooks → Add)
+# Paste the webhook URL from step 3 above
 printf 'WEBHOOK_URL=%s\n' 'https://hooks.slack.com/services/XXX/YYY/ZZZ' | sudo tee /etc/reboot-notify.env >/dev/null
 sudo chmod 600 /etc/reboot-notify.env
 
@@ -562,6 +571,51 @@ sudo firewall-cmd --reload
 ### 3.5 DNS
 
 In Cloudflare DNS, add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP. Keep it **Proxied** (orange cloud) — Cloudflare handles public TLS, Caddy uses the origin certificate for the Cloudflare-to-origin connection.
+
+### 3.6 Migrating an Existing Box (one-time)
+
+A clean machine set up via §3.2–3.3 needs none of this. Use it **only** to move
+a VM that's already running the older single-site layout (`~/Caddyfile`,
+`~/certs/`, Caddy reading the home directory) onto the shared-Caddy layout this
+repo now expects. Run as `opc`, from a checkout of the branch being deployed.
+
+1. **Shared Caddy dirs** (opc-owned):
+   ```bash
+   sudo install -d -o "$USER" -g "$USER" /srv/caddy /srv/caddy/sites /srv/caddy/certs
+   ```
+2. **Reuse the existing origin cert** under the per-site names the fragment expects:
+   ```bash
+   cp ~/certs/origin.pem     /srv/caddy/certs/kalandra.pem
+   cp ~/certs/origin-key.pem /srv/caddy/certs/kalandra.key
+   chmod 600 /srv/caddy/certs/kalandra.key
+   ```
+3. **Base Caddyfile + seed demopage's route** at whichever slot is live right now:
+   ```bash
+   cp infra/host/Caddyfile /srv/caddy/Caddyfile
+   PORT=$(systemctl --user is-active --quiet kalandra-api-green && echo 8081 || echo 8080)
+   sed "s/__PORT__/$PORT/" infra/quadlet/demopage.caddy > /srv/caddy/sites/demopage.caddy
+   chcon -t container_file_t /srv/caddy/sites/demopage.caddy 2>/dev/null || true
+   ```
+4. **Swap the Caddy unit** to the shared one (mounts `/srv/caddy`) and restart (~1–2s blip):
+   ```bash
+   cp infra/host/caddy.container infra/host/caddy-data.volume infra/host/caddy-config.volume \
+      ~/.config/containers/systemd/
+   systemctl --user daemon-reload
+   systemctl --user restart caddy.service
+   ```
+5. **Verify, then retire** the old home-dir config:
+   ```bash
+   curl -sf https://api.kalandra.tech/health && rm -rf ~/Caddyfile ~/certs
+   ```
+
+`linger` and the `ip_unprivileged_port_start` sysctl are already in place from
+the original setup. The additive host bits — [automatic updates](#enable-automatic-security-updates),
+the [reboot banner](#knowing-when-a-reboot-is-needed), and the Slack notifier —
+can be done any time.
+
+> **Sequencing:** do steps 1–5 right around merging the deploy PR — migrate the
+> box, then merge so the new pipeline takes over. Avoid pushing to `main` in the
+> gap (an old-pipeline deploy would rewrite the now-ignored `~/Caddyfile`).
 
 ---
 
