@@ -355,16 +355,13 @@ The credentials are stored under `~/.config/containers/auth.json`, which persist
 
 #### Configure firewall
 
-Oracle Linux runs `firewalld`. Open the ports (the API and Caddy use host networking, so they bind these host ports directly):
-
 ```bash
-sudo firewall-cmd --permanent --add-port=80/tcp
-sudo firewall-cmd --permanent --add-port=443/tcp
-sudo firewall-cmd --permanent --add-port=8080/tcp
-sudo firewall-cmd --reload
+# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
+sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+sudo netfilter-persistent save
 ```
-
-> If your OCI image manages `iptables` directly rather than running `firewalld`, add the equivalent `INPUT … -j ACCEPT` rules and persist them with `iptables-save` instead.
 
 Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
