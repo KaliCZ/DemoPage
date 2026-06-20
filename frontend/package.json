@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "@iconify-json/material-symbols": "^1.2.78",
+    "@iconify-json/material-symbols": "^1.2.79",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/context-zone": "^2.8.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
@@ -32,10 +32,10 @@
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-trace-web": "^2.7.1",
     "@opentelemetry/semantic-conventions": "^1.40.0",
-    "@sentry/browser": "^10.58.0",
+    "@sentry/browser": "^10.59.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/vite": "^4.3.1",
-    "astro": "^6.4.7",
+    "astro": "^6.4.8",
     "astro-icon": "^1.1.5",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.2.2"
@@ -48,5 +48,8 @@
     "prettier": "^3.8.4",
     "prettier-plugin-astro": "^0.14.1",
     "serve": "^14.2.6"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }
