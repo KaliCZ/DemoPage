@@ -334,10 +334,22 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          # App slot units only. The shared Caddy units live under infra/caddy/
+          # App slot units only. The shared Caddy units live under infra/host/
           # and are host-managed (SETUP.md §3.3), not synced by CI.
           source: "infra/quadlet/*.container"
           target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          strip_components: 2
+
+      - name: Sync Caddy routing fragment to VM
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          # demopage's routing template (port filled in at deploy time). The
+          # shared Caddy that loads it is host infra, not synced here.
+          source: "infra/quadlet/demopage.caddy"
+          target: "/home/${{ vars.OCI_USERNAME }}/"
           strip_components: 2
 
       - name: Deploy to Oracle Cloud (blue-green)
@@ -438,15 +450,12 @@ jobs:
             echo "New slot is healthy on port $NEW_PORT."
 
             # ----- 6. Point our shared-Caddy site at the new port and reload -----
-            # We own only this one fragment in /srv/caddy/sites; other apps'
-            # fragments are untouched. `caddy reload` is graceful and re-reads
-            # the whole imported config, so no other site drops traffic.
-            cat > "$SITE_CONF" << EOF
-            api.kalandra.tech {
-                reverse_proxy localhost:${NEW_PORT}
-                tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key
-            }
-            EOF
+            # Render demopage's routing from its committed template (synced to
+            # ~/demopage.caddy), filling in the active port. We own only this one
+            # fragment in /srv/caddy/sites; other apps' fragments are untouched.
+            # `caddy reload` is graceful and re-reads the whole imported config,
+            # so no other site drops traffic.
+            sed "s/__PORT__/${NEW_PORT}/" "$HOME/demopage.caddy" > "$SITE_CONF"
             # Oracle Linux enforces SELinux; relabel the freshly-written fragment
             # so the Caddy container can read it (the unit's :z relabel only runs
             # at container start). opc owns the file, so no sudo. No-op where

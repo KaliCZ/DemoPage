@@ -382,9 +382,11 @@ already done, and aborts with a pointer if not. The deploy job syncs the
 `~/kalandra-api.env` (the app secrets, read via `EnvironmentFile=`), rewrites
 each unit's `Image=` to the **digest** it just built (`…@sha256:…`, never
 `:latest`, so a restart can't silently run a different build), reloads Quadlet,
-pulls that image, and starts the target slot. It then writes this app's Caddy
-fragment (`/srv/caddy/sites/demopage.caddy`) pointing at the active port and
-reloads the shared Caddy.
+pulls that image, and starts the target slot. It then renders this app's routing
+rules from the committed template
+[`infra/quadlet/demopage.caddy`](../infra/quadlet/demopage.caddy) (filling in the
+active port), installs them at `/srv/caddy/sites/demopage.caddy`, and reloads the
+shared Caddy.
 
 #### Reboot Survival
 
@@ -412,22 +414,22 @@ deploys all run as `opc`, so they must be able to read/write it):
 
 | Path | Purpose |
 |------|---------|
-| `Caddyfile` | Base config — `import /etc/caddy/sites/*.caddy` ([`infra/caddy/Caddyfile`](../infra/caddy/Caddyfile)) |
+| `Caddyfile` | Base config — `import /etc/caddy/sites/*.caddy` ([`infra/host/Caddyfile`](../infra/host/Caddyfile)) |
 | `sites/` | One `<app>.caddy` fragment per app; each app's CI writes its own |
 | `certs/` | Cloudflare Origin cert pairs, one per site |
 
-The Quadlet units ([`caddy.container`](../infra/caddy/caddy.container) + the two `.volume` files in [`infra/caddy/`](../infra/caddy)) live in `~/.config/containers/systemd/`.
+The Quadlet units ([`caddy.container`](../infra/host/caddy.container) + the two `.volume` files in [`infra/host/`](../infra/host)) live in `~/.config/containers/systemd/`.
 
 #### 3.3.1 Provision the shared proxy (once per machine)
 
 ```bash
 # Config tree, owned by opc so the rootless container and app deploys can use it
 sudo install -d -o "$USER" -g "$USER" /srv/caddy /srv/caddy/sites /srv/caddy/certs
-cp infra/caddy/Caddyfile /srv/caddy/Caddyfile
+cp infra/host/Caddyfile /srv/caddy/Caddyfile
 
 # Quadlet units for the shared proxy
 mkdir -p ~/.config/containers/systemd
-cp infra/caddy/caddy.container infra/caddy/caddy-data.volume infra/caddy/caddy-config.volume \
+cp infra/host/caddy.container infra/host/caddy-data.volume infra/host/caddy-config.volume \
    ~/.config/containers/systemd/
 
 # Let the rootless container bind 80/443, and keep user services alive across reboots
@@ -437,7 +439,7 @@ sudo loginctl enable-linger "$USER"
 ```
 
 (If the repo isn't checked out on the VM, paste the file contents from
-[`infra/caddy/`](../infra/caddy) instead.)
+[`infra/host/`](../infra/host) instead.)
 
 #### 3.3.2 Per-site TLS certificate
 
