@@ -364,40 +364,33 @@ The credentials are stored under `~/.config/containers/auth.json`, which persist
 
 #### Configure firewall
 
+Only Caddy is public. The API slots (8080/8081) are reached **only** through it,
+so they stay closed to the internet — exposing them directly would bypass
+Cloudflare.
+
 ```bash
-# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
+# Public ports: 80 (HTTP) + 443 (HTTPS), both terminating at Caddy
 sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
 Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
-- Add ingress rules for ports 80, 443, 8080
+- Add ingress rules for ports 80 and 443
 
 #### API containers (Quadlet + systemd)
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
-`kalandra-api-green` (port 8081) — managed as rootless `systemd --user` services
-via Quadlet, from the unit files in [`infra/quadlet/`](../infra/quadlet). At most
-one slot is the active upstream at a time; the CI/CD deploy script swaps slots on
-each release. The shared Caddy proxy (§3.3) routes `api.kalandra.tech` to
-whichever port the active slot is on.
+`kalandra-api-green` (port 8081) — as rootless `systemd --user` services managed
+by Quadlet, from the unit files in [`infra/quadlet/`](../infra/quadlet). Only one
+slot is live at a time: each release deploys to the idle slot, health-checks it,
+then flips the shared Caddy proxy (§3.3) to its port. A completed deploy removes
+the retired slot's unit, so a reboot brings back exactly the live version.
 
-**Nothing to do here manually** — but the deploy *assumes* §3.2 and §3.3 are
-already done, and aborts with a pointer if not. The deploy job stages the
-`.container` files, writes `~/kalandra-api.env` (the app secrets, read via
-`EnvironmentFile=`), then installs **only the slot it's deploying to** into
-`~/.config/containers/systemd/` and pins that unit's `Image=` to the **digest**
-it just built (`…@sha256:…`, never `:latest`). The other slot's unit is left
-untouched, so its pinned production image survives a crash or reboot mid-deploy —
-the active slot only changes version when Caddy is swapped. The job then reloads
-Quadlet, pulls the image, starts the new slot, and once it's healthy renders this
-app's routing rules from the committed template
-[`infra/quadlet/kalandra.caddy`](../infra/quadlet/kalandra.caddy) (filling in the
-active port), installs them at `/srv/caddy/sites/kalandra.caddy`, and reloads the
-shared Caddy.
+**Nothing to do here manually** — the deploy installs and manages these units
+(see §4). It pins each unit's `Image=` to an immutable digest, never `:latest`,
+so a restart can't drift onto a different build.
 
 #### Port Allocation (shared host)
 
@@ -552,10 +545,10 @@ In **Security Lists** (or your Network Security Group), add:
 - Protocol: TCP
 - Destination Port Range: All (or 5432, 443 for minimal access)
 
-**Ingress** (optional — if you want the API reachable over IPv6):
+**Ingress** (optional — if you want the site reachable over IPv6):
 - Source: `::/0`
 - Protocol: TCP
-- Destination Port Range: 80, 443, 8080
+- Destination Port Range: 80, 443
 
 #### 3.4.5 Assign IPv6 Address to the VM
 
