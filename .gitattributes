@@ -1,0 +1,6 @@
+# Infrastructure files run on the Linux VM — force LF so a Windows checkout
+# can't introduce CRLF (a CRLF shebang breaks shell scripts with "bad
+# interpreter", and systemd/Quadlet units expect LF).
+infra/**            text eol=lf
+*.sh                text eol=lf
+.github/**          text eol=lf

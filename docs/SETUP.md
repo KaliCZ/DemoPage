@@ -314,11 +314,32 @@ EOF
 When the banner appears, reboot when convenient — the stack comes back on its
 own (see [Reboot Survival](#reboot-survival)).
 
-> **Want a push instead of waiting for a login?** Add a small daily systemd
-> timer that runs `needs-restarting -r` and notifies you *only* when a reboot is
-> pending — e.g. `curl` to an [ntfy](https://ntfy.sh) topic or a Slack/Discord
-> webhook, or email via `dnf-automatic`'s own `emit_via = email` (needs a
-> working mailer). Ask and I'll wire one up.
+##### Optional: push the alert to Slack
+
+The banner only helps once you log in. To get *pushed* a message the day a
+reboot becomes due, install the daily timer from [`infra/host/`](../infra/host):
+
+```bash
+sudo cp infra/host/reboot-notify.sh /usr/local/bin/reboot-notify.sh
+sudo chmod +x /usr/local/bin/reboot-notify.sh
+sudo cp infra/host/reboot-notify.service infra/host/reboot-notify.timer /etc/systemd/system/
+
+# Slack incoming-webhook URL (Slack → your app → Incoming Webhooks → Add)
+printf 'WEBHOOK_URL=%s\n' 'https://hooks.slack.com/services/XXX/YYY/ZZZ' | sudo tee /etc/reboot-notify.env >/dev/null
+sudo chmod 600 /etc/reboot-notify.env
+
+sudo systemctl enable --now reboot-notify.timer
+```
+
+It runs `needs-restarting -r` once a day and posts to Slack **only** when a
+reboot is pending.
+
+> **Why Slack, not email?** A Slack incoming webhook is one URL you `curl` over
+> 443. Email from the VM is harder: OCI blocks outbound port 25 by default and a
+> fresh box has no mailer, so you'd first have to configure postfix/msmtp
+> against an external SMTP relay (provider account + app password on 587) before
+> `dnf-automatic`'s `emit_via = email` could send anything. (For Discord instead
+> of Slack, change the JSON key in the script from `text` to `content`.)
 
 #### Authenticate to GHCR
 
@@ -334,15 +355,16 @@ The credentials are stored under `~/.config/containers/auth.json`, which persist
 
 #### Configure firewall
 
-Open the ports at the OS level. The containers use host networking, so they bind these host ports directly — the host `INPUT` rules govern:
+Oracle Linux runs `firewalld`. Open the ports (the API and Caddy use host networking, so they bind these host ports directly):
 
 ```bash
-# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
-sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
-sudo netfilter-persistent save
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
 ```
+
+> If your OCI image manages `iptables` directly rather than running `firewalld`, add the equivalent `INPUT … -j ACCEPT` rules and persist them with `iptables-save` instead.
 
 Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**

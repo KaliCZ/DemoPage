@@ -1,0 +1,11 @@
+# Posts a Slack alert when the host needs a reboot. Triggered by reboot-notify.timer.
+# System-level (root) so it runs regardless of who's logged in. Install: see docs/SETUP.md §3.2.
+[Unit]
+Description=Notify Slack when the host needs a reboot to finish updates
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/reboot-notify.env
+ExecStart=/usr/local/bin/reboot-notify.sh
