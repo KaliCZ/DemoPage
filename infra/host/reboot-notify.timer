@@ -1,12 +1,13 @@
-# Runs reboot-notify.service once a day. Persistent=true catches up after the
-# VM was off at the scheduled time; the randomized delay avoids a fixed spike.
+# Checks every 15 minutes for a pending reboot. The script (reboot-notify.sh)
+# throttles the actual Slack notifications to once per 24h, so a frequent check
+# means fast detection without a noisy channel. Persistent=true catches up a
+# missed run after the VM was off.
 [Unit]
-Description=Daily check for a pending reboot
+Description=Check every 15 min for a pending reboot
 
 [Timer]
-OnCalendar=daily
+OnCalendar=*:0/15
 Persistent=true
-RandomizedDelaySec=1h
 
 [Install]
 WantedBy=timers.target
