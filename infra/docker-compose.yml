@@ -1,0 +1,52 @@
+# Production stack for the OCI VM: two API slots (blue/green) behind Caddy.
+#
+# Synced to the deploy user's home (~/docker-compose.yml) by the CI/CD job
+# and driven with `docker compose -p kalandra`. Relative paths below resolve
+# against that home directory (the project directory).
+#
+# Reboot survival: every service uses `restart: unless-stopped`, so the
+# Docker daemon brings them back on boot — except a slot that was explicitly
+# `docker stop`ped during a swap, which stays down. That keeps exactly one
+# API slot active after a reboot, with no systemd/linger involved.
+#
+# IMAGE_REF is the digest-pinned API image; the deploy job writes it to
+# ~/compose.env (loaded via --env-file) so a restart can never silently run
+# a different build than the one that was health-checked.
+
+services:
+  kalandra-api-blue:
+    image: ${IMAGE_REF}
+    container_name: kalandra-api-blue
+    network_mode: host
+    env_file:
+      - ./kalandra-api.env
+    environment:
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_ENVIRONMENT: Production
+    restart: unless-stopped
+
+  kalandra-api-green:
+    image: ${IMAGE_REF}
+    container_name: kalandra-api-green
+    network_mode: host
+    env_file:
+      - ./kalandra-api.env
+    environment:
+      ASPNETCORE_HTTP_PORTS: "8081"
+      ASPNETCORE_ENVIRONMENT: Production
+    restart: unless-stopped
+
+  caddy:
+    image: docker.io/library/caddy:2-alpine
+    container_name: caddy
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/etc/caddy/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

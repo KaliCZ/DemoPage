@@ -224,21 +224,25 @@ WHERE email = 'your@email.com';
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, Always Free up to 4 OCPU / 24 GB RAM — size it to what you need; the shape can be resized later from the Console)
-   - Image: **Canonical Ubuntu 24.04 LTS** (aarch64) or newer. Quadlet needs podman ≥ 4.4, which 24.04 ships (4.9).
+   - Image: **Canonical Ubuntu 24.04 LTS** (aarch64) or newer.
    - Add your SSH public key
 3. Note the **public IP address**. The default login user is **`ubuntu`** (Oracle Linux used `opc`) — update the `OCI_USERNAME` GitHub variable accordingly (see §4.1).
 
-#### Install podman
+#### Install Docker
 
-Unlike Oracle Linux, Ubuntu doesn't preinstall podman — pull it from the archive:
+Install Docker Engine + the Compose plugin from Docker's official repository:
 
 ```bash
-sudo apt update
-sudo apt install -y podman
-podman --version   # confirm >= 4.4 for Quadlet support
+curl -fsSL https://get.docker.com | sudo sh
+docker --version            # Engine
+docker compose version      # Compose v2 plugin (used by the deploy job)
 ```
 
-> The deploy script calls `podman` directly, so the `podman-docker` (`docker` CLI alias) shim is optional. Install it with `sudo apt install -y podman-docker` only if you want the `docker` command on the box.
+The daemon runs as root and is enabled on boot by default (the deploy job re-asserts `systemctl enable --now docker` to be safe). The deploy script invokes `sudo docker` — the `ubuntu` user already has passwordless sudo on OCI images. For interactive use without `sudo`, optionally add yourself to the `docker` group and re-login:
+
+```bash
+sudo usermod -aG docker "$USER"   # then log out and back in
+```
 
 #### Enable automatic security updates
 
@@ -257,22 +261,24 @@ Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
 Unattended-Upgrade::Automatic-Reboot-Time "04:00";
 ```
 
-`Automatic-Reboot-WithUsers "true"` lets the reboot proceed even though linger (below) keeps a user manager alive. The reboot only fires after a batch of updates finishes, at the configured time, and only if one of them flagged a reboot as required.
+`Automatic-Reboot-WithUsers "true"` lets the reboot proceed even if someone is logged in over SSH. The reboot only fires after a batch of updates finishes, at the configured time, and only if one of them flagged a reboot as required.
 
 #### Authenticate to GHCR
 
 The API image is pulled from GitHub Container Registry. Create a GitHub
-Personal Access Token with `read:packages` scope and log in once:
+Personal Access Token with `read:packages` scope and log in once. The deploy
+job pulls with `sudo docker`, so log in as **root** — that's where the
+credentials must live:
 
 ```bash
-echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
+echo <GITHUB_PAT> | sudo docker login ghcr.io -u <GITHUB_USERNAME> --password-stdin
 ```
 
-The credentials are stored under `~/.config/containers/auth.json`, which persists across reboots.
+The credentials are stored under `/root/.docker/config.json`, which persists across reboots.
 
 #### Configure firewall
 
-OCI's Ubuntu images ship the same `iptables` + `netfilter-persistent` setup Oracle Linux used, so these commands are unchanged:
+OCI's Ubuntu images ship the same `iptables` + `netfilter-persistent` setup Oracle Linux used. The containers use host networking, so they bind these ports directly and Docker's own bridge/NAT chains don't interfere — the host `INPUT` rules govern:
 
 ```bash
 # Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
@@ -286,37 +292,40 @@ Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
 - Add ingress rules for ports 80, 443, 8080
 
-#### API containers (Quadlet + systemd)
+#### API containers (Docker Compose)
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
-`kalandra-api-green` (port 8081) — managed as systemd **user** services via
-Quadlet. At most one slot is the active upstream at a time; the CI/CD
-deploy script swaps slots on each release. Caddy (set up in §3.3) proxies
-to whichever port the active slot is on. None of this is Oracle-Linux-specific
-— podman, Quadlet, and `systemd --user` behave identically on Ubuntu, so the
-deploy job and the blue-green flow are unchanged across the OS switch.
+`kalandra-api-green` (port 8081) — defined as services in
+[`infra/docker-compose.yml`](../infra/docker-compose.yml). At most one slot is
+the active upstream at a time; the CI/CD deploy script swaps slots on each
+release. Caddy (set up in §3.3) proxies to whichever port the active slot is on.
 
-**Nothing to do here manually.** The Quadlet unit files live in
-[`infra/quadlet/`](../infra/quadlet) and are pushed to the VM by the CI/CD
-deploy job, which also writes `~/kalandra-api.env` from GitHub secrets,
-runs `systemctl --user daemon-reload`, and starts the chosen slot. The first
-deploy after this VM is provisioned will fully bootstrap the setup.
+**Nothing to do here manually.** The Compose file is synced to
+`~/docker-compose.yml` by the deploy job, which also writes:
+
+- `~/kalandra-api.env` — the app secrets, read by both slots (`env_file`).
+- `~/compose.env` — the digest-pinned `IMAGE_REF` for Compose variable substitution (loaded via `--env-file`).
+
+It then pulls the new image and runs `docker compose up -d` for the target
+slot. The image is pinned by **digest** (`…@sha256:…`), not `:latest`, so a
+restart can never silently run a different build than the one health-checked.
+The first deploy after this VM is provisioned will fully bootstrap the setup.
 
 #### Reboot Survival
 
 The blue-green setup comes back on its own after **any** restart — an
 unattended-upgrades reboot, a crash, or OCI host maintenance — with no manual
-step. Three pieces make that work, all established by the first deploy:
+step. It's the Docker daemon's job, not systemd's:
 
-- **Linger** — the deploy job runs `sudo loginctl enable-linger "$USER"` (the `ubuntu` user). This keeps that user's `systemd --user` instance running across SSH logouts *and* across reboots; without it, `--user` services only exist while someone is logged in. Idempotent and safe to re-apply on every deploy.
-- **Quadlet `[Install] WantedBy=default.target`** in each `.container` file — makes the generated systemd units start on boot.
-- **Persisted `~/Caddyfile` and `~/kalandra-api.env`** — they live in the home directory, so after a reboot Caddy comes back pointing at the last-active slot and the API starts with its secrets.
+- **`docker.service` is enabled on boot** (default; the deploy job re-asserts it). The daemon starts on boot and reconciles container restart policies.
+- **`restart: unless-stopped`** on every service — the daemon restarts the active slot and Caddy on boot. Crucially, a slot we `docker stop` during a swap is marked *explicitly stopped*, so it is **not** restarted on boot. That means exactly the active slot returns — no second slot wastefully coming up.
+- **Persisted `~/Caddyfile`, `~/kalandra-api.env`, `~/compose.env`, and the named volumes** (`kalandra_caddy-data`, `kalandra_caddy-config`) — they survive in the home directory / Docker storage, so after a reboot Caddy comes back pointing at the last-active slot and the API starts with its secrets and the same pinned image.
 
-On a cold boot both slots start (each on its own port); Caddy routes to whichever was active before the reboot, and the next deploy reconciles back to a single slot. No traffic is lost.
+No linger, no user-systemd, and no unprivileged-port sysctl are needed — rootful Docker binds 80/443 directly and the daemon handles boot autostart.
 
 ### 3.3 Reverse Proxy (Caddy)
 
-Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `ubuntu` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
+Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy is a Docker container defined as the `caddy` service in [`infra/docker-compose.yml`](../infra/docker-compose.yml), managed by the deploy job.
 
 #### 3.3.1 Create Cloudflare Origin Certificate
 
@@ -339,12 +348,11 @@ chmod 600 ~/certs/origin-key.pem
 
 **Nothing to do here manually.** The deploy job:
 
-- Sets `net.ipv4.ip_unprivileged_port_start=80` (via `/etc/sysctl.d/`) so the rootless container can bind ports 80/443
-- Seeds an initial `~/Caddyfile` if none exists
-- Starts `caddy.service` via `systemctl --user enable --now`
-- Rewrites `~/Caddyfile` and reloads Caddy gracefully (`podman exec caddy caddy reload`) on every slot swap
+- Seeds an initial `~/Caddyfile` if none exists (bind-mounted read-only into the container alongside `~/certs`)
+- Starts the `caddy` service via `docker compose up -d caddy` (rootful Docker binds ports 80/443 directly — no sysctl needed)
+- Rewrites `~/Caddyfile` and reloads Caddy gracefully (`docker exec caddy caddy reload`) on every slot swap
 
-Caddy's `/data` and `/config` directories are persisted across restarts via two podman-managed volumes (`caddy-data` and `caddy-config`).
+Caddy's `/data` and `/config` directories are persisted across restarts via two Docker-managed volumes (`kalandra_caddy-data` and `kalandra_caddy-config`).
 
 #### 3.3.4 Configure Cloudflare SSL Mode
 
@@ -422,7 +430,7 @@ sudo ip6tables -I INPUT -p ipv6-icmp -j ACCEPT
 sudo netfilter-persistent save
 ```
 
-> **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
+> **Note:** No Docker IPv6 configuration is needed — the backend container uses host networking (`network_mode: host`), so it shares the host's IPv6 stack directly.
 
 ### 3.5 DNS
 
@@ -474,7 +482,7 @@ Create a `production` environment in **Settings → Environments**:
 The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
 automatic for the build/push step. The OCI VM also pulls from GHCR — see
 [Authenticate to GHCR](#authenticate-to-ghcr) under §3.2 for the manual
-`podman login` step.
+`sudo docker login` step.
 
 ---
 
