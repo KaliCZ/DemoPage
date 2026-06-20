@@ -359,14 +359,18 @@ jobs:
             set -euo pipefail
             MAX_ATTEMPTS=40
             COMPOSE="sudo docker compose -p kalandra -f $HOME/docker-compose.yml --env-file $HOME/compose.env"
+            SITE_CONF=/srv/caddy/sites/demopage.caddy
 
-            # ----- 0. Idempotent host bootstrap -----
-            # Reboot survival is the Docker daemon's job: containers flagged
-            # restart=unless-stopped are restarted on boot (except ones we
-            # explicitly stopped). So we just make sure the daemon is enabled
-            # — no linger, no user-systemd, no unprivileged-port sysctl
-            # (rootful Docker binds 80/443 natively).
-            sudo systemctl enable --now docker
+            # ----- 0. Preconditions: shared infra must already exist -----
+            # Docker and the shared Caddy proxy are host infrastructure,
+            # provisioned once per machine (SETUP.md §3.2–3.3), not by this
+            # deploy. Fail fast with a pointer if an assumption is unmet.
+            command -v docker >/dev/null 2>&1 \
+              || { echo "Docker not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+            sudo docker ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
+              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+            [ -d /srv/caddy/sites ] \
+              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
 
             umask 077
 
@@ -383,25 +387,10 @@ jobs:
             Sentry__Dsn=${SENTRY_DSN}
             EOF
 
-            # Seed an initial Caddyfile if none exists so Caddy has something
-            # to bind-mount on its first start. The slot-swap step below
-            # rewrites it with the active port and reloads Caddy.
-            if [ ! -f "$HOME/Caddyfile" ]; then
-              cat > "$HOME/Caddyfile" << 'EOF'
-            api.kalandra.tech {
-                reverse_proxy localhost:8080
-                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
-            }
-            EOF
-            fi
-
             # ----- 1. Pull the digest-pinned image -----
             sudo docker pull "$IMAGE_REF"
 
-            # ----- 2. Ensure Caddy is up (idempotent) -----
-            $COMPOSE up -d caddy
-
-            # ----- 3. Determine which slot is currently active -----
+            # ----- 2. Determine which slot is currently active -----
             # Active = whichever API slot is running now. Cold start → blue.
             if sudo docker ps --filter name=kalandra-api-blue --filter status=running --format '{{.Names}}' | grep -q .; then
               OLD=blue; NEW=green; NEW_PORT=8081
@@ -412,12 +401,12 @@ jobs:
             fi
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
-            # ----- 4. Start the new slot -----
+            # ----- 3. Start the new slot -----
             # IMAGE_REF changed (new digest), so `up -d` recreates the slot
             # from the just-pulled image and (re)applies restart=unless-stopped.
             $COMPOSE up -d "kalandra-api-${NEW}"
 
-            # ----- 5. Health check the new slot directly (bypassing Caddy) -----
+            # ----- 4. Health check the new slot directly (bypassing Caddy) -----
             # Match the deployed commit, not just any healthy response, so a
             # stale container from an earlier deploy can't pass this gate.
             echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
@@ -436,23 +425,26 @@ jobs:
             done
             echo "New slot is healthy on port $NEW_PORT."
 
-            # ----- 6. Swap Caddy upstream to the new port -----
-            cat > "$HOME/Caddyfile" << EOF
+            # ----- 5. Point our shared-Caddy site at the new port and reload -----
+            # We own only this one fragment in /srv/caddy/sites; other apps'
+            # fragments are untouched. `caddy reload` is graceful and re-reads
+            # the whole imported config, so no other site drops traffic.
+            cat > "$SITE_CONF" << EOF
             api.kalandra.tech {
                 reverse_proxy localhost:${NEW_PORT}
-                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+                tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key
             }
             EOF
             sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # ----- 7. Stop the old slot -----
+            # ----- 6. Stop the old slot -----
             # `docker stop` marks it explicitly stopped, so restart=unless-stopped
             # will NOT bring it back on reboot — only the active slot returns.
             if [ -n "$OLD" ]; then
               $COMPOSE stop "kalandra-api-${OLD}" || true
             fi
 
-            # ----- 8. Prune images no longer referenced by any container -----
+            # ----- 7. Prune images no longer referenced by any container -----
             # The running slot, the stopped previous slot, and Caddy keep
             # their images; older digests are removed so the boot disk doesn't
             # grow with every deploy. (Images are only ever created by deploys.)

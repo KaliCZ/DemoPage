@@ -25,11 +25,12 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [3.2 Oracle Cloud VM (Ubuntu)](#32-oracle-cloud-vm-ubuntu)
     - [Automatic Security Updates](#enable-automatic-security-updates)
     - [Reboot Survival](#reboot-survival)
-  - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
-    - [3.3.1 Create Cloudflare Origin Certificate](#331-create-cloudflare-origin-certificate)
-    - [3.3.2 Upload Certificate to VM](#332-upload-certificate-to-vm)
-    - [3.3.3 Configure and Run Caddy](#333-configure-and-run-caddy)
-    - [3.3.4 Configure Cloudflare SSL Mode](#334-configure-cloudflare-ssl-mode)
+  - [3.3 Shared Caddy Reverse Proxy](#33-shared-caddy-reverse-proxy)
+    - [3.3.1 Provision the shared proxy](#331-provision-the-shared-proxy-once-per-machine)
+    - [3.3.2 Per-site TLS certificate](#332-per-site-tls-certificate)
+    - [3.3.3 Start Caddy](#333-start-caddy)
+    - [3.3.4 How apps attach](#334-how-apps-attach)
+    - [3.3.5 Configure Cloudflare SSL Mode](#335-configure-cloudflare-ssl-mode)
   - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
   - [3.5 DNS](#35-dns)
 - [4. CI/CD Configuration](#4-cicd-configuration)
@@ -167,6 +168,17 @@ npm run test:e2e
 
 This section covers the one-time setup needed to host this project yourself.
 
+**Shared host infrastructure vs. app deploy.** §3.2 (the VM, Docker, OS
+updates, firewall, IPv6) and §3.3 (the shared Caddy proxy) are **shared
+infrastructure** — set up once per machine and assumed to already exist by
+every app's CI/CD. The box is multi-tenant: demopage and other apps (e.g.
+hampap) share the same Docker daemon and the same Caddy. demopage's pipeline
+(§4) deploys **only its own containers and its own Caddy site fragment** — it
+never installs Docker, never owns Caddy, and fails fast if the shared pieces
+are missing. The machine is otherwise **stateless**: app data lives in Supabase
+/ external Postgres and secrets live in GitHub, so the only on-disk state worth
+preserving is the Caddy certs under `/srv/caddy/certs`.
+
 ### 3.1 Supabase Project
 
 #### Create Project
@@ -238,7 +250,7 @@ docker --version            # Engine
 docker compose version      # Compose v2 plugin (used by the deploy job)
 ```
 
-The daemon runs as root and is enabled on boot by default (the deploy job re-asserts `systemctl enable --now docker` to be safe). The deploy script invokes `sudo docker` — the `ubuntu` user already has passwordless sudo on OCI images. For interactive use without `sudo`, optionally add yourself to the `docker` group and re-login:
+The `get.docker.com` script enables `docker.service` on boot by default; confirm with `systemctl is-enabled docker` (should print `enabled`). The deploy script invokes `sudo docker` — the `ubuntu` user already has passwordless sudo on OCI images. For interactive use without `sudo`, optionally add yourself to the `docker` group and re-login:
 
 ```bash
 sudo usermod -aG docker "$USER"   # then log out and back in
@@ -296,67 +308,109 @@ Also add ingress rules in OCI Console:
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
 `kalandra-api-green` (port 8081) — defined as services in
-[`infra/docker-compose.yml`](../infra/docker-compose.yml). At most one slot is
-the active upstream at a time; the CI/CD deploy script swaps slots on each
-release. Caddy (set up in §3.3) proxies to whichever port the active slot is on.
+[`infra/docker-compose.yml`](../infra/docker-compose.yml) (Compose project
+`kalandra`). At most one slot is the active upstream at a time; the CI/CD deploy
+script swaps slots on each release. The shared Caddy proxy (§3.3) routes
+`api.kalandra.tech` to whichever port the active slot is on.
 
-**Nothing to do here manually.** The Compose file is synced to
+**Nothing to do here manually** — but the deploy *assumes* §3.2 and §3.3 are
+already done, and aborts with a pointer if not. The Compose file is synced to
 `~/docker-compose.yml` by the deploy job, which also writes:
 
 - `~/kalandra-api.env` — the app secrets, read by both slots (`env_file`).
 - `~/compose.env` — the digest-pinned `IMAGE_REF` for Compose variable substitution (loaded via `--env-file`).
 
-It then pulls the new image and runs `docker compose up -d` for the target
-slot. The image is pinned by **digest** (`…@sha256:…`), not `:latest`, so a
-restart can never silently run a different build than the one health-checked.
-The first deploy after this VM is provisioned will fully bootstrap the setup.
+It then pulls the image, runs `docker compose up -d` for the target slot,
+writes this app's Caddy fragment (`/srv/caddy/sites/demopage.caddy`) pointing at
+the active port, and reloads the shared Caddy. The image is pinned by **digest**
+(`…@sha256:…`), not `:latest`, so a restart can never silently run a different
+build than the one health-checked.
 
 #### Reboot Survival
 
-The blue-green setup comes back on its own after **any** restart — an
-unattended-upgrades reboot, a crash, or OCI host maintenance — with no manual
-step. It's the Docker daemon's job, not systemd's:
+The stack comes back on its own after **any** restart — an unattended-upgrades
+reboot, a crash, or OCI host maintenance — with no manual step. It's the Docker
+daemon's job, not systemd's:
 
-- **`docker.service` is enabled on boot** (default; the deploy job re-asserts it). The daemon starts on boot and reconciles container restart policies.
-- **`restart: unless-stopped`** on every service — the daemon restarts the active slot and Caddy on boot. Crucially, a slot we `docker stop` during a swap is marked *explicitly stopped*, so it is **not** restarted on boot. That means exactly the active slot returns — no second slot wastefully coming up.
-- **Persisted `~/Caddyfile`, `~/kalandra-api.env`, `~/compose.env`, and the named volumes** (`kalandra_caddy-data`, `kalandra_caddy-config`) — they survive in the home directory / Docker storage, so after a reboot Caddy comes back pointing at the last-active slot and the API starts with its secrets and the same pinned image.
+- **`docker.service` is enabled on boot** (host setup). The daemon starts and reconciles container restart policies.
+- **`restart: unless-stopped`** on every container — both API slots (project `kalandra`) and the shared Caddy (project `caddy`). The daemon restarts the active slot and Caddy on boot. Crucially, a slot we `docker stop` during a swap is marked *explicitly stopped*, so it is **not** restarted — exactly the active slot returns, no second slot.
+- **Persisted on-disk state** — `~/kalandra-api.env` + `~/compose.env` (secrets + image pin), `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS), and Caddy's named volumes (`caddy_caddy-data`, `caddy_caddy-config`). So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
 
 No linger, no user-systemd, and no unprivileged-port sysctl are needed — rootful Docker binds 80/443 directly and the daemon handles boot autostart.
 
-### 3.3 Reverse Proxy (Caddy)
+### 3.3 Shared Caddy Reverse Proxy
 
-Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy is a Docker container defined as the `caddy` service in [`infra/docker-compose.yml`](../infra/docker-compose.yml), managed by the deploy job.
+Caddy is the HTTPS reverse proxy in front of **every** app on the box
+(demopage, hampap, …) — **shared host infrastructure**, set up once per machine
+here. After that, each app's CI/CD only drops a site fragment and reloads it;
+no app owns Caddy's lifecycle. TLS uses Cloudflare Origin Certificates (not
+Let's Encrypt), since the hostnames are proxied through Cloudflare.
 
-#### 3.3.1 Create Cloudflare Origin Certificate
+Everything lives under `/srv/caddy`:
 
-1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**
-2. Hostnames: `api.kalandra.tech`
-3. Validity: 15 years (default)
-4. Format: PEM
-5. Copy both the **certificate** and **private key**
+| Path | Owner | Purpose |
+|------|-------|---------|
+| `docker-compose.yml` | root | The `caddy` Compose project ([`infra/caddy/docker-compose.yml`](../infra/caddy/docker-compose.yml)) |
+| `Caddyfile` | root | Base config — `import /etc/caddy/sites/*.caddy` ([`infra/caddy/Caddyfile`](../infra/caddy/Caddyfile)) |
+| `sites/` | deploy user | One `<app>.caddy` fragment per app; each app's CI writes its own |
+| `certs/` | root | Cloudflare Origin cert pairs, one per site |
 
-#### 3.3.2 Upload Certificate to VM
+#### 3.3.1 Provision the shared proxy (once per machine)
+
+Copy the two committed files into place and create the working dirs:
 
 ```bash
-mkdir -p ~/certs
-nano ~/certs/origin.pem       # paste the certificate, Ctrl+O to save, Ctrl+X to exit
-nano ~/certs/origin-key.pem   # paste the private key
-chmod 600 ~/certs/origin-key.pem
+sudo mkdir -p /srv/caddy/certs
+sudo install -d -o "$USER" /srv/caddy/sites        # app CI writes fragments here without sudo
+sudo cp infra/caddy/docker-compose.yml /srv/caddy/docker-compose.yml
+sudo cp infra/caddy/Caddyfile          /srv/caddy/Caddyfile
 ```
 
-#### 3.3.3 Caddy container
+(If the repo isn't checked out on the VM, paste the contents from
+[`infra/caddy/`](../infra/caddy) instead.)
 
-**Nothing to do here manually.** The deploy job:
+#### 3.3.2 Per-site TLS certificate
 
-- Seeds an initial `~/Caddyfile` if none exists (bind-mounted read-only into the container alongside `~/certs`)
-- Starts the `caddy` service via `docker compose up -d caddy` (rootful Docker binds ports 80/443 directly — no sysctl needed)
-- Rewrites `~/Caddyfile` and reloads Caddy gracefully (`docker exec caddy caddy reload`) on every slot swap
+For each hostname Caddy serves (here, `api.kalandra.tech` for demopage):
 
-Caddy's `/data` and `/config` directories are persisted across restarts via two Docker-managed volumes (`kalandra_caddy-data` and `kalandra_caddy-config`).
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostname `api.kalandra.tech`, 15-year validity, PEM format.
+2. Upload the pair to `/srv/caddy/certs`, named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
 
-#### 3.3.4 Configure Cloudflare SSL Mode
+```bash
+sudo nano /srv/caddy/certs/kalandra.pem    # paste the certificate
+sudo nano /srv/caddy/certs/kalandra.key    # paste the private key
+sudo chmod 600 /srv/caddy/certs/kalandra.key
+```
 
-In Cloudflare dashboard → **SSL/TLS → Overview**, set the mode to **Full (strict)**. This ensures Cloudflare validates the origin certificate when connecting to your VM.
+#### 3.3.3 Start Caddy
+
+```bash
+cd /srv/caddy && sudo docker compose -p caddy up -d
+```
+
+Rootful Docker binds 80/443 directly (no sysctl). `restart: unless-stopped` +
+the enabled `docker.service` bring Caddy back on every reboot. An empty
+`sites/` dir is fine on first start — the import glob matches nothing until an
+app deploys.
+
+#### 3.3.4 How apps attach
+
+Each app's deploy writes a self-contained site block to
+`/srv/caddy/sites/<app>.caddy` and reloads Caddy:
+
+```bash
+sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+demopage's CI does exactly this with `demopage.caddy`, pointing
+`api.kalandra.tech` at the active blue/green port. A second app (hampap) adds
+its own `hampap.caddy` for its own hostname and cert — the two coexist, and a
+reload triggered by one app re-reads the whole imported config without dropping
+the other's traffic.
+
+#### 3.3.5 Configure Cloudflare SSL Mode
+
+In Cloudflare dashboard → **SSL/TLS → Overview**, set the mode to **Full (strict)** (account-wide). This makes Cloudflare validate the origin certificate when connecting to your VM.
 
 ### 3.4 Enable IPv6 on the VCN
 
@@ -439,6 +493,12 @@ In Cloudflare DNS, add an A record for `api.kalandra.tech` pointing to your OCI 
 ---
 
 ## 4. CI/CD Configuration
+
+The deploy assumes the shared host infrastructure from §3.2–3.3 is already in
+place — Docker installed and enabled, the shared Caddy running, and
+`/srv/caddy/sites` writable by the deploy user. It checks these at the top of
+the run and aborts with a pointer to this doc if any is missing; it does **not**
+install or repair them.
 
 ### 4.1 GitHub Repository Secrets
 

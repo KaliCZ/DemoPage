@@ -1,0 +1,9 @@
+# Base config for the shared Caddy proxy. Each app drops a self-contained site
+# block in /etc/caddy/sites/<app>.caddy (bind-mounted from /srv/caddy/sites);
+# this glob pulls them all in. A reload (`docker exec caddy caddy reload`) after
+# an app rewrites its fragment applies the change with no downtime for others.
+#
+# An empty sites/ directory is fine — a glob import with no matches is not an
+# error in Caddy.
+
+import /etc/caddy/sites/*.caddy
