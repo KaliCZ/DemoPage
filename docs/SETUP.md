@@ -23,8 +23,7 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
-    - [Automatic Security Updates](#enable-automatic-security-updates)
-    - [Knowing When a Reboot Is Needed](#knowing-when-a-reboot-is-needed)
+    - [OS Updates and Reboots](#os-updates-and-reboots)
     - [Reboot Survival](#reboot-survival)
   - [3.3 Shared Caddy Reverse Proxy](#33-shared-caddy-reverse-proxy)
     - [3.3.1 Provision the shared proxy](#331-provision-the-shared-proxy-once-per-machine)
@@ -258,41 +257,14 @@ Quadlet `Volume=` lines, so no manual `chcon`/`semanage` is needed for the
 static config. (The deploy additionally `chcon`s each Caddy fragment it writes,
 since the `:z` relabel only runs at container start.)
 
-#### Enable automatic security updates
+#### OS Updates and Reboots
 
-Oracle Linux applies security patches automatically through `dnf-automatic`:
-
-```bash
-sudo dnf install -y dnf-automatic
-```
-
-Edit `/etc/dnf/automatic.conf`:
-
-```ini
-[commands]
-upgrade_type = security      # security-only — the conservative choice for a server
-apply_updates = yes          # download AND install (not just download)
-```
-
-Enable the timer:
-
-```bash
-sudo systemctl enable --now dnf-automatic.timer
-```
-
-`dnf-automatic` **never reboots the host** — it only installs packages. That's
-exactly what we want: no surprise restarts. The catch is that some updates
-(kernel, glibc, systemd, openssl) only take effect *after* a reboot, so you need
-to know when one is pending and do it yourself at a convenient time.
-
-#### Knowing When a Reboot Is Needed
-
-`dnf-automatic` never reboots, so a kernel/glibc/systemd update sits inert until
-you reboot. Two optional, additive ways to be told when one is pending — a login
-banner and a Slack push — are documented alongside their unit files in
-[`infra/host/reboot-notify.md`](../infra/host/reboot-notify.md). Neither affects
-the running stack, which comes back on its own after a reboot (see
-[Reboot Survival](#reboot-survival)).
+Automatic security patching (`dnf-automatic`), plus the optional login banner and
+Slack alert that tell you when a kernel/glibc/systemd update needs a reboot, are
+documented alongside their unit files in
+[`infra/host/os-updates.md`](../infra/host/os-updates.md). It's all additive host
+ops — none of it touches the running stack, which survives reboots on its own
+(see [Reboot Survival](#reboot-survival)).
 
 #### Authenticate to GHCR
 
@@ -567,8 +539,8 @@ repo now expects. Run as `opc`, from a checkout of the branch being deployed.
    ```
 
 `linger` and the `ip_unprivileged_port_start` sysctl are already in place from
-the original setup. The additive host bits — [automatic updates](#enable-automatic-security-updates),
-the [reboot banner](#knowing-when-a-reboot-is-needed), and the Slack notifier —
+the original setup. The additive host bits — automatic updates, the reboot
+banner, and the Slack notifier ([`infra/host/os-updates.md`](../infra/host/os-updates.md)) —
 can be done any time.
 
 > **Sequencing:** do steps 1–5 right around merging the deploy PR — migrate the

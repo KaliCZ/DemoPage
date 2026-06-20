@@ -1,9 +1,49 @@
-# Knowing when the host needs a reboot
+# Automatic OS updates and reboots
 
-`dnf-automatic` installs security patches but **never reboots** (see
-[SETUP.md §3.2](../docs/SETUP.md#32-oracle-cloud-vm)). Some updates — kernel,
-glibc, systemd, openssl — only take effect after a reboot, so you need to know
-when one is pending and do it yourself at a convenient time.
+Host-level patching for the Oracle Linux VM: apply security updates
+automatically, then surface when a reboot is needed to finish applying them.
+All optional/additive host ops — none of it affects the running app stack, and
+the stack comes back on its own after a reboot (see
+[SETUP.md → Reboot Survival](../docs/SETUP.md#reboot-survival)).
+
+## Automatic security updates (`dnf-automatic`)
+
+Oracle Linux applies security patches automatically through `dnf-automatic`:
+
+```bash
+sudo dnf install -y dnf-automatic
+```
+
+Edit `/etc/dnf/automatic.conf`:
+
+```ini
+[commands]
+upgrade_type = security      # security-only — the conservative choice for a server
+apply_updates = yes          # download AND install (not just download)
+```
+
+Enable the timer:
+
+```bash
+sudo systemctl enable --now dnf-automatic.timer
+```
+
+It runs daily by default. To change the cadence, override with a drop-in
+(`sudo systemctl edit dnf-automatic.timer`) — note the empty `OnCalendar=` first,
+since the directive is additive:
+
+```ini
+[Timer]
+OnCalendar=
+OnCalendar=*-*-* 03:00
+```
+
+`dnf-automatic` **never reboots the host** — it only installs packages. That's
+exactly what we want: no surprise restarts. The catch is that some updates
+(kernel, glibc, systemd, openssl) only take effect *after* a reboot, so you need
+to know when one is pending and do it yourself at a convenient time.
+
+## Knowing when a reboot is needed
 
 The check is `needs-restarting -r` (from `dnf-utils`), which exits non-zero when
 a reboot is required:
@@ -13,10 +53,15 @@ sudo dnf install -y dnf-utils
 needs-restarting -r        # "Reboot is required ..." → time to reboot
 ```
 
-Two optional, additive ways to surface that automatically. Neither affects the
-running stack; install whichever you want, whenever.
+> **Note:** Oracle Linux on OCI often ships Ksplice, which live-patches the
+> running kernel/glibc/openssl without a reboot. If it's active,
+> `needs-restarting -r` can legitimately stay green for a long time. Check with
+> `uptrack-uname -r` (vs `uname -r`).
 
-## A. Login banner (every SSH session)
+Two optional, additive ways to surface a pending reboot — a login banner and a
+Slack push. Install whichever you want.
+
+### A. Login banner (every SSH session)
 
 Prints a warning on login while a reboot is pending:
 
@@ -35,11 +80,9 @@ EOF
 ```
 
 `/etc/profile.d/` scripts run for **login** shells only (a fresh SSH session) —
-not subshells or tmux panes, which is exactly what you want here. The stack
-comes back on its own after a reboot (see
-[SETUP.md → Reboot Survival](../docs/SETUP.md#reboot-survival)).
+not subshells or tmux panes, which is exactly what you want here.
 
-## B. Push the alert to Slack
+### B. Push the alert to Slack
 
 The banner only helps once you log in. To get *pushed* a message when a reboot
 becomes due, create a Slack webhook and install the timer from this directory.
@@ -75,7 +118,7 @@ sudo bash -c 'source /etc/reboot-notify.env && curl -fsS -X POST -H "Content-Typ
   --data "{\"text\":\"✅ reboot-notify test from $(hostname)\"}" "$WEBHOOK_URL"'
 ```
 
-### Behavior
+#### Behavior
 
 The timer **checks** every 15 minutes; the script **notifies** at most once per
 24h while a reboot stays pending:
@@ -90,7 +133,7 @@ The timer **checks** every 15 minutes; the script **notifies** at most once per
 
 So: fast detection, one ping up front, at most a daily re-nag until you act.
 
-### Tuning
+#### Tuning
 
 - **Check cadence** — edit `OnCalendar=` in [`reboot-notify.timer`](reboot-notify.timer) (`*:0/15`, `hourly`, `daily`, …).
 - **Re-nag interval** — edit `THROTTLE` in [`reboot-notify.sh`](reboot-notify.sh) (seconds).
