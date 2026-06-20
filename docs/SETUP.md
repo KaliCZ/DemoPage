@@ -238,7 +238,7 @@ WHERE email = 'your@email.com';
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, Always Free up to 4 OCPU / 24 GB RAM — size it to what you need; the shape can be resized later from the Console)
-   - Image: **Oracle Linux 8** (aarch64 — ARM image for the A1 shape)
+   - Image: **Oracle Linux 9** (aarch64 — ARM image for the A1 shape)
    - Add your SSH public key
 3. Note the **public IP address**. The default login user is **`opc`** — match the `OCI_USERNAME` GitHub variable (see §4.1).
 
