@@ -314,6 +314,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: backend
@@ -333,8 +334,24 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: "infra/quadlet/*.container,infra/quadlet/*.volume"
-          target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          # App slot units only (the shared Caddy units live under infra/host/,
+          # host-managed per SETUP.md §3.3). Land them in a staging dir; the
+          # deploy installs only the slot it's deploying to, leaving the other
+          # slot's live unit (and its pinned production image) untouched.
+          source: "infra/quadlet/*.container"
+          target: "/home/${{ vars.OCI_USERNAME }}/quadlet-staging/"
+          strip_components: 2
+
+      - name: Sync Caddy routing fragment to VM
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          # Kalandra's routing template (port filled in at deploy time). The
+          # shared Caddy that loads it is host infra, not synced here.
+          source: "infra/quadlet/kalandra.caddy"
+          target: "/home/${{ vars.OCI_USERNAME }}/"
           strip_components: 2
 
       - name: Deploy to Oracle Cloud (blue-green)
@@ -345,38 +362,37 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           SENTRY_DSN: ${{ secrets.BACKEND_SENTRY_DSN }}
-          IMAGE: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+          # Digest-pinned, not :latest — the exact build verified by this run
+          # is what runs and what comes back after a reboot.
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           EXPECTED_SHA: ${{ github.sha }}
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,IMAGE,EXPECTED_SHA
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,IMAGE_REF,EXPECTED_SHA
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
+            UNIT_DIR="$HOME/.config/containers/systemd"
+            STAGING="$HOME/quadlet-staging"
+            SITE_CONF=/srv/caddy/sites/kalandra.caddy
 
-            # ----- 0. Idempotent host bootstrap -----
+            # ----- 0. Preconditions: shared infra must already exist -----
+            # podman and the shared Caddy proxy are host infrastructure,
+            # provisioned once per machine (SETUP.md §3.2–3.3), not by this
+            # deploy. Fail fast with a pointer if an assumption is unmet.
+            command -v podman >/dev/null 2>&1 \
+              || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+            podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
+              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+            [ -d /srv/caddy/sites ] \
+              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
 
-            # Linger keeps the user systemd instance alive across logouts
-            # and reboots. No-op if already enabled.
-            sudo loginctl enable-linger "$USER"
-
-            # Allow rootless containers to bind ports 80/443 (needed for
-            # Caddy). Idempotent — only writes the sysctl file if missing.
-            if [ ! -f /etc/sysctl.d/99-unprivileged-ports.conf ]; then
-              echo 'net.ipv4.ip_unprivileged_port_start=80' \
-                | sudo tee /etc/sysctl.d/99-unprivileged-ports.conf > /dev/null
-              sudo sysctl --system > /dev/null
-            fi
-
-            # Pick up any new/updated Quadlet files synced in the previous
-            # workflow step.
-            systemctl --user daemon-reload
-
-            # Refresh the secrets env file. Rewritten on every deploy so
-            # rotated secrets propagate the next time a slot starts.
             umask 077
+
+            # App secrets, read by both slots via EnvironmentFile. Rewritten
+            # every deploy so rotated secrets propagate when a slot (re)starts.
             cat > "$HOME/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
@@ -385,31 +401,8 @@ jobs:
             Sentry__Dsn=${SENTRY_DSN}
             EOF
 
-            # Seed an initial Caddyfile if none exists, so the rootless
-            # caddy.service has something to bind-mount on its first start.
-            # The slot-swap step below overwrites this with the actual
-            # active port and reloads Caddy.
-            if [ ! -f "$HOME/Caddyfile" ]; then
-              cat > "$HOME/Caddyfile" << 'EOF'
-            api.kalandra.tech {
-                reverse_proxy localhost:8080
-                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
-            }
-            EOF
-            fi
-
-            # Ensure Caddy is running. No-op if already started.
-            # Quadlet-generated units cannot be `enable`d (systemd refuses
-            # generated units), so we use `start`. Boot autostart is handled
-            # by [Install] WantedBy=default.target inside the .container file.
-            systemctl --user start caddy.service
-
-            # ----- 1. Pull the new image -----
-            podman pull "$IMAGE"
-
-            # ----- 2. Determine which slot is currently active -----
-            # The active slot is whichever systemd unit is currently running.
-            # If neither is running (cold start) we default to blue.
+            # ----- 1. Determine which slot is currently active -----
+            # Active = whichever slot's service is running now. Cold start → blue.
             if systemctl --user is-active --quiet kalandra-api-blue.service; then
               OLD=blue; NEW=green; NEW_PORT=8081
             elif systemctl --user is-active --quiet kalandra-api-green.service; then
@@ -419,26 +412,38 @@ jobs:
             fi
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
-            # ----- 3. Start the new slot -----
+            # ----- 2. Install + pin ONLY the slot we're deploying to -----
+            # Copy just the new slot's unit from staging and pin its Image= to the
+            # digest just built. The active slot's unit is deliberately left
+            # untouched, so its pinned (production) image stays put — if the host
+            # crashes or reboots mid-deploy, production comes back on the verified
+            # build, not this unproven one. Promotion happens only at the Caddy
+            # swap below. Digest, never :latest, so a restart can't drift.
+            mkdir -p "$UNIT_DIR"
+            cp "$STAGING/kalandra-api-${NEW}.container" "$UNIT_DIR/kalandra-api-${NEW}.container"
+            sed -i "s|^Image=.*|Image=${IMAGE_REF}|" "$UNIT_DIR/kalandra-api-${NEW}.container"
+            systemctl --user daemon-reload
+
+            # ----- 3. Pull the digest-pinned image -----
+            podman pull "$IMAGE_REF"
+
+            # ----- 4. Start the new slot -----
             # Stop first: if the unit is already active from a prior deploy,
-            # `systemctl start` is a no-op and the old container keeps
-            # serving the old binary. Cycling the unit forces ExecStart to
-            # fire and create a new container from the just-pulled image.
-            # Quadlet units cannot be `enable`d — boot autostart comes from
-            # [Install] WantedBy=default.target in the .container file.
+            # `start` is a no-op and the old container keeps serving the old
+            # binary. Cycling forces a fresh container from the pinned image.
             systemctl --user stop "kalandra-api-${NEW}.service" || true
             systemctl --user start "kalandra-api-${NEW}.service"
 
-            # ----- 4. Health check the new slot directly (bypassing Caddy) -----
-            # Match the deployed commit, not just any healthy response, so
-            # a stale container from an earlier deploy can't pass this gate.
+            # ----- 5. Health check the new slot directly (bypassing Caddy) -----
+            # Match the deployed commit, not just any healthy response, so a
+            # stale container from an earlier deploy can't pass this gate.
             echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
             ATTEMPTS=0
             until curl -sf "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -qF "$EXPECTED_SHA"; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
                 echo "New slot failed to start. Container logs:"
-                podman logs "kalandra-api-${NEW}" 2>&1 || true
+                podman logs "kalandra-api-${NEW}" 2>&1 | tail -50 || true
                 echo "systemd status:"
                 systemctl --user status "kalandra-api-${NEW}.service" --no-pager || true
                 echo "Rolling back..."
@@ -450,26 +455,43 @@ jobs:
             done
             echo "New slot is healthy on port $NEW_PORT."
 
-            # ----- 5. Swap Caddy upstream to the new port -----
-            # Caddy runs as a rootless Quadlet container under the opc
-            # user, so the bind-mounted Caddyfile is read with the same
-            # SELinux label opc owns it with — no chcon needed.
-            cat > "$HOME/Caddyfile" << EOF
-            api.kalandra.tech {
-                reverse_proxy localhost:${NEW_PORT}
-                tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
-            }
-            EOF
+            # ----- 6. Point our site at the new port (promotion) and reload -----
+            # We write ONLY our own fragment, /srv/caddy/sites/kalandra.caddy —
+            # never the shared /srv/caddy/Caddyfile, which is set up once at host
+            # provisioning and only `import`s each app's fragment. The reload
+            # below points at that root config because that's how Caddy reloads
+            # (it re-reads the root + all imports and applies gracefully); it does
+            # not modify the file. This is the promotion step — until now Caddy
+            # was still routing to the old (production) slot.
+            sed "s/__PORT__/${NEW_PORT}/" "$HOME/kalandra.caddy" > "$SITE_CONF"
+            # Oracle Linux enforces SELinux; relabel the freshly-written fragment
+            # so the Caddy container can read it (the unit's :z relabel only runs
+            # at container start). opc owns the file, so no sudo. No-op where
+            # SELinux/chcon isn't present.
+            command -v chcon >/dev/null 2>&1 && chcon -t container_file_t "$SITE_CONF" || true
             podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # ----- 6. Stop the old slot -----
-            # Quadlet units can't be `disable`d, so we just stop. Both slot
-            # .container files have WantedBy=default.target, which means a
-            # cold reboot will start whichever one Quadlet enumerates first;
-            # the next deploy re-establishes the intended slot.
+            # ----- 7. Retire the old slot -----
+            # Stop it AND remove its unit file, so only the production slot's
+            # unit remains on disk. Quadlet derives boot-start from the unit's
+            # presence + WantedBy=default.target (generated units can't be
+            # `systemctl disable`d), so removing the file is what guarantees a
+            # cold reboot starts exactly one container — the one Caddy routes to.
+            # The next deploy recreates this slot from staging (step 2), so
+            # blue/green still alternates. Safe as the final step: until now the
+            # old unit stayed on disk, so a crash/reboot mid-deploy still brings
+            # production back on its verified, pinned image.
             if [ -n "$OLD" ]; then
               systemctl --user stop "kalandra-api-${OLD}.service" || true
+              rm -f "$UNIT_DIR/kalandra-api-${OLD}.container"
+              systemctl --user daemon-reload
             fi
+
+            # ----- 8. Prune only THIS app's old images -----
+            # The box is shared, so scope the prune to our ownership label (set
+            # in the Dockerfile) — never touch other apps' images or the shared
+            # Caddy image. The running slot still references its digest.
+            podman image prune -af --filter "label=tech.kalandra.app=demopage"
 
             echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
 

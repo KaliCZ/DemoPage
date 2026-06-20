@@ -1,0 +1,12 @@
+# Runs reboot-notify.service once a day. Persistent=true catches up after the
+# VM was off at the scheduled time; the randomized delay avoids a fixed spike.
+[Unit]
+Description=Daily check for a pending reboot
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target

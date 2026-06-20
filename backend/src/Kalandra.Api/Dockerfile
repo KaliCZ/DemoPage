@@ -28,6 +28,11 @@ RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 
+# Ownership marker for the shared host: the deploy's image prune is scoped to
+# this label, so it only ever removes this app's old images — never another
+# app's or the shared Caddy image.
+LABEL tech.kalandra.app=demopage
+
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 

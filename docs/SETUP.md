@@ -23,13 +23,18 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
-  - [3.3 Reverse Proxy (Caddy)](#33-reverse-proxy-caddy)
-    - [3.3.1 Create Cloudflare Origin Certificate](#331-create-cloudflare-origin-certificate)
-    - [3.3.2 Upload Certificate to VM](#332-upload-certificate-to-vm)
-    - [3.3.3 Configure and Run Caddy](#333-configure-and-run-caddy)
-    - [3.3.4 Configure Cloudflare SSL Mode](#334-configure-cloudflare-ssl-mode)
+    - [Automatic Security Updates](#enable-automatic-security-updates)
+    - [Knowing When a Reboot Is Needed](#knowing-when-a-reboot-is-needed)
+    - [Reboot Survival](#reboot-survival)
+  - [3.3 Shared Caddy Reverse Proxy](#33-shared-caddy-reverse-proxy)
+    - [3.3.1 Provision the shared proxy](#331-provision-the-shared-proxy-once-per-machine)
+    - [3.3.2 Per-site TLS certificate](#332-per-site-tls-certificate)
+    - [3.3.3 Start Caddy](#333-start-caddy)
+    - [3.3.4 How apps attach](#334-how-apps-attach)
+    - [3.3.5 Configure Cloudflare SSL Mode](#335-configure-cloudflare-ssl-mode)
   - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
   - [3.5 DNS](#35-dns)
+  - [3.6 Migrating an Existing Box](#36-migrating-an-existing-box-one-time)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -165,6 +170,17 @@ npm run test:e2e
 
 This section covers the one-time setup needed to host this project yourself.
 
+**Shared host infrastructure vs. app deploy.** §3.2 (the VM, podman, OS
+updates, firewall, IPv6) and §3.3 (the shared Caddy proxy) are **shared
+infrastructure** — set up once per machine and assumed to already exist by
+every app's CI/CD. The box is multi-tenant: demopage and other apps (e.g.
+hampap) share the same rootless podman (under `opc`) and the same Caddy.
+demopage's pipeline (§4) deploys **only its own containers and its own Caddy
+site fragment** — it never installs podman, never owns Caddy, and fails fast if
+the shared pieces are missing. The machine is otherwise **stateless**: app data
+lives in Supabase / external Postgres and secrets live in GitHub, so the only
+on-disk state worth preserving is the Caddy certs under `/srv/caddy/certs`.
+
 ### 3.1 Supabase Project
 
 #### Create Project
@@ -217,105 +233,280 @@ WHERE email = 'your@email.com';
 
 ### 3.2 Oracle Cloud VM
 
-#### Create Always Free VM
+#### Create the VM
 
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
-   - Shape: `VM.Standard.A1.Flex` (ARM, 4 OCPU / 24 GB RAM — Always Free)
-   - Image: Oracle Linux 8 aarch64 (ARM image for A1 shape)
+   - Shape: `VM.Standard.A1.Flex` (ARM, Always Free up to 4 OCPU / 24 GB RAM — size it to what you need; the shape can be resized later from the Console)
+   - Image: **Oracle Linux 9** (aarch64 — ARM image for the A1 shape)
    - Add your SSH public key
-3. Note the **public IP address**
+3. Note the **public IP address**. The default login user is **`opc`** — match the `OCI_USERNAME` GitHub variable (see §4.1).
 
 #### Install podman
 
-Oracle Linux ships with rootless `podman`. The `podman-docker` shim makes
-the `docker` CLI an alias for `podman` so existing scripts work unchanged.
+Oracle Linux ships rootless `podman` — usually preinstalled. Make sure it's
+present (the deploy and the shared Caddy both run rootless under `opc`):
 
 ```bash
-sudo dnf install -y podman podman-docker
+sudo dnf install -y podman
+podman --version
 ```
+
+Containers run **rootless** under the `opc` user. SELinux is enforcing on Oracle
+Linux; podman handles bind-mount relabeling natively via the `:z` flag on the
+Quadlet `Volume=` lines, so no manual `chcon`/`semanage` is needed for the
+static config. (The deploy additionally `chcon`s each Caddy fragment it writes,
+since the `:z` relabel only runs at container start.)
+
+#### Enable automatic security updates
+
+Oracle Linux applies security patches automatically through `dnf-automatic`:
+
+```bash
+sudo dnf install -y dnf-automatic
+```
+
+Edit `/etc/dnf/automatic.conf`:
+
+```ini
+[commands]
+upgrade_type = security      # security-only — the conservative choice for a server
+apply_updates = yes          # download AND install (not just download)
+```
+
+Enable the timer:
+
+```bash
+sudo systemctl enable --now dnf-automatic.timer
+```
+
+`dnf-automatic` **never reboots the host** — it only installs packages. That's
+exactly what we want: no surprise restarts. The catch is that some updates
+(kernel, glibc, systemd, openssl) only take effect *after* a reboot, so you need
+to know when one is pending and do it yourself at a convenient time.
+
+#### Knowing When a Reboot Is Needed
+
+The check is `needs-restarting -r` (from `dnf-utils`), which exits non-zero and
+prints the reason when a reboot is required:
+
+```bash
+sudo dnf install -y dnf-utils
+needs-restarting -r        # "Reboot is required ..." → time to reboot
+```
+
+To surface that automatically, install a login banner so **every SSH session**
+tells you:
+
+```bash
+sudo tee /etc/profile.d/reboot-required.sh > /dev/null << 'EOF'
+if command -v needs-restarting >/dev/null 2>&1; then
+    needs-restarting -r >/dev/null 2>&1
+    if [ "$?" -eq 1 ]; then
+        echo ""
+        echo "  ⚠  A reboot is required to finish applying updates (kernel/glibc/systemd)."
+        echo "     Details: needs-restarting -r    Reboot when convenient: sudo reboot"
+        echo ""
+    fi
+fi
+EOF
+```
+
+When the banner appears, reboot when convenient — the stack comes back on its
+own (see [Reboot Survival](#reboot-survival)).
+
+##### Optional: push the alert to Slack
+
+The banner only helps once you log in. To get *pushed* a message the day a
+reboot becomes due, create a Slack webhook and install the daily timer.
+
+First, create the webhook in Slack (one-time, in the Slack UI):
+
+1. <https://api.slack.com/apps> → **Create New App** → *From scratch* (or reuse an app).
+2. **Incoming Webhooks** → toggle **On** → **Add New Webhook to Workspace** → pick the channel.
+3. Copy the **Webhook URL** (`https://hooks.slack.com/services/…`).
+
+Then install the timer from [`infra/host/`](../infra/host):
+
+```bash
+sudo cp infra/host/reboot-notify.sh /usr/local/bin/reboot-notify.sh
+sudo chmod +x /usr/local/bin/reboot-notify.sh
+sudo cp infra/host/reboot-notify.service infra/host/reboot-notify.timer /etc/systemd/system/
+
+# Paste the webhook URL from step 3 above
+printf 'WEBHOOK_URL=%s\n' 'https://hooks.slack.com/services/XXX/YYY/ZZZ' | sudo tee /etc/reboot-notify.env >/dev/null
+sudo chmod 600 /etc/reboot-notify.env
+
+sudo systemctl enable --now reboot-notify.timer
+```
+
+It runs `needs-restarting -r` once a day and posts to Slack **only** when a
+reboot is pending.
+
+> **Why Slack, not email?** A Slack incoming webhook is one URL you `curl` over
+> 443. Email from the VM is harder: OCI blocks outbound port 25 by default and a
+> fresh box has no mailer, so you'd first have to configure postfix/msmtp
+> against an external SMTP relay (provider account + app password on 587) before
+> `dnf-automatic`'s `emit_via = email` could send anything. (For Discord instead
+> of Slack, change the JSON key in the script from `text` to `content`.)
 
 #### Authenticate to GHCR
 
 The API image is pulled from GitHub Container Registry. Create a GitHub
-Personal Access Token with `read:packages` scope and log in once:
+Personal Access Token with `read:packages` scope and log in once as `opc`
+(the deploy pulls rootless):
 
 ```bash
 echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
 ```
 
+The credentials are stored under `~/.config/containers/auth.json`, which persists across reboots.
+
 #### Configure firewall
 
+Only Caddy is public. The API slots (8080/8081) are reached **only** through it,
+so they stay closed to the internet — exposing them directly would bypass
+Cloudflare.
+
 ```bash
-# Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
+# Public ports: 80 (HTTP) + 443 (HTTPS), both terminating at Caddy
 sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
 Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
-- Add ingress rules for ports 80, 443, 8080
+- Add ingress rules for ports 80 and 443
 
 #### API containers (Quadlet + systemd)
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
-`kalandra-api-green` (port 8081) — managed as systemd user services via
-Quadlet. At most one slot is enabled and running at a time; the CI/CD
-deploy script swaps slots on each release. Caddy (set up in §3.3) proxies
-to whichever port the active slot is on.
+`kalandra-api-green` (port 8081) — as rootless `systemd --user` services managed
+by Quadlet, from the unit files in [`infra/quadlet/`](../infra/quadlet). Only one
+slot is live at a time: each release deploys to the idle slot, health-checks it,
+then flips the shared Caddy proxy (§3.3) to its port. A completed deploy removes
+the retired slot's unit, so a reboot brings back exactly the live version.
 
-**Nothing to do here manually.** The Quadlet unit files live in
-[`infra/quadlet/`](../infra/quadlet) and are pushed to the VM by the CI/CD
-deploy job, which also writes `~/kalandra-api.env` from GitHub secrets,
-runs `systemctl --user daemon-reload`, removes any leftover ad-hoc
-containers, and starts the chosen slot. The first deploy after this VM
-is provisioned will fully bootstrap the setup.
+**Nothing to do here manually** — the deploy installs and manages these units
+(see §4). It pins each unit's `Image=` to an immutable digest, never `:latest`,
+so a restart can't drift onto a different build.
 
-> **About linger:** the deploy job runs `sudo loginctl enable-linger opc`
-> as part of its bootstrap. Linger keeps the `opc` user's systemd instance
-> running across SSH logouts and across reboots, which is what makes the
-> enabled slot come back automatically when the VM restarts. Without it,
-> the user manager would only exist while someone is logged in, and any
-> `--user` service would die on logout. The setting is idempotent and
-> safe to re-apply on every deploy.
+#### Port Allocation (shared host)
 
-### 3.3 Reverse Proxy (Caddy)
+Every app runs with `Network=host`, so they all share the host's port space.
+Only Caddy is reachable publicly (80/443); the per-app `80xx` ports are pure
+localhost wiring behind the proxy and never appear in a URL — Caddy routes by
+hostname. So there's no "primary app gets the nicer ports" tradeoff; the only
+rule is **don't collide**. Give each app a contiguous block and record it here.
 
-Caddy serves as the HTTPS reverse proxy in front of the backend API. TLS is handled via a Cloudflare Origin Certificate (not Let's Encrypt), since `api.kalandra.tech` is proxied through Cloudflare. Like the API, Caddy runs as a rootless Quadlet container under the `opc` user, managed by `systemd --user`. The Quadlet unit lives at [`infra/quadlet/caddy.container`](../infra/quadlet/caddy.container) and is synced to the VM by the deploy job.
+| Port(s)     | Owner                       | Notes                                              |
+|-------------|-----------------------------|----------------------------------------------------|
+| 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
+| 8080 / 8081 | kalandra (demopage) API     | blue / green slots. **API only** — the website is SSG, built and hosted off-box, so it has no port here. |
+| 8090 / 8091 | *reserved* — next app (hampap) | Suggested next block; claim it when adding the app. |
 
-#### 3.3.1 Create Cloudflare Origin Certificate
+When adding an app, take the next free block (e.g. `81xx`), set its container's
+listen port accordingly, and add a row above before wiring up its Caddy fragment.
+An app that ships a server-rendered (non-SSG) web tier needs its own port for
+that too — give it the next slot in the same block.
 
-1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**
-2. Hostnames: `api.kalandra.tech`
-3. Validity: 15 years (default)
-4. Format: PEM
-5. Copy both the **certificate** and **private key**
+#### Reboot Survival
 
-#### 3.3.2 Upload Certificate to VM
+The stack comes back on its own after **any** restart — a kernel-update reboot
+you trigger, a crash, or OCI host maintenance — with no manual step. Three
+pieces make that work, all established by host setup / the first deploy:
+
+- **Linger** (`sudo loginctl enable-linger opc`, set in host setup) keeps the `opc` user's `systemd --user` instance running across SSH logouts *and* reboots; without it, `--user` services only exist while someone is logged in.
+- **Quadlet `[Install] WantedBy=default.target`** in each `.container` file makes the generated units start on boot — the shared Caddy and the live API slot. A completed deploy removes the retired slot's unit file, so only the production slot's unit is present at rest.
+- **Persisted on-disk state** — `~/kalandra-api.env` (secrets) and the digest baked into the live slot's unit `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
+
+On a cold boot exactly one slot starts — the production slot, since the deploy removed the other slot's unit — and Caddy routes to the port its persisted fragment names. No traffic is lost. (If a reboot interrupts a deploy before the swap, the old unit is still present and comes back as production; the next deploy recreates the other slot.)
+
+### 3.3 Shared Caddy Reverse Proxy
+
+Caddy is the HTTPS reverse proxy in front of **every** app on the box
+(demopage, hampap, …) — **shared host infrastructure**, set up once per machine
+here. After that, each app's CI/CD only drops a site fragment and reloads it;
+no app owns Caddy's lifecycle. It runs rootless under `opc` as a Quadlet unit,
+like the API slots. TLS uses Cloudflare Origin Certificates (not Let's Encrypt),
+since the hostnames are proxied through Cloudflare.
+
+Config lives under `/srv/caddy`, owned by `opc` (rootless Caddy and the app
+deploys all run as `opc`, so they must be able to read/write it):
+
+| Path | Purpose |
+|------|---------|
+| `Caddyfile` | Base config — `import /etc/caddy/sites/*.caddy` ([`infra/host/Caddyfile`](../infra/host/Caddyfile)) |
+| `sites/` | One `<app>.caddy` fragment per app; each app's CI writes its own |
+| `certs/` | Cloudflare Origin cert pairs, one per site |
+
+The Quadlet units ([`caddy.container`](../infra/host/caddy.container) + the two `.volume` files in [`infra/host/`](../infra/host)) live in `~/.config/containers/systemd/`.
+
+#### 3.3.1 Provision the shared proxy (once per machine)
 
 ```bash
-mkdir -p ~/certs
-nano ~/certs/origin.pem       # paste the certificate, Ctrl+O to save, Ctrl+X to exit
-nano ~/certs/origin-key.pem   # paste the private key
-chmod 600 ~/certs/origin-key.pem
+# Config tree, owned by opc so the rootless container and app deploys can use it
+sudo install -d -o "$USER" -g "$USER" /srv/caddy /srv/caddy/sites /srv/caddy/certs
+cp infra/host/Caddyfile /srv/caddy/Caddyfile
+
+# Quadlet units for the shared proxy
+mkdir -p ~/.config/containers/systemd
+cp infra/host/caddy.container infra/host/caddy-data.volume infra/host/caddy-config.volume \
+   ~/.config/containers/systemd/
+
+# Let the rootless container bind 80/443, and keep user services alive across reboots
+echo 'net.ipv4.ip_unprivileged_port_start=80' | sudo tee /etc/sysctl.d/99-unprivileged-ports.conf
+sudo sysctl --system
+sudo loginctl enable-linger "$USER"
 ```
 
-#### 3.3.3 Caddy container
+(If the repo isn't checked out on the VM, paste the file contents from
+[`infra/host/`](../infra/host) instead.)
 
-**Nothing to do here manually.** The deploy job:
+#### 3.3.2 Per-site TLS certificate
 
-- Sets `net.ipv4.ip_unprivileged_port_start=80` (via `/etc/sysctl.d/`) so the rootless container can bind ports 80/443
-- Seeds an initial `~/Caddyfile` if none exists
-- Starts `caddy.service` via `systemctl --user enable --now`
-- Rewrites `~/Caddyfile` and reloads Caddy gracefully (`podman exec caddy caddy reload`) on every slot swap
+For each hostname Caddy serves (here, `api.kalandra.tech` for demopage):
 
-Caddy's `/data` and `/config` directories are persisted across restarts via two podman-managed volumes (`caddy-data` and `caddy-config`).
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostname `api.kalandra.tech`, 15-year validity, PEM format.
+2. Save the pair to `/srv/caddy/certs` (owned by `opc`, so no `sudo`), named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
 
-#### 3.3.4 Configure Cloudflare SSL Mode
+```bash
+nano /srv/caddy/certs/kalandra.pem    # paste the certificate
+nano /srv/caddy/certs/kalandra.key    # paste the private key
+chmod 600 /srv/caddy/certs/kalandra.key
+```
 
-In Cloudflare dashboard → **SSL/TLS → Overview**, set the mode to **Full (strict)**. This ensures Cloudflare validates the origin certificate when connecting to your VM.
+#### 3.3.3 Start Caddy
+
+```bash
+systemctl --user daemon-reload
+systemctl --user start caddy.service
+```
+
+The `ip_unprivileged_port_start` sysctl (set in §3.3.1) lets the rootless
+container bind 80/443; linger + `[Install] WantedBy=default.target` bring Caddy
+back on every reboot. An empty `sites/` dir is fine on first start — the import
+glob matches nothing until an app deploys.
+
+#### 3.3.4 How apps attach
+
+Each app's deploy writes a self-contained site block to
+`/srv/caddy/sites/<app>.caddy` (and `chcon`s it for SELinux), then reloads Caddy:
+
+```bash
+podman exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+demopage's CI does exactly this with `kalandra.caddy`, pointing
+`api.kalandra.tech` at the active blue/green port. A second app (hampap) adds
+its own `hampap.caddy` for its own hostname and cert — the two coexist, and a
+reload triggered by one app re-reads the whole imported config without dropping
+the other's traffic.
+
+#### 3.3.5 Configure Cloudflare SSL Mode
+
+In Cloudflare dashboard → **SSL/TLS → Overview**, set the mode to **Full (strict)** (account-wide). This makes Cloudflare validate the origin certificate when connecting to your VM.
 
 ### 3.4 Enable IPv6 on the VCN
 
@@ -354,10 +545,10 @@ In **Security Lists** (or your Network Security Group), add:
 - Protocol: TCP
 - Destination Port Range: All (or 5432, 443 for minimal access)
 
-**Ingress** (optional — if you want the API reachable over IPv6):
+**Ingress** (optional — if you want the site reachable over IPv6):
 - Source: `::/0`
 - Protocol: TCP
-- Destination Port Range: 80, 443, 8080
+- Destination Port Range: 80, 443
 
 #### 3.4.5 Assign IPv6 Address to the VM
 
@@ -389,15 +580,66 @@ sudo firewall-cmd --add-protocol=ipv6-icmp --permanent
 sudo firewall-cmd --reload
 ```
 
-> **Note:** No Docker IPv6 configuration is needed — the backend container runs with `--network host`, so it shares the host's IPv6 stack directly.
+> **Note:** No podman IPv6 configuration is needed — the backend container uses host networking (`Network=host`), so it shares the host's IPv6 stack directly.
 
 ### 3.5 DNS
 
 In Cloudflare DNS, add an A record for `api.kalandra.tech` pointing to your OCI VM's public IP. Keep it **Proxied** (orange cloud) — Cloudflare handles public TLS, Caddy uses the origin certificate for the Cloudflare-to-origin connection.
 
+### 3.6 Migrating an Existing Box (one-time)
+
+A clean machine set up via §3.2–3.3 needs none of this. Use it **only** to move
+a VM that's already running the older single-site layout (`~/Caddyfile`,
+`~/certs/`, Caddy reading the home directory) onto the shared-Caddy layout this
+repo now expects. Run as `opc`, from a checkout of the branch being deployed.
+
+1. **Shared Caddy dirs** (opc-owned):
+   ```bash
+   sudo install -d -o "$USER" -g "$USER" /srv/caddy /srv/caddy/sites /srv/caddy/certs
+   ```
+2. **Reuse the existing origin cert** under the per-site names the fragment expects:
+   ```bash
+   cp ~/certs/origin.pem     /srv/caddy/certs/kalandra.pem
+   cp ~/certs/origin-key.pem /srv/caddy/certs/kalandra.key
+   chmod 600 /srv/caddy/certs/kalandra.key
+   ```
+3. **Base Caddyfile + seed demopage's route** at whichever slot is live right now:
+   ```bash
+   cp infra/host/Caddyfile /srv/caddy/Caddyfile
+   PORT=$(systemctl --user is-active --quiet kalandra-api-green && echo 8081 || echo 8080)
+   sed "s/__PORT__/$PORT/" infra/quadlet/kalandra.caddy > /srv/caddy/sites/kalandra.caddy
+   chcon -t container_file_t /srv/caddy/sites/kalandra.caddy 2>/dev/null || true
+   ```
+4. **Swap the Caddy unit** to the shared one (mounts `/srv/caddy`) and restart (~1–2s blip):
+   ```bash
+   cp infra/host/caddy.container infra/host/caddy-data.volume infra/host/caddy-config.volume \
+      ~/.config/containers/systemd/
+   systemctl --user daemon-reload
+   systemctl --user restart caddy.service
+   ```
+5. **Verify, then retire** the old home-dir config:
+   ```bash
+   curl -sf https://api.kalandra.tech/health && rm -rf ~/Caddyfile ~/certs
+   ```
+
+`linger` and the `ip_unprivileged_port_start` sysctl are already in place from
+the original setup. The additive host bits — [automatic updates](#enable-automatic-security-updates),
+the [reboot banner](#knowing-when-a-reboot-is-needed), and the Slack notifier —
+can be done any time.
+
+> **Sequencing:** do steps 1–5 right around merging the deploy PR — migrate the
+> box, then merge so the new pipeline takes over. Avoid pushing to `main` in the
+> gap (an old-pipeline deploy would rewrite the now-ignored `~/Caddyfile`).
+
 ---
 
 ## 4. CI/CD Configuration
+
+The deploy assumes the shared host infrastructure from §3.2–3.3 is already in
+place — podman installed, linger enabled, the shared Caddy running, and
+`/srv/caddy/sites` present. It checks these at the top of the run and aborts
+with a pointer to this doc if any is missing; it does **not** install or repair
+them.
 
 ### 4.1 GitHub Repository Secrets
 
