@@ -1,0 +1,39 @@
+# Shared Caddy reverse proxy — fronts every app on the box (demopage, hampap, …).
+#
+# This is host-level shared infrastructure, NOT part of any app's CI/CD. It is
+# installed once per machine (see docs/SETUP.md §3.3): copy this unit and the
+# two .volume files to ~/.config/containers/systemd/, copy the base Caddyfile to
+# /srv/caddy/, then `systemctl --user start caddy`. Apps never touch Caddy's
+# lifecycle — they only drop a fragment in /srv/caddy/sites and reload.
+#
+# Runs rootless under the opc user. Binding 80/443 rootless requires the host
+# sysctl net.ipv4.ip_unprivileged_port_start=80 (set in host setup). The `:z`
+# flag relabels the bind mounts for SELinux (enforcing on Oracle Linux); the
+# deploy additionally `chcon`s each fragment it writes, since :z only relabels
+# at container start.
+#
+# Boot autostart comes from [Install] WantedBy=default.target together with
+# `loginctl enable-linger opc`, which keeps the user manager alive across reboots.
+
+[Unit]
+Description=Shared Caddy reverse proxy
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/caddy:2-alpine
+ContainerName=caddy
+Network=host
+Volume=/srv/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
+Volume=/srv/caddy/sites:/etc/caddy/sites:ro,z
+Volume=/srv/caddy/certs:/etc/caddy/certs:ro,z
+Volume=caddy-data.volume:/data
+Volume=caddy-config.volume:/config
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target

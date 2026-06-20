@@ -328,15 +328,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Sync Compose file to VM
+      - name: Sync Quadlet unit files to VM
         uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: "infra/docker-compose.yml"
-          target: "/home/${{ vars.OCI_USERNAME }}/"
-          strip_components: 1
+          # App slot units only. The shared Caddy units live under infra/caddy/
+          # and are host-managed (SETUP.md §3.3), not synced by CI.
+          source: "infra/quadlet/*.container"
+          target: "/home/${{ vars.OCI_USERNAME }}/.config/containers/systemd/"
+          strip_components: 2
 
       - name: Deploy to Oracle Cloud (blue-green)
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
@@ -358,27 +360,24 @@ jobs:
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
-            COMPOSE="sudo docker compose -p kalandra -f $HOME/docker-compose.yml --env-file $HOME/compose.env"
+            UNIT_DIR="$HOME/.config/containers/systemd"
             SITE_CONF=/srv/caddy/sites/demopage.caddy
 
             # ----- 0. Preconditions: shared infra must already exist -----
-            # Docker and the shared Caddy proxy are host infrastructure,
+            # podman and the shared Caddy proxy are host infrastructure,
             # provisioned once per machine (SETUP.md §3.2–3.3), not by this
             # deploy. Fail fast with a pointer if an assumption is unmet.
-            command -v docker >/dev/null 2>&1 \
-              || { echo "Docker not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
-            sudo docker ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
+            command -v podman >/dev/null 2>&1 \
+              || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+            podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
               || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
             [ -d /srv/caddy/sites ] \
               || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
 
             umask 077
 
-            # Compose variable substitution (the digest-pinned image to run).
-            echo "IMAGE_REF=$IMAGE_REF" > "$HOME/compose.env"
-
-            # App secrets, read by both slots via env_file. Rewritten every
-            # deploy so rotated secrets propagate when a slot is recreated.
+            # App secrets, read by both slots via EnvironmentFile. Rewritten
+            # every deploy so rotated secrets propagate when a slot (re)starts.
             cat > "$HOME/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
@@ -387,26 +386,37 @@ jobs:
             Sentry__Dsn=${SENTRY_DSN}
             EOF
 
-            # ----- 1. Pull the digest-pinned image -----
-            sudo docker pull "$IMAGE_REF"
+            # ----- 1. Pin both slot units to the digest just built -----
+            # The synced .container files ship :latest as a default; rewrite to
+            # the verified digest so any (re)start — including a reboot — runs
+            # exactly this build, then reload Quadlet to regenerate the units.
+            sed -i "s|^Image=.*|Image=${IMAGE_REF}|" \
+              "$UNIT_DIR/kalandra-api-blue.container" \
+              "$UNIT_DIR/kalandra-api-green.container"
+            systemctl --user daemon-reload
 
-            # ----- 2. Determine which slot is currently active -----
-            # Active = whichever API slot is running now. Cold start → blue.
-            if sudo docker ps --filter name=kalandra-api-blue --filter status=running --format '{{.Names}}' | grep -q .; then
+            # ----- 2. Pull the digest-pinned image -----
+            podman pull "$IMAGE_REF"
+
+            # ----- 3. Determine which slot is currently active -----
+            # Active = whichever slot's service is running now. Cold start → blue.
+            if systemctl --user is-active --quiet kalandra-api-blue.service; then
               OLD=blue; NEW=green; NEW_PORT=8081
-            elif sudo docker ps --filter name=kalandra-api-green --filter status=running --format '{{.Names}}' | grep -q .; then
+            elif systemctl --user is-active --quiet kalandra-api-green.service; then
               OLD=green; NEW=blue; NEW_PORT=8080
             else
               OLD=""; NEW=blue; NEW_PORT=8080
             fi
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
-            # ----- 3. Start the new slot -----
-            # IMAGE_REF changed (new digest), so `up -d` recreates the slot
-            # from the just-pulled image and (re)applies restart=unless-stopped.
-            $COMPOSE up -d "kalandra-api-${NEW}"
+            # ----- 4. Start the new slot -----
+            # Stop first: if the unit is already active from a prior deploy,
+            # `start` is a no-op and the old container keeps serving the old
+            # binary. Cycling forces a fresh container from the pinned image.
+            systemctl --user stop "kalandra-api-${NEW}.service" || true
+            systemctl --user start "kalandra-api-${NEW}.service"
 
-            # ----- 4. Health check the new slot directly (bypassing Caddy) -----
+            # ----- 5. Health check the new slot directly (bypassing Caddy) -----
             # Match the deployed commit, not just any healthy response, so a
             # stale container from an earlier deploy can't pass this gate.
             echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
@@ -415,9 +425,11 @@ jobs:
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
                 echo "New slot failed to start. Container logs:"
-                sudo docker logs "kalandra-api-${NEW}" 2>&1 | tail -50 || true
+                podman logs "kalandra-api-${NEW}" 2>&1 | tail -50 || true
+                echo "systemd status:"
+                systemctl --user status "kalandra-api-${NEW}.service" --no-pager || true
                 echo "Rolling back..."
-                $COMPOSE stop "kalandra-api-${NEW}" || true
+                systemctl --user stop "kalandra-api-${NEW}.service" || true
                 exit 1
               fi
               echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
@@ -425,7 +437,7 @@ jobs:
             done
             echo "New slot is healthy on port $NEW_PORT."
 
-            # ----- 5. Point our shared-Caddy site at the new port and reload -----
+            # ----- 6. Point our shared-Caddy site at the new port and reload -----
             # We own only this one fragment in /srv/caddy/sites; other apps'
             # fragments are untouched. `caddy reload` is graceful and re-reads
             # the whole imported config, so no other site drops traffic.
@@ -435,21 +447,27 @@ jobs:
                 tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key
             }
             EOF
-            sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            # Oracle Linux enforces SELinux; relabel the freshly-written fragment
+            # so the Caddy container can read it (the unit's :z relabel only runs
+            # at container start). opc owns the file, so no sudo. No-op where
+            # SELinux/chcon isn't present.
+            command -v chcon >/dev/null 2>&1 && chcon -t container_file_t "$SITE_CONF" || true
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-            # ----- 6. Stop the old slot -----
-            # `docker stop` marks it explicitly stopped, so restart=unless-stopped
-            # will NOT bring it back on reboot — only the active slot returns.
+            # ----- 7. Stop the old slot -----
+            # Both slot units have WantedBy=default.target, so a cold reboot
+            # starts both; Caddy routes to the port in the persisted fragment,
+            # and the next deploy reconciles back to one. Stopping here just
+            # frees the old slot now.
             if [ -n "$OLD" ]; then
-              $COMPOSE stop "kalandra-api-${OLD}" || true
+              systemctl --user stop "kalandra-api-${OLD}.service" || true
             fi
 
-            # ----- 7. Prune only THIS app's old images -----
-            # The box is shared, so scope the prune to our ownership label
-            # (set in the Dockerfile) — never touch other apps' images or the
-            # shared Caddy image. The running slot and the stopped previous
-            # slot still reference their digests, so only older ones go.
-            sudo docker image prune -af --filter "label=tech.kalandra.app=demopage"
+            # ----- 8. Prune only THIS app's old images -----
+            # The box is shared, so scope the prune to our ownership label (set
+            # in the Dockerfile) — never touch other apps' images or the shared
+            # Caddy image. The running slot still references its digest.
+            podman image prune -af --filter "label=tech.kalandra.app=demopage"
 
             echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
 

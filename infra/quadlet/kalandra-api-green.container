@@ -1,0 +1,30 @@
+# Quadlet unit for the green slot of the demopage API (rootless, under the opc user).
+#
+# At most one slot (blue OR green) is the active upstream at a time; the CI/CD
+# deploy script swaps slots on each release. The deploy rewrites the Image= line
+# below to the digest-pinned reference it just built and health-checked, so a
+# restart can never silently run a different build than the one verified.
+#
+# Pull=missing means systemd uses whatever image is local at start time; the
+# deploy runs `podman pull` for that digest before (re)starting the slot.
+
+[Unit]
+Description=Kalandra API (green slot)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/kalicz/demopage/api:latest
+ContainerName=kalandra-api-green
+Network=host
+EnvironmentFile=%h/kalandra-api.env
+Environment=ASPNETCORE_HTTP_PORTS=8081
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

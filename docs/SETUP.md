@@ -22,8 +22,9 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [2.3 E2E Tests](#23-e2e-tests)
 - [3. Infrastructure Setup](#3-infrastructure-setup)
   - [3.1 Supabase Project](#31-supabase-project)
-  - [3.2 Oracle Cloud VM (Ubuntu)](#32-oracle-cloud-vm-ubuntu)
+  - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
     - [Automatic Security Updates](#enable-automatic-security-updates)
+    - [Knowing When a Reboot Is Needed](#knowing-when-a-reboot-is-needed)
     - [Reboot Survival](#reboot-survival)
   - [3.3 Shared Caddy Reverse Proxy](#33-shared-caddy-reverse-proxy)
     - [3.3.1 Provision the shared proxy](#331-provision-the-shared-proxy-once-per-machine)
@@ -168,16 +169,16 @@ npm run test:e2e
 
 This section covers the one-time setup needed to host this project yourself.
 
-**Shared host infrastructure vs. app deploy.** §3.2 (the VM, Docker, OS
+**Shared host infrastructure vs. app deploy.** §3.2 (the VM, podman, OS
 updates, firewall, IPv6) and §3.3 (the shared Caddy proxy) are **shared
 infrastructure** — set up once per machine and assumed to already exist by
 every app's CI/CD. The box is multi-tenant: demopage and other apps (e.g.
-hampap) share the same Docker daemon and the same Caddy. demopage's pipeline
-(§4) deploys **only its own containers and its own Caddy site fragment** — it
-never installs Docker, never owns Caddy, and fails fast if the shared pieces
-are missing. The machine is otherwise **stateless**: app data lives in Supabase
-/ external Postgres and secrets live in GitHub, so the only on-disk state worth
-preserving is the Caddy certs under `/srv/caddy/certs`.
+hampap) share the same rootless podman (under `opc`) and the same Caddy.
+demopage's pipeline (§4) deploys **only its own containers and its own Caddy
+site fragment** — it never installs podman, never owns Caddy, and fails fast if
+the shared pieces are missing. The machine is otherwise **stateless**: app data
+lives in Supabase / external Postgres and secrets live in GitHub, so the only
+on-disk state worth preserving is the Caddy certs under `/srv/caddy/certs`.
 
 ### 3.1 Supabase Project
 
@@ -229,68 +230,111 @@ SET raw_app_meta_data = raw_app_meta_data || '{"roles": ["admin"]}'::jsonb
 WHERE email = 'your@email.com';
 ```
 
-### 3.2 Oracle Cloud VM (Ubuntu)
+### 3.2 Oracle Cloud VM
 
 #### Create the VM
 
 1. Sign up for [Oracle Cloud Free Tier](https://cloud.oracle.com/free)
 2. Create a Compute instance:
    - Shape: `VM.Standard.A1.Flex` (ARM, Always Free up to 4 OCPU / 24 GB RAM — size it to what you need; the shape can be resized later from the Console)
-   - Image: **Canonical Ubuntu 24.04 LTS** (aarch64) or newer.
+   - Image: **Oracle Linux 8** (aarch64 — ARM image for the A1 shape)
    - Add your SSH public key
-3. Note the **public IP address**. The default login user is **`ubuntu`** (Oracle Linux used `opc`) — update the `OCI_USERNAME` GitHub variable accordingly (see §4.1).
+3. Note the **public IP address**. The default login user is **`opc`** — match the `OCI_USERNAME` GitHub variable (see §4.1).
 
-#### Install Docker
+#### Install podman
 
-Install Docker Engine + the Compose plugin from Docker's official repository:
-
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-docker --version            # Engine
-docker compose version      # Compose v2 plugin (used by the deploy job)
-```
-
-The `get.docker.com` script enables `docker.service` on boot by default; confirm with `systemctl is-enabled docker` (should print `enabled`). The deploy script invokes `sudo docker` — the `ubuntu` user already has passwordless sudo on OCI images. For interactive use without `sudo`, optionally add yourself to the `docker` group and re-login:
+Oracle Linux ships rootless `podman` — usually preinstalled. Make sure it's
+present (the deploy and the shared Caddy both run rootless under `opc`):
 
 ```bash
-sudo usermod -aG docker "$USER"   # then log out and back in
+sudo dnf install -y podman
+podman --version
 ```
+
+Containers run **rootless** under the `opc` user. SELinux is enforcing on Oracle
+Linux; podman handles bind-mount relabeling natively via the `:z` flag on the
+Quadlet `Volume=` lines, so no manual `chcon`/`semanage` is needed for the
+static config. (The deploy additionally `chcon`s each Caddy fragment it writes,
+since the `:z` relabel only runs at container start.)
 
 #### Enable automatic security updates
 
-Ubuntu applies security patches automatically through `unattended-upgrades`:
+Oracle Linux applies security patches automatically through `dnf-automatic`:
 
 ```bash
-sudo apt install -y unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades   # answer "Yes"
+sudo dnf install -y dnf-automatic
 ```
 
-Out of the box it installs the **security pocket only** — the conservative choice for a server — and it never reboots on its own. Some updates (kernel, glibc, systemd) only take effect after a reboot. Because the app comes back automatically after any restart (see [Reboot Survival](#reboot-survival)), it's safe to let unattended-upgrades reboot during a quiet window. Add to `/etc/apt/apt.conf.d/50unattended-upgrades`:
+Edit `/etc/dnf/automatic.conf`:
 
-```
-Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
-Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+```ini
+[commands]
+upgrade_type = security      # security-only — the conservative choice for a server
+apply_updates = yes          # download AND install (not just download)
 ```
 
-`Automatic-Reboot-WithUsers "true"` lets the reboot proceed even if someone is logged in over SSH. The reboot only fires after a batch of updates finishes, at the configured time, and only if one of them flagged a reboot as required.
+Enable the timer:
+
+```bash
+sudo systemctl enable --now dnf-automatic.timer
+```
+
+`dnf-automatic` **never reboots the host** — it only installs packages. That's
+exactly what we want: no surprise restarts. The catch is that some updates
+(kernel, glibc, systemd, openssl) only take effect *after* a reboot, so you need
+to know when one is pending and do it yourself at a convenient time.
+
+#### Knowing When a Reboot Is Needed
+
+The check is `needs-restarting -r` (from `dnf-utils`), which exits non-zero and
+prints the reason when a reboot is required:
+
+```bash
+sudo dnf install -y dnf-utils
+needs-restarting -r        # "Reboot is required ..." → time to reboot
+```
+
+To surface that automatically, install a login banner so **every SSH session**
+tells you:
+
+```bash
+sudo tee /etc/profile.d/reboot-required.sh > /dev/null << 'EOF'
+if command -v needs-restarting >/dev/null 2>&1; then
+    needs-restarting -r >/dev/null 2>&1
+    if [ "$?" -eq 1 ]; then
+        echo ""
+        echo "  ⚠  A reboot is required to finish applying updates (kernel/glibc/systemd)."
+        echo "     Details: needs-restarting -r    Reboot when convenient: sudo reboot"
+        echo ""
+    fi
+fi
+EOF
+```
+
+When the banner appears, reboot when convenient — the stack comes back on its
+own (see [Reboot Survival](#reboot-survival)).
+
+> **Want a push instead of waiting for a login?** Add a small daily systemd
+> timer that runs `needs-restarting -r` and notifies you *only* when a reboot is
+> pending — e.g. `curl` to an [ntfy](https://ntfy.sh) topic or a Slack/Discord
+> webhook, or email via `dnf-automatic`'s own `emit_via = email` (needs a
+> working mailer). Ask and I'll wire one up.
 
 #### Authenticate to GHCR
 
 The API image is pulled from GitHub Container Registry. Create a GitHub
-Personal Access Token with `read:packages` scope and log in once. The deploy
-job pulls with `sudo docker`, so log in as **root** — that's where the
-credentials must live:
+Personal Access Token with `read:packages` scope and log in once as `opc`
+(the deploy pulls rootless):
 
 ```bash
-echo <GITHUB_PAT> | sudo docker login ghcr.io -u <GITHUB_USERNAME> --password-stdin
+echo <GITHUB_PAT> | podman login ghcr.io -u <GITHUB_USERNAME> --password-stdin
 ```
 
-The credentials are stored under `/root/.docker/config.json`, which persists across reboots.
+The credentials are stored under `~/.config/containers/auth.json`, which persists across reboots.
 
 #### Configure firewall
 
-OCI's Ubuntu images ship the same `iptables` + `netfilter-persistent` setup Oracle Linux used. The containers use host networking, so they bind these ports directly and Docker's own bridge/NAT chains don't interfere — the host `INPUT` rules govern:
+Open the ports at the OS level. The containers use host networking, so they bind these host ports directly — the host `INPUT` rules govern:
 
 ```bash
 # Open ports 80 (HTTP), 443 (HTTPS), 8080 (API)
@@ -304,69 +348,76 @@ Also add ingress rules in OCI Console:
 - **Networking → Virtual Cloud Networks → Security Lists**
 - Add ingress rules for ports 80, 443, 8080
 
-#### API containers (Docker Compose)
+#### API containers (Quadlet + systemd)
 
 The API runs in two slots — `kalandra-api-blue` (port 8080) and
-`kalandra-api-green` (port 8081) — defined as services in
-[`infra/docker-compose.yml`](../infra/docker-compose.yml) (Compose project
-`kalandra`). At most one slot is the active upstream at a time; the CI/CD deploy
-script swaps slots on each release. The shared Caddy proxy (§3.3) routes
-`api.kalandra.tech` to whichever port the active slot is on.
+`kalandra-api-green` (port 8081) — managed as rootless `systemd --user` services
+via Quadlet, from the unit files in [`infra/quadlet/`](../infra/quadlet). At most
+one slot is the active upstream at a time; the CI/CD deploy script swaps slots on
+each release. The shared Caddy proxy (§3.3) routes `api.kalandra.tech` to
+whichever port the active slot is on.
 
 **Nothing to do here manually** — but the deploy *assumes* §3.2 and §3.3 are
-already done, and aborts with a pointer if not. The Compose file is synced to
-`~/docker-compose.yml` by the deploy job, which also writes:
-
-- `~/kalandra-api.env` — the app secrets, read by both slots (`env_file`).
-- `~/compose.env` — the digest-pinned `IMAGE_REF` for Compose variable substitution (loaded via `--env-file`).
-
-It then pulls the image, runs `docker compose up -d` for the target slot,
-writes this app's Caddy fragment (`/srv/caddy/sites/demopage.caddy`) pointing at
-the active port, and reloads the shared Caddy. The image is pinned by **digest**
-(`…@sha256:…`), not `:latest`, so a restart can never silently run a different
-build than the one health-checked.
+already done, and aborts with a pointer if not. The deploy job syncs the
+`.container` files to `~/.config/containers/systemd/`, writes
+`~/kalandra-api.env` (the app secrets, read via `EnvironmentFile=`), rewrites
+each unit's `Image=` to the **digest** it just built (`…@sha256:…`, never
+`:latest`, so a restart can't silently run a different build), reloads Quadlet,
+pulls that image, and starts the target slot. It then writes this app's Caddy
+fragment (`/srv/caddy/sites/demopage.caddy`) pointing at the active port and
+reloads the shared Caddy.
 
 #### Reboot Survival
 
-The stack comes back on its own after **any** restart — an unattended-upgrades
-reboot, a crash, or OCI host maintenance — with no manual step. It's the Docker
-daemon's job, not systemd's:
+The stack comes back on its own after **any** restart — a kernel-update reboot
+you trigger, a crash, or OCI host maintenance — with no manual step. Three
+pieces make that work, all established by host setup / the first deploy:
 
-- **`docker.service` is enabled on boot** (host setup). The daemon starts and reconciles container restart policies.
-- **`restart: unless-stopped`** on every container — both API slots (project `kalandra`) and the shared Caddy (project `caddy`). The daemon restarts the active slot and Caddy on boot. Crucially, a slot we `docker stop` during a swap is marked *explicitly stopped*, so it is **not** restarted — exactly the active slot returns, no second slot.
-- **Persisted on-disk state** — `~/kalandra-api.env` + `~/compose.env` (secrets + image pin), `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS), and Caddy's named volumes (`caddy_caddy-data`, `caddy_caddy-config`). So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
+- **Linger** (`sudo loginctl enable-linger opc`, set in host setup) keeps the `opc` user's `systemd --user` instance running across SSH logouts *and* reboots; without it, `--user` services only exist while someone is logged in.
+- **Quadlet `[Install] WantedBy=default.target`** in each `.container` file makes the generated units start on boot — the shared Caddy and both API slots.
+- **Persisted on-disk state** — `~/kalandra-api.env` (secrets) and the digest baked into each unit's `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
 
-No linger, no user-systemd, and no unprivileged-port sysctl are needed — rootful Docker binds 80/443 directly and the daemon handles boot autostart.
+On a cold boot both slots start (each on its own port); Caddy routes to whichever the persisted fragment names, and the next deploy reconciles back to one. No traffic is lost.
 
 ### 3.3 Shared Caddy Reverse Proxy
 
 Caddy is the HTTPS reverse proxy in front of **every** app on the box
 (demopage, hampap, …) — **shared host infrastructure**, set up once per machine
 here. After that, each app's CI/CD only drops a site fragment and reloads it;
-no app owns Caddy's lifecycle. TLS uses Cloudflare Origin Certificates (not
-Let's Encrypt), since the hostnames are proxied through Cloudflare.
+no app owns Caddy's lifecycle. It runs rootless under `opc` as a Quadlet unit,
+like the API slots. TLS uses Cloudflare Origin Certificates (not Let's Encrypt),
+since the hostnames are proxied through Cloudflare.
 
-Everything lives under `/srv/caddy`:
+Config lives under `/srv/caddy`, owned by `opc` (rootless Caddy and the app
+deploys all run as `opc`, so they must be able to read/write it):
 
-| Path | Owner | Purpose |
-|------|-------|---------|
-| `docker-compose.yml` | root | The `caddy` Compose project ([`infra/caddy/docker-compose.yml`](../infra/caddy/docker-compose.yml)) |
-| `Caddyfile` | root | Base config — `import /etc/caddy/sites/*.caddy` ([`infra/caddy/Caddyfile`](../infra/caddy/Caddyfile)) |
-| `sites/` | deploy user | One `<app>.caddy` fragment per app; each app's CI writes its own |
-| `certs/` | root | Cloudflare Origin cert pairs, one per site |
+| Path | Purpose |
+|------|---------|
+| `Caddyfile` | Base config — `import /etc/caddy/sites/*.caddy` ([`infra/caddy/Caddyfile`](../infra/caddy/Caddyfile)) |
+| `sites/` | One `<app>.caddy` fragment per app; each app's CI writes its own |
+| `certs/` | Cloudflare Origin cert pairs, one per site |
+
+The Quadlet units ([`caddy.container`](../infra/caddy/caddy.container) + the two `.volume` files in [`infra/caddy/`](../infra/caddy)) live in `~/.config/containers/systemd/`.
 
 #### 3.3.1 Provision the shared proxy (once per machine)
 
-Copy the two committed files into place and create the working dirs:
-
 ```bash
-sudo mkdir -p /srv/caddy/certs
-sudo install -d -o "$USER" /srv/caddy/sites        # app CI writes fragments here without sudo
-sudo cp infra/caddy/docker-compose.yml /srv/caddy/docker-compose.yml
-sudo cp infra/caddy/Caddyfile          /srv/caddy/Caddyfile
+# Config tree, owned by opc so the rootless container and app deploys can use it
+sudo install -d -o "$USER" -g "$USER" /srv/caddy /srv/caddy/sites /srv/caddy/certs
+cp infra/caddy/Caddyfile /srv/caddy/Caddyfile
+
+# Quadlet units for the shared proxy
+mkdir -p ~/.config/containers/systemd
+cp infra/caddy/caddy.container infra/caddy/caddy-data.volume infra/caddy/caddy-config.volume \
+   ~/.config/containers/systemd/
+
+# Let the rootless container bind 80/443, and keep user services alive across reboots
+echo 'net.ipv4.ip_unprivileged_port_start=80' | sudo tee /etc/sysctl.d/99-unprivileged-ports.conf
+sudo sysctl --system
+sudo loginctl enable-linger "$USER"
 ```
 
-(If the repo isn't checked out on the VM, paste the contents from
+(If the repo isn't checked out on the VM, paste the file contents from
 [`infra/caddy/`](../infra/caddy) instead.)
 
 #### 3.3.2 Per-site TLS certificate
@@ -374,32 +425,33 @@ sudo cp infra/caddy/Caddyfile          /srv/caddy/Caddyfile
 For each hostname Caddy serves (here, `api.kalandra.tech` for demopage):
 
 1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostname `api.kalandra.tech`, 15-year validity, PEM format.
-2. Upload the pair to `/srv/caddy/certs`, named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
+2. Save the pair to `/srv/caddy/certs` (owned by `opc`, so no `sudo`), named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
 
 ```bash
-sudo nano /srv/caddy/certs/kalandra.pem    # paste the certificate
-sudo nano /srv/caddy/certs/kalandra.key    # paste the private key
-sudo chmod 600 /srv/caddy/certs/kalandra.key
+nano /srv/caddy/certs/kalandra.pem    # paste the certificate
+nano /srv/caddy/certs/kalandra.key    # paste the private key
+chmod 600 /srv/caddy/certs/kalandra.key
 ```
 
 #### 3.3.3 Start Caddy
 
 ```bash
-cd /srv/caddy && sudo docker compose -p caddy up -d
+systemctl --user daemon-reload
+systemctl --user start caddy.service
 ```
 
-Rootful Docker binds 80/443 directly (no sysctl). `restart: unless-stopped` +
-the enabled `docker.service` bring Caddy back on every reboot. An empty
-`sites/` dir is fine on first start — the import glob matches nothing until an
-app deploys.
+The `ip_unprivileged_port_start` sysctl (set in §3.3.1) lets the rootless
+container bind 80/443; linger + `[Install] WantedBy=default.target` bring Caddy
+back on every reboot. An empty `sites/` dir is fine on first start — the import
+glob matches nothing until an app deploys.
 
 #### 3.3.4 How apps attach
 
 Each app's deploy writes a self-contained site block to
-`/srv/caddy/sites/<app>.caddy` and reloads Caddy:
+`/srv/caddy/sites/<app>.caddy` (and `chcon`s it for SELinux), then reloads Caddy:
 
 ```bash
-sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 demopage's CI does exactly this with `demopage.caddy`, pointing
@@ -464,7 +516,7 @@ In **Security Lists** (or your Network Security Group), add:
 
 #### 3.4.6 Verify IPv6 on the VM
 
-SSH into the VM (`ssh ubuntu@<public-ip>`) and verify:
+SSH into the VM (`ssh opc@<public-ip>`) and verify:
 
 ```bash
 # Verify IPv6 is not disabled (should return 0)
@@ -477,14 +529,14 @@ ip -6 addr show
 curl -6 -v --connect-timeout 5 https://ipv6.google.com 2>&1 | head -5
 ```
 
-Ubuntu manages the firewall with `iptables` / `netfilter-persistent` (same as the IPv4 rules in §3.2). If ICMPv6 is needed for debugging:
+Oracle Linux uses `firewalld`. If ICMPv6 is needed for debugging:
 
 ```bash
-sudo ip6tables -I INPUT -p ipv6-icmp -j ACCEPT
-sudo netfilter-persistent save
+sudo firewall-cmd --add-protocol=ipv6-icmp --permanent
+sudo firewall-cmd --reload
 ```
 
-> **Note:** No Docker IPv6 configuration is needed — the backend container uses host networking (`network_mode: host`), so it shares the host's IPv6 stack directly.
+> **Note:** No podman IPv6 configuration is needed — the backend container uses host networking (`Network=host`), so it shares the host's IPv6 stack directly.
 
 ### 3.5 DNS
 
@@ -495,10 +547,10 @@ In Cloudflare DNS, add an A record for `api.kalandra.tech` pointing to your OCI 
 ## 4. CI/CD Configuration
 
 The deploy assumes the shared host infrastructure from §3.2–3.3 is already in
-place — Docker installed and enabled, the shared Caddy running, and
-`/srv/caddy/sites` writable by the deploy user. It checks these at the top of
-the run and aborts with a pointer to this doc if any is missing; it does **not**
-install or repair them.
+place — podman installed, linger enabled, the shared Caddy running, and
+`/srv/caddy/sites` present. It checks these at the top of the run and aborts
+with a pointer to this doc if any is missing; it does **not** install or repair
+them.
 
 ### 4.1 GitHub Repository Secrets
 
@@ -507,7 +559,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | Secret | Value |
 |--------|-------|
 | `OCI_HOST` | Your OCI VM public IP |
-| `OCI_USERNAME` | SSH username (`ubuntu` for Ubuntu; `opc` on the old Oracle Linux VM) |
+| `OCI_USERNAME` | SSH username (`opc` for Oracle Linux) |
 | `OCI_SSH_KEY` | Private SSH key for the VM |
 | `DB_CONNECTION_STRING` | `Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<DB_PASSWORD>;Port=5432` |
 | `SUPABASE_PROJECT_URL` | `https://your-project.supabase.co` |
@@ -542,7 +594,7 @@ Create a `production` environment in **Settings → Environments**:
 The CI/CD uses GitHub Container Registry (GHCR). The `GITHUB_TOKEN` is
 automatic for the build/push step. The OCI VM also pulls from GHCR — see
 [Authenticate to GHCR](#authenticate-to-ghcr) under §3.2 for the manual
-`sudo docker login` step.
+`podman login` step.
 
 ---
 
