@@ -399,6 +399,23 @@ app's routing rules from the committed template
 active port), installs them at `/srv/caddy/sites/kalandra.caddy`, and reloads the
 shared Caddy.
 
+#### Port Allocation (shared host)
+
+Every app runs with `Network=host`, so they all share the host's port space.
+Only Caddy is reachable publicly (80/443); the per-app `80xx` ports are pure
+localhost wiring behind the proxy and never appear in a URL — Caddy routes by
+hostname. So there's no "primary app gets the nicer ports" tradeoff; the only
+rule is **don't collide**. Give each app a contiguous block and record it here.
+
+| Port(s)     | Owner                       | Notes                                              |
+|-------------|-----------------------------|----------------------------------------------------|
+| 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
+| 8080 / 8081 | kalandra (demopage) API     | blue / green slots.                                |
+| 8090 / 8091 | *reserved* — next app (hampap) | Suggested next block; claim it when adding the app. |
+
+When adding an app, take the next free block (e.g. `81xx`), set its container's
+listen port accordingly, and add a row above before wiring up its Caddy fragment.
+
 #### Reboot Survival
 
 The stack comes back on its own after **any** restart — a kernel-update reboot
