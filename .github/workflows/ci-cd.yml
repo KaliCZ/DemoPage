@@ -346,9 +346,9 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          # demopage's routing template (port filled in at deploy time). The
+          # Kalandra's routing template (port filled in at deploy time). The
           # shared Caddy that loads it is host infra, not synced here.
-          source: "infra/quadlet/demopage.caddy"
+          source: "infra/quadlet/kalandra.caddy"
           target: "/home/${{ vars.OCI_USERNAME }}/"
           strip_components: 2
 
@@ -373,7 +373,7 @@ jobs:
             set -euo pipefail
             MAX_ATTEMPTS=40
             UNIT_DIR="$HOME/.config/containers/systemd"
-            SITE_CONF=/srv/caddy/sites/demopage.caddy
+            SITE_CONF=/srv/caddy/sites/kalandra.caddy
 
             # ----- 0. Preconditions: shared infra must already exist -----
             # podman and the shared Caddy proxy are host infrastructure,
@@ -450,12 +450,12 @@ jobs:
             echo "New slot is healthy on port $NEW_PORT."
 
             # ----- 6. Point our shared-Caddy site at the new port and reload -----
-            # Render demopage's routing from its committed template (synced to
-            # ~/demopage.caddy), filling in the active port. We own only this one
+            # Render Kalandra's routing from its committed template (synced to
+            # ~/kalandra.caddy), filling in the active port. We own only this one
             # fragment in /srv/caddy/sites; other apps' fragments are untouched.
             # `caddy reload` is graceful and re-reads the whole imported config,
             # so no other site drops traffic.
-            sed "s/__PORT__/${NEW_PORT}/" "$HOME/demopage.caddy" > "$SITE_CONF"
+            sed "s/__PORT__/${NEW_PORT}/" "$HOME/kalandra.caddy" > "$SITE_CONF"
             # Oracle Linux enforces SELinux; relabel the freshly-written fragment
             # so the Caddy container can read it (the unit's :z relabel only runs
             # at container start). opc owns the file, so no sudo. No-op where

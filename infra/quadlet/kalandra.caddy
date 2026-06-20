@@ -1,9 +1,9 @@
-# demopage's routing rules for the shared Caddy proxy — the one Caddy file that
-# is demopage-specific. The proxy itself and its base config are shared host
+# Kalandra's routing rules for the shared Caddy proxy — the one Caddy file that
+# is app-specific. The proxy itself and its base config are shared host
 # infrastructure under infra/host/.
 #
 # The deploy substitutes __PORT__ with the active blue/green port and installs
-# this as /srv/caddy/sites/demopage.caddy, then reloads the shared Caddy.
+# this as /srv/caddy/sites/kalandra.caddy, then reloads the shared Caddy.
 api.kalandra.tech {
     reverse_proxy localhost:__PORT__
     tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key

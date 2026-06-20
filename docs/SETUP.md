@@ -393,8 +393,8 @@ each unit's `Image=` to the **digest** it just built (`…@sha256:…`, never
 `:latest`, so a restart can't silently run a different build), reloads Quadlet,
 pulls that image, and starts the target slot. It then renders this app's routing
 rules from the committed template
-[`infra/quadlet/demopage.caddy`](../infra/quadlet/demopage.caddy) (filling in the
-active port), installs them at `/srv/caddy/sites/demopage.caddy`, and reloads the
+[`infra/quadlet/kalandra.caddy`](../infra/quadlet/kalandra.caddy) (filling in the
+active port), installs them at `/srv/caddy/sites/kalandra.caddy`, and reloads the
 shared Caddy.
 
 #### Reboot Survival
@@ -484,7 +484,7 @@ Each app's deploy writes a self-contained site block to
 podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
-demopage's CI does exactly this with `demopage.caddy`, pointing
+demopage's CI does exactly this with `kalandra.caddy`, pointing
 `api.kalandra.tech` at the active blue/green port. A second app (hampap) adds
 its own `hampap.caddy` for its own hostname and cert — the two coexist, and a
 reload triggered by one app re-reads the whole imported config without dropping
@@ -593,8 +593,8 @@ repo now expects. Run as `opc`, from a checkout of the branch being deployed.
    ```bash
    cp infra/host/Caddyfile /srv/caddy/Caddyfile
    PORT=$(systemctl --user is-active --quiet kalandra-api-green && echo 8081 || echo 8080)
-   sed "s/__PORT__/$PORT/" infra/quadlet/demopage.caddy > /srv/caddy/sites/demopage.caddy
-   chcon -t container_file_t /srv/caddy/sites/demopage.caddy 2>/dev/null || true
+   sed "s/__PORT__/$PORT/" infra/quadlet/kalandra.caddy > /srv/caddy/sites/kalandra.caddy
+   chcon -t container_file_t /srv/caddy/sites/kalandra.caddy 2>/dev/null || true
    ```
 4. **Swap the Caddy unit** to the shared one (mounts `/srv/caddy`) and restart (~1–2s blip):
    ```bash
