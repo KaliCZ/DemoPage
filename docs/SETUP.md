@@ -410,11 +410,13 @@ rule is **don't collide**. Give each app a contiguous block and record it here.
 | Port(s)     | Owner                       | Notes                                              |
 |-------------|-----------------------------|----------------------------------------------------|
 | 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
-| 8080 / 8081 | kalandra (demopage) API     | blue / green slots.                                |
+| 8080 / 8081 | kalandra (demopage) API     | blue / green slots. **API only** — the website is SSG, built and hosted off-box, so it has no port here. |
 | 8090 / 8091 | *reserved* — next app (hampap) | Suggested next block; claim it when adding the app. |
 
 When adding an app, take the next free block (e.g. `81xx`), set its container's
 listen port accordingly, and add a row above before wiring up its Caddy fragment.
+An app that ships a server-rendered (non-SSG) web tier needs its own port for
+that too — give it the next slot in the same block.
 
 #### Reboot Survival
 
