@@ -85,19 +85,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         </>
       )
     }
-    <!-- Flag icons: loaded non-render-blocking via the media swap trick.
-         The browser fetches the stylesheet at low priority because it thinks it's
-         for print, then the onload handler switches it to `media="all"` so styles
-         apply. The <noscript> fallback ensures it still works without JS. -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"
-      media="print"
-      onload="this.media='all'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-    </noscript>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <title>{title}</title>

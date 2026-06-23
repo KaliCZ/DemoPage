@@ -41,7 +41,9 @@
     "skipToContent": "Skip to content",
     "mainNavigation": "Main navigation",
     "toggleDarkMode": "Toggle dark mode",
-    "changeLanguage": "Switch to Czech",
+    "language": "Language",
+    "switchToEnglish": "Switch to English",
+    "switchToCzech": "Switch to Czech",
     "openProjectsMenu": "Quick links to specific projects",
     "breadcrumb": "Breadcrumb"
   },
