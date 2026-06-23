@@ -1,7 +1,8 @@
 ---
 import { Icon } from "astro-icon/components";
 import type { Locale } from "../i18n/utils";
-import { localePath, alternateLangUrl } from "../i18n/utils";
+import { localePath } from "../i18n/utils";
+import LanguagePicker from "./LanguagePicker.astro";
 
 type ActivePage =
   | "home"
@@ -37,7 +38,9 @@ interface Props {
       mainNavigation: string;
       skipToContent: string;
       toggleDarkMode: string;
-      changeLanguage: string;
+      language: string;
+      switchToEnglish: string;
+      switchToCzech: string;
       openProjectsMenu: string;
     };
     theme: { switchToDark: string };
@@ -107,16 +110,12 @@ const navItems: NavItem[] = [
         <Icon name="material-symbols:dark-mode" class="size-[18px] dark-hidden" aria-hidden="true" />
         <Icon name="material-symbols:light-mode" class="size-[18px] hidden dark-visible" aria-hidden="true" />
       </button>
-      <!-- Language picker (mobile) — only two languages, so the flag switches directly. -->
-      <a
-        href={alternateLangUrl(lang === "cs" ? "en" : "cs", activePage)}
-        class="p-1 cursor-pointer"
-        title={t.a11y.changeLanguage}
-        aria-label={t.a11y.changeLanguage}
-        hreflang={lang === "cs" ? "en" : "cs"}
-      >
-        <span class:list={["fi fis inline-block w-4 h-3 rounded-sm", lang === "cs" ? "fi-cz" : "fi-us"]} aria-hidden="true"></span>
-      </a>
+      <!-- Language picker (mobile) -->
+      <LanguagePicker
+        lang={lang}
+        activePage={activePage}
+        labels={{ language: t.a11y.language, switchToEnglish: t.a11y.switchToEnglish, switchToCzech: t.a11y.switchToCzech }}
+      />
       <!-- Auth (mobile) -->
       <button
         id="auth-sign-in-mobile"
@@ -207,16 +206,12 @@ const navItems: NavItem[] = [
         <Icon name="material-symbols:dark-mode" class="size-5 dark-hidden" aria-hidden="true" />
         <Icon name="material-symbols:light-mode" class="size-5 hidden dark-visible" aria-hidden="true" />
       </button>
-      <!-- Language picker (desktop) — only two languages, so the flag switches directly. -->
-      <a
-        href={alternateLangUrl(lang === "cs" ? "en" : "cs", activePage)}
-        class="px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
-        title={t.a11y.changeLanguage}
-        aria-label={t.a11y.changeLanguage}
-        hreflang={lang === "cs" ? "en" : "cs"}
-      >
-        <span class:list={["fi fis inline-block w-5 h-3.5 rounded-sm", lang === "cs" ? "fi-cz" : "fi-us"]} aria-hidden="true"></span>
-      </a>
+      <!-- Language picker (desktop) -->
+      <LanguagePicker
+        lang={lang}
+        activePage={activePage}
+        labels={{ language: t.a11y.language, switchToEnglish: t.a11y.switchToEnglish, switchToCzech: t.a11y.switchToCzech }}
+      />
       <!-- Auth (desktop) -->
       <div id="auth-container-desktop" class="flex items-center">
         <button

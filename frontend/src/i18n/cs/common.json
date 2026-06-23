@@ -41,7 +41,9 @@
     "skipToContent": "Přeskočit na obsah",
     "mainNavigation": "Hlavní navigace",
     "toggleDarkMode": "Přepnout tmavý režim",
-    "changeLanguage": "Přepnout do angličtiny",
+    "language": "Jazyk",
+    "switchToEnglish": "Přepnout do angličtiny",
+    "switchToCzech": "Přepnout do češtiny",
     "openProjectsMenu": "Rychlé odkazy na konkrétní projekty",
     "breadcrumb": "Drobečková navigace"
   },

@@ -1,0 +1,81 @@
+---
+import type { Locale } from "../i18n/utils";
+import { alternateLangUrl } from "../i18n/utils";
+
+interface Props {
+  lang: Locale;
+  activePage: string;
+  labels: {
+    language: string;
+    switchToEnglish: string;
+    switchToCzech: string;
+  };
+}
+
+const { lang, activePage, labels } = Astro.props;
+
+// Both flags are always shown so the available pair is visible at a glance; the
+// active locale is highlighted and the other dimmed. Flags are inline SVG (not
+// emoji) — emoji regional-indicator flags don't render on Windows.
+const options: { locale: Locale; label: string }[] = [
+  { locale: "en", label: labels.switchToEnglish },
+  { locale: "cs", label: labels.switchToCzech },
+];
+---
+
+<div class="inline-flex items-center gap-0.5 rounded-full border border-on-surface/30 p-0.5" role="group" aria-label={labels.language}>
+  {
+    options.map((opt) => {
+      const active = lang === opt.locale;
+      return (
+        <a
+          href={alternateLangUrl(opt.locale, activePage)}
+          hreflang={opt.locale}
+          title={opt.label}
+          aria-label={opt.label}
+          aria-current={active ? "true" : undefined}
+          class:list={[
+            "rounded-full px-1.5 py-1 transition",
+            active ? "bg-surface-container-high opacity-100" : "opacity-50 grayscale hover:opacity-100 hover:grayscale-0",
+          ]}
+        >
+          <span class="block w-5 h-3.5 overflow-hidden rounded-[2px] shadow-sm ring-1 ring-black/10">
+            {opt.locale === "cs" ? (
+              <svg viewBox="0 0 6 4" preserveAspectRatio="none" class="w-full h-full" aria-hidden="true">
+                <rect width="6" height="4" fill="#fff" />
+                <rect y="2" width="6" height="2" fill="#d7141a" />
+                <path d="M0 0l3 2-3 2z" fill="#11457e" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 60 30" preserveAspectRatio="none" class="w-full h-full" aria-hidden="true">
+                <rect width="60" height="30" fill="#fff" />
+                <g fill="#b22234">
+                  <rect width="60" y="0" height="2.308" />
+                  <rect width="60" y="4.615" height="2.308" />
+                  <rect width="60" y="9.231" height="2.308" />
+                  <rect width="60" y="13.846" height="2.308" />
+                  <rect width="60" y="18.462" height="2.308" />
+                  <rect width="60" y="23.077" height="2.308" />
+                  <rect width="60" y="27.692" height="2.308" />
+                </g>
+                <rect width="24" height="16.154" fill="#3c3b6e" />
+                <g fill="#fff">
+                  <circle cx="4" cy="3" r="0.9" />
+                  <circle cx="12" cy="3" r="0.9" />
+                  <circle cx="20" cy="3" r="0.9" />
+                  <circle cx="8" cy="6.5" r="0.9" />
+                  <circle cx="16" cy="6.5" r="0.9" />
+                  <circle cx="4" cy="10" r="0.9" />
+                  <circle cx="12" cy="10" r="0.9" />
+                  <circle cx="20" cy="10" r="0.9" />
+                  <circle cx="8" cy="13.5" r="0.9" />
+                  <circle cx="16" cy="13.5" r="0.9" />
+                </g>
+              </svg>
+            )}
+          </span>
+        </a>
+      );
+    })
+  }
+</div>
