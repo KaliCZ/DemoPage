@@ -34,13 +34,14 @@
     "callbackError": "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu."
   },
   "theme": {
-    "switchToDark": "Přepnout na tmavý režim",
-    "switchToLight": "Přepnout na světlý režim"
+    "label": "Motiv",
+    "light": "Světlý režim",
+    "system": "Podle systému",
+    "dark": "Tmavý režim"
   },
   "a11y": {
     "skipToContent": "Přeskočit na obsah",
     "mainNavigation": "Hlavní navigace",
-    "toggleDarkMode": "Přepnout tmavý režim",
     "language": "Jazyk",
     "switchToEnglish": "Přepnout do angličtiny",
     "switchToCzech": "Přepnout do češtiny",

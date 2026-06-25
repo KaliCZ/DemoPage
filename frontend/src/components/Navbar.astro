@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 import type { Locale } from "../i18n/utils";
 import { localePath } from "../i18n/utils";
 import LanguagePicker from "./LanguagePicker.astro";
+import ThemePicker from "./ThemePicker.astro";
 
 type ActivePage =
   | "home"
@@ -37,13 +38,12 @@ interface Props {
     a11y: {
       mainNavigation: string;
       skipToContent: string;
-      toggleDarkMode: string;
       language: string;
       switchToEnglish: string;
       switchToCzech: string;
       openProjectsMenu: string;
     };
-    theme: { switchToDark: string };
+    theme: { label: string; light: string; system: string; dark: string };
   };
 }
 
@@ -98,18 +98,9 @@ const navItems: NavItem[] = [
   <div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
     <a href={localePath(lang, "home")} class="text-xl font-bold tracking-tighter text-on-surface font-headline">kalandra.tech</a>
 
-    <!-- Theme toggle + Language picker + Auth (mobile) -->
+    <!-- Theme picker + Language picker + Auth (mobile) -->
     <div class="flex md:hidden items-center gap-2">
-      <button
-        id="theme-toggle-mobile"
-        type="button"
-        class="p-1 text-on-surface-variant"
-        aria-label={t.a11y.toggleDarkMode}
-        title={t.theme.switchToDark}
-      >
-        <Icon name="material-symbols:dark-mode" class="size-[18px] dark-hidden" aria-hidden="true" />
-        <Icon name="material-symbols:light-mode" class="size-[18px] hidden dark-visible" aria-hidden="true" />
-      </button>
+      <ThemePicker labels={{ label: t.theme.label, light: t.theme.light, system: t.theme.system, dark: t.theme.dark }} />
       <!-- Language picker (mobile) -->
       <LanguagePicker
         lang={lang}
@@ -193,19 +184,9 @@ const navItems: NavItem[] = [
       }
     </div>
 
-    <!-- Theme toggle + Language picker + Auth (desktop) -->
+    <!-- Theme picker + Language picker + Auth (desktop) -->
     <div class="hidden md:flex items-center gap-2">
-      <!-- Dark mode toggle -->
-      <button
-        id="theme-toggle"
-        type="button"
-        class="p-1.5 grid place-items-center text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container-high"
-        aria-label={t.a11y.toggleDarkMode}
-        title={t.theme.switchToDark}
-      >
-        <Icon name="material-symbols:dark-mode" class="size-5 dark-hidden" aria-hidden="true" />
-        <Icon name="material-symbols:light-mode" class="size-5 hidden dark-visible" aria-hidden="true" />
-      </button>
+      <ThemePicker labels={{ label: t.theme.label, light: t.theme.light, system: t.theme.system, dark: t.theme.dark }} />
       <!-- Language picker (desktop) -->
       <LanguagePicker
         lang={lang}

@@ -34,13 +34,14 @@
     "callbackError": "Sign-in could not be completed. Please try again."
   },
   "theme": {
-    "switchToDark": "Switch to dark mode",
-    "switchToLight": "Switch to light mode"
+    "label": "Theme",
+    "light": "Light mode",
+    "system": "System theme",
+    "dark": "Dark mode"
   },
   "a11y": {
     "skipToContent": "Skip to content",
     "mainNavigation": "Main navigation",
-    "toggleDarkMode": "Toggle dark mode",
     "language": "Language",
     "switchToEnglish": "Switch to English",
     "switchToCzech": "Switch to Czech",
