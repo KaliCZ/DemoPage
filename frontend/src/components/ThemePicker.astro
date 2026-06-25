@@ -1,0 +1,61 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  labels: {
+    label: string;
+    light: string;
+    system: string;
+    dark: string;
+  };
+}
+
+const { labels } = Astro.props;
+
+// Three-state toggle: explicit light/dark plus a "system" middle that follows
+// the OS preference (the default when the visitor has never picked one). The
+// active segment is highlighted purely from the `data-theme-pref` attribute the
+// pre-paint script sets on <html>, so the right one paints with no flash.
+const options: { value: "light" | "system" | "dark"; label: string; icon: string }[] = [
+  { value: "light", label: labels.light, icon: "light-mode" },
+  { value: "system", label: labels.system, icon: "computer" },
+  { value: "dark", label: labels.dark, icon: "dark-mode" },
+];
+---
+
+<div class="inline-flex items-center gap-0.5 rounded-full border border-on-surface/30 p-0.5" role="group" aria-label={labels.label}>
+  {
+    options.map((opt) => (
+      <button
+        type="button"
+        data-theme-option={opt.value}
+        title={opt.label}
+        aria-label={opt.label}
+        aria-pressed="false"
+        class="theme-opt grid place-items-center rounded-full p-1.5 text-on-surface-variant transition cursor-pointer"
+      >
+        <Icon name={`material-symbols:${opt.icon}`} class="size-[18px]" aria-hidden="true" />
+      </button>
+    ))
+  }
+</div>
+
+<style>
+  /* Inactive segments are dimmed; the one matching the stored preference is
+     lit. Driven by the html[data-theme-pref] attribute so the active state is
+     correct on first paint — no JS-driven flash. */
+  .theme-opt {
+    opacity: 0.5;
+  }
+  .theme-opt:hover {
+    opacity: 1;
+    color: var(--color-on-surface);
+  }
+  :global(html[data-theme-pref="light"]) .theme-opt[data-theme-option="light"],
+  :global(html[data-theme-pref="system"]) .theme-opt[data-theme-option="system"],
+  :global(html[data-theme-pref="dark"]) .theme-opt[data-theme-option="dark"] {
+    opacity: 1;
+    color: var(--color-on-surface);
+    background-color: var(--color-surface-container-high);
+  }
+</style>

@@ -119,8 +119,13 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <script is:inline>
       (function () {
-        var theme = localStorage.getItem("theme");
-        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        // Stored preference is "light" | "dark", or absent meaning "follow the
+        // OS" (the system default). Expose it as data-theme-pref so the theme
+        // picker can highlight the active segment on first paint.
+        var pref = localStorage.getItem("theme");
+        if (pref !== "light" && pref !== "dark") pref = "system";
+        document.documentElement.dataset.themePref = pref;
+        if (pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
           // Pre-paint swap of theme-aware images. As the body parses, swap
           // any `[data-src-dark]` <img> to its dark variant before the
@@ -212,19 +217,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       }
       html.auth-known-in .signed-in-only {
         display: block !important;
-      }
-
-      /* Theme toggle icons: pure-CSS swap so the correct icon paints immediately based on the
-       `dark` class set by the inline pre-paint script. Avoids the JS-driven flash that
-       happened while the end-of-body updateToggleIcons() script had not yet run. */
-      html:not(.dark) .dark-visible {
-        display: none !important;
-      }
-      html.dark .dark-hidden {
-        display: none !important;
-      }
-      html.dark .dark-visible {
-        display: inline-block !important;
       }
     </style>
   </head>

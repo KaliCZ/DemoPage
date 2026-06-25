@@ -90,11 +90,18 @@ test.describe("Navigation", () => {
   });
 });
 
-test.describe("Dark mode", () => {
-  test("toggle switches to dark mode and re-styles the page", async ({ page }) => {
+test.describe("Theme picker", () => {
+  test("light/system/dark segments re-style the page and persist the choice", async ({ page }) => {
     await page.goto("/");
     const html = page.locator("html");
+
+    // Default (no stored preference) follows the OS, which Playwright runs as
+    // light unless told otherwise.
     await expect(html).not.toHaveClass(/dark/);
+    await expect(html).toHaveAttribute("data-theme-pref", "system");
+
+    // Only the desktop picker is visible at the default viewport width.
+    const opt = (value: string) => page.locator(`[data-theme-option="${value}"]:visible`);
 
     // Capture a few token-driven colors in light mode so we can confirm they
     // actually change — the .dark class flipping is a precondition, not proof.
@@ -107,19 +114,32 @@ test.describe("Dark mode", () => {
 
     const lightColors = await readColors();
 
-    await page.locator("#theme-toggle").click();
+    await opt("dark").click();
     await expect(html).toHaveClass(/dark/);
+    await expect(html).toHaveAttribute("data-theme-pref", "dark");
+    await expect(opt("dark")).toHaveAttribute("aria-pressed", "true");
 
     const darkColors = await readColors();
     expect(darkColors.body).not.toBe(lightColors.body);
     expect(darkColors.nav).not.toBe(lightColors.nav);
     expect(darkColors.footer).not.toBe(lightColors.footer);
 
-    await page.locator("#theme-toggle").click();
+    await opt("light").click();
     await expect(html).not.toHaveClass(/dark/);
+    await expect(html).toHaveAttribute("data-theme-pref", "light");
 
-    // Toggling back restores the original light-mode colors.
+    // Switching back to light restores the original colors.
     const restoredColors = await readColors();
     expect(restoredColors).toEqual(lightColors);
+
+    // The chosen preference survives a reload.
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme-pref", "light");
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+    // The system segment clears the override (no stored value).
+    await opt("system").click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme-pref", "system");
+    expect(await page.evaluate(() => localStorage.getItem("theme"))).toBeNull();
   });
 });
