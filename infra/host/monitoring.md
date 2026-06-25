@@ -47,6 +47,35 @@ Force a run to confirm it's wired up (silent if everything's under threshold):
 sudo systemctl start disk-notify.service && journalctl -u disk-notify.service -n 20 --no-pager
 ```
 
+### Growing the boot volume
+
+When the watchdog says the disk is filling, this is how you add space. On OCI the
+boot volume can be enlarged in the console, but that **does not** resize the OS
+filesystem — the extra space sits unallocated until you grow the partition and
+LVM volume too. (Tell-tale: the console shows e.g. 150GB but `df` shows ~30GB on
+`/`, and `lsblk` shows `sda` larger than the sum of its partitions.)
+
+The VM uses Oracle Linux's stock LVM layout — one disk (`sda`), an LVM partition
+(`sda3`) in volume group `ocivolume`, split into `root` (mounted `/`) and `oled`
+(reserved, `/var/oled`). **Container images and volumes live on `/`** (rootless
+podman under `/home/opc`), so `root` is the volume to grow.
+
+Resize the boot volume in the OCI console first, then on the host confirm the
+layout and grow `/` into the new space — online, no reboot, no data loss:
+
+```bash
+lsblk                                                 # confirm sda is now bigger than its partitions
+sudo growpart /dev/sda 3                              # grow the partition to fill the disk
+sudo pvresize /dev/sda3                               # let LVM see the bigger partition
+sudo lvextend -r -l +100%FREE /dev/ocivolume/root     # extend the root LV + grow its XFS filesystem
+df -h /                                               # verify the new size
+```
+
+`lvextend` names `/dev/ocivolume/root` explicitly, so only `/` grows — `oled` is
+untouched. XFS can only grow, never shrink, so snapshot/back up the boot volume
+in the console first if you want a safety net. If `growpart` is missing:
+`sudo dnf install -y cloud-utils-growpart`.
+
 ## Daily health digest (`host-stats`)
 
 For each of CPU and memory the digest reports **average**, **peak**, and (for
