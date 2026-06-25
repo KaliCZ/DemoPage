@@ -1,0 +1,11 @@
+# Posts a daily host health digest to Slack. Triggered by host-stats.timer.
+# System-level (root) so it runs regardless of who's logged in. Install: see infra/host/monitoring.md.
+[Unit]
+Description=Post a daily host health digest (CPU/memory/disk) to Slack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/slack-notify.env
+ExecStart=/usr/local/bin/host-stats.sh

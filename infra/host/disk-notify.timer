@@ -1,0 +1,14 @@
+# Checks hourly whether a filesystem has crossed its usage threshold. The script
+# (disk-notify.sh) throttles the actual Slack notifications to once per 24h, so
+# an hourly check means timely warning without a noisy channel. Disk usage
+# creeps slowly, so hourly is plenty. Persistent=true catches up a missed run
+# after the VM was off.
+[Unit]
+Description=Check hourly for a host filesystem running low
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

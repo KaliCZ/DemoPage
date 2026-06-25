@@ -3,9 +3,10 @@
 # applying updates, post to a Slack incoming webhook. dnf-automatic installs
 # patches but never reboots, so this is how a pending reboot gets noticed.
 #
-# The webhook URL comes from /etc/reboot-notify.env (WEBHOOK_URL=...), kept out
-# of this script so the secret isn't committed. For Discord, change the JSON
-# key from "text" to "content"; for ntfy, send "$msg" as a plain-text body.
+# The webhook URL comes from /etc/slack-notify.env (WEBHOOK_URL=...), shared
+# with the other host alerters (disk-notify, host-stats) so there's one secret
+# to manage. For Discord, change the JSON key from "text" to "content"; for
+# ntfy, send "$msg" as a plain-text body.
 #
 # The timer checks often; this script throttles the *notifications* to one per
 # THROTTLE window so a lingering pending-reboot doesn't spam the channel. The
@@ -13,7 +14,7 @@
 # so the next episode pings immediately.
 set -euo pipefail
 
-[ -n "${WEBHOOK_URL:-}" ] || { echo "WEBHOOK_URL not set in /etc/reboot-notify.env" >&2; exit 0; }
+[ -n "${WEBHOOK_URL:-}" ] || { echo "WEBHOOK_URL not set in /etc/slack-notify.env" >&2; exit 0; }
 
 STATE=/var/lib/reboot-notify/last-notified
 THROTTLE=$((24 * 3600))   # seconds between repeat pings while a reboot stays pending

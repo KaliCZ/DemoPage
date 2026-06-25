@@ -93,7 +93,17 @@ First, create the webhook (one-time, in the Slack UI):
 2. **Incoming Webhooks** → toggle **On** → **Add New Webhook to Workspace** → pick the channel.
 3. Copy the **Webhook URL** (`https://hooks.slack.com/services/…`).
 
-Then install ([`reboot-notify.sh`](reboot-notify.sh),
+The URL goes in `/etc/slack-notify.env`, the shared secrets file for all the
+host alerters — `reboot-notify` and `disk-notify` use this `WEBHOOK_URL`; the
+[daily stats digest](monitoring.md) adds its own `STATS_WEBHOOK_URL` for a
+separate channel. Create the file with the URL from step 3:
+
+```bash
+printf 'WEBHOOK_URL=%s\n' 'https://hooks.slack.com/services/XXX/YYY/ZZZ' | sudo tee /etc/slack-notify.env >/dev/null
+sudo chmod 600 /etc/slack-notify.env
+```
+
+Then install the units ([`reboot-notify.sh`](reboot-notify.sh),
 [`.service`](reboot-notify.service), [`.timer`](reboot-notify.timer) — copy from
 a checkout, or paste their contents):
 
@@ -101,10 +111,6 @@ a checkout, or paste their contents):
 sudo cp infra/host/reboot-notify.sh /usr/local/bin/reboot-notify.sh
 sudo chmod +x /usr/local/bin/reboot-notify.sh
 sudo cp infra/host/reboot-notify.service infra/host/reboot-notify.timer /etc/systemd/system/
-
-# Paste the webhook URL from step 3 above
-printf 'WEBHOOK_URL=%s\n' 'https://hooks.slack.com/services/XXX/YYY/ZZZ' | sudo tee /etc/reboot-notify.env >/dev/null
-sudo chmod 600 /etc/reboot-notify.env
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now reboot-notify.timer
@@ -114,7 +120,7 @@ These are **system** units (under `/etc/systemd/system/`, run by PID 1), so they
 need no linger — just `enable` to start on boot. Verify the webhook end-to-end:
 
 ```bash
-sudo bash -c 'source /etc/reboot-notify.env && curl -fsS -X POST -H "Content-Type: application/json" \
+sudo bash -c 'source /etc/slack-notify.env && curl -fsS -X POST -H "Content-Type: application/json" \
   --data "{\"text\":\"✅ reboot-notify test from $(hostname)\"}" "$WEBHOOK_URL"'
 ```
 

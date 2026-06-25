@@ -24,6 +24,7 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [3.1 Supabase Project](#31-supabase-project)
   - [3.2 Oracle Cloud VM](#32-oracle-cloud-vm)
     - [OS Updates and Reboots](#os-updates-and-reboots)
+    - [Host Monitoring](#host-monitoring)
     - [Reboot Survival](#reboot-survival)
   - [3.3 Shared Caddy Reverse Proxy](#33-shared-caddy-reverse-proxy)
     - [3.3.1 Provision the shared proxy](#331-provision-the-shared-proxy-once-per-machine)
@@ -265,6 +266,15 @@ documented alongside their unit files in
 [`infra/host/os-updates.md`](../infra/host/os-updates.md). It's all additive host
 ops — none of it touches the running stack, which survives reboots on its own
 (see [Reboot Survival](#reboot-survival)).
+
+#### Host Monitoring
+
+Two optional Slack alerters: a **disk-space watchdog** (early warning before
+container images fill the disk) and a **daily health digest** (CPU/memory
+average, peak, and busy-minute count from `sysstat`, plus disk usage). They post
+to separate channels — alerts vs. stats — via two webhooks in the shared
+`/etc/slack-notify.env`. Documented with their unit files in
+[`infra/host/monitoring.md`](../infra/host/monitoring.md).
 
 #### Authenticate to GHCR
 
@@ -539,8 +549,9 @@ repo now expects. Run as `opc`, from a checkout of the branch being deployed.
    ```
 
 `linger` and the `ip_unprivileged_port_start` sysctl are already in place from
-the original setup. The additive host bits — automatic updates, the reboot
-banner, and the Slack notifier ([`infra/host/os-updates.md`](../infra/host/os-updates.md)) —
+the original setup. The additive host bits — automatic updates and the reboot
+notifier ([`infra/host/os-updates.md`](../infra/host/os-updates.md)), plus the
+disk and health alerters ([`infra/host/monitoring.md`](../infra/host/monitoring.md)) —
 can be done any time.
 
 > **Sequencing:** do steps 1–5 right around merging the deploy PR — migrate the

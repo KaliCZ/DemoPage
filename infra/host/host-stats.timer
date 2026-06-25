@@ -1,0 +1,13 @@
+# Posts the health digest once a day at 08:00. RandomizedDelaySec spreads the
+# send so it doesn't fire at the exact same second as other timers.
+# Persistent=true catches up a missed run after the VM was off.
+[Unit]
+Description=Send the daily host health digest to Slack
+
+[Timer]
+OnCalendar=*-*-* 08:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target
