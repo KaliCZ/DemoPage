@@ -1,0 +1,11 @@
+# Posts a Slack alert when a host filesystem is running low. Triggered by disk-notify.timer.
+# System-level (root) so it runs regardless of who's logged in. Install: see infra/host/monitoring.md.
+[Unit]
+Description=Notify Slack when a host filesystem crosses its usage threshold
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/slack-notify.env
+ExecStart=/usr/local/bin/disk-notify.sh

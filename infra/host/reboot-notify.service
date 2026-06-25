@@ -7,5 +7,5 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/reboot-notify.env
+EnvironmentFile=/etc/slack-notify.env
 ExecStart=/usr/local/bin/reboot-notify.sh
