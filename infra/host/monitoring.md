@@ -7,8 +7,8 @@ host ops — none of it touches the running app stack.
 - **`disk-notify`** — a watchdog that pings Slack when any filesystem crosses a
   usage threshold (the early warning before the disk fills from container
   images and podman/Caddy start failing).
-- **`host-stats`** — a daily digest posting yesterday's CPU and memory (average,
-  peak, and how many minutes ran hot), plus current disk usage.
+- **`host-stats`** — a daily digest posting the last 24h of CPU and memory
+  (average, peak, and how many minutes ran hot), plus current disk usage.
 
 Both read `/etc/slack-notify.env`, alongside the OS-update notifier. It holds
 two webhook URLs so urgent alerts and the daily digest land in separate channels
@@ -20,6 +20,19 @@ two webhook URLs so urgent alerts and the daily digest land in separate channels
 
 If you haven't created the file and the first (`WEBHOOK_URL`) webhook yet, see
 [os-updates.md → Push the alert to Slack](os-updates.md#b-push-the-alert-to-slack).
+
+> **Updating a host with no repo checkout.** The `cp` steps below assume you're
+> in a checkout, as at first install — CI never ships these host scripts (it
+> deploys only the app slot units). To update one in place on the VM, copy it up
+> and install it with `sudo`:
+>
+> ```bash
+> scp infra/host/host-stats.sh opc@<public-ip>:/tmp/
+> ssh opc@<public-ip> 'sed -i "s/\r$//" /tmp/host-stats.sh && sudo install -m 755 /tmp/host-stats.sh /usr/local/bin/host-stats.sh'
+> ```
+>
+> The `sed` strips CR in case the file was checked out on Windows (a CRLF shebang
+> breaks the script). Then `daemon-reload`/restart as the section below shows.
 
 ## Disk-space alert (`disk-notify`)
 
@@ -80,7 +93,8 @@ in the console first if you want a safety net. If `growpart` is missing:
 
 For each of CPU and memory the digest reports **average**, **peak**, and (for
 CPU) **how many intervals ran above a threshold** (`CPU_SPIKE_PCT`, default 70%)
-over the previous day. That last number is what catches a local spike a daily
+over the **trailing 24h** ending when it runs (so the digest is current at send
+time, not hours stale). That spike count is what catches a local spike a daily
 average would smooth away — but it's only meaningful if each interval is short,
 so the collection cadence matters.
 
@@ -135,9 +149,11 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now host-stats.timer
 ```
 
-It fires daily at 08:00 and reports the **previous full calendar day** (a clean
-24h window). First add its webhook ([below](#posting-the-digest-to-its-own-channel)) —
-the digest needs `STATS_WEBHOOK_URL` — then send one now to verify:
+It fires daily at 09:00 and reports the **trailing 24h** ending at that time
+(09:00 yesterday → 09:00 today). The host runs on UTC, so that window is a clean,
+continuous 24h with no DST seam. First add its webhook
+([below](#posting-the-digest-to-its-own-channel)) — the digest needs
+`STATS_WEBHOOK_URL` — then send one now to verify:
 
 ```bash
 sudo systemctl start host-stats.service
@@ -191,5 +207,6 @@ so `sar -f` lookback only reaches back that far. sysstat's own `HISTORY`
 - **Digest channel** — `STATS_WEBHOOK_URL=` in `/etc/slack-notify.env` is the
   digest's own channel (separate from the alerts' `WEBHOOK_URL`; see above).
 
-After editing a unit or script, re-copy it and
-`sudo systemctl daemon-reload && sudo systemctl restart <name>.timer`.
+After editing a unit or script, re-copy it (or stream it up if the VM has no
+checkout — see the note under [Disk-space alert](#disk-space-alert-disk-notify))
+and `sudo systemctl daemon-reload && sudo systemctl restart <name>.timer`.

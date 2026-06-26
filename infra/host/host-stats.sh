@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Run daily (host-stats.timer): post a host health digest to Slack — for the
-# previous day, the average / peak / number of busy intervals for CPU and
-# memory (from sysstat/sar), plus current disk usage. disk-notify.sh is the
-# urgent threshold watchdog; this is the trend digest.
+# trailing 24h ending at run time, the average / peak / number of busy intervals
+# for CPU and memory (from sysstat/sar), plus current disk usage. disk-notify.sh
+# is the urgent threshold watchdog; this is the trend digest.
+#
+# A rolling window (not the previous calendar day) so the digest is current at
+# send time rather than hours stale. The window crosses midnight, so it spans
+# two day-of-month files: yesterday's saNN from the boundary to end-of-day, plus
+# today's from start-of-day to the boundary. The host runs on UTC, so the wall
+# clock is continuous (no DST jumps) and that split is always a clean 24h.
 #
 # The "N intervals above X%" spike count is the point of per-minute sampling:
 # each minute sar records is one interval, so counting the busy ones surfaces a
@@ -30,23 +36,30 @@ FRESH_MAX=$(( 2 * 24 * 3600 ))      # a data file older than this is treated as 
 # below maps columns by header name regardless, but this keeps output stable.
 export S_TIME_FORMAT=ISO LC_ALL=C
 
-# Prefer yesterday's complete file, fall back to today's partial — but only if
-# the file was actually written recently (guards against a dead collector and
-# against last month's saNN being reused under the same name).
-f=""
-for d in "$(date -d yesterday +%d)" "$(date +%d)"; do
-    cand="/var/log/sa/sa$d"
-    [ -f "$cand" ] || continue
-    age=$(( $(date +%s) - $(stat -c %Y "$cand") ))
-    [ "$age" -le "$FRESH_MAX" ] && { f="$cand"; break; }
-done
+BOUNDARY=$(date +%H:%M:00)            # window edge: now, split point between the two days
+YDAY=/var/log/sa/sa$(date -d yesterday +%d)
+TODAY=/var/log/sa/sa$(date +%d)
 
-# Reduce one sar report to "avg max spikes samples" across its per-interval rows.
-# The column is located by header name, so layout differences between sysstat
-# versions don't matter; invert=1 turns %idle into busy% (100 - idle). Prints
-# nothing when there are no data rows, so the caller can fall back to "n/a".
+# True if the file exists and was written within FRESH_MAX — guards a dead
+# collector and last month's saNN reused under the same name.
+fresh() { [ -f "$1" ] && [ $(( $(date +%s) - $(stat -c %Y "$1") )) -le "$FRESH_MAX" ]; }
+
+# Emit one sar report's per-interval rows across the trailing 24h: yesterday from
+# the boundary to end-of-day, then today up to the boundary. Both -s and -e are
+# pinned because sar otherwise defaults -e to 18:00, which would drop the evening.
+# A missing or stale segment just contributes no rows.
+sar_window() {  # $1 = sar flag (-u|-r)
+    if fresh "$YDAY";  then sar "$1" -s "$BOUNDARY" -e 23:59:59 -f "$YDAY"  2>/dev/null || true; fi
+    if fresh "$TODAY"; then sar "$1" -s 00:00:00 -e "$BOUNDARY" -f "$TODAY" 2>/dev/null || true; fi
+}
+
+# Reduce the windowed sar rows to "avg max spikes samples". The column is located
+# by header name, so layout differences between sysstat versions don't matter (and
+# the second segment's repeated header is harmlessly ignored once the column is
+# found); invert=1 turns %idle into busy% (100 - idle). Prints nothing when there
+# are no data rows, so the caller can fall back to "n/a".
 stats() {  # $1 = sar flag (-u|-r), $2 = column header, $3 = invert (0|1), $4 = spike threshold
-    { sar "$1" -f "$f" 2>/dev/null || true; } | awk -v want="$2" -v inv="$3" -v thr="$4" '
+    sar_window "$1" | awk -v want="$2" -v inv="$3" -v thr="$4" '
         /^Average:/ || /RESTART/ { next }
         index($0, want) && !col  { for (i = 1; i <= NF; i++) if ($i == want) col = i; next }
         col && $col ~ /^[0-9.]+$/ {
@@ -59,16 +72,14 @@ stats() {  # $1 = sar flag (-u|-r), $2 = column header, $3 = invert (0|1), $4 = 
 }
 
 cpu="n/a"; mem="n/a"; note=""
-if [ -z "$f" ]; then
+if read -r avg max spikes n <<<"$(stats -u %idle 1 "$SPIKE")" && [ -n "${n:-}" ]; then
+    cpu="avg ${avg}% · peak ${max}% · ${spikes}/${n} min above ${SPIKE}%"
+else
     note="
 ⚠ no recent sysstat data — is collection running? (systemctl status sysstat-collect.timer)"
-else
-    if read -r avg max spikes n <<<"$(stats -u %idle 1 "$SPIKE")" && [ -n "${n:-}" ]; then
-        cpu="avg ${avg}% · peak ${max}% · ${spikes}/${n} min above ${SPIKE}%"
-    fi
-    if read -r avg max _ n <<<"$(stats -r %memused 0 "$SPIKE")" && [ -n "${n:-}" ]; then
-        mem="avg ${avg}% · peak ${max}%"
-    fi
+fi
+if read -r avg max _ n <<<"$(stats -r %memused 0 "$SPIKE")" && [ -n "${n:-}" ]; then
+    mem="avg ${avg}% · peak ${max}%"
 fi
 
 load=$(awk '{printf "%s / %s / %s", $1, $2, $3}' /proc/loadavg)
@@ -76,7 +87,8 @@ cores=$(nproc 2>/dev/null || echo '?')   # load == cores is full saturation, so 
 disk=$(df -Ph -x tmpfs -x devtmpfs -x squashfs -x overlay -x efivarfs |
     awk 'NR > 1 { printf "  %s on %s (%s used of %s, %s free)\n", $5, $6, $3, $2, $4 }')
 
-msg="📊 $(hostname) — daily health for $(date -d yesterday +%F)
+hm=${BOUNDARY%:*}   # HH:MM for the header — the window runs hm yesterday → hm today
+msg="📊 $(hostname) — health, $(date -d yesterday +%F) ${hm} → $(date +%F) ${hm} $(date +%Z) (last 24h)
 • CPU: ${cpu}
 • Memory: ${mem}
 • Load (1/5/15m): ${load}  (${cores} cores = full)
