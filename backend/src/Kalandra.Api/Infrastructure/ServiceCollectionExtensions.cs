@@ -1,6 +1,7 @@
 using JasperFx;
 using JasperFx.OpenTelemetry;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Blog;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
 
             // Domain-specific Marten configuration
             options.ConfigureJobOffers();
+            options.ConfigureBlog();
 
             // Use snake_case for database identifiers
             options.UseSystemTextJsonForSerialization();
