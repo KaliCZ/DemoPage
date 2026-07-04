@@ -170,6 +170,12 @@ test.describe("Blog", () => {
     await expect(page).toHaveURL("/blog");
   });
 
+  test("blog index and footer expose the RSS feed", async ({ page }) => {
+    await page.goto("/blog");
+    await expect(page.getByRole("link", { name: "Subscribe via RSS" })).toHaveAttribute("href", "/rss.xml");
+    await expect(page.getByRole("link", { name: "Subscribe to the blog RSS feed" })).toHaveAttribute("href", "/rss.xml");
+  });
+
   test("rss.xml lists the first post with a canonical link", async ({ request }) => {
     const response = await request.get("/rss.xml");
     expect(response.ok()).toBeTruthy();

@@ -8,7 +8,9 @@
     "subtitle": "Engineering notes — .NET, type-driven design, and building this site in public.",
     "empty": "No posts yet. The first one is on its way.",
     "publishedOn": "Published",
-    "updatedOn": "Updated"
+    "updatedOn": "Updated",
+    "rssLabel": "Subscribe via RSS",
+    "rssTitle": "RSS feed of all posts"
   },
   "post": {
     "backToBlog": "All posts",

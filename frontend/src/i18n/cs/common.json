@@ -72,6 +72,8 @@
     "linkedinAriaLabel": "LinkedIn profil",
     "githubTitle": "GitHub — KaliCZ",
     "githubAriaLabel": "GitHub profil",
+    "rssTitle": "RSS — články z blogu",
+    "rssAriaLabel": "Odebírat blog přes RSS",
     "privacy": "Ochrana osobních údajů",
     "terms": "Podmínky používání"
   }

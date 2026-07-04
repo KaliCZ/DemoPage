@@ -8,7 +8,9 @@
     "subtitle": "Poznámky z vývoje — .NET, typově řízený návrh a stavba tohoto webu.",
     "empty": "Zatím tu žádné články nejsou. První je na cestě.",
     "publishedOn": "Publikováno",
-    "updatedOn": "Aktualizováno"
+    "updatedOn": "Aktualizováno",
+    "rssLabel": "Odebírat přes RSS",
+    "rssTitle": "RSS kanál všech článků"
   },
   "post": {
     "backToBlog": "Všechny články",
