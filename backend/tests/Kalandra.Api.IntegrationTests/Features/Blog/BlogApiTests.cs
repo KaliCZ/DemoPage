@@ -304,7 +304,101 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         AssertValidationError(await ParseJsonAsync(response), "commentId", "AlreadyDeleted");
     }
 
+    // ───── Notification emails (via the Temporal workflow) ─────
+
+    [Fact]
+    public async Task PostComment_NotifiesTheBlogAuthor()
+    {
+        var slug = NewSlug();
+        var content = $"Author should hear about this {Guid.NewGuid():N}";
+        Authenticate(email: "notifier@test.com");
+
+        var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content }, Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var email = Assert.Single(await WaitForEmailsAsync(m => m.TextBody.Value.Contains(content), expectedCount: 1));
+        Assert.Equal("author@kalandra.local", email.To.Value.Address);
+        Assert.Contains(slug, email.Subject.Value);
+        Assert.Contains($"https://www.kalandra.tech/blog/{slug}", email.TextBody.Value);
+        Assert.Contains("notifier", email.TextBody.Value);
+    }
+
+    [Fact]
+    public async Task Reply_NotifiesBlogAuthorAndParentCommentAuthor()
+    {
+        var slug = NewSlug();
+        Authenticate(userId: Guid.NewGuid(), email: "parent-author@test.com");
+        var parent = await ParseJsonAsync(await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Original thought" }, Ct));
+        var parentId = parent.GetProperty("id").GetString();
+
+        var replyContent = $"Strong disagreement {Guid.NewGuid():N}";
+        Authenticate(userId: Guid.NewGuid(), email: "replier@test.com");
+        await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = replyContent, parentCommentId = parentId }, Ct);
+
+        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(replyContent), expectedCount: 2);
+        Assert.Equal(2, emails.Length);
+        Assert.Contains(emails, m => m.To.Value.Address == "author@kalandra.local");
+        var parentNotification = Assert.Single(emails, m => m.To.Value.Address == "parent-author@test.com");
+        Assert.StartsWith("New reply to your comment", parentNotification.Subject.Value);
+    }
+
+    [Fact]
+    public async Task ReplyToYourOwnComment_OnlyNotifiesTheBlogAuthor()
+    {
+        var slug = NewSlug();
+        var userId = Guid.NewGuid();
+        Authenticate(userId: userId, email: "monologuist@test.com");
+        var parent = await ParseJsonAsync(await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "First thought" }, Ct));
+
+        var replyContent = $"Second thought {Guid.NewGuid():N}";
+        await client.PostAsJsonAsync(
+            $"/api/blog/{slug}/comments",
+            new { content = replyContent, parentCommentId = parent.GetProperty("id").GetString() },
+            Ct);
+
+        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(replyContent), expectedCount: 1);
+        // Grace period: a wrong extra notification would arrive moments later.
+        await Task.Delay(1500, Ct);
+        emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(replyContent))];
+
+        var email = Assert.Single(emails);
+        Assert.Equal("author@kalandra.local", email.To.Value.Address);
+    }
+
+    [Fact]
+    public async Task AuthorsOwnComment_SendsNoEmailAtAll()
+    {
+        var slug = NewSlug();
+        var content = $"Author talking to themselves {Guid.NewGuid():N}";
+        Authenticate(email: "author@kalandra.local");
+
+        var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content }, Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // The comment must still be stored even though nobody is notified.
+        SignOut();
+        var comments = (await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/comments", Ct))).GetProperty("comments");
+        Assert.Equal(1, comments.GetArrayLength());
+
+        await Task.Delay(1500, Ct);
+        Assert.DoesNotContain(factory.EmailSender.Sent, m => m.TextBody.Value.Contains(content));
+    }
+
     // ───── Helpers ─────
+
+    private async Task<Kalandra.Infrastructure.Email.EmailMessage[]> WaitForEmailsAsync(
+        Func<Kalandra.Infrastructure.Email.EmailMessage, bool> predicate, int expectedCount)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(20);
+        while (DateTime.UtcNow < deadline)
+        {
+            var matches = factory.EmailSender.Sent.Where(predicate).ToArray();
+            if (matches.Length >= expectedCount)
+                return matches;
+            await Task.Delay(200, Ct);
+        }
+        return [.. factory.EmailSender.Sent.Where(predicate)];
+    }
 
     /// <summary>Unique per test — the factory shares one database across the class.</summary>
     private static string NewSlug() => $"post-{Guid.NewGuid():N}";

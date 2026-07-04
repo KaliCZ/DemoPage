@@ -1,4 +1,7 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Kalandra.Infrastructure.Auth;
+using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
@@ -19,15 +22,29 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
+    // Real Temporal dev server — the comment workflow runs for real in tests, not against a mock.
+    private readonly IContainer _temporal = new ContainerBuilder("temporalio/temporal:1.7.2")
+        .WithCommand("server", "start-dev", "--ip", "0.0.0.0", "--headless")
+        .WithPortBinding(7233, assignRandomHostPort: true)
+        .WithWaitStrategy(Wait.ForUnixContainer()
+            .UntilCommandIsCompleted("temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"))
+        .Build();
+
     public FakeSupabaseAdminService FakeAdminService { get; } = new();
+    public CapturingEmailSender EmailSender { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Supabase:ProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Supabase:ServiceKey", "test-service-key");
+        builder.UseSetting("Temporal:TargetHost", $"127.0.0.1:{_temporal.GetMappedPublicPort(7233)}");
+        builder.UseSetting("Blog:AuthorNotificationEmail", "author@kalandra.local");
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(EmailSender);
+
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();
 
@@ -69,12 +86,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        await Task.WhenAll(_postgres.StartAsync(), _temporal.StartAsync());
     }
 
     public new async ValueTask DisposeAsync()
     {
         await _postgres.DisposeAsync();
+        await _temporal.DisposeAsync();
         await base.DisposeAsync();
     }
 }

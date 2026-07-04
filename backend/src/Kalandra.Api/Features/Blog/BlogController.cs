@@ -4,11 +4,15 @@ using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
 using Kalandra.Blog.Commands;
 using Kalandra.Blog.Entities;
+using Kalandra.Blog.Events;
 using Kalandra.Blog.Queries;
+using Kalandra.Blog.Workflows;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Temporalio.Api.Enums.V1;
+using Temporalio.Client;
 
 namespace Kalandra.Api.Features.Blog;
 
@@ -19,8 +23,8 @@ namespace Kalandra.Api.Features.Blog;
 public class BlogController(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
+    ITemporalClient temporalClient,
     ToggleBlogReactionHandler toggleReactionHandler,
-    PostBlogCommentHandler postCommentHandler,
     DeleteBlogCommentHandler deleteCommentHandler,
     GetBlogReactionsHandler getReactionsHandler,
     GetBlogCommentsHandler getCommentsHandler) : ControllerBase
@@ -97,16 +101,32 @@ public class BlogController(
         if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
             return this.ValidationError("slug", BlogSlugError.InvalidSlug);
 
-        var command = new PostBlogCommentCommand(
-            Slug: postSlug,
-            User: AppUser,
-            Content: request.Content,
+        var comment = new BlogCommentPosted(
+            CommentId: Guid.NewGuid(),
             ParentCommentId: request.ParentCommentId,
+            UserId: AppUser.Id,
+            UserEmail: AppUser.Email,
+            AuthorDisplayName: AppUser.FullName,
+            AuthorAvatarUrl: AppUser.AvatarUrl,
+            Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await postCommentHandler.HandleAsync(command, ct);
+        // Store + notify share one durable workflow (BlogCommentWorkflow); the
+        // update returns once the comment is stored, notifications continue async.
+        var input = new BlogCommentWorkflowInput(postSlug.Value, comment);
+        var startOperation = WithStartWorkflowOperation.Create(
+            (BlogCommentWorkflow workflow) => workflow.RunAsync(input),
+            new(id: BlogCommentWorkflow.IdFor(comment.CommentId), taskQueue: BlogTaskQueue.Name)
+            {
+                // A client retry of the same request reattaches instead of failing.
+                IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
+            });
 
-        if (result.Error is { } error)
+        var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
+            (BlogCommentWorkflow workflow) => workflow.StoreCommentAsync(input),
+            new(startOperation));
+
+        if (outcome.Error is { } error)
         {
             return error switch
             {
@@ -115,7 +135,7 @@ public class BlogController(
             };
         }
 
-        return BlogCommentResponse.Serialize(result.Success!);
+        return BlogCommentResponse.Serialize(outcome.Posted!);
     }
 
     [HttpDelete("comments/{commentId:guid}")]

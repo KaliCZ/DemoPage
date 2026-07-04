@@ -49,6 +49,9 @@ builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 builder.Services.AddBlogDomain();
+BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration);
+builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
+builder.Services.AddTemporal(builder.Configuration);
 RateLimits.Add(builder.Services, builder.Environment);
 
 builder.Services.AddResponseCompression(options =>

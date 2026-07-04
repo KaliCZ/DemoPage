@@ -55,10 +55,21 @@ try
         .WithDockerGroup(dockerGroup);
     var kalandraDb = postgres.AddDatabase("kalandra");
 
+    // Temporal dev server (in-memory) — the API hosts a worker and needs it up to start.
+    var temporal = builder.AddContainer("temporal", "temporalio/temporal", "1.7.2")
+        .WithArgs("server", "start-dev", "--ip", "0.0.0.0")
+        .WithEndpoint(targetPort: 7233, name: "server")
+        .WithHttpEndpoint(targetPort: 8233, name: "ui")
+        .WithDockerGroup(dockerGroup);
+    var temporalEndpoint = temporal.GetEndpoint("server");
+
     // launchProfileName: null bypasses launchSettings.json's :5000 so parallel AppHosts get distinct API ports.
     var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
         .WithReference(kalandraDb, connectionName: "DefaultConnection")
         .WaitFor(kalandraDb)
+        .WithEnvironment("Temporal__TargetHost", ReferenceExpression.Create(
+            $"{temporalEndpoint.Property(EndpointProperty.Host)}:{temporalEndpoint.Property(EndpointProperty.Port)}"))
+        .WaitFor(temporal)
         .WithHttpEndpoint()
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
         .WithIconName("Server");

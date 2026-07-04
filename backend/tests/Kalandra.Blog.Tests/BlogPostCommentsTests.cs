@@ -17,39 +17,35 @@ public class BlogPostCommentsTests
     private static readonly CurrentUser Other = new(OtherId, new MailAddress("other@test.com"), "Other".ToNonEmpty(), []);
     private static readonly CurrentUser Admin = new(AdminId, new MailAddress("admin@test.com"), "Admin".ToNonEmpty(), [UserRole.Admin]);
 
+    private static BlogCommentPosted NewComment(CurrentUser user, Guid? parentId = null, string content = "A comment") => new(
+        CommentId: Guid.NewGuid(),
+        ParentCommentId: parentId,
+        UserId: user.Id,
+        UserEmail: new Email(user.Email),
+        AuthorDisplayName: user.FullName,
+        AuthorAvatarUrl: null,
+        Content: content.ToNonEmpty(),
+        Timestamp: Now);
+
     private static BlogPostComments WithComment(Guid commentId, CurrentUser user, Guid? parentId = null)
     {
         var comments = new BlogPostComments();
-        comments.Apply(new BlogCommentPosted(
-            CommentId: commentId,
-            ParentCommentId: parentId,
-            UserId: user.Id,
-            UserEmail: new Email(user.Email),
-            AuthorDisplayName: user.FullName,
-            AuthorAvatarUrl: null,
-            Content: "A comment".ToNonEmpty(),
-            Timestamp: Now));
+        comments.Apply(NewComment(user, parentId) with { CommentId = commentId });
         return comments;
     }
 
     // --- Post ---
 
     [Fact]
-    public void Post_TopLevel_EmitsEventWithAuthorInfo()
+    public void Post_TopLevel_ReturnsTheEvent()
     {
         var comments = new BlogPostComments();
-        var commentId = Guid.NewGuid();
+        var comment = NewComment(Author, content: "Hello!");
 
-        var result = comments.Post(commentId, Author, "Hello!".ToNonEmpty(), parentCommentId: null, Now);
+        var result = comments.Post(comment);
 
         Assert.True(result.IsSuccess);
-        var posted = result.Success!;
-        Assert.Equal(commentId, posted.CommentId);
-        Assert.Null(posted.ParentCommentId);
-        Assert.Equal(AuthorId, posted.UserId);
-        Assert.Equal("Author", posted.AuthorDisplayName.Value);
-        Assert.Equal("Hello!", posted.Content.Value);
-        Assert.Equal(Now, posted.Timestamp);
+        Assert.Equal(comment, result.Success);
     }
 
     [Fact]
@@ -58,7 +54,7 @@ public class BlogPostCommentsTests
         var parentId = Guid.NewGuid();
         var comments = WithComment(parentId, Author);
 
-        var result = comments.Post(Guid.NewGuid(), Other, "A reply".ToNonEmpty(), parentId, Now.AddMinutes(1));
+        var result = comments.Post(NewComment(Other, parentId, "A reply"));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(parentId, result.Success!.ParentCommentId);
@@ -69,7 +65,7 @@ public class BlogPostCommentsTests
     {
         var comments = new BlogPostComments();
 
-        var result = comments.Post(Guid.NewGuid(), Other, "A reply".ToNonEmpty(), Guid.NewGuid(), Now);
+        var result = comments.Post(NewComment(Other, Guid.NewGuid(), "A reply"));
 
         Assert.Equal(PostBlogCommentError.ParentCommentNotFound, result.Error);
     }
@@ -81,7 +77,7 @@ public class BlogPostCommentsTests
         var comments = WithComment(parentId, Author);
         comments.Apply(new BlogCommentDeleted(parentId, AuthorId, Now.AddMinutes(1)));
 
-        var result = comments.Post(Guid.NewGuid(), Other, "A reply".ToNonEmpty(), parentId, Now.AddMinutes(2));
+        var result = comments.Post(NewComment(Other, parentId, "A reply"));
 
         Assert.Equal(PostBlogCommentError.ParentCommentDeleted, result.Error);
     }
@@ -154,15 +150,7 @@ public class BlogPostCommentsTests
         var parentId = Guid.NewGuid();
         var replyId = Guid.NewGuid();
         var comments = WithComment(parentId, Author);
-        comments.Apply(new BlogCommentPosted(
-            CommentId: replyId,
-            ParentCommentId: parentId,
-            UserId: OtherId,
-            UserEmail: new Email(Other.Email),
-            AuthorDisplayName: Other.FullName,
-            AuthorAvatarUrl: null,
-            Content: "A reply".ToNonEmpty(),
-            Timestamp: Now.AddMinutes(1)));
+        comments.Apply(NewComment(Other, parentId, "A reply") with { CommentId = replyId, Timestamp = Now.AddMinutes(1) });
 
         comments.Apply(new BlogCommentDeleted(parentId, AuthorId, Now.AddMinutes(2)));
 

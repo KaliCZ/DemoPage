@@ -30,6 +30,7 @@
     <PackageReference Include="Sentry.AspNetCore" Version="6.6.0" />
     <PackageReference Include="Sentry.OpenTelemetry" Version="6.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <PackageReference Include="Temporalio.Extensions.Hosting" Version="1.16.0" />
   </ItemGroup>
 
 </Project>

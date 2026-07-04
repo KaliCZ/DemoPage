@@ -2,6 +2,8 @@ using JasperFx;
 using JasperFx.OpenTelemetry;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
+using Kalandra.Blog.Workflows;
+using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
@@ -9,6 +11,7 @@ using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
 using Marten.Services;
+using Temporalio.Extensions.Hosting;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -149,6 +152,44 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
         services.AddSingleton(TimeProvider.System);
+
+        return services;
+    }
+
+    public static IServiceCollection AddEmailServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
+    {
+        if (!configuration.GetSection("Email").Exists())
+        {
+            // The mock is a Development-only convenience; anywhere else a missing
+            // Email section must stop the app before it silently drops mail.
+            if (!environment.IsDevelopment())
+                throw new InvalidOperationException(
+                    "Email configuration is required outside Development — provide Email:Host, Email:Port, Email:FromEmail and Email:FromName.");
+
+            services.AddSingleton<IEmailSender, NoOpEmailSender>();
+            return services;
+        }
+
+        EmailConfig.AddSingleton(services, configuration);
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        return services;
+    }
+
+    public static IServiceCollection AddTemporal(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddTemporalClient(options =>
+        {
+            options.TargetHost = configuration["Temporal:TargetHost"] ?? "localhost:7233";
+            options.Namespace = configuration["Temporal:Namespace"] ?? "default";
+        });
+
+        // The API process hosts the worker — no separate deployable.
+        services.AddHostedTemporalWorker(BlogTaskQueue.Name)
+            .AddScopedActivities<BlogCommentActivities>()
+            .AddWorkflow<BlogCommentWorkflow>();
 
         return services;
     }

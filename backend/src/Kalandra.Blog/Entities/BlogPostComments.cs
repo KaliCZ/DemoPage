@@ -11,6 +11,7 @@ public class BlogPostComment
     public Guid CommentId { get; set; }
     public Guid? ParentCommentId { get; set; }
     public Guid UserId { get; set; }
+    public Email UserEmail { get; set; } = null!;
     public NonEmptyString AuthorDisplayName { get; set; } = null!;
     public Uri? AuthorAvatarUrl { get; set; }
     public NonEmptyString Content { get; set; } = null!;
@@ -27,14 +28,10 @@ public class BlogPostComments
     public Guid Id { get; set; }
     public List<BlogPostComment> Comments { get; set; } = [];
 
-    public Result<BlogCommentPosted, PostBlogCommentError> Post(
-        Guid commentId,
-        CurrentUser user,
-        NonEmptyString content,
-        Guid? parentCommentId,
-        DateTimeOffset timestamp)
+    /// <summary>Takes the fully-built event because the caller (a Temporal workflow) owns the comment identity and timestamp.</summary>
+    public Result<BlogCommentPosted, PostBlogCommentError> Post(BlogCommentPosted comment)
     {
-        if (parentCommentId is { } parentId)
+        if (comment.ParentCommentId is { } parentId)
         {
             var parent = Comments.FirstOrDefault(c => c.CommentId == parentId);
             if (parent == null)
@@ -43,15 +40,7 @@ public class BlogPostComments
                 return PostBlogCommentError.ParentCommentDeleted;
         }
 
-        return new BlogCommentPosted(
-            CommentId: commentId,
-            ParentCommentId: parentCommentId,
-            UserId: user.Id,
-            UserEmail: user.Email,
-            AuthorDisplayName: user.FullName,
-            AuthorAvatarUrl: user.AvatarUrl,
-            Content: content,
-            Timestamp: timestamp);
+        return comment;
     }
 
     public Result<BlogCommentDeleted, DeleteBlogCommentError> Delete(
@@ -77,6 +66,7 @@ public class BlogPostComments
             CommentId = e.CommentId,
             ParentCommentId = e.ParentCommentId,
             UserId = e.UserId,
+            UserEmail = e.UserEmail,
             AuthorDisplayName = e.AuthorDisplayName,
             AuthorAvatarUrl = e.AuthorAvatarUrl,
             Content = e.Content,

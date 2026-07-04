@@ -68,6 +68,11 @@ jobs:
       - name: Start local Supabase in background
         run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
 
+      # The API hosts a Temporal worker and needs the server at startup; the dev
+      # server boots in seconds while the .NET/Node setup below overlaps.
+      - name: Start Temporal dev server
+        run: docker run -d --name temporal-dev -p 7233:7233 temporalio/temporal:1.7.2 server start-dev --ip 0.0.0.0 --headless
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -362,6 +367,12 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           SENTRY_DSN: ${{ secrets.BACKEND_SENTRY_DSN }}
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
+          BLOG_AUTHOR_NOTIFICATION_EMAIL: ${{ vars.BLOG_AUTHOR_NOTIFICATION_EMAIL }}
           # Digest-pinned, not :latest — the exact build verified by this run
           # is what runs and what comes back after a reboot.
           IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -370,7 +381,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,IMAGE_REF,EXPECTED_SHA
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM_EMAIL,BLOG_AUTHOR_NOTIFICATION_EMAIL,IMAGE_REF,EXPECTED_SHA
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -399,6 +410,14 @@ jobs:
             Supabase__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             Sentry__Dsn=${SENTRY_DSN}
+            Temporal__TargetHost=localhost:7233
+            Email__Host=${SMTP_HOST}
+            Email__Port=${SMTP_PORT}
+            Email__Username=${SMTP_USERNAME}
+            Email__Password=${SMTP_PASSWORD}
+            Email__FromEmail=${SMTP_FROM_EMAIL}
+            Email__FromName=kalandra.tech
+            Blog__AuthorNotificationEmail=${BLOG_AUTHOR_NOTIFICATION_EMAIL}
             EOF
 
             # ----- 1. Determine which slot is currently active -----
@@ -528,9 +547,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          # Full history required for git-based sitemap lastmod in astro.config.mjs
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

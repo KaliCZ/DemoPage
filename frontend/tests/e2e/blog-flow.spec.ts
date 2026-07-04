@@ -16,6 +16,10 @@ const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
+// Supabase's bundled mail catcher; the backend's dev SMTP config points at it.
+const MAILPIT_URL = process.env.MAILPIT_URL || "http://127.0.0.1:54324";
+const AUTHOR_EMAIL = "author@kalandra.local";
+
 const SLUG = "zero-code-validations-in-your-dotnet-api";
 const POST_PATH = `/blog/${SLUG}`;
 
@@ -25,22 +29,49 @@ const testUser = {
   fullName: "E2E Blog User",
 };
 
+const replyingUser = {
+  email: `e2e-blog-replier-${Date.now()}@test.local`,
+  password: "test-password-123",
+  fullName: "E2E Blog Replier",
+};
+
+/** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
+async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
+  const query = `to:"${to}" "${containing}"`;
+  await expect
+    .poll(
+      async () => {
+        const response = await request.get(`${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(query)}`);
+        if (!response.ok()) return 0;
+        const body = await response.json();
+        return (body.messages ?? []).length;
+      },
+      { timeout: 30000, message: `email to ${to} containing "${containing}"` },
+    )
+    .toBeGreaterThan(0);
+}
+
 test.describe("Blog Flow", () => {
+  // Set by the signed-in test, replied to by the cross-user test below it.
+  let sharedCommentText = "";
+
   test.beforeAll(async ({ request }) => {
-    const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      headers: {
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        "Content-Type": "application/json",
-      },
-      data: {
-        email: testUser.email,
-        password: testUser.password,
-        email_confirm: true,
-        user_metadata: { full_name: testUser.fullName },
-      },
-    });
-    expect(response.ok(), `Failed to create test user: ${await response.text()}`).toBeTruthy();
+    for (const user of [testUser, replyingUser]) {
+      const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          "Content-Type": "application/json",
+        },
+        data: {
+          email: user.email,
+          password: user.password,
+          email_confirm: true,
+          user_metadata: { full_name: user.fullName },
+        },
+      });
+      expect(response.ok(), `Failed to create test user: ${await response.text()}`).toBeTruthy();
+    }
   });
 
   test("anonymous visitor sees reactions and comments but must sign in to interact", async ({ page, request }) => {
@@ -69,7 +100,7 @@ test.describe("Blog Flow", () => {
     expect(commentResponse.status()).toBe(401);
   });
 
-  test("signed-in user reacts, comments, replies, and deletes", async ({ page }) => {
+  test("signed-in user reacts, comments, replies, and deletes", async ({ page, request }) => {
     await page.goto(POST_PATH);
 
     await page.evaluate(
@@ -103,11 +134,16 @@ test.describe("Blog Flow", () => {
     // Post a top-level comment.
     const comments = page.locator('section[aria-label="Comments"]');
     const commentText = `E2E comment ${Date.now()}`;
+    sharedCommentText = commentText;
     await comments.getByRole("textbox").fill(commentText);
     await comments.getByRole("button", { name: "Post comment" }).click();
     const commentItem = comments.locator("li").filter({ hasText: commentText }).first();
     await expect(commentItem).toBeVisible();
     await expect(commentItem).toContainText(testUser.fullName);
+
+    // The same Temporal workflow that stored the comment notifies the blog author —
+    // the email must land in the local mail catcher.
+    await waitForEmail(request, { to: AUTHOR_EMAIL, containing: commentText });
 
     // Reply to it.
     await commentItem.getByRole("button", { name: "Reply" }).click();
@@ -117,10 +153,41 @@ test.describe("Blog Flow", () => {
     const replyItem = comments.locator("li").filter({ hasText: replyText }).first();
     await expect(replyItem).toBeVisible();
 
+    // Self-reply: the blog author is notified, the parent author (same user) is not.
+    await waitForEmail(request, { to: AUTHOR_EMAIL, containing: replyText });
+
     // Delete the reply — inline confirm, then the tombstone placeholder takes its place.
     await replyItem.getByRole("button", { name: "Delete" }).click();
     await replyItem.getByRole("button", { name: "Delete" }).click();
     await expect(comments.getByText(replyText)).toHaveCount(0);
     await expect(comments.getByText("[deleted]").first()).toBeVisible();
+  });
+
+  test("a reply from another user emails the parent comment's author", async ({ page, request }) => {
+    expect(sharedCommentText, "previous test must have posted a comment").not.toBe("");
+
+    await page.goto(POST_PATH);
+    await page.evaluate(
+      async ({ email, password }) => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) throw new Error("Supabase client not available");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(`Sign-in failed: ${error.message}`);
+      },
+      { email: replyingUser.email, password: replyingUser.password },
+    );
+
+    const comments = page.locator('section[aria-label="Comments"]');
+    const parentItem = comments.locator("li").filter({ hasText: sharedCommentText }).first();
+    await parentItem.getByRole("button", { name: "Reply" }).click();
+
+    const crossReplyText = `E2E cross-user reply ${Date.now()}`;
+    await comments.getByRole("textbox").fill(crossReplyText);
+    await comments.getByRole("button", { name: "Post comment" }).click();
+    await expect(comments.getByText(crossReplyText)).toBeVisible();
+
+    // One workflow, two notifications: the blog author and the parent comment's author.
+    await waitForEmail(request, { to: AUTHOR_EMAIL, containing: crossReplyText });
+    await waitForEmail(request, { to: testUser.email, containing: crossReplyText });
   });
 });
