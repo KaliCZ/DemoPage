@@ -18,6 +18,7 @@ interface Props {
     | "projects"
     | "project"
     | "strong-types"
+    | "blog"
     | "hire-me"
     | "job-offers"
     | "admin/job-offers"
@@ -26,6 +27,9 @@ interface Props {
     | "privacy"
     | "terms";
   lang?: Locale;
+  /** Canonical path override for pages nested under an activePage section (e.g. "blog/<slug>"). */
+  pagePath?: string;
+  ogType?: "website" | "article";
 }
 
 const {
@@ -33,13 +37,16 @@ const {
   description = "Pavel Kalandra — CTO & Software Engineering Leader. Personal showcase built in public at kalandra.tech.",
   activePage,
   lang = "en",
+  pagePath,
+  ogType = "website",
 } = Astro.props;
 
 const t = lang === "cs" ? csCommon : enCommon;
 
 const siteUrl = "https://www.kalandra.tech";
-const enUrl = activePage === "home" ? `${siteUrl}/` : `${siteUrl}/${activePage}`;
-const csUrl = activePage === "home" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${activePage}`;
+const canonicalPath = pagePath ?? (activePage === "home" ? "" : activePage);
+const enUrl = canonicalPath === "" ? `${siteUrl}/` : `${siteUrl}/${canonicalPath}`;
+const csUrl = canonicalPath === "" ? `${siteUrl}/cs/` : `${siteUrl}/cs/${canonicalPath}`;
 const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 ---
 
@@ -59,10 +66,11 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="alternate" hreflang="en" href={enUrl} />
     <link rel="alternate" hreflang="cs" href={csUrl} />
     <link rel="alternate" hreflang="x-default" href={enUrl} />
-    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <link rel="alternate" type="application/rss+xml" title="kalandra.tech — Blog" href="/rss.xml" />
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content="kalandra.tech" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

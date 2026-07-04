@@ -5,6 +5,7 @@ import OnThisPage from "../../components/OnThisPage.astro";
 import Breadcrumb from "../../components/Breadcrumb.astro";
 import IconGitHub from "../../components/icons/IconGitHub.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/strong-types.json";
 import csStrings from "../../i18n/cs/strong-types.json";
 import enCommon from "../../i18n/en/common.json";
@@ -14,6 +15,8 @@ import { strongTypesBadges, strongTypesBadgeSrc } from "../../lib/strong-types-b
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-05-06" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({

@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import QrCodeCard from "../../components/QrCodeCard.astro";
 import ProjectCard from "../../components/ProjectCard.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/home.json";
 import csStrings from "../../i18n/cs/home.json";
 // Project cards on the home page render the same content as on the /projects
@@ -13,6 +14,8 @@ import csProjects from "../../i18n/cs/projects.json";
 
 const translations = { en: enStrings, cs: csStrings };
 const projectTranslations = { en: enProjects, cs: csProjects };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-05-01" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({

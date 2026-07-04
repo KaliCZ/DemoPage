@@ -7,6 +7,9 @@
    their light values, producing hybrid mid-toggle rendering. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Prose styling for blog post bodies (see BlogPostLayout.astro). */
+@plugin "@tailwindcss/typography";
+
 /* Safelist dynamic color classes used via interpolated class names (e.g. `bg-${cat.color}`). */
 @source inline("bg-primary bg-secondary bg-tertiary text-primary text-secondary text-tertiary");
 
@@ -249,4 +252,41 @@ details > summary + * {
 
   --color-inverse-surface: #e5e2e1;
   --color-inverse-on-surface: #313030;
+}
+
+/* ============================================
+   Blog article typography
+   ============================================ */
+
+/* Map prose colors onto the design tokens — they already flip under `.dark`,
+   so `prose-invert` is never needed. */
+.prose {
+  --tw-prose-body: var(--color-on-surface-variant);
+  --tw-prose-headings: var(--color-on-surface);
+  --tw-prose-lead: var(--color-on-surface-variant);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--color-on-surface);
+  --tw-prose-counters: var(--color-on-surface-variant);
+  --tw-prose-bullets: var(--color-outline-variant);
+  --tw-prose-hr: var(--color-outline-variant);
+  --tw-prose-quotes: var(--color-on-surface);
+  --tw-prose-quote-borders: var(--color-primary);
+  --tw-prose-captions: var(--color-on-surface-variant);
+  --tw-prose-code: var(--color-on-surface);
+  --tw-prose-pre-bg: var(--color-surface-container-low);
+  --tw-prose-th-borders: var(--color-outline-variant);
+  --tw-prose-td-borders: var(--color-outline-variant);
+}
+
+.prose h2,
+.prose h3 {
+  font-family: var(--font-headline);
+  letter-spacing: -0.025em;
+}
+
+/* Shiki dual-theme code blocks: flip to the dark palette under `.dark`. */
+.dark .astro-code,
+.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
 }

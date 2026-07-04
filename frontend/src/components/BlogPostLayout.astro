@@ -1,0 +1,91 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../layouts/Layout.astro";
+import BlogReactions from "./blog/BlogReactions.vue";
+import BlogComments from "./blog/BlogComments.vue";
+import { localePath, type Locale } from "../i18n/utils";
+import type { BlogPostMetadata } from "../blog/types";
+import enBlog from "../i18n/en/blog.json";
+import csBlog from "../i18n/cs/blog.json";
+
+interface Props {
+  metadata: BlogPostMetadata;
+  lang: Locale;
+}
+
+const { metadata, lang } = Astro.props;
+const t = lang === "cs" ? csBlog : enBlog;
+
+// The slug is the last path segment — identical for /blog/x and /cs/blog/x —
+// and keys the post's reaction and comment streams in the backend.
+const slug = Astro.url.pathname.replace(/\/$/, "").split("/").pop()!;
+const pagePath = `blog/${slug}`;
+
+const pubDate = new Date(metadata.pubDate);
+const updatedDate = metadata.updatedDate ? new Date(metadata.updatedDate) : undefined;
+const dateLocale = lang === "cs" ? "cs-CZ" : "en-US";
+const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
+---
+
+<Layout
+  title={`${metadata.title} | kalandra.tech`}
+  description={metadata.summary}
+  activePage="blog"
+  lang={lang}
+  pagePath={pagePath}
+  ogType="article"
+>
+  <Fragment slot="head">
+    <meta property="article:published_time" content={pubDate.toISOString()} />
+    {updatedDate && <meta property="article:modified_time" content={updatedDate.toISOString()} />}
+    {metadata.tags.map((tag) => <meta property="article:tag" content={tag} />)}
+  </Fragment>
+
+  <article class="max-w-3xl mx-auto px-4 md:px-8">
+    <header class="mb-10">
+      <a
+        href={localePath(lang, "blog")}
+        class="inline-flex items-center gap-1 mb-6 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
+      >
+        <Icon name="material-symbols:arrow-back" class="size-4" aria-hidden="true" />
+        {t.post.backToBlog}
+      </a>
+      <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter leading-tight mb-4">
+        {metadata.title}
+      </h1>
+      <p class="font-label text-sm text-on-surface-variant">
+        <time datetime={metadata.pubDate}>{formatDate(pubDate)}</time>
+        {
+          updatedDate && metadata.updatedDate && (
+            <span>
+              {" · "}
+              {t.post.updatedOn} <time datetime={metadata.updatedDate}>{formatDate(updatedDate)}</time>
+            </span>
+          )
+        }
+      </p>
+      {
+        metadata.tags.length > 0 && (
+          <ul class="flex flex-wrap gap-2 mt-4" role="list">
+            {metadata.tags.map((tag) => (
+              <li class="px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/30 text-xs font-label text-on-surface-variant">
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    <div class="prose prose-lg max-w-none font-body">
+      <slot />
+    </div>
+
+    <footer class="mt-16 pt-10 border-t border-outline-variant/30 space-y-14">
+      <BlogReactions client:idle apiUrl={apiUrl} slug={slug} t={t.reactions} />
+      <BlogComments client:idle apiUrl={apiUrl} slug={slug} lang={lang} t={t.comments} />
+    </footer>
+  </article>
+</Layout>

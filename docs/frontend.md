@@ -1,6 +1,6 @@
 # Frontend Guide
 
-Astro SSG site with Tailwind CSS, deployed to Cloudflare Pages as static files. All interactive behaviour is vanilla JS in `<script>` tags — no React, no Vue, no client-side framework.
+Astro SSG site with Tailwind CSS, deployed to Cloudflare Pages as static files. Interactivity is either a small vanilla-JS `<script>` block or a Vue 3 island (`@astrojs/vue`) — see "Client-side JavaScript" for when to use which.
 
 ## Routing and i18n
 
@@ -53,11 +53,12 @@ All new UI must work in both modes. Use the semantic colour tokens (`bg-backgrou
 
 ## Client-side JavaScript
 
-All interactivity is vanilla JS in `<script>` tags — no framework.
+Two tiers, chosen by how much state the UI owns:
 
-- `<script>` tags go at the bottom of the page or component file, after the markup.
-- Prefer `data-*` attributes for JS hooks over class names or IDs. This separates styling from behaviour.
-- Keep scripts focused — one concern per script block. If a page needs multiple independent behaviours, use separate `<script>` tags.
+- **Vanilla `<script>` blocks** — the default for page-level wiring: toggles, fetch-and-render lists, form submission. `<script>` tags go at the bottom of the page or component file, prefer `data-*` attributes for JS hooks, one concern per script block.
+- **Vue 3 islands** (`@astrojs/vue`) — for stateful, data-driven widgets where manual DOM bookkeeping would outweigh the framework cost (e.g. `BlogReactions.vue` / `BlogComments.vue` with optimistic updates and threaded rendering). Load with `client:idle` and pass translations and config as props. Don't retrofit existing vanilla pages to Vue without a reason.
+
+Auth plumbing is identical in both tiers: `window.__getAccessToken()`, `window.__getUser()`, `window.__openAuthDialog()`, and the `auth-change` window event.
 
 ## Auth on the frontend
 
@@ -69,6 +70,21 @@ Supabase Auth with email/password + Google OAuth. Client-side auth state is mana
 - `window.__getUser()` — returns the current user object.
 
 The sign-in dialog (`AuthDialog.astro`) is included in the layout — pages don't need to add it.
+
+## Blog
+
+Posts are first-class Astro pages, not a CMS — git is the source of truth.
+
+- One `.astro` file per post under `pages/[...lang]/blog/<slug>.astro`; the filename is the slug and also keys the post's reaction/comment streams in the backend.
+- Every post exports a `metadata` constant (contract in `src/blog/types.ts`) and `export const getStaticPaths = () => blogPostStaticPaths(metadata);`. That metadata drives the index page, `/rss.xml`, and the sitemap.
+- `draft: true` keeps a post in git but out of the build entirely — no page, no feed entry, no sitemap entry.
+- Wrap the content in `BlogPostLayout`; use `<Code>` from `astro:components` for snippets (dual light/dark themes are wired in `global.css`).
+- Post bodies are written once, in English; the `[...lang]` route still serves `/cs/blog/…` with Czech chrome from `blog.json`.
+- One site-wide feed at `/rss.xml` — summary-only, canonical English URLs.
+
+## Sitemap
+
+`/sitemap.xml` is a custom endpoint (`src/pages/sitemap.xml.ts`), not an integration. A static page opts in by exporting `pageMeta` (`src/lib/page-meta.ts`); its `updatedDate` becomes the `<lastmod>` — **bump it when you meaningfully edit a page**. Pages without the export (profile, admin, auth callback) stay out of the sitemap. Blog posts contribute `updatedDate ?? pubDate` from their own metadata, and the blog index entry tracks the newest post.
 
 ## Accessibility
 

@@ -143,3 +143,52 @@ test.describe("Theme picker", () => {
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBeNull();
   });
 });
+
+test.describe("Blog", () => {
+  test("blog index lists the first post", async ({ page }) => {
+    await page.goto("/blog");
+    await expect(page).toHaveTitle(/Blog/);
+    await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toBeVisible();
+  });
+
+  test("blog index renders in Czech", async ({ page }) => {
+    await page.goto("/cs/blog");
+    await expect(page.locator("html")).toHaveAttribute("lang", "cs");
+    await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toBeVisible();
+  });
+
+  test("blog post renders the article with highlighted code", async ({ page }) => {
+    await page.goto("/blog/zero-code-validations-in-your-dotnet-api");
+    await expect(page).toHaveTitle(/Zero-Code Validations/);
+    await expect(page.locator("article h1")).toContainText("Zero-Code Validations in Your .NET API");
+    await expect(page.locator("pre.astro-code").first()).toBeVisible();
+  });
+
+  test("nav includes Blog and navigates to the index", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Blog" }).first().click();
+    await expect(page).toHaveURL("/blog");
+  });
+
+  test("rss.xml lists the first post with a canonical link", async ({ request }) => {
+    const response = await request.get("/rss.xml");
+    expect(response.ok()).toBeTruthy();
+    const body = await response.text();
+    expect(body).toContain("<rss");
+    expect(body).toContain("Zero-Code Validations in Your .NET API");
+    expect(body).toContain("<link>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</link>");
+  });
+
+  test("sitemap.xml covers static pages and blog posts, skips private pages", async ({ request }) => {
+    const response = await request.get("/sitemap.xml");
+    expect(response.ok()).toBeTruthy();
+    const body = await response.text();
+    expect(body).toContain("<loc>https://www.kalandra.tech/about</loc>");
+    expect(body).toContain("<loc>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</loc>");
+    expect(body).toContain("<lastmod>2026-07-04</lastmod>");
+    expect(body).toContain('hreflang="cs"');
+    expect(body).not.toContain("/profile");
+    expect(body).not.toContain("/admin");
+    expect(body).not.toContain("/auth/callback");
+  });
+});

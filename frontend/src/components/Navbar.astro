@@ -11,6 +11,7 @@ type ActivePage =
   | "projects"
   | "project"
   | "strong-types"
+  | "blog"
   | "hire-me"
   | "job-offers"
   | "admin/job-offers"
@@ -29,6 +30,7 @@ interface Props {
       projects: string;
       projectThisSite: string;
       projectStrongTypes: string;
+      blog: string;
       hireMe: string;
       mySubmissions: string;
       admin: string;
@@ -81,6 +83,7 @@ const navItems: NavItem[] = [
       { label: t.nav.projectStrongTypes, page: "strong-types", icon: "package-2", active: activePage === "strong-types" },
     ],
   },
+  { label: t.nav.blog, page: "blog", active: activePage === "blog" },
   { label: t.nav.hireMe, page: "hire-me", active: activePage === "hire-me" },
 ];
 ---
