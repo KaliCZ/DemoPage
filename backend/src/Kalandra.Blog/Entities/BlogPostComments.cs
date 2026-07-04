@@ -61,7 +61,6 @@ public class BlogPostComments
         if (comment == null)
             return DeleteBlogCommentError.CommentNotFound;
 
-        // Admins can moderate any thread; everyone else only deletes their own.
         if (comment.UserId != user.Id && !user.IsAdmin)
             return DeleteBlogCommentError.NotAuthorized;
 

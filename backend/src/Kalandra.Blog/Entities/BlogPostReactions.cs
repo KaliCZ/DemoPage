@@ -3,8 +3,7 @@ using Kalandra.Blog.Events;
 namespace Kalandra.Blog.Entities;
 
 /// <summary>
-/// Live-aggregated state of one post's reaction stream. Toggle semantics: the
-/// decision replays current state to emit either an Added or a Removed event.
+/// Live-aggregated state of one post's reaction stream — replayed per read, never snapshotted.
 /// </summary>
 public class BlogPostReactions
 {

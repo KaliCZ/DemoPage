@@ -27,8 +27,7 @@ public static class RateLimits
             QueueLimit = 0,
         };
 
-        // Blog reactions and comments: burst-friendly but bounded, per authenticated
-        // user. No Turnstile escape hatch — blog writes have no captcha flow.
+        // No Turnstile escape hatch here — blog writes have no captcha flow.
         var blogWriteLimiterOptions = new SlidingWindowRateLimiterOptions
         {
             PermitLimit = environment.IsDevelopment() ? 1000 : 30,

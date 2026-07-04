@@ -86,7 +86,12 @@ test.describe("Blog Flow", () => {
     const reactions = page.locator('section[aria-label="Was this useful?"]');
     const thumbsUp = reactions.getByRole("button", { name: "Thumbs up" });
     await expect(thumbsUp).toHaveAttribute("aria-pressed", "false");
+
+    // The UI flips optimistically, so wait for the server write to land before
+    // reloading — a reload mid-flight would abort the request and lose the toggle.
+    const toggleSettled = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
     await thumbsUp.click();
+    expect((await toggleSettled).ok()).toBeTruthy();
     await expect(thumbsUp).toHaveAttribute("aria-pressed", "true");
 
     await page.reload();
