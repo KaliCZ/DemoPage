@@ -1,0 +1,13 @@
+# Temporal UI routing for the shared Caddy proxy. deploy-temporal substitutes
+# the credentials and installs this as /srv/caddy/sites/temporal.caddy.
+#
+# basic_auth is the whole security model here: the Temporal UI has no built-in
+# sign-in and the server authorizes any caller, so nothing may reach :8233
+# except through this block. Assumes the origin cert covers *.kalandra.tech.
+temporal.kalandra.tech {
+    basic_auth {
+        __TEMPORAL_UI_USER__ __TEMPORAL_UI_PASSWORD_HASH__
+    }
+    reverse_proxy localhost:8233
+    tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key
+}

@@ -9,10 +9,12 @@ name: deploy-temporal
 # Persistence lives in the SAME Supabase Postgres the API uses, in dedicated
 # `temporal` and `temporal_visibility` databases that auto-setup creates on the
 # first (cold) run. Required configuration:
-#   vars.TEMPORAL_DB_HOST       — Supabase Postgres host (direct/session, not the transaction pooler)
-#   vars.TEMPORAL_DB_PORT       — usually 5432
-#   secrets.TEMPORAL_DB_USER    — Postgres role allowed to create databases
+#   vars.TEMPORAL_DB_HOST        — Supabase Postgres host (direct/session, not the transaction pooler)
+#   vars.TEMPORAL_DB_PORT        — usually 5432
+#   secrets.TEMPORAL_DB_USER     — Postgres role allowed to create databases
 #   secrets.TEMPORAL_DB_PASSWORD
+#   vars.TEMPORAL_UI_USERNAME    — basic-auth user for temporal.kalandra.tech
+#   secrets.TEMPORAL_UI_PASSWORD — basic-auth password (bcrypt-hashed on the VM at deploy time)
 on:
   workflow_dispatch:
 
@@ -36,7 +38,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: "infra/quadlet/kalandra-temporal.container,infra/quadlet/kalandra-temporal-ui.container"
+          source: "infra/quadlet/kalandra-temporal.container,infra/quadlet/kalandra-temporal-ui.container,infra/quadlet/temporal.caddy"
           target: "/home/${{ vars.OCI_USERNAME }}/temporal-staging/"
           strip_components: 2
           # Own staging dir, wiped per run — never shared with the app deploy's staging.
@@ -49,6 +51,8 @@ jobs:
           TEMPORAL_DB_PORT: ${{ vars.TEMPORAL_DB_PORT }}
           TEMPORAL_DB_USER: ${{ secrets.TEMPORAL_DB_USER }}
           TEMPORAL_DB_PASSWORD: ${{ secrets.TEMPORAL_DB_PASSWORD }}
+          TEMPORAL_UI_USERNAME: ${{ vars.TEMPORAL_UI_USERNAME }}
+          TEMPORAL_UI_PASSWORD: ${{ secrets.TEMPORAL_UI_PASSWORD }}
         with:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
@@ -56,7 +60,7 @@ jobs:
           # A cold first-init runs both schema setups against Supabase before the
           # server listens; warm restarts are up in seconds.
           command_timeout: 10m
-          envs: TEMPORAL_DB_HOST,TEMPORAL_DB_PORT,TEMPORAL_DB_USER,TEMPORAL_DB_PASSWORD
+          envs: TEMPORAL_DB_HOST,TEMPORAL_DB_PORT,TEMPORAL_DB_USER,TEMPORAL_DB_PASSWORD,TEMPORAL_UI_USERNAME,TEMPORAL_UI_PASSWORD
           script: |
             set -euo pipefail
             UNIT_DIR="$HOME/.config/containers/systemd"
@@ -65,6 +69,12 @@ jobs:
 
             command -v podman >/dev/null 2>&1 \
               || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+            podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
+              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+            [ -d /srv/caddy/sites ] \
+              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+            [ -n "$TEMPORAL_UI_USERNAME" ] && [ -n "$TEMPORAL_UI_PASSWORD" ] \
+              || { echo "::error::TEMPORAL_UI_USERNAME / TEMPORAL_UI_PASSWORD must be set — they gate temporal.kalandra.tech"; exit 1; }
 
             wait_for_listen() {  # $1=unit  $2=port  $3=timeout_secs
               unit="$1"; port="$2"; timeout="$3"; waited=0
@@ -131,4 +141,17 @@ jobs:
             systemctl --user restart kalandra-temporal-ui.service
             wait_for_listen kalandra-temporal-ui.service 8233 90 || exit 1
 
-            echo "Temporal up — server :7233 (loopback), UI :8233 (SSH tunnel). The API worker connects at localhost:7233."
+            # ----- 3. Publish the UI at temporal.kalandra.tech through the shared Caddy.
+            # basic_auth is mandatory: the Temporal UI has no sign-in of its own, and an
+            # open UI would expose workflow payloads and allow terminating workflows.
+            # Hashing happens here so CI only ever stores the plain secret.
+            # (Bcrypt output is $-, .- and /-safe for the | sed delimiter.)
+            HASH="$(podman exec caddy caddy hash-password --plaintext "$TEMPORAL_UI_PASSWORD")"
+            [ -n "$HASH" ] || { echo "::error::caddy hash-password produced no output"; exit 1; }
+            sed -e "s|__TEMPORAL_UI_USER__|${TEMPORAL_UI_USERNAME}|" \
+                -e "s|__TEMPORAL_UI_PASSWORD_HASH__|${HASH}|" \
+                "$STAGING/temporal.caddy" > /srv/caddy/sites/temporal.caddy
+            command -v chcon >/dev/null 2>&1 && chcon -t container_file_t /srv/caddy/sites/temporal.caddy || true
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+            echo "Temporal up — server :7233 (loopback), UI https://temporal.kalandra.tech (basic auth). The API worker connects at localhost:7233."
