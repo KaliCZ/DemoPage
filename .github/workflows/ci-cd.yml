@@ -63,7 +63,9 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          # Exact pin (matching package.json) — resolving "latest" is a GitHub API
+          # call that rate-limits on shared runners.
+          version: 2.108.0
 
       - name: Start local Supabase in background
         run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
