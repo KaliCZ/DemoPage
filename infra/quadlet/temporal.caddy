@@ -1,13 +1,18 @@
-# Temporal UI routing for the shared Caddy proxy. deploy-temporal substitutes
-# the credentials and installs this as /srv/caddy/sites/temporal.caddy.
+# Temporal UI routing for the shared Caddy proxy. deploy-temporal installs this
+# verbatim as /srv/caddy/sites/temporal.caddy.
 #
-# basic_auth is the whole security model here: the Temporal UI has no built-in
-# sign-in and the server authorizes any caller, so nothing may reach :8233
-# except through this block. Assumes the origin cert covers *.kalandra.tech.
+# Sign-in happens at the Cloudflare edge (Cloudflare Access application on this
+# hostname). The Temporal UI has no auth of its own, so client_auth is what makes
+# Access unskippable: only TLS connections presenting Cloudflare's Authenticated
+# Origin Pulls client cert are accepted — dialing the VM's IP directly with this
+# SNI fails the handshake. Requires "Authenticated Origin Pulls" enabled for the
+# zone in Cloudflare; deploy-temporal refreshes the CA file on every run.
 temporal.kalandra.tech {
-    basic_auth {
-        __TEMPORAL_UI_USER__ __TEMPORAL_UI_PASSWORD_HASH__
+    tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key {
+        client_auth {
+            mode require_and_verify
+            trust_pool file /etc/caddy/certs/cloudflare-origin-pull-ca.pem
+        }
     }
     reverse_proxy localhost:8233
-    tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key
 }

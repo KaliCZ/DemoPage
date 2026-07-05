@@ -1,7 +1,8 @@
 # Temporal Web UI on :8233 — published as https://temporal.kalandra.tech through
-# the shared Caddy with basic_auth (the UI has no authentication of its own).
-# The OCI security list keeps :8233 itself unreachable from outside, so the
-# authenticated Caddy vhost is the only way in.
+# the shared Caddy. Sign-in is Cloudflare Access at the edge; Caddy only accepts
+# connections carrying Cloudflare's origin-pull client cert, so Access can't be
+# bypassed by dialing the VM directly (the UI has no authentication of its own).
+# The OCI security list keeps :8233 itself unreachable from outside.
 
 [Unit]
 Description=Kalandra Temporal UI
