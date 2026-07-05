@@ -15,9 +15,6 @@
 *.sln.docstates
 .mcp.json
 
-# Local app configs
-**/appsettings.Development.json
-
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

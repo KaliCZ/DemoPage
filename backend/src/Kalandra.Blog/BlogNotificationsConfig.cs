@@ -10,8 +10,11 @@ public record BlogNotificationsConfig(Email AuthorEmail)
         IServiceCollection services,
         IConfiguration configuration)
     {
-        var config = new BlogNotificationsConfig(
-            AuthorEmail: Email.Create(configuration["Blog:AuthorNotificationEmail"]));
+        var authorEmail = configuration["Blog:AuthorNotificationEmail"]
+            ?? throw new InvalidOperationException(
+                "Blog:AuthorNotificationEmail is not configured — comment notifications have no author recipient.");
+
+        var config = new BlogNotificationsConfig(AuthorEmail: Email.Create(authorEmail));
 
         services.AddSingleton(config);
 
