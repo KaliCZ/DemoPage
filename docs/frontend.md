@@ -7,6 +7,7 @@ Astro SSG site with Tailwind CSS, deployed to Cloudflare Pages as static files. 
 Every route page lives in `pages/[...lang]/` and uses Astro's rest parameter to handle all locales from a single file. English gets no prefix (`/about`), Czech gets `/cs/about`.
 
 **Translation file rules:**
+
 - One JSON file per page per language, plus `common.json` for shared strings (nav, footer, auth, a11y).
 - Always use raw UTF-8 characters in JSON, never Unicode escapes (`č` not `\u010d`).
 - Adding a new language = new JSON files + one entry in the `locales` array in `utils.ts`. No new route files needed.
@@ -16,24 +17,28 @@ Every route page lives in `pages/[...lang]/` and uses Astro's rest parameter to 
 **The single most important rule for frontend code quality.** Astro page files should stay focused on routing, data loading, and page-level layout.
 
 **When to extract:**
+
 - A page file exceeds ~300 lines.
 - A distinct visual section has its own heading, layout, and internal structure (e.g., a detail card, a form, a diagram).
 - The same markup appears on multiple pages.
 - A section has enough props/logic that it would benefit from its own `interface Props`.
 
 **How to extract:**
+
 1. Create `src/components/MySection.astro`.
 2. Define a `Props` interface in the frontmatter for everything the component needs (translations, data, flags).
 3. Move the markup and any scoped `<style>` into the component.
 4. Import and use it in the page.
 
 **What stays in the page file:**
+
 - `getStaticPaths()` and locale resolution.
 - Top-level data fetching and page-level variables.
 - The page's primary layout skeleton (the `<Layout>` wrapper, main sections grid).
 - Inline `<script>` tags that wire up page-level interactivity.
 
 **What to avoid:**
+
 - Components that are just thin wrappers around a single HTML element — don't extract for extraction's sake.
 - Passing the entire translation object when the component only needs a few strings — pass a focused subset.
 
@@ -65,6 +70,7 @@ Auth plumbing is identical in both tiers: `window.__getAccessToken()`, `window._
 Supabase Auth with email/password + Google OAuth. Client-side auth state is managed via `@supabase/supabase-js`.
 
 `Layout.astro` exposes three globals for pages and scripts:
+
 - `window.__supabase` — the Supabase client instance.
 - `window.__getAccessToken()` — returns the current JWT (for API calls).
 - `window.__getUser()` — returns the current user object.
@@ -79,7 +85,7 @@ Posts are first-class Astro pages, not a CMS — git is the source of truth.
 - Every post exports a `metadata` constant (contract in `src/blog/types.ts`) and `export const getStaticPaths = () => blogPostStaticPaths(metadata);`. That metadata drives the index page, `/rss.xml`, and the sitemap.
 - `draft: true` keeps a post in git but out of the build entirely — no page, no feed entry, no sitemap entry.
 - Wrap the content in `BlogPostLayout`; use `<Code>` from `astro:components` for snippets (dual light/dark themes are wired in `global.css`).
-- Post bodies are written once, in English; the `[...lang]` route still serves `/cs/blog/…` with Czech chrome from `blog.json`.
+- Post content — title, summary, body — is **deliberately English-only**; the metadata contract has no per-locale fields. A single-author technical blog doesn't get translated posts, and half-translated metadata (Czech title over an English body) would be worse than honest English. The `[...lang]` route still serves `/cs/blog/…` with Czech chrome from `blog.json`. If this ever changes, extend `BlogPostMetadata`, the index, and the feed together.
 - One site-wide feed at `/rss.xml` — summary-only, canonical English URLs.
 
 ## Sitemap

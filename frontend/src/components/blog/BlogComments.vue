@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import { getApiError } from "../../lib/api-errors";
 
 interface CommentDto {
   id: string;
@@ -36,6 +37,11 @@ const props = defineProps<{
     postError: string;
     deleteError: string;
     rateLimited: string;
+    errors: {
+      ContentRequired: string;
+      ParentCommentNotFound: string;
+      ParentCommentDeleted: string;
+    };
   };
 }>();
 
@@ -145,7 +151,19 @@ async function submit() {
       (window as any).__showSnackbar?.(props.t.rateLimited, "error", 8000);
       return;
     }
-    if (!res.ok) throw new Error(`Comment post failed with ${res.status}`);
+    if (!res.ok) {
+      // ProblemDetails error codes map onto i18n keys (same convention as the
+      // hire-me form); anything unmapped falls back to the generic message.
+      const apiError = await getApiError(res, {
+        content: { ContentRequired: props.t.errors.ContentRequired },
+        parentCommentId: {
+          ParentCommentNotFound: props.t.errors.ParentCommentNotFound,
+          ParentCommentDeleted: props.t.errors.ParentCommentDeleted,
+        },
+      });
+      (window as any).__showSnackbar?.(apiError?.message ?? props.t.postError, "error", 8000);
+      return;
+    }
     const created: CommentDto = await res.json();
     comments.value = [...comments.value, created];
     draft.value = "";

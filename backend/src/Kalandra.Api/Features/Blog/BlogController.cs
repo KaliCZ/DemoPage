@@ -101,6 +101,9 @@ public class BlogController(
         if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
             return this.ValidationError("slug", BlogSlugError.InvalidSlug);
 
+        if (request.Content?.Trim().AsNonEmpty() is not { } content)
+            return this.ValidationError("content", PostCommentError.ContentRequired);
+
         var comment = new BlogCommentPosted(
             CommentId: Guid.NewGuid(),
             ParentCommentId: request.ParentCommentId,
@@ -108,7 +111,7 @@ public class BlogController(
             UserEmail: AppUser.Email,
             AuthorDisplayName: AppUser.FullName,
             AuthorAvatarUrl: AppUser.AvatarUrl,
-            Content: request.Content,
+            Content: content,
             Timestamp: timeProvider.GetUtcNow());
 
         // Store + notify share one durable workflow (BlogCommentWorkflow); the
@@ -122,9 +125,11 @@ public class BlogController(
                 IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
             });
 
+        // Cancellation frees this request if the client disconnects; the workflow
+        // itself keeps running — durability is the point.
         var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
             (BlogCommentWorkflow workflow) => workflow.StoreCommentAsync(input),
-            new(startOperation));
+            new(startOperation) { Rpc = new() { CancellationToken = ct } });
 
         if (outcome.Error is { } error)
         {

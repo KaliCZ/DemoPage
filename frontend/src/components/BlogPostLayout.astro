@@ -84,8 +84,23 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "";
     </div>
 
     <footer class="mt-16 pt-10 border-t border-outline-variant/30 space-y-14">
-      <BlogReactions client:idle apiUrl={apiUrl} slug={slug} t={t.reactions} />
+      <div>
+        <BlogReactions client:idle apiUrl={apiUrl} slug={slug} t={t.reactions} />
+        <!-- Static hint so signed-out visitors aren't left to discover the
+             sign-in requirement by clicking. The signed-out-only tier only
+             covers the pre-paint window; the script below owns it afterwards. -->
+        <p id="blog-signin-hint" class="signed-out-only font-body text-sm text-on-surface-variant mt-3">
+          {t.reactions.signInHint}
+        </p>
+      </div>
       <BlogComments client:idle apiUrl={apiUrl} slug={slug} lang={lang} t={t.comments} />
     </footer>
   </article>
+
+  <script>
+    window.addEventListener("auth-change", (event) => {
+      const hint = document.getElementById("blog-signin-hint");
+      hint?.classList.toggle("hidden", !!(event as CustomEvent).detail?.user);
+    });
+  </script>
 </Layout>

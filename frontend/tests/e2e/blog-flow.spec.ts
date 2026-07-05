@@ -81,6 +81,9 @@ test.describe("Blog Flow", () => {
     await expect(reactions.getByRole("button", { name: "Thumbs up" })).toBeVisible();
     await expect(reactions.getByRole("button", { name: "Thumbs down" })).toBeVisible();
 
+    // The static signed-out hint renders without any JS or island hydration.
+    await expect(page.getByText("Sign in to leave a reaction or comment.")).toBeVisible();
+
     const comments = page.locator('section[aria-label="Comments"]');
     await expect(comments.getByRole("button", { name: "Sign In" })).toBeVisible();
 
@@ -118,18 +121,28 @@ test.describe("Blog Flow", () => {
     const thumbsUp = reactions.getByRole("button", { name: "Thumbs up" });
     await expect(thumbsUp).toHaveAttribute("aria-pressed", "false");
 
+    // Count-relative assertion — earlier runs may have left reactions behind.
+    // Baseline from the API, not the UI: the rendered count races the island's
+    // async fetch, while the post-toggle UI always converges on server state.
+    const thumbsUpCount = thumbsUp.locator("span").nth(1);
+    const baseline = await request.get(`${API_URL}/api/blog/${SLUG}/reactions`);
+    const countBefore = (await baseline.json()).counts.thumbsUp;
+
     // The UI flips optimistically, so wait for the server write to land before
     // reloading — a reload mid-flight would abort the request and lose the toggle.
     const toggleSettled = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
     await thumbsUp.click();
     expect((await toggleSettled).ok()).toBeTruthy();
     await expect(thumbsUp).toHaveAttribute("aria-pressed", "true");
+    await expect(thumbsUpCount).toHaveText(String(countBefore + 1));
 
     await page.reload();
-    await expect(page.locator('section[aria-label="Was this useful?"]').getByRole("button", { name: "Thumbs up" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    const reloadedThumbsUp = page.locator('section[aria-label="Was this useful?"]').getByRole("button", { name: "Thumbs up" });
+    await expect(reloadedThumbsUp).toHaveAttribute("aria-pressed", "true");
+    await expect(reloadedThumbsUp.locator("span").nth(1)).toHaveText(String(countBefore + 1));
+
+    // Signed in, the static hint is gone (Layout's auth-known-in tier hides it).
+    await expect(page.getByText("Sign in to leave a reaction or comment.")).not.toBeVisible();
 
     // Post a top-level comment.
     const comments = page.locator('section[aria-label="Comments"]');

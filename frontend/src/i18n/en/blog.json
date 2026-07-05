@@ -19,6 +19,7 @@
   },
   "reactions": {
     "heading": "Was this useful?",
+    "signInHint": "Sign in to leave a reaction or comment.",
     "error": "Your reaction could not be saved. Please try again.",
     "labels": {
       "ThumbsUp": "Thumbs up",
@@ -47,6 +48,11 @@
     "loadError": "Comments could not be loaded.",
     "postError": "Your comment could not be posted. Please try again.",
     "deleteError": "The comment could not be deleted. Please try again.",
-    "rateLimited": "You're posting too fast — try again in a minute."
+    "rateLimited": "You're posting too fast — try again in a minute.",
+    "errors": {
+      "ContentRequired": "Your comment is empty — write something first.",
+      "ParentCommentNotFound": "The comment you're replying to no longer exists.",
+      "ParentCommentDeleted": "The comment you're replying to was deleted."
+    }
   }
 }

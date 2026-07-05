@@ -24,6 +24,9 @@ function collectEntries(): SitemapEntry[] {
 
     let route = path.slice(LOCALIZED_PAGES_PREFIX.length).replace(/\.astro$/, "");
     if (route === "index") route = "";
+    // Normalize nested index pages ("blog/index" → "blog") BEFORE the blog-post
+    // skip below, or the blog index itself would be dropped from the sitemap.
+    if (route.endsWith("/index")) route = route.slice(0, -"/index".length);
     if (route.startsWith("blog/")) continue; // posts are added from their own metadata below
 
     // The blog index changes whenever a post lands — its lastmod tracks the newest post.

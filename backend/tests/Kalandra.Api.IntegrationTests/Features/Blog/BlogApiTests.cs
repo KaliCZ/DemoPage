@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kalandra.Api.IntegrationTests.Helpers;
+using Kalandra.Blog.Entities;
 
 namespace Kalandra.Api.IntegrationTests.Features.Blog;
 
@@ -107,6 +108,49 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(userId: userA, email: "reader-a@test.com");
         var mine = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/reactions", Ct));
         Assert.Equal("Heart", mine.GetProperty("mine")[0].GetString());
+    }
+
+    [Fact]
+    public async Task ToggleReaction_EveryKindRoundTripsOnTheWire()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "completionist@test.com");
+
+        // Iterating the domain enum makes a sixth kind that's missing from the
+        // hardcoded counts response fail here instead of shipping as a silent zero.
+        foreach (var kind in Enum.GetValues<BlogReactionKind>())
+        {
+            var response = await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = kind.ToString() }, Ct);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        var json = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/reactions", Ct));
+        var counts = json.GetProperty("counts");
+        foreach (var kind in Enum.GetValues<BlogReactionKind>())
+        {
+            var property = char.ToLowerInvariant(kind.ToString()[0]) + kind.ToString()[1..];
+            Assert.True(counts.TryGetProperty(property, out var count), $"counts is missing '{property}'");
+            Assert.Equal(1, count.GetInt32());
+        }
+        Assert.Equal(Enum.GetValues<BlogReactionKind>().Length, json.GetProperty("mine").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task ReactionsAndComments_AreIsolatedPerSlug()
+    {
+        var slugA = NewSlug();
+        var slugB = NewSlug();
+        Authenticate(email: "isolated@test.com");
+
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Heart" }, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/comments", new { content = "Only on A" }, Ct);
+
+        var reactions = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slugB}/reactions", Ct));
+        Assert.Equal(0, reactions.GetProperty("counts").GetProperty("heart").GetInt32());
+        Assert.Equal(0, reactions.GetProperty("mine").GetArrayLength());
+
+        var comments = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slugB}/comments", Ct));
+        Assert.Equal(0, comments.GetProperty("comments").GetArrayLength());
     }
 
     [Fact]
@@ -217,6 +261,33 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         AssertValidationFieldError(await ParseJsonAsync(response), "Content");
+    }
+
+    [Theory]
+    [InlineData(" \n\t  ")]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task PostComment_MissingOrWhitespaceContent_Returns400(string? content)
+    {
+        Authenticate(email: "spacebar@test.com");
+
+        var response = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/comments", new { content }, Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        AssertValidationError(await ParseJsonAsync(response), "content", "ContentRequired");
+    }
+
+    [Fact]
+    public async Task PostComment_TrimsSurroundingWhitespace()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "tidy@test.com");
+
+        var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "  Trimmed!\n" }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await ParseJsonAsync(response);
+        Assert.Equal("Trimmed!", json.GetProperty("content").GetString());
     }
 
     [Fact]

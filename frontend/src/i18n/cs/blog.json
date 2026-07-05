@@ -19,6 +19,7 @@
   },
   "reactions": {
     "heading": "Byl článek užitečný?",
+    "signInHint": "Reagovat a komentovat můžete po přihlášení.",
     "error": "Reakci se nepodařilo uložit. Zkuste to prosím znovu.",
     "labels": {
       "ThumbsUp": "Palec nahoru",
@@ -47,6 +48,11 @@
     "loadError": "Komentáře se nepodařilo načíst.",
     "postError": "Komentář se nepodařilo odeslat. Zkuste to prosím znovu.",
     "deleteError": "Komentář se nepodařilo smazat. Zkuste to prosím znovu.",
-    "rateLimited": "Přispíváte příliš rychle — zkuste to za minutu."
+    "rateLimited": "Přispíváte příliš rychle — zkuste to za minutu.",
+    "errors": {
+      "ContentRequired": "Komentář je prázdný — nejdřív něco napište.",
+      "ParentCommentNotFound": "Komentář, na který odpovídáte, už neexistuje.",
+      "ParentCommentDeleted": "Komentář, na který odpovídáte, byl smazán."
+    }
   }
 }

@@ -179,17 +179,25 @@ test.describe("Blog", () => {
   test("rss.xml lists the first post with a canonical link", async ({ request }) => {
     const response = await request.get("/rss.xml");
     expect(response.ok()).toBeTruthy();
+    expect(response.headers()["content-type"]).toContain("xml");
     const body = await response.text();
     expect(body).toContain("<rss");
     expect(body).toContain("Zero-Code Validations in Your .NET API");
     expect(body).toContain("<link>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</link>");
+    // Validator-completeness fields: self link, feed language, last change.
+    expect(body).toContain('<atom:link href="https://www.kalandra.tech/rss.xml" rel="self" type="application/rss+xml"/>');
+    expect(body).toContain("<language>en</language>");
+    expect(body).toContain("<lastBuildDate>");
   });
 
-  test("sitemap.xml covers static pages and blog posts, skips private pages", async ({ request }) => {
+  test("sitemap.xml covers static pages, the blog index, and blog posts, skips private pages", async ({ request }) => {
     const response = await request.get("/sitemap.xml");
     expect(response.ok()).toBeTruthy();
     const body = await response.text();
     expect(body).toContain("<loc>https://www.kalandra.tech/about</loc>");
+    // Exact match — the /blog prefix on post URLs must not stand in for the index itself.
+    expect(body).toContain("<loc>https://www.kalandra.tech/blog</loc>");
+    expect(body).toContain("<loc>https://www.kalandra.tech/cs/blog</loc>");
     expect(body).toContain("<loc>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</loc>");
     expect(body).toContain("<lastmod>2026-07-04</lastmod>");
     expect(body).toContain('hreflang="cs"');
