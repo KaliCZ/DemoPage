@@ -151,10 +151,12 @@ test.describe("Blog", () => {
     await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toBeVisible();
   });
 
-  test("blog index renders in Czech", async ({ page }) => {
+  test("blog index renders in Czech with the Czech variant", async ({ page }) => {
     await page.goto("/cs/blog");
     await expect(page.locator("html")).toHaveAttribute("lang", "cs");
-    await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toBeVisible();
+    const postLink = page.getByRole("link", { name: /Validace v \.NET API/ });
+    await expect(postLink).toBeVisible();
+    await expect(postLink).toHaveAttribute("href", "/cs/blog/zero-code-validations-in-your-dotnet-api");
   });
 
   test("blog post renders the article with highlighted code", async ({ page }) => {
@@ -164,19 +166,51 @@ test.describe("Blog", () => {
     await expect(page.locator("pre.astro-code").first()).toBeVisible();
   });
 
+  test("czech post variant renders its own body and hreflang pair", async ({ page }) => {
+    await page.goto("/cs/blog/zero-code-validations-in-your-dotnet-api");
+    await expect(page.locator("html")).toHaveAttribute("lang", "cs");
+    await expect(page.locator("article h1")).toContainText("Validace v .NET API bez jediného řádku kódu");
+    await expect(page.locator("pre.astro-code").first()).toBeVisible();
+    // The bilingual post claims both languages in its head.
+    await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute(
+      "href",
+      "https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api",
+    );
+  });
+
+  test("language picker on a bilingual post targets the translated post", async ({ page }) => {
+    await page.goto("/blog/zero-code-validations-in-your-dotnet-api");
+    await expect(page.getByRole("link", { name: "Switch to Czech" }).first()).toHaveAttribute(
+      "href",
+      "/cs/blog/zero-code-validations-in-your-dotnet-api",
+    );
+  });
+
   test("nav includes Blog and navigates to the index", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Blog" }).first().click();
     await expect(page).toHaveURL("/blog");
   });
 
-  test("blog index and footer expose the RSS feed", async ({ page }) => {
+  test("blog index and footer expose the current locale's RSS feed", async ({ page }) => {
     await page.goto("/blog");
     await expect(page.getByRole("link", { name: "Subscribe via RSS" })).toHaveAttribute("href", "/rss.xml");
     await expect(page.getByRole("link", { name: "Subscribe to the blog RSS feed" })).toHaveAttribute("href", "/rss.xml");
+
+    await page.goto("/cs/blog");
+    await expect(page.getByRole("link", { name: "Odebírat přes RSS" })).toHaveAttribute("href", "/cs/rss.xml");
+    await expect(page.getByRole("link", { name: "Odebírat blog přes RSS" })).toHaveAttribute("href", "/cs/rss.xml");
   });
 
-  test("rss.xml lists the first post with a canonical link", async ({ request }) => {
+  test("every page advertises both feeds for autodiscovery", async ({ page }) => {
+    await page.goto("/about");
+    const feedLinks = page.locator('link[rel="alternate"][type="application/rss+xml"]');
+    await expect(feedLinks).toHaveCount(2);
+    await expect(feedLinks.nth(0)).toHaveAttribute("href", "/rss.xml");
+    await expect(feedLinks.nth(1)).toHaveAttribute("href", "/cs/rss.xml");
+  });
+
+  test("rss.xml lists the English variant with a canonical link", async ({ request }) => {
     const response = await request.get("/rss.xml");
     expect(response.ok()).toBeTruthy();
     expect(response.headers()["content-type"]).toContain("xml");
@@ -190,6 +224,19 @@ test.describe("Blog", () => {
     expect(body).toContain("<lastBuildDate>");
   });
 
+  test("cs/rss.xml lists the Czech variant at Czech URLs", async ({ request }) => {
+    const response = await request.get("/cs/rss.xml");
+    expect(response.ok()).toBeTruthy();
+    expect(response.headers()["content-type"]).toContain("xml");
+    const body = await response.text();
+    expect(body).toContain("Validace v .NET API bez jediného řádku kódu");
+    expect(body).toContain("<link>https://www.kalandra.tech/cs/blog/zero-code-validations-in-your-dotnet-api</link>");
+    expect(body).toContain('<atom:link href="https://www.kalandra.tech/cs/rss.xml" rel="self" type="application/rss+xml"/>');
+    expect(body).toContain("<language>cs</language>");
+    // The English variant must not leak into the Czech feed.
+    expect(body).not.toContain("<link>https://www.kalandra.tech/blog/");
+  });
+
   test("sitemap.xml covers static pages, the blog index, and blog posts, skips private pages", async ({ request }) => {
     const response = await request.get("/sitemap.xml");
     expect(response.ok()).toBeTruthy();
@@ -199,6 +246,8 @@ test.describe("Blog", () => {
     expect(body).toContain("<loc>https://www.kalandra.tech/blog</loc>");
     expect(body).toContain("<loc>https://www.kalandra.tech/cs/blog</loc>");
     expect(body).toContain("<loc>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</loc>");
+    // Bilingual post: the Czech URL is a first-class sitemap entry, not just an alternate.
+    expect(body).toContain("<loc>https://www.kalandra.tech/cs/blog/zero-code-validations-in-your-dotnet-api</loc>");
     expect(body).toContain("<lastmod>2026-07-04</lastmod>");
     expect(body).toContain('hreflang="cs"');
     expect(body).not.toContain("/profile");

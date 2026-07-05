@@ -10,7 +10,11 @@
     "publishedOn": "Publikováno",
     "updatedOn": "Aktualizováno",
     "rssLabel": "Odebírat přes RSS",
-    "rssTitle": "RSS kanál všech článků"
+    "rssTitle": "RSS kanál všech článků",
+    "language": {
+      "en": "Anglicky",
+      "cs": "Česky"
+    }
   },
   "post": {
     "backToBlog": "Všechny články",

@@ -5,9 +5,18 @@ import { blogPostStaticPaths, type BlogPostMetadata } from "../../../blog/types"
 import { defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 
 export const metadata: BlogPostMetadata = {
-  title: "Zero-Code Validations in Your .NET API",
-  summary:
-    "How swapping primitive strings and ints for Kalicz.StrongTypes turned request validation into something the JSON deserializer and the compiler do for me — less code, honest signatures, and far fewer edge cases to test.",
+  variants: {
+    en: {
+      title: "Zero-Code Validations in Your .NET API",
+      summary:
+        "How swapping primitive strings and ints for Kalicz.StrongTypes turned request validation into something the JSON deserializer and the compiler do for me — less code, honest signatures, and far fewer edge cases to test.",
+    },
+    cs: {
+      title: "Validace v .NET API bez jediného řádku kódu",
+      summary:
+        "Jak výměna primitivních stringů a intů za Kalicz.StrongTypes proměnila validaci requestů v práci pro JSON deserializér a kompilátor — méně kódu, upřímné signatury a mnohem méně hraničních případů k testování.",
+    },
+  },
   pubDate: "2026-07-04",
   tags: ["dotnet", "csharp", "strong-types", "api-design"],
 };
@@ -66,104 +75,219 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 ---
 
 <BlogPostLayout metadata={metadata} lang={lang}>
-  <p>
-    A while ago I reviewed an endpoint that was, by every checklist, done. It compiled, it had tests, it even had XML docs. It also spent
-    its first fifteen lines interrogating its own request object: is the email set, does it parse, is the product code blank, is the
-    quantity at least one. The actual business logic — the reason the endpoint exists — started somewhere around line twenty.
-  </p>
+  {
+    lang === "cs" ? (
+      <Fragment>
+        <p>
+          Před časem jsem dělal review endpointu, který byl podle všech checklistů hotový. Kompiloval se, měl testy, měl dokonce XML
+          dokumentaci. Taky strávil svých prvních patnáct řádků výslechem vlastního request objektu: je e-mail vyplněný, dá se naparsovat,
+          není kód produktu prázdný, je množství alespoň jedna. Skutečná business logika — důvod, proč ten endpoint existuje — začínala
+          někde kolem dvacátého řádku.
+        </p>
 
-  <p>
-    That's not an unusual endpoint. That's most endpoints. When a request DTO is made of <code>string</code> and
-    <code>int</code>, every field is a liar until proven otherwise, and the proving is on you — in the controller, then again in the service
-    that doesn't quite trust the controller, then again in the domain that doesn't quite trust either of them.
-  </p>
+        <p>
+          To není nijak výjimečný endpoint. Tak vypadá většina endpointů. Když se request DTO skládá ze <code>string</code> a
+          <code>int</code>, je každé pole lhář, dokud se neprokáže opak — a to prokazování je na vás: v controlleru, pak znovu v service,
+          která controlleru tak docela nevěří, a pak znovu v doméně, která nevěří ani jednomu z nich.
+        </p>
 
-  <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
+        <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
 
-  <h2>Parse, don't validate</h2>
+        <h2>Parse, don't validate</h2>
 
-  <p>
-    The fix is an old functional-programming idea: instead of checking values and passing the same loose type along, convert the value <em
-      >once</em
-    > into a type that cannot represent the invalid state. A <code>string</code> that survived a null check is still a <code>string</code> — the
-    check's result is thrown away the moment it passes. A
-    <code>NonEmptyString</code> carries the proof in the type, and the compiler enforces it everywhere downstream.
-  </p>
+        <p>
+          Náprava je stará myšlenka z funkcionálního programování: místo kontrolování hodnoty a posílání téhož volného typu dál ji
+          <em>jednou</em> převeďte do typu, který neplatný stav vůbec neumí reprezentovat. <code>string</code>, který přežil null check, je
+          pořád jen <code>string</code> — výsledek kontroly se zahodí ve chvíli, kdy projde.
+          <code>NonEmptyString</code> si důkaz nese přímo v typu a kompilátor ho vymáhá všude níž.
+        </p>
 
-  <p>
-    That's what my <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package packages up for C#: a small set of validated wrappers
-    — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> and friends over any <code>INumber&lt;T&gt;</code>, <code
-      >NonEmptyEnumerable&lt;T&gt;</code
-    > — plus the algebraic types
-    <code>Maybe&lt;T&gt;</code> and <code>Result&lt;T, TError&gt;</code> to compose them with.
-  </p>
+        <p>
+          Přesně tohle pro C# balí můj balíček <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>: malá sada validovaných
+          obálek — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> a spol. nad libovolným
+          <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus algebraické typy
+          <code>Maybe&lt;T&gt;</code> a <code>Result&lt;T, TError&gt;</code>, kterými se to celé skládá dohromady.
+        </p>
 
-  <h2>The zero-code part</h2>
+        <h2>Ta část „bez jediného řádku“</h2>
 
-  <p>One line to install:</p>
+        <p>Jeden řádek na instalaci:</p>
 
-  <Code code="dotnet add package Kalicz.StrongTypes" lang="shell" themes={codeThemes} />
+        <Code code="dotnet add package Kalicz.StrongTypes" lang="shell" themes={codeThemes} />
 
-  <p>Then the request record swaps its primitives for types that mean what they say:</p>
+        <p>Pak už jen request record vymění primitivy za typy, které říkají, co skutečně znamenají:</p>
 
-  <Code code={afterSnippet} lang="csharp" themes={codeThemes} />
+        <Code code={afterSnippet} lang="csharp" themes={codeThemes} />
 
-  <p>
-    The trick is that the package ships <code>System.Text.Json</code> converters that need no registration. When a payload arrives with an empty
-    product code or a quantity of zero, deserialization itself fails, and ASP.NET Core turns that into an RFC 7807 <code>400</code> with the offending
-    field named — before your endpoint method is ever called. All four guard clauses from the first snippet are gone, and nothing replaced them.
-    There is no validator class, no attribute soup, no pipeline behavior. The types <em>are</em> the validation.
-  </p>
+        <p>
+          Trik je v tom, že balíček přináší konvertory pro <code>System.Text.Json</code>, které se nikde neregistrují. Když dorazí payload s
+          prázdným kódem produktu nebo nulovým množstvím, selže už samotná deserializace a ASP.NET Core z ní udělá RFC 7807
+          <code>400</code> s pojmenovaným polem — dřív, než se metoda vašeho endpointu vůbec zavolá. Všechny čtyři guard clauses z prvního
+          snippetu zmizely a nic je nenahradilo. Není tu žádná třída validátoru, žádná polévka z atributů, žádný pipeline behavior. Ty typy
+          <em>jsou</em> ta validace.
+        </p>
 
-  <h2>Signatures become documentation</h2>
+        <h2>Signatury jako dokumentace</h2>
 
-  <p>
-    The part I didn't anticipate when I started writing the package is how far the effect travels beyond the API boundary. Once the edge
-    parses values into strong types, every layer below it gets to state its real requirements:
-  </p>
+        <p>
+          S čím jsem při psaní balíčku nepočítal, je to, jak daleko za hranici API se ten efekt nese. Jakmile okraj systému hodnoty jednou
+          naparsuje do silných typů, každá vrstva pod ním může vyslovit své skutečné požadavky:
+        </p>
 
-  <Code code={signatureSnippet} lang="csharp" themes={codeThemes} />
+        <Code code={signatureSnippet} lang="csharp" themes={codeThemes} />
 
-  <p>
-    The second signature answers questions the first one forces you to research: no, the email can't be null; no, zero quantity can't happen
-    here; yes, you can pass this straight to the persistence layer. Reviewers stop asking "what if this is empty?" because the question no
-    longer type-checks.
-  </p>
+        <p>
+          Druhá signatura odpovídá na otázky, které vás ta první nutí dohledávat: ne, e-mail nemůže být null; ne, nulové množství sem
+          nedoteče; ano, můžete to poslat rovnou do persistence. Kolegové na review se přestanou ptát „a co když je tohle prázdné?“, protože
+          ta otázka už neprojde přes typovou kontrolu.
+        </p>
 
-  <p>
-    Business rules that <em>can</em> legitimately fail get the same treatment with <code>Result&lt;T, TError&gt;</code> — failure becomes a value
-    in the signature instead of a surprise exception:
-  </p>
+        <p>
+          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code> — selhání je
+          hodnota v signatuře, ne překvapení v podobě výjimky:
+        </p>
 
-  <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
+        <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
 
-  <h2>Fewer edge cases, fewer tests</h2>
+        <h2>Méně hraničních případů, méně testů</h2>
 
-  <p>
-    My favorite consequence is what happens to the test suite. The tests that fed <code>null</code>, <code>""</code>,
-    <code>" "</code> and <code>-1</code> into every layer to verify each one defends itself? Deleted. Those states are unrepresentable, so there
-    is nothing to defend against. What remains are tests about behavior — the ones worth reading. At the boundaries where you do construct values
-    from loose input, the API is explicit about intent:
-  </p>
+        <p>
+          Můj nejoblíbenější důsledek je, co se stane s testy. Ty, které do každé vrstvy sypaly <code>null</code>, <code>""</code>,
+          <code>" "</code> a <code>-1</code>, aby ověřily, že se každá umí ubránit sama? Smazané. Ty stavy jsou nereprezentovatelné, takže
+          není co bránit. Zbydou testy o chování — ty, které stojí za to číst. A na hranicích, kde hodnoty z volného vstupu opravdu
+          konstruujete, je API explicitní v tom, co zamýšlíte:
+        </p>
 
-  <Code code={constructionSnippet} lang="csharp" themes={codeThemes} />
+        <Code code={constructionSnippet} lang="csharp" themes={codeThemes} />
 
-  <p>
-    And for the properties you still want to verify, the <code>Kalicz.StrongTypes.FsCheck</code> companion package generates valid strong-typed
-    values for property-based tests, so your generators respect the same invariants your code does. There's an EF Core companion with value converters,
-    too.
-  </p>
+        <p>
+          A pro vlastnosti, které si ověřit chcete, umí doprovodný balíček <code>Kalicz.StrongTypes.FsCheck</code> generovat validní silně
+          typované hodnoty pro property-based testy — vaše generátory tak respektují stejné invarianty jako váš kód. Existuje i EF Core
+          companion s value konvertory.
+        </p>
 
-  <h2>Try it</h2>
+        <h2>Vyzkoušejte to</h2>
 
-  <p>
-    The backend behind this very site runs on StrongTypes end to end — request DTOs, domain events, entity state. If the approach appeals to
-    you, the <a href={localePath(lang, "strong-types")}>StrongTypes page</a> has diagrams and more examples, the source lives on
-    <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">GitHub</a>, and the package is on <a
-      href="https://www.nuget.org/packages/Kalicz.StrongTypes"
-      target="_blank"
-      rel="noopener noreferrer">NuGet</a
-    >. Start with one request record. Delete the guard clauses it makes redundant. You'll know within an afternoon whether you want it
-    everywhere.
-  </p>
+        <p>
+          Backend tohohle webu běží na StrongTypes od kraje ke kraji — request DTO, doménové eventy, stav entit. Pokud vás ten přístup
+          zaujal, na stránce <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdete diagramy a další ukázky, zdrojáky žijí na
+          <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
+            GitHubu
+          </a>{" "}
+          a balíček je na
+          <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
+            NuGetu
+          </a>
+          . Začněte jedním request recordem. Smažte guard clauses, které tím ztratí smysl. Do odpoledne budete vědět, jestli ho chcete
+          všude.
+        </p>
+      </Fragment>
+    ) : (
+      <Fragment>
+        <p>
+          A while ago I reviewed an endpoint that was, by every checklist, done. It compiled, it had tests, it even had XML docs. It also
+          spent its first fifteen lines interrogating its own request object: is the email set, does it parse, is the product code blank, is
+          the quantity at least one. The actual business logic — the reason the endpoint exists — started somewhere around line twenty.
+        </p>
+
+        <p>
+          That's not an unusual endpoint. That's most endpoints. When a request DTO is made of <code>string</code> and
+          <code>int</code>, every field is a liar until proven otherwise, and the proving is on you — in the controller, then again in the
+          service that doesn't quite trust the controller, then again in the domain that doesn't quite trust either of them.
+        </p>
+
+        <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
+
+        <h2>Parse, don't validate</h2>
+
+        <p>
+          The fix is an old functional-programming idea: instead of checking values and passing the same loose type along, convert the value{" "}
+          <em>once</em> into a type that cannot represent the invalid state. A <code>string</code> that survived a null check is still a{" "}
+          <code>string</code> — the check's result is thrown away the moment it passes. A<code>NonEmptyString</code> carries the proof in
+          the type, and the compiler enforces it everywhere downstream.
+        </p>
+
+        <p>
+          That's what my <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package packages up for C#: a small set of
+          validated wrappers — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> and friends over any
+          <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus the algebraic types
+          <code>Maybe&lt;T&gt;</code> and <code>Result&lt;T, TError&gt;</code> to compose them with.
+        </p>
+
+        <h2>The zero-code part</h2>
+
+        <p>One line to install:</p>
+
+        <Code code="dotnet add package Kalicz.StrongTypes" lang="shell" themes={codeThemes} />
+
+        <p>Then the request record swaps its primitives for types that mean what they say:</p>
+
+        <Code code={afterSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          The trick is that the package ships <code>System.Text.Json</code> converters that need no registration. When a payload arrives
+          with an empty product code or a quantity of zero, deserialization itself fails, and ASP.NET Core turns that into an RFC 7807
+          <code>400</code> with the offending field named — before your endpoint method is ever called. All four guard clauses from the
+          first snippet are gone, and nothing replaced them. There is no validator class, no attribute soup, no pipeline behavior. The types{" "}
+          <em>are</em> the validation.
+        </p>
+
+        <h2>Signatures become documentation</h2>
+
+        <p>
+          The part I didn't anticipate when I started writing the package is how far the effect travels beyond the API boundary. Once the
+          edge parses values into strong types, every layer below it gets to state its real requirements:
+        </p>
+
+        <Code code={signatureSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          The second signature answers questions the first one forces you to research: no, the email can't be null; no, zero quantity can't
+          happen here; yes, you can pass this straight to the persistence layer. Reviewers stop asking "what if this is empty?" because the
+          question no longer type-checks.
+        </p>
+
+        <p>
+          Business rules that <em>can</em> legitimately fail get the same treatment with <code>Result&lt;T, TError&gt;</code> — failure
+          becomes a value in the signature instead of a surprise exception:
+        </p>
+
+        <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
+
+        <h2>Fewer edge cases, fewer tests</h2>
+
+        <p>
+          My favorite consequence is what happens to the test suite. The tests that fed <code>null</code>, <code>""</code>,<code>" "</code>{" "}
+          and <code>-1</code> into every layer to verify each one defends itself? Deleted. Those states are unrepresentable, so there is
+          nothing to defend against. What remains are tests about behavior — the ones worth reading. At the boundaries where you do
+          construct values from loose input, the API is explicit about intent:
+        </p>
+
+        <Code code={constructionSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          And for the properties you still want to verify, the <code>Kalicz.StrongTypes.FsCheck</code> companion package generates valid
+          strong-typed values for property-based tests, so your generators respect the same invariants your code does. There's an EF Core
+          companion with value converters, too.
+        </p>
+
+        <h2>Try it</h2>
+
+        <p>
+          The backend behind this very site runs on StrongTypes end to end — request DTOs, domain events, entity state. If the approach
+          appeals to you, the <a href={localePath(lang, "strong-types")}>StrongTypes page</a> has diagrams and more examples, the source
+          lives on
+          <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+          , and the package is on
+          <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
+            NuGet
+          </a>
+          . Start with one request record. Delete the guard clauses it makes redundant. You'll know within an afternoon whether you want it
+          everywhere.
+        </p>
+      </Fragment>
+    )
+  }
 </BlogPostLayout>

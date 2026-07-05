@@ -10,7 +10,11 @@
     "publishedOn": "Published",
     "updatedOn": "Updated",
     "rssLabel": "Subscribe via RSS",
-    "rssTitle": "RSS feed of all posts"
+    "rssTitle": "RSS feed of all posts",
+    "language": {
+      "en": "English",
+      "cs": "Czech"
+    }
   },
   "post": {
     "backToBlog": "All posts",

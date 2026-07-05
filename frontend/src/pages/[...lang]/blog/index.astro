@@ -3,7 +3,8 @@ import Layout from "../../../layouts/Layout.astro";
 import IconRss from "../../../components/icons/IconRss.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import type { PageMeta } from "../../../lib/page-meta";
-import { publishedPosts } from "../../../blog/posts";
+import { publishedPosts, resolveVariant } from "../../../blog/posts";
+import { feeds } from "../../../blog/feeds";
 import enStrings from "../../../i18n/en/blog.json";
 import csStrings from "../../../i18n/cs/blog.json";
 
@@ -35,7 +36,7 @@ const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "
         {t.index.subtitle}
       </p>
       <a
-        href="/rss.xml"
+        href={feeds[lang].path}
         title={t.index.rssTitle}
         class="inline-flex items-center gap-2 mt-6 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
       >
@@ -48,35 +49,51 @@ const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "
 
     <ul class="space-y-8" role="list">
       {
-        posts.map((post) => (
-          <li>
-            <a
-              href={localePath(lang, `blog/${post.slug}`)}
-              class="block rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-6 md:p-8 hover:border-primary/40 transition-colors"
-            >
-              <p class="font-label text-xs uppercase tracking-widest text-tertiary mb-3">
-                <time datetime={post.metadata.pubDate}>{formatDate(post.pubDate)}</time>
-                {post.updatedDate && post.metadata.updatedDate && (
-                  <span>
-                    {" · "}
-                    {t.index.updatedOn} <time datetime={post.metadata.updatedDate}>{formatDate(post.updatedDate)}</time>
-                  </span>
+        posts.map((post) => {
+          // A post without a variant in this language is listed anyway — under its
+          // own language's title, linking to its own language's URL, with a chip.
+          const { locale, variant } = resolveVariant(post, lang);
+          const crossLocale = locale !== lang ? locale : undefined;
+          return (
+            <li>
+              <a
+                href={localePath(locale, `blog/${post.slug}`)}
+                hreflang={crossLocale}
+                class="block rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-6 md:p-8 hover:border-primary/40 transition-colors"
+              >
+                <p class="font-label text-xs uppercase tracking-widest text-tertiary mb-3">
+                  <time datetime={post.metadata.pubDate}>{formatDate(post.pubDate)}</time>
+                  {post.updatedDate && post.metadata.updatedDate && (
+                    <span>
+                      {" · "}
+                      {t.index.updatedOn} <time datetime={post.metadata.updatedDate}>{formatDate(post.updatedDate)}</time>
+                    </span>
+                  )}
+                  {crossLocale && (
+                    <span class="inline-block align-middle ml-2 px-2 py-0.5 rounded-full bg-surface-container-low border border-outline-variant/30 normal-case tracking-normal text-on-surface-variant">
+                      {t.index.language[crossLocale]}
+                    </span>
+                  )}
+                </p>
+                <h2 lang={crossLocale} class="font-headline text-2xl md:text-3xl font-bold tracking-tight mb-3 text-on-surface">
+                  {variant.title}
+                </h2>
+                <p lang={crossLocale} class="font-body text-on-surface-variant leading-relaxed mb-4">
+                  {variant.summary}
+                </p>
+                {post.metadata.tags.length > 0 && (
+                  <ul class="flex flex-wrap gap-2" role="list">
+                    {post.metadata.tags.map((tag) => (
+                      <li class="px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/30 text-xs font-label text-on-surface-variant">
+                        {tag}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </p>
-              <h2 class="font-headline text-2xl md:text-3xl font-bold tracking-tight mb-3 text-on-surface">{post.metadata.title}</h2>
-              <p class="font-body text-on-surface-variant leading-relaxed mb-4">{post.metadata.summary}</p>
-              {post.metadata.tags.length > 0 && (
-                <ul class="flex flex-wrap gap-2" role="list">
-                  {post.metadata.tags.map((tag) => (
-                    <li class="px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/30 text-xs font-label text-on-surface-variant">
-                      {tag}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </a>
-          </li>
-        ))
+              </a>
+            </li>
+          );
+        })
       }
     </ul>
   </section>

@@ -1,10 +1,22 @@
-import { defaultLocale, locales } from "../i18n/utils";
+import { defaultLocale, locales, type Locale } from "../i18n/utils";
 
-/** Metadata contract every blog post page exports — drives the index, RSS feed, and sitemap. */
-export interface BlogPostMetadata {
+export interface BlogPostVariant {
   title: string;
   /** Plain-text summary shown on the index, in the RSS feed (summary-only by design), and as meta description. */
   summary: string;
+}
+
+/**
+ * A post is English-only, Czech-only, or bilingual; routes, index entries, feed
+ * items, and sitemap URLs exist only for the declared languages. Declare a
+ * language only when title, summary, AND the body are written in it — no
+ * half-translations.
+ */
+export type BlogPostVariants = { en: BlogPostVariant; cs?: BlogPostVariant } | { en?: BlogPostVariant; cs: BlogPostVariant };
+
+/** Metadata contract every blog post page exports — drives the index, RSS feeds, and sitemap. */
+export interface BlogPostMetadata {
+  variants: BlogPostVariants;
   /** ISO date (YYYY-MM-DD). */
   pubDate: string;
   /** ISO date (YYYY-MM-DD) — set on meaningful edits; drives the sitemap lastmod. */
@@ -14,10 +26,15 @@ export interface BlogPostMetadata {
   draft?: boolean;
 }
 
-/** getStaticPaths body for post pages — a draft emits no paths, so it is never built or publicly reachable. */
+/** Declared languages in site order (en first). */
+export function postLocales(metadata: BlogPostMetadata): Locale[] {
+  return locales.filter((locale) => metadata.variants[locale] !== undefined);
+}
+
+/** getStaticPaths body for post pages — only declared languages get a route; a draft emits none. */
 export function blogPostStaticPaths(metadata: BlogPostMetadata) {
   if (metadata.draft) return [];
-  return locales.map((lang) => ({
+  return postLocales(metadata).map((lang) => ({
     params: { lang: lang === defaultLocale ? undefined : lang },
   }));
 }

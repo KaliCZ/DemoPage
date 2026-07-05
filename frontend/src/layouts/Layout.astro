@@ -4,7 +4,8 @@ import AuthDialog from "../components/AuthDialog.astro";
 import Navbar from "../components/Navbar.astro";
 import Snackbar from "../components/Snackbar.astro";
 import Footer from "../components/Footer.astro";
-import type { Locale } from "../i18n/utils";
+import { locales, type Locale } from "../i18n/utils";
+import { feeds } from "../blog/feeds";
 
 import enCommon from "../i18n/en/common.json";
 import csCommon from "../i18n/cs/common.json";
@@ -29,6 +30,10 @@ interface Props {
   lang?: Locale;
   /** Canonical path override for pages nested under an activePage section (e.g. "blog/<slug>"). */
   pagePath?: string;
+  /** Locales this page exists in — defaults to all; single-language blog posts narrow it so hreflang never claims a 404. */
+  alternateLocales?: Locale[];
+  /** Per-locale language-picker targets for pages whose counterpart is not simply pagePath (e.g. an untranslated post falls back to the blog index). */
+  langUrls?: Partial<Record<Locale, string>>;
   ogType?: "website" | "article";
 }
 
@@ -38,6 +43,8 @@ const {
   activePage,
   lang = "en",
   pagePath,
+  alternateLocales = locales,
+  langUrls,
   ogType = "website",
 } = Astro.props;
 
@@ -61,13 +68,21 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
 
-    <!-- Canonical & hreflang -->
+    <!-- Canonical & hreflang — hreflang needs a pair, so single-locale pages emit only the canonical -->
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="alternate" hreflang="en" href={enUrl} />
-    <link rel="alternate" hreflang="cs" href={csUrl} />
-    <link rel="alternate" hreflang="x-default" href={enUrl} />
+    {
+      alternateLocales.length > 1 && (
+        <>
+          {alternateLocales.map((locale) => (
+            <link rel="alternate" hreflang={locale} href={locale === "cs" ? csUrl : enUrl} />
+          ))}
+          <link rel="alternate" hreflang="x-default" href={alternateLocales.includes("en") ? enUrl : csUrl} />
+        </>
+      )
+    }
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-    <link rel="alternate" type="application/rss+xml" title="kalandra.tech — Blog" href="/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title={feeds.en.title} href={feeds.en.path} />
+    <link rel="alternate" type="application/rss+xml" title={feeds.cs.title} href={feeds.cs.path} />
 
     <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
@@ -76,7 +91,11 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content={lang === "cs" ? "cs_CZ" : "en_US"} />
-    <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
+    {
+      alternateLocales.includes(lang === "cs" ? "en" : "cs") && (
+        <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
+      )
+    }
 
     <!-- Self-hosted fonts: preload the latin subset files so the browser starts
          downloading them immediately on HTML parse, before CSS is even fetched.
@@ -229,7 +248,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     </style>
   </head>
   <body class="min-h-screen flex flex-col">
-    <Navbar activePage={activePage} lang={lang} t={t} />
+    <Navbar activePage={activePage} lang={lang} langUrls={langUrls} t={t} />
 
     <script is:inline>
       // Prefill the profile chip from the session we parsed in the head pre-detect script,

@@ -3,8 +3,8 @@ import { Icon } from "astro-icon/components";
 import Layout from "../layouts/Layout.astro";
 import BlogReactions from "./blog/BlogReactions.vue";
 import BlogComments from "./blog/BlogComments.vue";
-import { localePath, type Locale } from "../i18n/utils";
-import type { BlogPostMetadata } from "../blog/types";
+import { locales, localePath, type Locale } from "../i18n/utils";
+import { postLocales, type BlogPostMetadata } from "../blog/types";
 import enBlog from "../i18n/en/blog.json";
 import csBlog from "../i18n/cs/blog.json";
 
@@ -21,6 +21,14 @@ const t = lang === "cs" ? csBlog : enBlog;
 const slug = Astro.url.pathname.replace(/\/$/, "").split("/").pop()!;
 const pagePath = `blog/${slug}`;
 
+// blogPostStaticPaths only builds routes for declared languages, so the variant exists.
+const variant = metadata.variants[lang]!;
+const availableLocales = postLocales(metadata);
+// The language picker jumps to the translated post, or to the blog index when no translation exists.
+const langUrls = Object.fromEntries(
+  locales.map((locale) => [locale, localePath(locale, availableLocales.includes(locale) ? pagePath : "blog")]),
+) as Record<Locale, string>;
+
 const pubDate = new Date(metadata.pubDate);
 const updatedDate = metadata.updatedDate ? new Date(metadata.updatedDate) : undefined;
 const dateLocale = lang === "cs" ? "cs-CZ" : "en-US";
@@ -30,11 +38,13 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "";
 ---
 
 <Layout
-  title={`${metadata.title} | kalandra.tech`}
-  description={metadata.summary}
+  title={`${variant.title} | kalandra.tech`}
+  description={variant.summary}
   activePage="blog"
   lang={lang}
   pagePath={pagePath}
+  alternateLocales={availableLocales}
+  langUrls={langUrls}
   ogType="article"
 >
   <Fragment slot="head">
@@ -53,7 +63,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "";
         {t.post.backToBlog}
       </a>
       <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter leading-tight mb-4">
-        {metadata.title}
+        {variant.title}
       </h1>
       <p class="font-label text-sm text-on-surface-variant">
         <time datetime={metadata.pubDate}>{formatDate(pubDate)}</time>

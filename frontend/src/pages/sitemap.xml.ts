@@ -1,6 +1,7 @@
 import type { APIContext } from "astro";
 import type { PageMeta } from "../lib/page-meta";
 import { publishedPosts } from "../blog/posts";
+import { locales, localePath, type Locale } from "../i18n/utils";
 
 // Every static page opts in by exporting `pageMeta`; blog posts contribute
 // their own metadata. One mechanism, no auto-discovery — see docs/frontend.md.
@@ -11,6 +12,8 @@ interface SitemapEntry {
   path: string;
   /** ISO date (YYYY-MM-DD). */
   lastmod: string;
+  /** Locales this URL exists in — all for static pages, the declared languages for posts. */
+  locales: Locale[];
 }
 
 const LOCALIZED_PAGES_PREFIX = "./[...lang]/";
@@ -35,29 +38,33 @@ function collectEntries(): SitemapEntry[] {
         ? [module.pageMeta.updatedDate, ...posts.map((post) => post.lastModified)].sort().at(-1)!
         : module.pageMeta.updatedDate;
 
-    entries.push({ path: route, lastmod });
+    entries.push({ path: route, lastmod, locales });
   }
 
   for (const post of posts) {
-    entries.push({ path: `blog/${post.slug}`, lastmod: post.lastModified });
+    entries.push({ path: `blog/${post.slug}`, lastmod: post.lastModified, locales: post.locales });
   }
 
   return entries.sort((a, b) => a.path.localeCompare(b.path));
 }
 
 function urlNodes(site: string, entry: SitemapEntry): string {
-  const enLocation = entry.path === "" ? `${site}/` : `${site}/${entry.path}`;
-  const csLocation = entry.path === "" ? `${site}/cs/` : `${site}/cs/${entry.path}`;
+  const location = (locale: Locale) => `${site}${localePath(locale, entry.path === "" ? "home" : entry.path)}`;
 
-  const alternates = [
-    `    <xhtml:link rel="alternate" hreflang="en" href="${enLocation}"/>`,
-    `    <xhtml:link rel="alternate" hreflang="cs" href="${csLocation}"/>`,
-    `    <xhtml:link rel="alternate" hreflang="x-default" href="${enLocation}"/>`,
-  ].join("\n");
+  // hreflang needs a pair — single-language entries emit a bare <url>.
+  const alternates =
+    entry.locales.length > 1
+      ? [
+          ...entry.locales.map((locale) => `    <xhtml:link rel="alternate" hreflang="${locale}" href="${location(locale)}"/>`),
+          `    <xhtml:link rel="alternate" hreflang="x-default" href="${location(entry.locales[0])}"/>`,
+        ].join("\n")
+      : undefined;
 
-  return [enLocation, csLocation]
-    .map((location) =>
-      [`  <url>`, `    <loc>${location}</loc>`, `    <lastmod>${entry.lastmod}</lastmod>`, alternates, `  </url>`].join("\n"),
+  return entry.locales
+    .map((locale) =>
+      [`  <url>`, `    <loc>${location(locale)}</loc>`, `    <lastmod>${entry.lastmod}</lastmod>`, alternates, `  </url>`]
+        .filter((line) => line !== undefined)
+        .join("\n"),
     )
     .join("\n");
 }

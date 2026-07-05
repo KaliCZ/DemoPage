@@ -81,16 +81,18 @@ The sign-in dialog (`AuthDialog.astro`) is included in the layout — pages don'
 
 Posts are first-class Astro pages, not a CMS — git is the source of truth.
 
-- One `.astro` file per post under `pages/[...lang]/blog/<slug>.astro`; the filename is the slug and also keys the post's reaction/comment streams in the backend.
-- Every post exports a `metadata` constant (contract in `src/blog/types.ts`) and `export const getStaticPaths = () => blogPostStaticPaths(metadata);`. That metadata drives the index page, `/rss.xml`, and the sitemap.
+- One `.astro` file per post under `pages/[...lang]/blog/<slug>.astro`; the filename is the slug and also keys the post's reaction/comment streams in the backend (shared across language variants — one discussion per post).
+- Every post exports a `metadata` constant (contract in `src/blog/types.ts`) and `export const getStaticPaths = () => blogPostStaticPaths(metadata);`. That metadata drives the index page, the RSS feeds, and the sitemap.
+- **A post declares its languages** via `variants` — English-only, Czech-only, or both. Each declared language gets its own title/summary and its own route (`/blog/<slug>`, `/cs/blog/<slug>`); undeclared languages get nothing (no route, no feed item, no sitemap URL, no hreflang claim). Declare a language only when title, summary, AND body are written in it — no half-translations.
+- Bilingual bodies live in the same post file, switched with `lang === "cs" ? <Fragment>…</Fragment> : <Fragment>…</Fragment>`; code snippets stay shared (code comments remain English by convention).
 - `draft: true` keeps a post in git but out of the build entirely — no page, no feed entry, no sitemap entry.
-- Wrap the content in `BlogPostLayout`; use `<Code>` from `astro:components` for snippets (dual light/dark themes are wired in `global.css`).
-- Post content — title, summary, body — is **deliberately English-only**; the metadata contract has no per-locale fields. A single-author technical blog doesn't get translated posts, and half-translated metadata (Czech title over an English body) would be worse than honest English. The `[...lang]` route still serves `/cs/blog/…` with Czech chrome from `blog.json`. If this ever changes, extend `BlogPostMetadata`, the index, and the feed together.
-- One site-wide feed at `/rss.xml` — summary-only, canonical English URLs.
+- Wrap the content in `BlogPostLayout`; use `<Code>` from `astro:components` for snippets (dual light/dark themes are wired in `global.css`). The layout narrows hreflang to the declared languages and points the language picker at the translated post, or at the blog index when no translation exists.
+- The index lists every post at both locales; an entry without a variant in the current language shows its own language's title with a language chip and links across (`lang`/`hreflang` attributes mark the foreign text).
+- Two feeds mirror the two language editions: `/rss.xml` (English variants, English URLs) and `/cs/rss.xml` (Czech variants, Czech URLs) — summary-only, both advertised via `<link rel="alternate">` on every page. A bilingual post appears in each feed once, in that feed's language. There is deliberately no combined feed: it would either duplicate bilingual posts or lie about its channel language; feed identity lives in `src/blog/feeds.ts`.
 
 ## Sitemap
 
-`/sitemap.xml` is a custom endpoint (`src/pages/sitemap.xml.ts`), not an integration. A static page opts in by exporting `pageMeta` (`src/lib/page-meta.ts`); its `updatedDate` becomes the `<lastmod>` — **bump it when you meaningfully edit a page**. Pages without the export (profile, admin, auth callback) stay out of the sitemap. Blog posts contribute `updatedDate ?? pubDate` from their own metadata, and the blog index entry tracks the newest post.
+`/sitemap.xml` is a custom endpoint (`src/pages/sitemap.xml.ts`), not an integration. A static page opts in by exporting `pageMeta` (`src/lib/page-meta.ts`); its `updatedDate` becomes the `<lastmod>` — **bump it when you meaningfully edit a page**. Pages without the export (profile, admin, auth callback) stay out of the sitemap. Blog posts contribute `updatedDate ?? pubDate` from their own metadata and emit URLs only for their declared languages (hreflang alternates only when a post declares more than one); the blog index entry tracks the newest post.
 
 ## Accessibility
 

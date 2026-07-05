@@ -1,8 +1,11 @@
-import type { BlogPostMetadata } from "./types";
+import type { Locale } from "../i18n/utils";
+import { postLocales, type BlogPostMetadata, type BlogPostVariant } from "./types";
 
 export interface BlogPost {
   slug: string;
   metadata: BlogPostMetadata;
+  /** Declared languages in site order (en first). */
+  locales: Locale[];
   pubDate: Date;
   updatedDate?: Date;
   /** Sitemap lastmod source: updatedDate when set, else pubDate. */
@@ -34,6 +37,7 @@ export function publishedPosts(): BlogPost[] {
       return {
         slug,
         metadata,
+        locales: postLocales(metadata),
         pubDate: parseIsoDate(metadata.pubDate, path),
         updatedDate: metadata.updatedDate ? parseIsoDate(metadata.updatedDate, path) : undefined,
         lastModified: metadata.updatedDate ?? metadata.pubDate,
@@ -41,4 +45,10 @@ export function publishedPosts(): BlogPost[] {
     })
     .filter((post) => !post.metadata.draft)
     .sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
+}
+
+/** The `lang` variant when declared, else the post's first language — `locale` tells callers when they link across languages. */
+export function resolveVariant(post: BlogPost, lang: Locale): { locale: Locale; variant: BlogPostVariant } {
+  const locale = post.locales.includes(lang) ? lang : post.locales[0];
+  return { locale, variant: post.metadata.variants[locale]! };
 }
