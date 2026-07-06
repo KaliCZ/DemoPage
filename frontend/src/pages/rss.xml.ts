@@ -5,11 +5,12 @@ import { publishedPosts } from "../blog/posts";
 import { feed } from "../blog/feeds";
 import enBlog from "../i18n/en/blog.json";
 
-// One feed for the whole blog. A post is written in English, Czech, or both; a
-// bilingual post shows both titles ("English / Czech") so the language is
-// visible in any reader (RSS has no per-item language field), and links to its
-// default-locale page, which carries the language switcher. Summary-only by
-// design. The channel language is the site default.
+// One feed for the whole blog. A post is written in English, Czech, or both;
+// RSS has no per-item language field, so each item is prefixed with its
+// language tags ("[EN]/[CS]") and a bilingual post shows both titles
+// ("English / Czech"), keeping the language visible in any reader. The item
+// links to the post's default-locale page, which carries the language
+// switcher. Summary-only by design. The channel language is the site default.
 export function GET(context: APIContext) {
   const posts = publishedPosts();
   // ISO date strings order lexicographically, so .sort() finds the newest edit.
@@ -31,8 +32,10 @@ export function GET(context: APIContext) {
     ].join(""),
     items: posts.map((post) => {
       const primary = post.locales.includes(defaultLocale) ? defaultLocale : post.locales[0];
+      const tags = post.locales.map((locale) => `[${locale.toUpperCase()}]`).join("/");
+      const titles = post.locales.map((locale) => post.metadata.variants[locale]!.title).join(" / ");
       return {
-        title: post.locales.map((locale) => post.metadata.variants[locale]!.title).join(" / "),
+        title: `${tags} ${titles}`,
         description: post.metadata.variants[primary]!.summary,
         link: localePath(primary, `blog/${post.slug}`),
         pubDate: post.pubDate,

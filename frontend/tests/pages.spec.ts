@@ -215,8 +215,8 @@ test.describe("Blog", () => {
     expect(response.headers()["content-type"]).toContain("xml");
     const body = await response.text();
     expect(body).toContain("<rss");
-    // Bilingual post: one item, both titles (English first), linked to the English page.
-    expect(body).toContain("Zero-Code Validations in Your .NET API / Validace v .NET API bez jediného řádku kódu");
+    // Bilingual post: one item, language tags + both titles (English first), linked to the English page.
+    expect(body).toContain("[EN]/[CS] Zero-Code Validations in Your .NET API / Validace v .NET API bez jediného řádku kódu");
     expect(body).toContain("<link>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</link>");
     // The Czech URL is not a separate entry — one item per post, not per language.
     expect(body).not.toContain("<link>https://www.kalandra.tech/cs/blog/");
