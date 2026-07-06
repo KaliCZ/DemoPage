@@ -24,12 +24,27 @@ public class BlogController(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
     ITemporalClient temporalClient,
+    IBlogPostCatalog postCatalog,
     ToggleBlogReactionHandler toggleReactionHandler,
     DeleteBlogCommentHandler deleteCommentHandler,
     GetBlogReactionsHandler getReactionsHandler,
     GetBlogCommentsHandler getCommentsHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
+
+    // Malformed slug → 400; well-shaped but not a real post → 404 (no stream for a
+    // page that doesn't exist). Returns null when the slug is a known post.
+    private ActionResult? ResolveSlug(string slug, out BlogPostSlug postSlug)
+    {
+        if (BlogPostSlug.TryCreate(slug) is not { } parsed)
+        {
+            postSlug = default;
+            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+        }
+
+        postSlug = parsed;
+        return postCatalog.IsKnown(parsed) ? null : NotFound();
+    }
 
     // ───── Reactions ─────
 
@@ -39,8 +54,8 @@ public class BlogController(
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<GetBlogReactionsResponse>> GetReactions(string slug, CancellationToken ct)
     {
-        if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
-            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+        if (ResolveSlug(slug, out var postSlug) is { } slugError)
+            return slugError;
 
         var reactions = await getReactionsHandler.HandleAsync(new GetBlogReactionsQuery(postSlug), ct);
         return GetBlogReactionsResponse.Serialize(reactions, currentUser.User?.Id);
@@ -56,8 +71,8 @@ public class BlogController(
         [FromBody] ToggleBlogReactionRequest request,
         CancellationToken ct)
     {
-        if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
-            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+        if (ResolveSlug(slug, out var postSlug) is { } slugError)
+            return slugError;
 
         // JsonStringEnumConverter rejects unknown names but still lets raw numbers through.
         if (!Enum.IsDefined(request.Kind))
@@ -81,8 +96,8 @@ public class BlogController(
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ListBlogCommentsResponse>> GetComments(string slug, CancellationToken ct)
     {
-        if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
-            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+        if (ResolveSlug(slug, out var postSlug) is { } slugError)
+            return slugError;
 
         var comments = await getCommentsHandler.HandleAsync(new GetBlogCommentsQuery(postSlug), ct);
         return ListBlogCommentsResponse.Serialize(comments);
@@ -98,8 +113,8 @@ public class BlogController(
         [FromBody] PostBlogCommentRequest request,
         CancellationToken ct)
     {
-        if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
-            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+        if (ResolveSlug(slug, out var postSlug) is { } slugError)
+            return slugError;
 
         if (request.Content?.Trim().AsNonEmpty() is not { } content)
             return this.ValidationError("content", PostCommentError.ContentRequired);
@@ -151,8 +166,8 @@ public class BlogController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteComment(string slug, Guid commentId, CancellationToken ct)
     {
-        if (BlogPostSlug.TryCreate(slug) is not { } postSlug)
-            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+        if (ResolveSlug(slug, out var postSlug) is { } slugError)
+            return slugError;
 
         var command = new DeleteBlogCommentCommand(
             Slug: postSlug,

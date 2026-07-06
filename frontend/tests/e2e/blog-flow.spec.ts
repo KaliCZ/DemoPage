@@ -35,6 +35,13 @@ const replyingUser = {
   fullName: "E2E Blog Replier",
 };
 
+// Used only by the all-posts anti-drift probe; its reactions are reverted so they don't perturb the counts asserted elsewhere.
+const driftUser = {
+  email: `e2e-blog-drift-${Date.now()}@test.local`,
+  password: "test-password-123",
+  fullName: "E2E Drift User",
+};
+
 /** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
 async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
   const query = `to:"${to}" "${containing}"`;
@@ -56,7 +63,7 @@ test.describe("Blog Flow", () => {
   let sharedCommentText = "";
 
   test.beforeAll(async ({ request }) => {
-    for (const user of [testUser, replyingUser]) {
+    for (const user of [testUser, replyingUser, driftUser]) {
       const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
         headers: {
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -202,5 +209,44 @@ test.describe("Blog Flow", () => {
     // One workflow, two notifications: the blog author and the parent comment's author.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: crossReplyText });
     await waitForEmail(request, { to: testUser.email, containing: crossReplyText });
+  });
+
+  test("the backend accepts reactions on every published post (slug catalogs don't drift)", async ({ page, request }) => {
+    // The backend gates reactions to slugs in BlogPostCatalog; the frontend owns the
+    // actual posts. Enumerate the published posts from the sitemap and prove the
+    // backend recognizes each — a new frontend post whose slug wasn't added to the
+    // catalog fails here.
+    await page.goto(POST_PATH);
+    await page.evaluate(
+      async ({ email, password }) => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) throw new Error("Supabase client not available");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(`Sign-in failed: ${error.message}`);
+      },
+      { email: driftUser.email, password: driftUser.password },
+    );
+
+    const token = await page.evaluate(async () => {
+      const supabase = await (window as any).__supabaseReady;
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token as string | undefined;
+    });
+    expect(token, "drift user must be signed in").toBeTruthy();
+
+    const sitemap = await request.get("/sitemap.xml");
+    expect(sitemap.ok()).toBeTruthy();
+    const xml = await sitemap.text();
+    // Capture the slug from /blog/<slug> and /cs/blog/<slug>; the bare /blog index has no slug.
+    const slugs = [...new Set([...xml.matchAll(/<loc>https:\/\/www\.kalandra\.tech\/(?:cs\/)?blog\/([^<]+)<\/loc>/g)].map((m) => m[1]))];
+    expect(slugs.length, "sitemap should list at least one blog post").toBeGreaterThan(0);
+
+    const headers = { Authorization: `Bearer ${token}` };
+    for (const slug of slugs) {
+      const on = await request.post(`${API_URL}/api/blog/${slug}/reactions/toggle`, { headers, data: { kind: "ThumbsUp" } });
+      expect(on.ok(), `backend rejected a reaction on "${slug}" — add it to BlogPostCatalog`).toBeTruthy();
+      // Toggle back so this probe leaves reaction counts untouched.
+      await request.post(`${API_URL}/api/blog/${slug}/reactions/toggle`, { headers, data: { kind: "ThumbsUp" } });
+    }
   });
 });

@@ -8,6 +8,9 @@ public static class ServiceRegistration
 {
     public static IServiceCollection AddBlogDomain(this IServiceCollection services)
     {
+        // Which slugs are real posts (drives the reactions/comments slug gate).
+        services.AddSingleton<IBlogPostCatalog, BlogPostCatalog>();
+
         // Command handlers
         services.AddScoped<ToggleBlogReactionHandler>();
         services.AddScoped<StoreBlogCommentHandler>();

@@ -1,5 +1,6 @@
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using Kalandra.Blog;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Storage;
@@ -44,6 +45,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         {
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(EmailSender);
+
+            // Random per-test slugs need to resolve; the prod catalog gates to real posts.
+            services.RemoveAll<IBlogPostCatalog>();
+            services.AddSingleton<IBlogPostCatalog, OpenBlogPostCatalog>();
 
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();
