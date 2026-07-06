@@ -1,9 +1,10 @@
+using System.Net.Mail;
 using StrongTypes;
 
 namespace Kalandra.Infrastructure.Email;
 
 public record EmailMessage(
-    StrongTypes.Email To,
+    MailAddress To,
     NonEmptyString Subject,
     NonEmptyString TextBody);
 

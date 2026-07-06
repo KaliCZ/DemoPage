@@ -388,7 +388,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var email = Assert.Single(await WaitForEmailsAsync(m => m.TextBody.Value.Contains(content), expectedCount: 1));
-        Assert.Equal("author@kalandra.local", email.To.Value.Address);
+        Assert.Equal("author@kalandra.local", email.To.Address);
         Assert.Contains(slug, email.Subject.Value);
         Assert.Contains($"https://www.kalandra.tech/blog/{slug}", email.TextBody.Value);
         Assert.Contains("notifier", email.TextBody.Value);
@@ -408,8 +408,8 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
         var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(replyContent), expectedCount: 2);
         Assert.Equal(2, emails.Length);
-        Assert.Contains(emails, m => m.To.Value.Address == "author@kalandra.local");
-        var parentNotification = Assert.Single(emails, m => m.To.Value.Address == "parent-author@test.com");
+        Assert.Contains(emails, m => m.To.Address == "author@kalandra.local");
+        var parentNotification = Assert.Single(emails, m => m.To.Address == "parent-author@test.com");
         Assert.StartsWith("New reply to your comment", parentNotification.Subject.Value);
     }
 
@@ -433,7 +433,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(replyContent))];
 
         var email = Assert.Single(emails);
-        Assert.Equal("author@kalandra.local", email.To.Value.Address);
+        Assert.Equal("author@kalandra.local", email.To.Address);
     }
 
     [Fact]

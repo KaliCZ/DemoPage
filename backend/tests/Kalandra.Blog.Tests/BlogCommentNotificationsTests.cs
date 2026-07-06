@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 using Kalandra.Blog.Workflows;
@@ -6,7 +7,7 @@ namespace Kalandra.Blog.Tests;
 
 public class BlogCommentNotificationsTests
 {
-    private static readonly Email AuthorEmail = Email.Create("author@kalandra.local");
+    private static readonly MailAddress AuthorEmail = new("author@kalandra.local");
     private static readonly DateTimeOffset Now = new(2026, 7, 4, 12, 0, 0, TimeSpan.Zero);
 
     private static BlogCommentPosted Comment(string email, Guid? userId = null, Guid? parentId = null) => new(
@@ -37,7 +38,7 @@ public class BlogCommentNotificationsTests
 
         var notification = Assert.Single(notifications);
         Assert.Equal(BlogCommentNotificationKind.NewCommentForAuthor, notification.Kind);
-        Assert.Equal("author@kalandra.local", notification.Recipient.Value.Address);
+        Assert.Equal("author@kalandra.local", notification.Recipient.Address);
     }
 
     [Fact]
@@ -50,7 +51,7 @@ public class BlogCommentNotificationsTests
         Assert.Equal(2, notifications.Count);
         Assert.Contains(notifications, n => n.Kind == BlogCommentNotificationKind.NewCommentForAuthor);
         Assert.Contains(notifications, n =>
-            n.Kind == BlogCommentNotificationKind.ReplyToYourComment && n.Recipient.Value.Address == "parent@test.com");
+            n.Kind == BlogCommentNotificationKind.ReplyToYourComment && n.Recipient.Address == "parent@test.com");
     }
 
     [Fact]

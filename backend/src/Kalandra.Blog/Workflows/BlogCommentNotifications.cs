@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 
@@ -9,7 +10,7 @@ public enum BlogCommentNotificationKind
     ReplyToYourComment,
 }
 
-public record BlogCommentNotification(Email Recipient, BlogCommentNotificationKind Kind);
+public record BlogCommentNotification(MailAddress Recipient, BlogCommentNotificationKind Kind);
 
 public static class BlogCommentNotifications
 {
@@ -19,23 +20,24 @@ public static class BlogCommentNotifications
     /// and nobody gets two emails for one.
     /// </summary>
     public static IReadOnlyList<BlogCommentNotification> Plan(
-        BlogCommentPosted comment, BlogPostComment? parent, Email authorEmail)
+        BlogCommentPosted comment, BlogPostComment? parent, MailAddress authorEmail)
     {
         var notifications = new List<BlogCommentNotification>();
 
-        if (!SameAddress(comment.UserEmail, authorEmail))
+        // Event/entity emails are StrongTypes.Email (a serialization boundary); .Value is the MailAddress used in code.
+        if (!SameAddress(comment.UserEmail.Value, authorEmail))
             notifications.Add(new BlogCommentNotification(authorEmail, BlogCommentNotificationKind.NewCommentForAuthor));
 
         if (parent is { IsDeleted: false }
             && parent.UserId != comment.UserId
-            && !SameAddress(parent.UserEmail, authorEmail))
+            && !SameAddress(parent.UserEmail.Value, authorEmail))
         {
-            notifications.Add(new BlogCommentNotification(parent.UserEmail, BlogCommentNotificationKind.ReplyToYourComment));
+            notifications.Add(new BlogCommentNotification(parent.UserEmail.Value, BlogCommentNotificationKind.ReplyToYourComment));
         }
 
         return notifications;
     }
 
-    private static bool SameAddress(Email left, Email right) =>
-        string.Equals(left.Value.Address, right.Value.Address, StringComparison.OrdinalIgnoreCase);
+    private static bool SameAddress(MailAddress left, MailAddress right) =>
+        string.Equals(left.Address, right.Address, StringComparison.OrdinalIgnoreCase);
 }
