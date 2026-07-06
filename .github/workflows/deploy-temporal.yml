@@ -42,9 +42,9 @@ jobs:
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           source: "infra/quadlet/kalandra-temporal.container,infra/quadlet/kalandra-temporal-ui.container,infra/quadlet/temporal.caddy"
-          target: "/home/${{ vars.OCI_USERNAME }}/temporal-staging/"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/temporal-staging/"
           strip_components: 2
-          # Own staging dir, wiped per run — never shared with the app deploy's staging.
+          # Own staging dir under ~/demoPage/, wiped per run — never shared with the app deploy's staging.
           rm: true
 
       - name: Bring up Temporal
@@ -65,8 +65,9 @@ jobs:
           script: |
             set -euo pipefail
             UNIT_DIR="$HOME/.config/containers/systemd"
-            STAGING="$HOME/temporal-staging"
-            mkdir -p "$UNIT_DIR"
+            APP_DIR="$HOME/demoPage"
+            STAGING="$APP_DIR/temporal-staging"
+            mkdir -p "$UNIT_DIR" "$APP_DIR"
 
             command -v podman >/dev/null 2>&1 \
               || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
@@ -100,7 +101,7 @@ jobs:
             # chain isn't in the VM's trust store, and the connection is
             # egress-only to a pinned host. -----
             umask 077
-            cat > "$HOME/kalandra-temporal.env.new" << EOF
+            cat > "$APP_DIR/kalandra-temporal.env.new" << EOF
             DB=postgres12
             DB_PORT=${TEMPORAL_DB_PORT}
             POSTGRES_SEEDS=${TEMPORAL_DB_HOST}
@@ -119,8 +120,8 @@ jobs:
             TEMPORAL_ADDRESS=127.0.0.1:7233
             EOF
             NEEDS_RESTART=0
-            cmp -s "$HOME/kalandra-temporal.env.new" "$HOME/kalandra-temporal.env" 2>/dev/null || NEEDS_RESTART=1
-            mv -f "$HOME/kalandra-temporal.env.new" "$HOME/kalandra-temporal.env"
+            cmp -s "$APP_DIR/kalandra-temporal.env.new" "$APP_DIR/kalandra-temporal.env" 2>/dev/null || NEEDS_RESTART=1
+            mv -f "$APP_DIR/kalandra-temporal.env.new" "$APP_DIR/kalandra-temporal.env"
 
             # ----- 2. Install units; restart only when the env or a unit changed —
             # a warm no-op re-run must not bounce a healthy server. -----

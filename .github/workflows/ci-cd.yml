@@ -342,11 +342,12 @@ jobs:
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           # App slot units only (the shared Caddy units live under infra/host/,
-          # host-managed per SETUP.md §3.3). Land them in a staging dir; the
+          # host-managed per SETUP.md §3.3). Land them in this app's staging dir
+          # under ~/demoPage/ (parallel to ~/hampap/ on the shared box); the
           # deploy installs only the slot it's deploying to, leaving the other
           # slot's live unit (and its pinned production image) untouched.
           source: "infra/quadlet/*.container"
-          target: "/home/${{ vars.OCI_USERNAME }}/quadlet-staging/"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/quadlet-staging/"
           strip_components: 2
 
       - name: Sync Caddy routing fragment to VM
@@ -358,7 +359,7 @@ jobs:
           # Kalandra's routing template (port filled in at deploy time). The
           # shared Caddy that loads it is host infra, not synced here.
           source: "infra/quadlet/kalandra.caddy"
-          target: "/home/${{ vars.OCI_USERNAME }}/"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/"
           strip_components: 2
 
       - name: Deploy to Oracle Cloud (blue-green)
@@ -388,7 +389,8 @@ jobs:
             set -euo pipefail
             MAX_ATTEMPTS=40
             UNIT_DIR="$HOME/.config/containers/systemd"
-            STAGING="$HOME/quadlet-staging"
+            APP_DIR="$HOME/demoPage"
+            STAGING="$APP_DIR/quadlet-staging"
             SITE_CONF=/srv/caddy/sites/kalandra.caddy
 
             # ----- 0. Preconditions: shared infra must already exist -----
@@ -403,10 +405,11 @@ jobs:
               || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
 
             umask 077
+            mkdir -p "$APP_DIR"
 
             # App secrets, read by both slots via EnvironmentFile. Rewritten
             # every deploy so rotated secrets propagate when a slot (re)starts.
-            cat > "$HOME/kalandra-api.env" << EOF
+            cat > "$APP_DIR/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Supabase__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
@@ -484,7 +487,7 @@ jobs:
             # (it re-reads the root + all imports and applies gracefully); it does
             # not modify the file. This is the promotion step — until now Caddy
             # was still routing to the old (production) slot.
-            sed "s/__PORT__/${NEW_PORT}/" "$HOME/kalandra.caddy" > "$SITE_CONF"
+            sed "s/__PORT__/${NEW_PORT}/" "$APP_DIR/kalandra.caddy" > "$SITE_CONF"
             # Oracle Linux enforces SELinux; relabel the freshly-written fragment
             # so the Caddy container can read it (the unit's :z relabel only runs
             # at container start). opc owns the file, so no sudo. No-op where

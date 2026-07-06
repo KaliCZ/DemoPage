@@ -35,6 +35,7 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
   - [3.5 DNS](#35-dns)
   - [3.6 Migrating an Existing Box](#36-migrating-an-existing-box-one-time)
+  - [3.7 Move DemoPage Into Its App Folder](#37-move-demopage-into-its-app-folder-one-time)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -318,6 +319,25 @@ the retired slot's unit, so a reboot brings back exactly the live version.
 (see §4). It pins each unit's `Image=` to an immutable digest, never `:latest`,
 so a restart can't drift onto a different build.
 
+#### On-disk layout (per-app home folder)
+
+Each app keeps its VM-side files in its own folder under `opc`'s home, so the
+shared box stays legible: demopage under `~/demoPage/`, hampap under `~/hampap/`.
+demopage's deploys write there:
+
+| Path | Written by | Purpose |
+|------|-----------|---------|
+| `~/demoPage/kalandra-api.env` | app deploy (§4), every run | API secrets — the slots' `EnvironmentFile` |
+| `~/demoPage/kalandra-temporal.env` | deploy-temporal, on change | Temporal server config |
+| `~/demoPage/kalandra.caddy` | app deploy, every run | Routing template (`__PORT__` filled in at deploy time) |
+| `~/demoPage/quadlet-staging/` | app deploy | Scratch: API `.container` units before install |
+| `~/demoPage/temporal-staging/` | deploy-temporal | Scratch: Temporal units + `temporal.caddy` (wiped each run) |
+
+The installed Quadlet units (`~/.config/containers/systemd/`), the Caddy site
+fragments and certs (`/srv/caddy/`) live in their shared locations — namespaced
+by filename (`kalandra-*`, `kalandra.caddy`, `temporal.caddy`), so they never
+collide with another app's.
+
 #### Port Allocation (shared host)
 
 Every app runs with `Network=host`, so they all share the host's port space.
@@ -330,7 +350,7 @@ rule is **don't collide**. Give each app a contiguous block and record it here.
 |-------------|-----------------------------|----------------------------------------------------|
 | 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
 | 8080 / 8081 | kalandra (demopage) API     | blue / green slots. **API only** — the website is SSG, built and hosted off-box, so it has no port here. |
-| 8090 / 8091 | *reserved* — next app (hampap) | Suggested next block; claim it when adding the app. |
+| 7233 / 8233 | kalandra (demopage) Temporal | Server / Web UI, both loopback-only. UI published at `temporal.kalandra.tech` through Caddy; see [`deploy-temporal.yml`](../.github/workflows/deploy-temporal.yml). |
 
 When adding an app, take the next free block (e.g. `81xx`), set its container's
 listen port accordingly, and add a row above before wiring up its Caddy fragment.
@@ -345,7 +365,7 @@ pieces make that work, all established by host setup / the first deploy:
 
 - **Linger** (`sudo loginctl enable-linger opc`, set in host setup) keeps the `opc` user's `systemd --user` instance running across SSH logouts *and* reboots; without it, `--user` services only exist while someone is logged in.
 - **Quadlet `[Install] WantedBy=default.target`** in each `.container` file makes the generated units start on boot — the shared Caddy and the live API slot. A completed deploy removes the retired slot's unit file, so only the production slot's unit is present at rest.
-- **Persisted on-disk state** — `~/kalandra-api.env` (secrets) and the digest baked into the live slot's unit `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
+- **Persisted on-disk state** — `~/demoPage/kalandra-api.env` (secrets) and the digest baked into the live slot's unit `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
 
 On a cold boot exactly one slot starts — the production slot, since the deploy removed the other slot's unit — and Caddy routes to the port its persisted fragment names. No traffic is lost. (If a reboot interrupts a deploy before the swap, the old unit is still present and comes back as production; the next deploy recreates the other slot.)
 
@@ -557,6 +577,33 @@ can be done any time.
 > **Sequencing:** do steps 1–5 right around merging the deploy PR — migrate the
 > box, then merge so the new pipeline takes over. Avoid pushing to `main` in the
 > gap (an old-pipeline deploy would rewrite the now-ignored `~/Caddyfile`).
+
+### 3.7 Move DemoPage Into Its App Folder (one-time)
+
+demopage's VM-side files used to sit loose at the top of `~` (`~/kalandra-api.env`,
+`~/kalandra.caddy`, `~/quadlet-staging/`); they now live under `~/demoPage/`
+(§3.2, "On-disk layout"), alongside hampap's `~/hampap/`.
+
+**No manual pre-step.** The deploy creates `~/demoPage/` and repopulates it. The
+blue-green swap is unchanged: the new slot's unit points at
+`~/demoPage/kalandra-api.env` and starts from the freshly written file, while the
+still-live slot keeps reading the old root file until it's retired — so a deploy
+that fails before the swap rolls back exactly as before. There is no real outage.
+
+After the **first successful deploy** of this layout (and, if you use it, one
+`deploy-temporal` run), the old root-level files are orphaned dead weight. Remove
+them as `opc`, gated on a healthy site:
+
+```bash
+curl -sf https://api.kalandra.tech/health >/dev/null \
+  && rm -f ~/kalandra-api.env ~/kalandra.caddy \
+  && rm -rf ~/quadlet-staging \
+  && echo "removed orphaned root-level demopage files"
+```
+
+The shared pieces don't move: the installed Quadlet units stay in
+`~/.config/containers/systemd/` and the Caddy fragment/cert stay under
+`/srv/caddy/` — both namespaced by filename, so hampap is untouched throughout.
 
 ---
 
