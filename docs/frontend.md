@@ -88,7 +88,7 @@ Posts are first-class Astro pages, not a CMS — git is the source of truth.
 - `draft: true` keeps a post in git but out of the build entirely — no page, no feed entry, no sitemap entry.
 - Wrap the content in `BlogPostLayout`; use `<Code>` from `astro:components` for snippets (dual light/dark themes are wired in `global.css`). The layout narrows hreflang to the declared languages and points the language picker at the translated post, or at the blog index when no translation exists.
 - The index lists every post at both locales; an entry without a variant in the current language shows its own language's title with a language chip and links across (`lang`/`hreflang` attributes mark the foreign text).
-- Two feeds mirror the two language editions: `/rss.xml` (English variants, English URLs) and `/cs/rss.xml` (Czech variants, Czech URLs) — summary-only, both advertised via `<link rel="alternate">` on every page. A bilingual post appears in each feed once, in that feed's language. There is deliberately no combined feed: it would either duplicate bilingual posts or lie about its channel language; feed identity lives in `src/blog/feeds.ts`.
+- One feed at `/rss.xml` for the whole blog (identity in `src/blog/feeds.ts`), summary-only, advertised via `<link rel="alternate">` on every page. One item per post: a bilingual post shows both titles (`English / Czech`, default locale first) since RSS has no per-item language field, and links to its default-locale page (the post carries the language switcher); the description is the default-locale summary. Per-language feeds were tried and dropped — for a mostly-English personal blog, one feed a reader subscribes to once beats making them choose a language edition.
 
 ## Sitemap
 

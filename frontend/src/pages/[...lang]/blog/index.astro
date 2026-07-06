@@ -4,7 +4,7 @@ import IconRss from "../../../components/icons/IconRss.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import type { PageMeta } from "../../../lib/page-meta";
 import { publishedPosts, resolveVariant } from "../../../blog/posts";
-import { feeds } from "../../../blog/feeds";
+import { feed } from "../../../blog/feeds";
 import enStrings from "../../../i18n/en/blog.json";
 import csStrings from "../../../i18n/cs/blog.json";
 
@@ -36,7 +36,7 @@ const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "
         {t.index.subtitle}
       </p>
       <a
-        href={feeds[lang].path}
+        href={feed.path}
         title={t.index.rssTitle}
         class="inline-flex items-center gap-2 mt-6 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
       >

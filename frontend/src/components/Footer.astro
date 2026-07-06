@@ -5,7 +5,7 @@ import IconLinkedIn from "./icons/IconLinkedIn.astro";
 import IconRss from "./icons/IconRss.astro";
 import type { Locale } from "../i18n/utils";
 import { localePath } from "../i18n/utils";
-import { feeds } from "../blog/feeds";
+import { feed } from "../blog/feeds";
 
 interface Props {
   lang: Locale;
@@ -71,7 +71,7 @@ const { lang, t } = Astro.props;
       </a>
       <a
         class="text-on-surface-variant hover:text-primary transition-colors"
-        href={feeds[lang].path}
+        href={feed.path}
         title={t.footer.rssTitle}
         aria-label={t.footer.rssAriaLabel}
       >
