@@ -27,32 +27,48 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 
 const codeThemes = { light: "github-light", dark: "github-dark" } as const;
 
-const beforeSnippet = `public record CreateOrderRequest(string CustomerEmail, string ProductCode, int Quantity);
+const beforeSnippet = `public record CreateOrderRequest(
+    [Required, EmailAddress] string CustomerEmail,
+    [Required] string ProductCode,
+    [Range(1, int.MaxValue)] int Quantity);
 
 [HttpPost]
-public IActionResult Create(CreateOrderRequest request)
+[ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+public ActionResult<OrderResponse> Create(CreateOrderRequest request)
 {
-    if (string.IsNullOrWhiteSpace(request.CustomerEmail))
-        return BadRequest("Customer email is required.");
+    // [EmailAddress] waves through "a@b" and much worse, so re-parse with the
+    // type the rest of .NET actually trusts. The other annotations we lean on.
     if (!MailAddress.TryCreate(request.CustomerEmail, out _))
-        return BadRequest("Customer email is not valid.");
-    if (string.IsNullOrWhiteSpace(request.ProductCode))
-        return BadRequest("Product code is required.");
-    if (request.Quantity <= 0)
-        return BadRequest("Quantity must be positive.");
+        return ValidationProblem("Customer email is not valid.");
 
-    // ...four checks later, the actual work finally starts.
+    var order = orders.Place(request.CustomerEmail, request.ProductCode, request.Quantity);
+    return Ok(OrderResponse.From(order));
+}`;
+
+const beforeServiceSnippet = `public Order Place(string customerEmail, string productCode, int quantity)
+{
+    // The controller already checked all this. But Place takes a plain string
+    // and int, so it can be called from anywhere — and it can't trust that it was.
+    if (string.IsNullOrWhiteSpace(productCode))
+        throw new ArgumentException("Product code is required.", nameof(productCode));
+    if (quantity <= 0)
+        throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be positive.");
+
+    // ...the same guards as the API, one layer down.
 }`;
 
 const afterSnippet = `public record CreateOrderRequest(Email CustomerEmail, NonEmptyString ProductCode, Positive<int> Quantity);
 
 [HttpPost]
-public IActionResult Create(CreateOrderRequest request)
+[ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+public ActionResult<OrderResponse> Create(CreateOrderRequest request)
 {
-    // An invalid payload never reaches this line. The built-in
-    // System.Text.Json converters already rejected it with a 400.
+    // An invalid payload never reaches this line: the built-in System.Text.Json
+    // converters already rejected it with a 400, naming the offending field.
     var order = orders.Place(request.CustomerEmail, request.ProductCode, request.Quantity);
-    return Ok(order);
+    return Ok(OrderResponse.From(order));
 }`;
 
 const signatureSnippet = `// Before: every caller re-checks, every reader wonders.
@@ -80,9 +96,9 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
       <Fragment>
         <p>
           Před časem jsem dělal review endpointu, který byl podle všech checklistů hotový. Kompiloval se, měl testy, měl dokonce XML
-          dokumentaci. Taky strávil svých prvních patnáct řádků výslechem vlastního request objektu: je e-mail vyplněný, dá se naparsovat,
-          není kód produktu prázdný, je množství alespoň jedna. Skutečná business logika — důvod, proč ten endpoint existuje — začínala
-          někde kolem dvacátého řádku.
+          dokumentaci. Jeho request objekt byl obalený validačními atributy, controller si e-mail stejně naparsoval ručně, protože
+          <code>[EmailAddress]</code> pustí i nesmysl, a service, kterou volal, ty samé hodnoty prověřila potřetí. Skutečná business logika
+          — důvod, proč ten endpoint existuje — se ve vlastních strážích ztrácela.
         </p>
 
         <p>
@@ -92,6 +108,21 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          Atributy si na hranici HTTP svoje odpracují — většinou. <code>[Required]</code> pořád pustí řetězec ze samých mezer a
+          <code>[EmailAddress]</code> je proslule benevolentní, takže si controller e-mail stejně naparsuje přes <code>MailAddress</code>.
+          Řekněme, že hranice je zhruba pokrytá. Pak ale request dorazí do service:
+        </p>
+
+        <Code code={beforeServiceSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          <code>Place</code> bere <code>string</code> a <code>int</code>. Netuší, že ho nějaký controller prověřil, a nic nebrání jinému
+          volajícímu — background jobu, testu, příštímu endpointu — předat mu <code>""</code> a <code>-1</code>. Tak to kontroluje znovu.
+          Stejná pravidla teď žijí na dvou místech, samostatně se rozjíždějí a každé si pěstuje vlastní testy. To je daň za posílání
+          zvalidovaných dat v typech, které si nepamatují, že byly zvalidované.
+        </p>
 
         <h2>Parse, don't validate</h2>
 
@@ -122,9 +153,10 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           Trik je v tom, že balíček přináší konvertory pro <code>System.Text.Json</code>, které se nikde neregistrují. Když dorazí payload s
           prázdným kódem produktu nebo nulovým množstvím, selže už samotná deserializace a ASP.NET Core z ní udělá RFC 7807
-          <code>400</code> s pojmenovaným polem — dřív, než se metoda vašeho endpointu vůbec zavolá. Všechny čtyři guard clauses z prvního
-          snippetu zmizely a nic je nenahradilo. Není tu žádná třída validátoru, žádná polévka z atributů, žádný pipeline behavior. Ty typy
-          <em>jsou</em> ta validace.
+          <code>400</code> s pojmenovaným polem — dřív, než se metoda vašeho endpointu vůbec zavolá. Validační atributy, ruční parsování
+          přes
+          <code>MailAddress</code> i — jakmile <code>Place</code> bere ty samé silné typy — kontroly v service: všechno pryč a nic je
+          nenahradilo. Není tu žádná třída validátoru, žádná polévka z atributů, žádný pipeline behavior. Ty typy <em>jsou</em> ta validace.
         </p>
 
         <h2>Signatury jako dokumentace</h2>
@@ -185,9 +217,11 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
     ) : (
       <Fragment>
         <p>
-          A while ago I reviewed an endpoint that was, by every checklist, done. It compiled, it had tests, it even had XML docs. It also
-          spent its first fifteen lines interrogating its own request object: is the email set, does it parse, is the product code blank, is
-          the quantity at least one. The actual business logic — the reason the endpoint exists — started somewhere around line twenty.
+          A while ago I reviewed an endpoint that was, by every checklist, done. It compiled, it had tests, it even had XML docs. Its
+          request object was plastered with validation attributes, its controller still re-parsed the email by hand because{" "}
+          <code>[EmailAddress]</code>
+          waves nonsense through, and the service it called re-checked the same fields a third time. The actual business logic — the reason
+          the endpoint exists — was outnumbered by its own guards.
         </p>
 
         <p>
@@ -197,6 +231,21 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          The attributes earn their keep at the HTTP edge — mostly. <code>[Required]</code> still lets a whitespace-only string through and
+          <code>[EmailAddress]</code> is famously lax, which is why the controller re-parses the email with <code>MailAddress</code> anyway.
+          Call the boundary roughly covered. Then the request reaches the service:
+        </p>
+
+        <Code code={beforeServiceSnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          <code>Place</code> takes a <code>string</code> and an <code>int</code>. It has no idea a controller vetted them, and nothing stops
+          another caller — a background job, a test, next year's endpoint — from handing it <code>""</code> and <code>-1</code>. So it
+          checks again. The same rules now live in two places, drift apart independently, and each grows its own tests. That's the tax on
+          passing validated data around in types that don't remember they were validated.
+        </p>
 
         <h2>Parse, don't validate</h2>
 
@@ -227,9 +276,10 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           The trick is that the package ships <code>System.Text.Json</code> converters that need no registration. When a payload arrives
           with an empty product code or a quantity of zero, deserialization itself fails, and ASP.NET Core turns that into an RFC 7807
-          <code>400</code> with the offending field named — before your endpoint method is ever called. All four guard clauses from the
-          first snippet are gone, and nothing replaced them. There is no validator class, no attribute soup, no pipeline behavior. The types{" "}
-          <em>are</em> the validation.
+          <code>400</code> with the offending field named — before your endpoint method is ever called. The validation attributes, the
+          hand-rolled <code>MailAddress</code> parse, and — once <code>Place</code> takes the same strong types — the service's re-checks:
+          all gone, and nothing replaced them. There is no validator class, no attribute soup, no pipeline behavior. The types <em>are</em>{" "}
+          the validation.
         </p>
 
         <h2>Signatures become documentation</h2>
