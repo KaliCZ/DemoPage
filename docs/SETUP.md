@@ -582,26 +582,23 @@ can be done any time.
 
 demopage's VM-side files used to sit loose at the top of `~` (`~/kalandra-api.env`,
 `~/kalandra.caddy`, `~/quadlet-staging/`); they now live under `~/demoPage/`
-(§3.2, "On-disk layout"), alongside hampap's `~/hampap/`.
-
-**No manual pre-step.** The deploy creates `~/demoPage/` and repopulates it. The
-blue-green swap is unchanged: the new slot's unit points at
-`~/demoPage/kalandra-api.env` and starts from the freshly written file, while the
-still-live slot keeps reading the old root file until it's retired — so a deploy
-that fails before the swap rolls back exactly as before. There is no real outage.
-
-After the **first successful deploy** of this layout (and, if you use it, one
-`deploy-temporal` run), the old root-level files are orphaned dead weight. Remove
-them as `opc`, gated on a healthy site:
+(§3.2, "On-disk layout"), alongside hampap's `~/hampap/`. **The pipeline does no
+migration** — it just reads and writes under `~/demoPage/`. So move the existing
+files once, as `opc`, right before merging the branch that introduces the folder:
 
 ```bash
-curl -sf https://api.kalandra.tech/health >/dev/null \
-  && rm -f ~/kalandra-api.env ~/kalandra.caddy \
-  && rm -rf ~/quadlet-staging \
-  && echo "removed orphaned root-level demopage files"
+mkdir -p ~/demoPage
+mv ~/kalandra-api.env ~/kalandra.caddy ~/quadlet-staging ~/demoPage/ 2>/dev/null || true
+# Repoint the currently-running slot's unit at the new env path so a reboot before
+# the next deploy still finds it (no restart needed — the live container already
+# loaded its env; the unit change only matters on the next start).
+sed -i 's#%h/kalandra-api.env#%h/demoPage/kalandra-api.env#' ~/.config/containers/systemd/kalandra-api-*.container
+systemctl --user daemon-reload
 ```
 
-The shared pieces don't move: the installed Quadlet units stay in
+Then merge. The next deploy writes into the folder that already holds the live
+slot's env file; the blue-green swap is otherwise unchanged (no real outage). The
+shared pieces never move: the installed Quadlet units stay in
 `~/.config/containers/systemd/` and the Caddy fragment/cert stay under
 `/srv/caddy/` — both namespaced by filename, so hampap is untouched throughout.
 
