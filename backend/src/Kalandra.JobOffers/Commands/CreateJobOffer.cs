@@ -10,7 +10,7 @@ using Temporalio.Client;
 
 namespace Kalandra.JobOffers.Commands;
 
-public enum CreateJobOfferError { TooManyAttachments, TotalSizeTooLarge, DisallowedContentType }
+public enum CreateJobOfferError { TooManyAttachments, TotalSizeTooLarge, DisallowedContentType, IdAlreadyUsed }
 
 public record CreateJobOfferFile(
     NonEmptyString FileName,
@@ -117,9 +117,12 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
 
         // Cancellation frees the request if the client disconnects; the workflow keeps
         // running — durability is the point.
-        await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
+        var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
             (JobOfferSubmittedWorkflow workflow) => workflow.StoreJobOfferAsync(input),
             new(startOperation) { Rpc = new() { CancellationToken = ct } });
+
+        if (outcome.Error is { } error)
+            return error;
 
         return streamId;
     }

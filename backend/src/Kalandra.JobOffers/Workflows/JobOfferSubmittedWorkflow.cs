@@ -1,9 +1,12 @@
+using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Events;
 using Temporalio.Workflows;
 
 namespace Kalandra.JobOffers.Workflows;
 
 public record JobOfferSubmittedWorkflowInput(Guid JobOfferId, JobOfferSubmitted Submitted);
+
+public record StoreJobOfferOutcome(CreateJobOfferError? Error);
 
 /// <summary>
 /// One durable flow per submitted job offer: the update handler stores it (the API
@@ -21,35 +24,39 @@ public class JobOfferSubmittedWorkflow
         StartToCloseTimeout = TimeSpan.FromSeconds(30),
     };
 
-    private bool stored;
+    private StoreJobOfferOutcome? storeOutcome;
 
     [WorkflowRun]
     public async Task RunAsync(JobOfferSubmittedWorkflowInput input)
     {
-        await Workflow.WaitConditionAsync(() => stored);
+        await Workflow.WaitConditionAsync(() => storeOutcome != null);
 
-        var recipients = await Workflow.ExecuteActivityAsync(
-            (JobOfferActivities activities) => activities.PlanSubmittedNotifications(input),
-            Options);
+        if (storeOutcome!.Error == null)
+        {
+            var recipients = await Workflow.ExecuteActivityAsync(
+                (JobOfferActivities activities) => activities.PlanSubmittedNotifications(input),
+                Options);
 
-        // One activity per email so a failed send retries on its own instead of re-delivering the rest.
-        var sends = recipients
-            .Select(recipient => Workflow.ExecuteActivityAsync(
-                (JobOfferActivities activities) => activities.SendSubmittedNotificationAsync(recipient, input),
-                Options))
-            .ToList();
-        await Task.WhenAll(sends);
+            // One activity per email so a failed send retries on its own instead of re-delivering the rest.
+            var sends = recipients
+                .Select(recipient => Workflow.ExecuteActivityAsync(
+                    (JobOfferActivities activities) => activities.SendSubmittedNotificationAsync(recipient, input),
+                    Options))
+                .ToList();
+            await Task.WhenAll(sends);
+        }
 
-        // Closing while a late client-retry update is still storing would abort it with an RPC error.
+        // Temporal's prescribed completion guard (message-passing docs): returning while a
+        // client retry's update is still storing would abort that update with an RPC error.
         await Workflow.WaitConditionAsync(() => Workflow.AllHandlersFinished);
     }
 
     [WorkflowUpdate]
-    public async Task StoreJobOfferAsync(JobOfferSubmittedWorkflowInput input)
+    public async Task<StoreJobOfferOutcome> StoreJobOfferAsync(JobOfferSubmittedWorkflowInput input)
     {
-        await Workflow.ExecuteActivityAsync(
+        storeOutcome = await Workflow.ExecuteActivityAsync(
             (JobOfferActivities activities) => activities.StoreJobOfferAsync(input),
             Options);
-        stored = true;
+        return storeOutcome;
     }
 }
