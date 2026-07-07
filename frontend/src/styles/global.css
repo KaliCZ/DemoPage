@@ -284,19 +284,20 @@ details > summary + * {
   letter-spacing: -0.025em;
 }
 
-/* Shiki code blocks (see BlogCode.astro): the themes bring the token colors,
-   but the block surface comes from the design system — the theme's own white
-   background is invisible against the cream page. */
+/* Shiki code blocks (see BlogCode.astro): the theme's colors are the aliases
+   below, so syntax highlighting comes from the design system and flips with
+   `.dark` through the tokens themselves. */
 .astro-code {
-  background-color: var(--color-surface-container-low) !important;
   border: 1px solid var(--color-outline-variant);
-}
 
-/* Flip to the dark palette under `.dark`. */
-.dark .astro-code,
-.dark .astro-code span {
-  color: var(--shiki-dark) !important;
-  background-color: var(--shiki-dark-bg) !important;
+  --code-background: var(--color-surface-container-low);
+  --code-foreground: var(--color-on-surface);
+  --code-comment: var(--color-on-surface-variant);
+  --code-keyword: var(--color-primary);
+  --code-string: var(--color-error);
+  --code-constant: var(--color-secondary);
+  --code-type: var(--color-tertiary);
+  --code-function: var(--color-tertiary);
 }
 
 /* Inline code: a distinct chip so it stands out from body text. Shiki blocks

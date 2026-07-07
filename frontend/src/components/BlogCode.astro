@@ -1,9 +1,10 @@
 ---
 import { Code } from "astro:components";
 import type { ComponentProps } from "astro/types";
+import { designTokenCodeTheme } from "../lib/code-theme";
 
-// The one place that picks the syntax-highlight theme pair, so every post's
-// code blocks match. Block surface and dark-mode flip live in global.css.
+// The one place that picks the syntax-highlight theme, so every post's code
+// blocks match. The theme's colors resolve from design tokens in global.css.
 type CodeProps = ComponentProps<typeof Code>;
 
 interface Props {
@@ -14,4 +15,4 @@ interface Props {
 const { code, lang } = Astro.props;
 ---
 
-<Code code={code} lang={lang} themes={{ light: "github-light-high-contrast", dark: "github-dark" }} />
+<Code code={code} lang={lang} theme={designTokenCodeTheme} />
