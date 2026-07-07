@@ -6,10 +6,8 @@ ARG COMMIT_SHA=unknown
 ARG TARGETARCH
 WORKDIR /src
 
-# Copy the whole context (.dockerignore is the blacklist of what to leave out)
-# and publish the API, which pulls in every project it references. Publishing the
-# API — not an enumerated project list — is what decides what gets built, so a
-# newly added project needs no change here.
+# Copy everything (.dockerignore is the blacklist) and publish the API — its
+# project references decide what's built, so adding a project needs no change here.
 COPY . .
 RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -c Release \
