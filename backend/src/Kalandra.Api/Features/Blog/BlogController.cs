@@ -94,7 +94,7 @@ public class BlogController(
         if (ResolvePost(slug, out var post) is { } notFound)
             return notFound;
 
-        var comments = await getCommentsHandler.Get(new GetBlogCommentsQuery(post.CommentsStreamId), ct);
+        var comments = await getCommentsHandler.GetForDisplay(new GetBlogCommentsQuery(post.CommentsStreamId), ct);
         return ListBlogCommentsResponse.Serialize(comments);
     }
 

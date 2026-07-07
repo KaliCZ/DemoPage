@@ -33,6 +33,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     public FakeSupabaseAdminService FakeAdminService { get; } = new();
     public TestEmailSender EmailSender { get; } = new();
+    public FakeUserInfoService UserInfoService { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -60,7 +61,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.AddSingleton<ISupabaseAdminService>(FakeAdminService);
 
             services.RemoveAll<IUserInfoService>();
-            services.AddSingleton<IUserInfoService, NoOpUserInfoService>();
+            services.AddSingleton<IUserInfoService>(UserInfoService);
 
             services.RemoveAll<Supabase.Storage.Client>();
             services.RemoveAll<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>();

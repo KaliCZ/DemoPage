@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Kalandra.Api.IntegrationTests.Helpers;
 using Kalandra.Blog.Entities;
+using Kalandra.Infrastructure.Users;
 
 namespace Kalandra.Api.IntegrationTests.Features.Blog;
 
@@ -218,6 +219,26 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(2, comments.GetArrayLength());
         Assert.Equal(JsonValueKind.Null, comments[0].GetProperty("parentCommentId").ValueKind);
         Assert.Equal(firstId, comments[1].GetProperty("parentCommentId").GetString());
+    }
+
+    [Fact]
+    public async Task Comments_ReflectAuthorsCurrentProfile_NotThePostTimeSnapshot()
+    {
+        var slug = NewSlug();
+        var userId = Guid.NewGuid();
+        Authenticate(userId: userId, email: "chameleon@test.com");
+
+        // No user_metadata in the token, so the snapshot name is the email local part with no avatar.
+        await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Look at my avatar" }, Ct);
+
+        // The author later sets a display name and avatar; every past comment must show them.
+        factory.UserInfoService.Profiles[userId] = new UserPublicInfo("Chameleon Prime", new Uri("https://cdn.test/avatar.png"));
+
+        SignOut();
+        var comments = (await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/comments", Ct))).GetProperty("comments");
+        var comment = comments[0];
+        Assert.Equal("Chameleon Prime", comment.GetProperty("authorDisplayName").GetString());
+        Assert.Equal("https://cdn.test/avatar.png", comment.GetProperty("authorAvatarUrl").GetString());
     }
 
     [Fact]
