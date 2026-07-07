@@ -18,7 +18,7 @@ public class PostBlogCommentHandler(ITemporalClient temporalClient)
         PostBlogCommentCommand command, CancellationToken ct)
     {
         var input = new BlogCommentWorkflowInput(
-            command.Post.Slug.Value, command.Post.CommentsStreamId, command.Comment);
+            command.Post.Slug, command.Post.CommentsStreamId, command.Comment);
 
         var startOperation = WithStartWorkflowOperation.Create(
             (BlogCommentWorkflow workflow) => workflow.RunAsync(input),

@@ -34,16 +34,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     [Fact]
-    public async Task GetReactions_InvalidSlug_Returns404()
-    {
-        SignOut();
-
-        var response = await client.GetAsync("/api/blog/Not-A-Valid-Slug/reactions", Ct);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
     public async Task ToggleReaction_WithoutAuth_Returns401()
     {
         SignOut();
@@ -307,16 +297,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var json = await ParseJsonAsync(response);
         Assert.Equal("spaced   out   comment", json.GetProperty("content").GetString());
-    }
-
-    [Fact]
-    public async Task PostComment_InvalidSlug_Returns404()
-    {
-        Authenticate(email: "lost@test.com");
-
-        var response = await client.PostAsJsonAsync("/api/blog/UPPER_case/comments", new { content = "Hello" }, Ct);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

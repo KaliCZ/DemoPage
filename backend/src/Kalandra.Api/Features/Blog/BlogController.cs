@@ -29,12 +29,11 @@ public class BlogController(
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
-    // Any slug that isn't a real published post is a 404 — a malformed slug is no more
-    // "found" than a well-shaped one that doesn't exist. Returns null (no error) and the
+    // Any slug that isn't a real published post is a 404. Returns null (no error) and the
     // resolved post when the slug is known.
     private ActionResult? ResolvePost(string slug, out BlogPost post)
     {
-        if (BlogPostSlug.TryCreate(slug) is { } parsed && postCatalog.Find(parsed) is { } found)
+        if (postCatalog.Find(slug) is { } found)
         {
             post = found;
             return null;

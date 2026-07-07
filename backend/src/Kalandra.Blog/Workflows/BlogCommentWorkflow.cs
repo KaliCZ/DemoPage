@@ -4,10 +4,7 @@ using Temporalio.Workflows;
 
 namespace Kalandra.Blog.Workflows;
 
-/// <summary>
-/// Carries the comment stream id it stores to and the slug the notification links point at.
-/// Slug travels as a raw string — BlogPostSlug has no public constructor for the payload converter.
-/// </summary>
+/// <summary>Carries the comment stream id it stores to and the slug the notification links point at.</summary>
 public record BlogCommentWorkflowInput(string Slug, Guid CommentsStreamId, BlogCommentPosted Comment);
 
 public record StoreBlogCommentOutcome(BlogCommentPosted? Posted, PostBlogCommentError? Error);
