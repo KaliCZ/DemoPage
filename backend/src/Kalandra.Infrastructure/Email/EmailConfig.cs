@@ -1,6 +1,7 @@
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using StrongTypes;
 
 namespace Kalandra.Infrastructure.Email;
@@ -21,7 +22,8 @@ public record EmailConfig(
 {
     public static EmailConfig AddSingleton(
         IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         var section = configuration.GetSection("Email");
 
@@ -30,11 +32,17 @@ public record EmailConfig(
         var credentials = username is { } u && password is { } p ? new SmtpCredentials(u, p) : null;
 
         var host = NonEmptyString.Create(section["Host"]);
+        var isLoopback = host.Value is "localhost" or "127.0.0.1";
+
+        // Crash rather than let a prod deploy that forgot Email:Host silently mail into the local catcher.
+        if (!environment.IsDevelopment() && isLoopback)
+            throw new InvalidOperationException(
+                "Email:Host still points at the local mail catcher — a production deploy must set a real SMTP relay.");
 
         // Only the loopback mail catcher accepts unauthenticated mail; a real relay
         // always needs a login. Fails a misconfigured production deploy fast rather
         // than silently dropping mail at an unauthenticated relay.
-        if (credentials is null && host.Value is not ("localhost" or "127.0.0.1"))
+        if (credentials is null && !isLoopback)
             throw new InvalidOperationException(
                 "Email:Username and Email:Password are required unless Email:Host is the local mail catcher (localhost).");
 

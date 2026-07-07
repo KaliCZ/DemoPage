@@ -27,6 +27,11 @@ public static class ServiceCollectionExtensions
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
+        if (!environment.IsDevelopment()
+            && (connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) || connectionString.Contains("127.0.0.1")))
+            throw new InvalidOperationException(
+                "ConnectionStrings:DefaultConnection still points at localhost — a production deploy must set the real database.");
+
         services.AddMarten(options =>
         {
             options.Connection(connectionString);
@@ -165,12 +170,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddEmailServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddEmailServices(
+        this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        // appsettings.json points at the local Supabase mail catcher; production
-        // overrides Host/Port/Username/Password via env. EmailConfig enforces that a
-        // real (non-loopback) relay comes with a login.
-        EmailConfig.AddSingleton(services, configuration);
+        // appsettings.json defaults to the local mail catcher; production overrides Host/Port/Username/Password via env.
+        EmailConfig.AddSingleton(services, configuration, environment);
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         return services;
     }

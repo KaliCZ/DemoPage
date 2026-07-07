@@ -37,7 +37,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Mirror the dev/e2e environment so the prod-only config guard stays out of the test host.
+        // Mirror the dev/e2e environment so the configs' prod-only localhost checks stay out of the test host.
         builder.UseEnvironment("Development");
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Supabase:ProjectUrl", "https://test-project.supabase.co");

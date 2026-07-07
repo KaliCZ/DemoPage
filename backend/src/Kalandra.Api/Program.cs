@@ -13,8 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 Observability.Add(builder);
 
-ProductionConfigGuard.Validate(builder.Configuration, builder.Environment);
-
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -40,8 +38,8 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<AuthorizeOperationFilter>();
 });
 
-var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration);
-TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
+var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
+TurnstileConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddAppDataProtection();
@@ -55,8 +53,8 @@ builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 builder.Services.AddBlogDomain();
-BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration);
-builder.Services.AddEmailServices(builder.Configuration);
+BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
+builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
 builder.Services.AddTemporal(builder.Configuration);
 RateLimits.Add(builder.Services, builder.Environment);
 
