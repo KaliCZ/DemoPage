@@ -54,7 +54,6 @@
     "deleteError": "The comment could not be deleted. Please try again.",
     "rateLimited": "You're posting too fast — try again in a minute.",
     "errors": {
-      "ContentRequired": "Your comment is empty — write something first.",
       "ParentCommentNotFound": "The comment you're replying to no longer exists.",
       "ParentCommentDeleted": "The comment you're replying to was deleted."
     }

@@ -27,7 +27,7 @@ var (success, error, edited) = offer.Edit(
     timestamp: timeProvider.GetUtcNow());
 
 // Good — single line, null is labeled
-var result = await listHandler.HandleAsync(userId: null, page, pageSize, ct);
+var result = await listHandler.List(userId: null, page, pageSize, ct);
 ```
 
 ## `Result<TSuccess, TError>` type

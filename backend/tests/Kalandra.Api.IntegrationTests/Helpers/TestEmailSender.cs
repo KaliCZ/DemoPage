@@ -3,7 +3,7 @@ using Kalandra.Infrastructure.Email;
 
 namespace Kalandra.Api.IntegrationTests.Helpers;
 
-public class CapturingEmailSender : IEmailSender
+public class TestEmailSender : IEmailSender
 {
     private readonly ConcurrentQueue<EmailMessage> sent = new();
 

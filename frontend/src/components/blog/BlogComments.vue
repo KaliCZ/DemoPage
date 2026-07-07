@@ -38,7 +38,6 @@ const props = defineProps<{
     deleteError: string;
     rateLimited: string;
     errors: {
-      ContentRequired: string;
       ParentCommentNotFound: string;
       ParentCommentDeleted: string;
     };
@@ -134,14 +133,16 @@ async function submit() {
   const content = draft.value.trim();
   if (!content || submitting.value) return;
 
-  const token = await authToken();
-  if (!token) {
-    openSignIn();
-    return;
-  }
-
+  // Latch before the first await so a rapid second click can't race in behind
+  // the token fetch and post the comment twice.
   submitting.value = true;
   try {
+    const token = await authToken();
+    if (!token) {
+      openSignIn();
+      return;
+    }
+
     const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -155,7 +156,6 @@ async function submit() {
       // ProblemDetails error codes map onto i18n keys (same convention as the
       // hire-me form); anything unmapped falls back to the generic message.
       const apiError = await getApiError(res, {
-        content: { ContentRequired: props.t.errors.ContentRequired },
         parentCommentId: {
           ParentCommentNotFound: props.t.errors.ParentCommentNotFound,
           ParentCommentDeleted: props.t.errors.ParentCommentDeleted,

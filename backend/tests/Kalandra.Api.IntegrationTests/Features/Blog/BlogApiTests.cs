@@ -33,14 +33,13 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     [Fact]
-    public async Task GetReactions_InvalidSlug_Returns400()
+    public async Task GetReactions_InvalidSlug_Returns404()
     {
         SignOut();
 
         var response = await client.GetAsync("/api/blog/Not-A-Valid-Slug/reactions", Ct);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        AssertValidationError(await ParseJsonAsync(response), "slug", "InvalidSlug");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -158,14 +157,13 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     {
         Authenticate(email: "unknown-kind@test.com");
 
-        // Unknown enum names fail JSON binding; raw numbers pass binding and are
-        // caught by the controller's IsDefined guard.
+        // Both an unknown enum name and a raw number fail JSON binding (the converter
+        // runs with allowIntegerValues: false), so each is a 400 before the action runs.
         var nameResponse = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/reactions/toggle", new { kind = "Confetti" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
         var numberResponse = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/reactions/toggle", new { kind = 99 }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, numberResponse.StatusCode);
-        AssertValidationError(await ParseJsonAsync(numberResponse), "kind", "UnknownKind");
     }
 
     // ───── Comments ─────
@@ -264,41 +262,40 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     [Theory]
-    [InlineData(" \n\t  ")]
     [InlineData("")]
     [InlineData(null)]
-    public async Task PostComment_MissingOrWhitespaceContent_Returns400(string? content)
+    public async Task PostComment_MissingContent_Returns400(string? content)
     {
         Authenticate(email: "spacebar@test.com");
 
         var response = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/comments", new { content }, Ct);
 
+        // NonEmptyString rejects null/empty at binding — a plain 400, no stable error code.
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        AssertValidationError(await ParseJsonAsync(response), "content", "ContentRequired");
     }
 
     [Fact]
-    public async Task PostComment_TrimsSurroundingWhitespace()
+    public async Task PostComment_PreservesContentWhitespace()
     {
         var slug = NewSlug();
-        Authenticate(email: "tidy@test.com");
+        Authenticate(email: "spacer@test.com");
 
-        var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "  Trimmed!\n" }, Ct);
+        // Content is stored verbatim — no server-side trimming or whitespace collapsing.
+        var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "spaced   out   comment" }, Ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var json = await ParseJsonAsync(response);
-        Assert.Equal("Trimmed!", json.GetProperty("content").GetString());
+        Assert.Equal("spaced   out   comment", json.GetProperty("content").GetString());
     }
 
     [Fact]
-    public async Task PostComment_InvalidSlug_Returns400()
+    public async Task PostComment_InvalidSlug_Returns404()
     {
         Authenticate(email: "lost@test.com");
 
         var response = await client.PostAsJsonAsync("/api/blog/UPPER_case/comments", new { content = "Hello" }, Ct);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        AssertValidationError(await ParseJsonAsync(response), "slug", "InvalidSlug");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

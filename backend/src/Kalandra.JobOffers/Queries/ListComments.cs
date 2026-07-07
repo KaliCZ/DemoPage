@@ -9,7 +9,7 @@ public record ListCommentsQuery(Guid JobOfferId, CurrentUser User);
 
 public class ListCommentsHandler(IQuerySession session)
 {
-    public async Task<IReadOnlyList<JobOfferCommentAdded>?> HandleAsync(
+    public async Task<IReadOnlyList<JobOfferCommentAdded>?> List(
         ListCommentsQuery query, CancellationToken ct)
     {
         var offer = await session.LoadAsync<JobOffer>(query.JobOfferId, ct);

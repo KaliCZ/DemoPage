@@ -132,7 +132,7 @@ Write actions that touch an event stream must be wrapped in `WithConcurrencyHand
 ```csharp
 return WithConcurrencyHandling<GetJobOfferDetailResponse>(async () =>
 {
-    var result = await editHandler.HandleAsync(command, ct);
+    var result = await editHandler.EditAndSave(command, ct);
     // ... map errors, return response
 });
 ```

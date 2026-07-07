@@ -6,7 +6,7 @@ using Marten;
 namespace Kalandra.Blog.Commands;
 
 public record ToggleBlogReactionCommand(
-    BlogPostSlug Slug,
+    Guid ReactionsStreamId,
     CurrentUser User,
     BlogReactionKind Kind,
     DateTimeOffset Timestamp);
@@ -17,9 +17,9 @@ public class ToggleBlogReactionHandler(IDocumentSession session)
     /// Toggling has no failure mode — any signed-in user may react — so this
     /// returns the updated state directly instead of a Result.
     /// </summary>
-    public async Task<BlogPostReactions> HandleAsync(ToggleBlogReactionCommand command, CancellationToken ct)
+    public async Task<BlogPostReactions> ToggleAndSave(ToggleBlogReactionCommand command, CancellationToken ct)
     {
-        var streamId = BlogStreamId.ForReactions(command.Slug);
+        var streamId = command.ReactionsStreamId;
         var reactions = await session.Events.AggregateStreamAsync<BlogPostReactions>(streamId, token: ct)
             ?? new BlogPostReactions();
 

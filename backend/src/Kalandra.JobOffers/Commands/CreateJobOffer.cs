@@ -48,7 +48,7 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         "image/webp",
     };
 
-    public async Task<Result<Guid, CreateJobOfferError>> HandleAsync(
+    public async Task<Result<Guid, CreateJobOfferError>> CreateAndSave(
         CreateJobOfferCommand command, CancellationToken ct)
     {
         // Validate attachments

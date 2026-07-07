@@ -4,8 +4,11 @@ using Temporalio.Workflows;
 
 namespace Kalandra.Blog.Workflows;
 
-/// <summary>Slug travels as a raw string — BlogPostSlug has no public constructor for the payload converter.</summary>
-public record BlogCommentWorkflowInput(string Slug, BlogCommentPosted Comment);
+/// <summary>
+/// Carries the comment stream id it stores to and the slug the notification links point at.
+/// Slug travels as a raw string — BlogPostSlug has no public constructor for the payload converter.
+/// </summary>
+public record BlogCommentWorkflowInput(string Slug, Guid CommentsStreamId, BlogCommentPosted Comment);
 
 public record StoreBlogCommentOutcome(BlogCommentPosted? Posted, PostBlogCommentError? Error);
 
@@ -35,9 +38,17 @@ public class BlogCommentWorkflow
         if (storeOutcome!.Posted == null)
             return; // rejected by domain validation — nothing to notify
 
-        await Workflow.ExecuteActivityAsync(
-            (BlogCommentActivities activities) => activities.SendCommentNotificationsAsync(input),
+        var notifications = await Workflow.ExecuteActivityAsync(
+            (BlogCommentActivities activities) => activities.PlanCommentNotificationsAsync(input),
             Options);
+
+        // One activity per email so a failed send retries on its own instead of re-delivering the rest.
+        var sends = notifications
+            .Select(notification => Workflow.ExecuteActivityAsync(
+                (BlogCommentActivities activities) => activities.SendCommentNotificationAsync(notification, input),
+                Options))
+            .ToList();
+        await Task.WhenAll(sends);
     }
 
     [WorkflowUpdate]

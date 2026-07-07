@@ -14,7 +14,7 @@ public record AddCommentCommand(
 
 public class AddCommentHandler(IDocumentSession session)
 {
-    public async Task<Result<JobOfferCommentAdded, AddCommentError>> HandleAsync(
+    public async Task<Result<JobOfferCommentAdded, AddCommentError>> AddAndSave(
         AddCommentCommand command, CancellationToken ct)
     {
         var offer = await session.LoadAsync<JobOffer>(command.JobOfferId, ct);

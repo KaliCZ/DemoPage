@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Kalandra.Blog.Commands;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
@@ -19,35 +20,36 @@ public class BlogCommentActivities(
     public async Task<StoreBlogCommentOutcome> StoreCommentAsync(BlogCommentWorkflowInput input)
     {
         var ct = ActivityExecutionContext.Current.CancellationToken;
-        var command = new StoreBlogCommentCommand(ParseSlug(input.Slug), input.Comment);
-        var result = await storeHandler.HandleAsync(command, ct);
+        var command = new StoreBlogCommentCommand(input.CommentsStreamId, input.Comment);
+        var result = await storeHandler.StoreAndSave(command, ct);
         return new StoreBlogCommentOutcome(result.Success, result.Error);
     }
 
     [Activity]
-    public async Task SendCommentNotificationsAsync(BlogCommentWorkflowInput input)
+    public async Task<IReadOnlyList<PlannedBlogCommentNotification>> PlanCommentNotificationsAsync(BlogCommentWorkflowInput input)
     {
         var ct = ActivityExecutionContext.Current.CancellationToken;
-        var slug = ParseSlug(input.Slug);
 
         BlogPostComment? parent = null;
         if (input.Comment.ParentCommentId is { } parentId)
         {
-            var comments = await commentsHandler.HandleAsync(new GetBlogCommentsQuery(slug), ct);
+            var comments = await commentsHandler.Get(new GetBlogCommentsQuery(input.CommentsStreamId), ct);
             parent = comments.Comments.FirstOrDefault(c => c.CommentId == parentId);
         }
 
-        foreach (var notification in BlogCommentNotifications.Plan(input.Comment, parent, notificationsConfig.AuthorEmail))
-        {
-            await emailSender.SendAsync(BuildEmail(notification, input.Comment, slug.Value), ct);
-        }
+        return BlogCommentNotifications.Plan(input.Comment, parent, notificationsConfig.AuthorEmail)
+            .Select(notification => new PlannedBlogCommentNotification(notification.Recipient.Address, notification.Kind))
+            .ToList();
     }
 
-    private static BlogPostSlug ParseSlug(string slug) =>
-        BlogPostSlug.TryCreate(slug)
-            ?? throw new InvalidOperationException($"Workflow input carried an invalid slug \"{slug}\"");
+    [Activity]
+    public async Task SendCommentNotificationAsync(PlannedBlogCommentNotification notification, BlogCommentWorkflowInput input)
+    {
+        var ct = ActivityExecutionContext.Current.CancellationToken;
+        await emailSender.SendAsync(BuildEmail(notification, input.Comment, input.Slug), ct);
+    }
 
-    private static EmailMessage BuildEmail(BlogCommentNotification notification, BlogCommentPosted comment, string slug)
+    private static EmailMessage BuildEmail(PlannedBlogCommentNotification notification, BlogCommentPosted comment, string slug)
     {
         var postUrl = $"{SiteUrl}/blog/{slug}";
         var (subject, body) = notification.Kind switch
@@ -60,6 +62,6 @@ public class BlogCommentActivities(
                 $"{comment.AuthorDisplayName.Value} replied to your comment on {postUrl}:\n\n{comment.Content.Value}"),
         };
 
-        return new EmailMessage(notification.Recipient, subject.ToNonEmpty(), body.ToNonEmpty());
+        return new EmailMessage(new MailAddress(notification.RecipientEmail), subject.ToNonEmpty(), body.ToNonEmpty());
     }
 }

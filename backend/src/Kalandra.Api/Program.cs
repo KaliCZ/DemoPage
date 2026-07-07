@@ -17,7 +17,10 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        // allowIntegerValues: false so a raw number for an enum field is rejected at
+        // binding (a clean 400) instead of deserializing to an out-of-range value.
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -50,7 +53,7 @@ builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
 builder.Services.AddBlogDomain();
 BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration);
-builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
+builder.Services.AddEmailServices(builder.Configuration);
 builder.Services.AddTemporal(builder.Configuration);
 RateLimits.Add(builder.Services, builder.Environment);
 

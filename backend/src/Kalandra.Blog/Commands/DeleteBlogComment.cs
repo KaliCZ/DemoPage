@@ -6,17 +6,17 @@ using Marten;
 namespace Kalandra.Blog.Commands;
 
 public record DeleteBlogCommentCommand(
-    BlogPostSlug Slug,
+    Guid CommentsStreamId,
     Guid CommentId,
     CurrentUser User,
     DateTimeOffset Timestamp);
 
 public class DeleteBlogCommentHandler(IDocumentSession session)
 {
-    public async Task<Result<BlogCommentDeleted, DeleteBlogCommentError>> HandleAsync(
+    public async Task<Result<BlogCommentDeleted, DeleteBlogCommentError>> DeleteAndSave(
         DeleteBlogCommentCommand command, CancellationToken ct)
     {
-        var streamId = BlogStreamId.ForComments(command.Slug);
+        var streamId = command.CommentsStreamId;
         var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(streamId, token: ct)
             ?? new BlogPostComments();
 

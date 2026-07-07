@@ -4,14 +4,14 @@ using Marten;
 
 namespace Kalandra.Blog.Commands;
 
-public record StoreBlogCommentCommand(BlogPostSlug Slug, BlogCommentPosted Comment);
+public record StoreBlogCommentCommand(Guid CommentsStreamId, BlogCommentPosted Comment);
 
 public class StoreBlogCommentHandler(IDocumentSession session)
 {
-    public async Task<Result<BlogCommentPosted, PostBlogCommentError>> HandleAsync(
+    public async Task<Result<BlogCommentPosted, PostBlogCommentError>> StoreAndSave(
         StoreBlogCommentCommand command, CancellationToken ct)
     {
-        var streamId = BlogStreamId.ForComments(command.Slug);
+        var streamId = command.CommentsStreamId;
         var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(streamId, token: ct)
             ?? new BlogPostComments();
 

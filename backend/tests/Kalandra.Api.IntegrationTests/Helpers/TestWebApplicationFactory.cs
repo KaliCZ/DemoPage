@@ -32,7 +32,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         .Build();
 
     public FakeSupabaseAdminService FakeAdminService { get; } = new();
-    public CapturingEmailSender EmailSender { get; } = new();
+    public TestEmailSender EmailSender { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -48,7 +48,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
             // Random per-test slugs need to resolve; the prod catalog gates to real posts.
             services.RemoveAll<IBlogPostCatalog>();
-            services.AddSingleton<IBlogPostCatalog, OpenBlogPostCatalog>();
+            services.AddSingleton<IBlogPostCatalog, TestBlogPostCatalog>();
 
             services.RemoveAll<IStorageService>();
             services.AddSingleton<IStorageService, InMemoryStorageService>();

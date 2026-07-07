@@ -3,6 +3,7 @@ using JasperFx.OpenTelemetry;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
 using Kalandra.Blog.Workflows;
+using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
@@ -156,23 +157,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddEmailServices(
-        this IServiceCollection services,
-        IConfiguration configuration,
-        IWebHostEnvironment environment)
+    public static IServiceCollection AddEmailServices(this IServiceCollection services, IConfiguration configuration)
     {
-        if (!configuration.GetSection("Email").Exists())
-        {
-            // The mock is a Development-only convenience; anywhere else a missing
-            // Email section must stop the app before it silently drops mail.
-            if (!environment.IsDevelopment())
-                throw new InvalidOperationException(
-                    "Email configuration is required outside Development — provide Email:Host, Email:Port, Email:FromEmail and Email:FromName.");
-
-            services.AddSingleton<IEmailSender, NoOpEmailSender>();
-            return services;
-        }
-
+        // appsettings.json points at the local Supabase mail catcher; production
+        // overrides Host/Port/Username/Password via env. EmailConfig enforces that a
+        // real (non-loopback) relay comes with a login.
         EmailConfig.AddSingleton(services, configuration);
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         return services;
@@ -180,10 +169,12 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddTemporal(this IServiceCollection services, IConfiguration configuration)
     {
+        var config = TemporalConfig.AddSingleton(services, configuration);
+
         services.AddTemporalClient(options =>
         {
-            options.TargetHost = configuration["Temporal:TargetHost"] ?? "localhost:7233";
-            options.Namespace = configuration["Temporal:Namespace"] ?? "default";
+            options.TargetHost = config.TargetHost.Value;
+            options.Namespace = config.Namespace.Value;
         });
 
         // The API process hosts the worker — no separate deployable.

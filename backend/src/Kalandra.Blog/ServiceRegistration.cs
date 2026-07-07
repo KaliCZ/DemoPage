@@ -13,6 +13,7 @@ public static class ServiceRegistration
 
         // Command handlers
         services.AddScoped<ToggleBlogReactionHandler>();
+        services.AddScoped<PostBlogCommentHandler>();
         services.AddScoped<StoreBlogCommentHandler>();
         services.AddScoped<DeleteBlogCommentHandler>();
 

@@ -6,13 +6,10 @@ using Kalandra.Blog.Commands;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 using Kalandra.Blog.Queries;
-using Kalandra.Blog.Workflows;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Temporalio.Api.Enums.V1;
-using Temporalio.Client;
 
 namespace Kalandra.Api.Features.Blog;
 
@@ -23,27 +20,28 @@ namespace Kalandra.Api.Features.Blog;
 public class BlogController(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
-    ITemporalClient temporalClient,
     IBlogPostCatalog postCatalog,
     ToggleBlogReactionHandler toggleReactionHandler,
+    PostBlogCommentHandler postCommentHandler,
     DeleteBlogCommentHandler deleteCommentHandler,
     GetBlogReactionsHandler getReactionsHandler,
     GetBlogCommentsHandler getCommentsHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
-    // Malformed slug → 400; well-shaped but not a real post → 404 (no stream for a
-    // page that doesn't exist). Returns null when the slug is a known post.
-    private ActionResult? ResolveSlug(string slug, out BlogPostSlug postSlug)
+    // Any slug that isn't a real published post is a 404 — a malformed slug is no more
+    // "found" than a well-shaped one that doesn't exist. Returns null (no error) and the
+    // resolved post when the slug is known.
+    private ActionResult? ResolvePost(string slug, out BlogPost post)
     {
-        if (BlogPostSlug.TryCreate(slug) is not { } parsed)
+        if (BlogPostSlug.TryCreate(slug) is { } parsed && postCatalog.Find(parsed) is { } found)
         {
-            postSlug = default;
-            return this.ValidationError("slug", BlogSlugError.InvalidSlug);
+            post = found;
+            return null;
         }
 
-        postSlug = parsed;
-        return postCatalog.IsKnown(parsed) ? null : NotFound();
+        post = null!;
+        return NotFound();
     }
 
     // ───── Reactions ─────
@@ -51,13 +49,13 @@ public class BlogController(
     [HttpGet("reactions")]
     [AllowAnonymous]
     [ProducesResponseType<GetBlogReactionsResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GetBlogReactionsResponse>> GetReactions(string slug, CancellationToken ct)
     {
-        if (ResolveSlug(slug, out var postSlug) is { } slugError)
-            return slugError;
+        if (ResolvePost(slug, out var post) is { } notFound)
+            return notFound;
 
-        var reactions = await getReactionsHandler.HandleAsync(new GetBlogReactionsQuery(postSlug), ct);
+        var reactions = await getReactionsHandler.Get(new GetBlogReactionsQuery(post.ReactionsStreamId), ct);
         return GetBlogReactionsResponse.Serialize(reactions, currentUser.User?.Id);
     }
 
@@ -66,25 +64,22 @@ public class BlogController(
     [ProducesResponseType<GetBlogReactionsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GetBlogReactionsResponse>> ToggleReaction(
         string slug,
         [FromBody] ToggleBlogReactionRequest request,
         CancellationToken ct)
     {
-        if (ResolveSlug(slug, out var postSlug) is { } slugError)
-            return slugError;
-
-        // JsonStringEnumConverter rejects unknown names but still lets raw numbers through.
-        if (!Enum.IsDefined(request.Kind))
-            return this.ValidationError("kind", ToggleReactionError.UnknownKind);
+        if (ResolvePost(slug, out var post) is { } notFound)
+            return notFound;
 
         var command = new ToggleBlogReactionCommand(
-            Slug: postSlug,
+            ReactionsStreamId: post.ReactionsStreamId,
             User: AppUser,
             Kind: request.Kind,
             Timestamp: timeProvider.GetUtcNow());
 
-        var reactions = await toggleReactionHandler.HandleAsync(command, ct);
+        var reactions = await toggleReactionHandler.ToggleAndSave(command, ct);
         return GetBlogReactionsResponse.Serialize(reactions, AppUser.Id);
     }
 
@@ -93,13 +88,13 @@ public class BlogController(
     [HttpGet("comments")]
     [AllowAnonymous]
     [ProducesResponseType<ListBlogCommentsResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ListBlogCommentsResponse>> GetComments(string slug, CancellationToken ct)
     {
-        if (ResolveSlug(slug, out var postSlug) is { } slugError)
-            return slugError;
+        if (ResolvePost(slug, out var post) is { } notFound)
+            return notFound;
 
-        var comments = await getCommentsHandler.HandleAsync(new GetBlogCommentsQuery(postSlug), ct);
+        var comments = await getCommentsHandler.Get(new GetBlogCommentsQuery(post.CommentsStreamId), ct);
         return ListBlogCommentsResponse.Serialize(comments);
     }
 
@@ -108,16 +103,14 @@ public class BlogController(
     [ProducesResponseType<BlogCommentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BlogCommentResponse>> PostComment(
         string slug,
         [FromBody] PostBlogCommentRequest request,
         CancellationToken ct)
     {
-        if (ResolveSlug(slug, out var postSlug) is { } slugError)
-            return slugError;
-
-        if (request.Content?.Trim().AsNonEmpty() is not { } content)
-            return this.ValidationError("content", PostCommentError.ContentRequired);
+        if (ResolvePost(slug, out var post) is { } notFound)
+            return notFound;
 
         var comment = new BlogCommentPosted(
             CommentId: Guid.NewGuid(),
@@ -126,27 +119,12 @@ public class BlogController(
             UserEmail: AppUser.Email,
             AuthorDisplayName: AppUser.FullName,
             AuthorAvatarUrl: AppUser.AvatarUrl,
-            Content: content,
+            Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
-        // Store + notify share one durable workflow (BlogCommentWorkflow); the
-        // update returns once the comment is stored, notifications continue async.
-        var input = new BlogCommentWorkflowInput(postSlug.Value, comment);
-        var startOperation = WithStartWorkflowOperation.Create(
-            (BlogCommentWorkflow workflow) => workflow.RunAsync(input),
-            new(id: BlogCommentWorkflow.IdFor(comment.CommentId), taskQueue: BlogTaskQueue.Name)
-            {
-                // A client retry of the same request reattaches instead of failing.
-                IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
-            });
+        var result = await postCommentHandler.Post(new PostBlogCommentCommand(post, comment), ct);
 
-        // Cancellation frees this request if the client disconnects; the workflow
-        // itself keeps running — durability is the point.
-        var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
-            (BlogCommentWorkflow workflow) => workflow.StoreCommentAsync(input),
-            new(startOperation) { Rpc = new() { CancellationToken = ct } });
-
-        if (outcome.Error is { } error)
+        if (result.Error is { } error)
         {
             return error switch
             {
@@ -155,7 +133,7 @@ public class BlogController(
             };
         }
 
-        return BlogCommentResponse.Serialize(outcome.Posted!);
+        return BlogCommentResponse.Serialize(result.Success!);
     }
 
     [HttpDelete("comments/{commentId:guid}")]
@@ -166,16 +144,16 @@ public class BlogController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteComment(string slug, Guid commentId, CancellationToken ct)
     {
-        if (ResolveSlug(slug, out var postSlug) is { } slugError)
-            return slugError;
+        if (ResolvePost(slug, out var post) is { } notFound)
+            return notFound;
 
         var command = new DeleteBlogCommentCommand(
-            Slug: postSlug,
+            CommentsStreamId: post.CommentsStreamId,
             CommentId: commentId,
             User: AppUser,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await deleteCommentHandler.HandleAsync(command, ct);
+        var result = await deleteCommentHandler.DeleteAndSave(command, ct);
 
         if (result.Error is { } error)
         {

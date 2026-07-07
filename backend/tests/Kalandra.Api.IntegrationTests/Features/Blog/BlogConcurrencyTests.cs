@@ -1,7 +1,6 @@
 using JasperFx;
 using JasperFx.Events;
 using Kalandra.Api.IntegrationTests.Helpers;
-using Kalandra.Blog;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 using Marten;
@@ -14,8 +13,6 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
 {
     private readonly IDocumentStore store = factory.Services.GetRequiredService<IDocumentStore>();
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
-
-    private static BlogPostSlug NewSlug() => BlogPostSlug.TryCreate($"concurrency-{Guid.NewGuid():N}")!.Value;
 
     private static BlogCommentPosted NewComment(string content) => new(
         CommentId: Guid.NewGuid(),
@@ -30,7 +27,7 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
     [Fact]
     public async Task ExpectedVersionAppend_RejectsStaleSecondWriter_OnTheCommentStream()
     {
-        var streamId = BlogStreamId.ForComments(NewSlug());
+        var streamId = Guid.NewGuid();
 
         await using (var seedSession = store.LightweightSession())
         {
@@ -52,19 +49,21 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
     }
 
     [Fact]
-    public async Task ReactionAndCommentStreams_OfTheSameSlug_DoNotConflict()
+    public async Task ReactionAndCommentStreams_DoNotConflict()
     {
-        var slug = NewSlug();
+        // A post's comment and reaction streams are two distinct ids; interleaved writers
+        // on them must not collide — a reaction lands between the comment writer's version
+        // check and its save.
+        var commentsStreamId = Guid.NewGuid();
+        var reactionsStreamId = Guid.NewGuid();
 
-        // Interleaved writers on the two streams derived from one slug: a reaction
-        // lands between the comment writer's version check and its save.
         await using var commentSession = store.LightweightSession();
-        commentSession.Events.Append(BlogStreamId.ForComments(slug), 1, NewComment("Hello"));
+        commentSession.Events.Append(commentsStreamId, 1, NewComment("Hello"));
 
         await using (var reactionSession = store.LightweightSession())
         {
             reactionSession.Events.Append(
-                BlogStreamId.ForReactions(slug),
+                reactionsStreamId,
                 new BlogReactionAdded(UserId: Guid.NewGuid(), Kind: BlogReactionKind.Heart, Timestamp: DateTimeOffset.UtcNow));
             await reactionSession.SaveChangesAsync(Ct);
         }
@@ -72,8 +71,8 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
         await commentSession.SaveChangesAsync(Ct);
 
         await using var verifySession = store.LightweightSession();
-        var comments = await verifySession.Events.AggregateStreamAsync<BlogPostComments>(BlogStreamId.ForComments(slug), token: Ct);
-        var reactions = await verifySession.Events.AggregateStreamAsync<BlogPostReactions>(BlogStreamId.ForReactions(slug), token: Ct);
+        var comments = await verifySession.Events.AggregateStreamAsync<BlogPostComments>(commentsStreamId, token: Ct);
+        var reactions = await verifySession.Events.AggregateStreamAsync<BlogPostReactions>(reactionsStreamId, token: Ct);
         Assert.Single(comments!.Comments);
         Assert.Equal(1, reactions!.CountOf(BlogReactionKind.Heart));
     }
@@ -81,11 +80,10 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
     [Fact]
     public async Task RacingDuplicateReactionAppends_ConvergeOnReplay()
     {
-        // Reaction toggles deliberately use plain appends (no stream lock): two
-        // racing "add Heart" writers both commit, and the idempotent Apply makes
-        // replay converge to a single reaction instead of double-counting.
-        var slug = NewSlug();
-        var streamId = BlogStreamId.ForReactions(slug);
+        // Reaction toggles deliberately use plain appends (no stream lock): two racing
+        // "add Heart" writers both commit, and the idempotent Apply makes replay converge
+        // to a single reaction instead of double-counting.
+        var streamId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
         await using var firstSession = store.LightweightSession();

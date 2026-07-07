@@ -12,7 +12,7 @@ public record CancelJobOfferCommand(
 
 public class CancelJobOfferHandler(IDocumentSession session)
 {
-    public async Task<Result<JobOffer, CancelJobOfferError>> HandleAsync(
+    public async Task<Result<JobOffer, CancelJobOfferError>> CancelAndSave(
         CancelJobOfferCommand command, CancellationToken ct)
     {
         var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);

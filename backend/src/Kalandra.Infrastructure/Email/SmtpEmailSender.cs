@@ -11,7 +11,7 @@ public class SmtpEmailSender(EmailConfig config, ILogger<SmtpEmailSender> logger
     {
         var mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress(config.FromName.Value, config.FromEmail.Address));
-        mimeMessage.To.Add(MailboxAddress.Parse(message.To.Address));
+        mimeMessage.To.Add(new MailboxAddress(message.To.DisplayName, message.To.Address));
         mimeMessage.Subject = message.Subject;
         mimeMessage.Body = new TextPart("plain") { Text = message.TextBody };
 

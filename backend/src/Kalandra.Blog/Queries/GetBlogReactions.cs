@@ -3,15 +3,12 @@ using Marten;
 
 namespace Kalandra.Blog.Queries;
 
-public record GetBlogReactionsQuery(BlogPostSlug Slug);
+public record GetBlogReactionsQuery(Guid ReactionsStreamId);
 
 public class GetBlogReactionsHandler(IQuerySession session)
 {
-    /// <summary>
-    /// A slug with no stream yet returns empty state, not null — the backend
-    /// cannot know which posts exist, so "no reactions" is the honest answer.
-    /// </summary>
-    public async Task<BlogPostReactions> HandleAsync(GetBlogReactionsQuery query, CancellationToken ct) =>
-        await session.Events.AggregateStreamAsync<BlogPostReactions>(BlogStreamId.ForReactions(query.Slug), token: ct)
+    /// <summary>A post with no reactions yet has no stream, so aggregation returns null — treat that as empty state.</summary>
+    public async Task<BlogPostReactions> Get(GetBlogReactionsQuery query, CancellationToken ct) =>
+        await session.Events.AggregateStreamAsync<BlogPostReactions>(query.ReactionsStreamId, token: ct)
             ?? new BlogPostReactions();
 }
