@@ -26,26 +26,6 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4.0.1
-        id: filter
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-              - '.github/workflows/**'
-              - 'infra/**'
-            frontend:
-              - 'frontend/**'
-              - '.github/workflows/**'
-
   e2e:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -276,13 +256,12 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [changes, e2e, backend-test, frontend-format, frontend-test]
+    needs: [e2e, backend-test, frontend-format, frontend-test]
     if: |
       always() &&
       (
         (
           github.event_name == 'push' &&
-          needs.changes.outputs.backend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
           needs.frontend-format.result == 'success' &&
@@ -530,19 +509,18 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: [changes, e2e, backend-test, frontend-format, frontend-test, backend-deploy]
+    needs: [e2e, backend-test, frontend-format, frontend-test, backend-deploy]
     if: |
       always() &&
       (
         github.event_name == 'workflow_dispatch' ||
         (
           github.event_name == 'push' &&
-          needs.changes.outputs.frontend == 'true' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
           needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success' &&
-          (needs.backend-deploy.result == 'success' || needs.backend-deploy.result == 'skipped')
+          needs.backend-deploy.result == 'success'
         )
       )
     runs-on: ubuntu-latest
