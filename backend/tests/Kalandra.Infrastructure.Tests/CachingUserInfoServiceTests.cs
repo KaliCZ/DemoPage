@@ -66,6 +66,30 @@ public class CachingUserInfoServiceTests
     }
 
     [Fact]
+    public async Task Evict_AlsoClearsAnEntryReCachedByARacingRead()
+    {
+        var source = new CountingUserInfoService();
+        var cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+        var service = new CachingUserInfoService(source, cache, NullLogger<CachingUserInfoService>.Instance,
+            secondEvictionDelay: TimeSpan.FromMilliseconds(50));
+        var userId = Guid.NewGuid();
+        source.Profiles[userId] = new UserPublicInfo("Old", null);
+
+        await service.GetUserInfoAsync([userId], Ct);
+        await service.EvictAsync(userId, Ct);
+        // The racing read: re-caches the (stale) profile right after the immediate eviction.
+        await service.GetUserInfoAsync([userId], Ct);
+
+        // The delayed second eviction clears the resurrected entry.
+        for (var attempt = 0; ; attempt++)
+        {
+            if (await cache.GetAsync($"userinfo:{userId}", Ct) is null) break;
+            Assert.True(attempt < 100, "the delayed second eviction never cleared the entry");
+            await Task.Delay(25, Ct);
+        }
+    }
+
+    [Fact]
     public async Task MixedHitAndMiss_FetchesOnlyTheMiss()
     {
         var service = Build(out var source);

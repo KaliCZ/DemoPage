@@ -11,9 +11,12 @@ namespace Kalandra.Infrastructure.Users;
 public class CachingUserInfoService(
     IUserInfoService source,
     IDistributedCache cache,
-    ILogger<CachingUserInfoService> logger) : IUserInfoService
+    ILogger<CachingUserInfoService> logger,
+    TimeSpan? secondEvictionDelay = null) : IUserInfoService
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(24);
+
+    private readonly TimeSpan _secondEvictionDelay = secondEvictionDelay ?? TimeSpan.FromSeconds(5);
 
     private static string Key(Guid userId) => $"userinfo:{userId}";
 
@@ -44,7 +47,26 @@ public class CachingUserInfoService(
         return result;
     }
 
-    public Task EvictAsync(Guid userId, CancellationToken ct) => cache.RemoveAsync(Key(userId), ct);
+    public async Task EvictAsync(Guid userId, CancellationToken ct)
+    {
+        await cache.RemoveAsync(Key(userId), ct);
+        _ = EvictAgainAfterDelayAsync(userId);
+    }
+
+    // A read that fetched the old profile just before the update commits can write it back after
+    // the immediate eviction above; this second pass clears that resurrected entry.
+    private async Task EvictAgainAfterDelayAsync(Guid userId)
+    {
+        try
+        {
+            await Task.Delay(_secondEvictionDelay);
+            await cache.RemoveAsync(Key(userId), CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Delayed user-info cache eviction failed for {UserId}", userId);
+        }
+    }
 
     public Task PingAsync(CancellationToken ct) => source.PingAsync(ct);
 
