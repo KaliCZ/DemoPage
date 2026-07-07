@@ -18,7 +18,7 @@ export const metadata: BlogPostMetadata = {
     },
   },
   pubDate: "2026-07-04",
-  tags: ["dotnet", "csharp", "strong-types", "api-design"],
+  tags: ["dotnet", "csharp", "strong-types", "api-design", "validations"],
 };
 
 export const getStaticPaths = () => blogPostStaticPaths(metadata);
@@ -28,62 +28,106 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const codeThemes = { light: "github-light", dark: "github-dark" } as const;
 
 const beforeSnippet = `public record CreateOrderRequest(
-    [Required, EmailAddress] string CustomerEmail,
-    [Required] string ProductCode,
+    [EmailAddress] string CustomerEmail,
+    string ProductCode,
     [Range(1, int.MaxValue)] int Quantity);
 
 [HttpPost]
 [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
 [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-public ActionResult<OrderResponse> Create(CreateOrderRequest request)
+public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request)
 {
     // [EmailAddress] waves through "a@b" and much worse, so re-parse with the
-    // type the rest of .NET actually trusts. The other annotations we lean on.
+    // type the rest of .NET actually trusts.
     if (!MailAddress.TryCreate(request.CustomerEmail, out _))
         return ValidationProblem("Customer email is not valid.");
 
-    var order = orders.Place(request.CustomerEmail, request.ProductCode, request.Quantity);
-    return Ok(OrderResponse.From(order));
+    try
+    {
+        var order = await orders.PlaceAsync(request.CustomerEmail, request.ProductCode, request.Quantity);
+        return Ok(OrderResponse.From(order));
+    }
+    catch (UnknownProductException)
+    {
+        return ValidationProblem("No product matches that code.");
+    }
+    catch (OutOfStockException)
+    {
+        return ValidationProblem("Not enough stock to fill the order.");
+    }
 }`;
 
-const beforeServiceSnippet = `public Order Place(string customerEmail, string productCode, int quantity)
+const beforeServiceSnippet = `public async Task<Order> PlaceAsync(string customerEmail, string productCode, int quantity)
 {
-    // The controller already checked all this. But Place takes a plain string
-    // and int, so it can be called from anywhere — and it can't trust that it was.
+    // The controller already checked all this. But PlaceAsync takes plain strings
+    // and an int, so it can be called from anywhere — and it can't trust that it was.
     if (string.IsNullOrWhiteSpace(productCode))
         throw new ArgumentException("Product code is required.", nameof(productCode));
     if (quantity <= 0)
         throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be positive.");
 
-    // ...the same guards as the API, one layer down.
+    if (!await catalog.ContainsAsync(productCode))
+        throw new UnknownProductException(productCode);
+
+    // ...the same guards as the API, one layer down — then the real work.
 }`;
 
-const afterSnippet = `public record CreateOrderRequest(Email CustomerEmail, NonEmptyString ProductCode, Positive<int> Quantity);
+const afterSnippet = `public record CreateOrderRequest(
+    Email CustomerEmail,
+    NonEmptyString ProductCode,
+    Positive<int> Quantity);
 
 [HttpPost]
 [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
 [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-public ActionResult<OrderResponse> Create(CreateOrderRequest request)
+public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request)
 {
     // An invalid payload never reaches this line: the built-in System.Text.Json
     // converters already rejected it with a 400, naming the offending field.
-    var order = orders.Place(request.CustomerEmail, request.ProductCode, request.Quantity);
-    return Ok(OrderResponse.From(order));
+    var result = await orders.PlaceAsync(request.CustomerEmail, request.ProductCode, request.Quantity);
+
+    if (result.Error is { } error)
+    {
+        return error switch
+        {
+            PlaceOrderError.UnknownProduct => ValidationProblem("No product matches that code."),
+            PlaceOrderError.OutOfStock => ValidationProblem("Not enough stock to fill the order."),
+        };
+    }
+
+    return Ok(OrderResponse.From(result.Success!));
 }`;
 
 const signatureSnippet = `// Before: every caller re-checks, every reader wonders.
-Order Place(string email, string code, int quantity);
+Task<Order> PlaceAsync(string email, string code, int quantity);
 
 // After: the signature is the contract.
-Order Place(Email email, NonEmptyString code, Positive<int> quantity);`;
+Task<Order> PlaceAsync(Email email, NonEmptyString code, Positive<int> quantity);`;
 
-const resultSnippet = `public Result<Order, PlaceOrderError> Place(Email email, NonEmptyString code, Positive<int> quantity)
+const resultSnippet = `public async Task<Result<Order, PlaceOrderError>> PlaceAsync(Email email, NonEmptyString code, Positive<int> quantity)
 {
-    if (!catalog.Contains(code))
+    if (!await catalog.ContainsAsync(code))
         return PlaceOrderError.UnknownProduct;
+
+    if (!await inventory.HasStockAsync(code, quantity))
+        return PlaceOrderError.OutOfStock;
 
     return new Order(email, code, quantity);
 }`;
+
+const entitySnippet = `public sealed class Order
+{
+    public Guid Id { get; init; }
+    public Email CustomerEmail { get; init; }
+    public NonEmptyString ProductCode { get; init; }
+    public Positive<int> Quantity { get; init; }
+}
+
+// One call attaches a value converter to every strong-type property: the column
+// stays a plain string or int, but the entity hands you back the strong type.
+services.AddDbContext<ShopDbContext>(options => options
+    .UseNpgsql(connectionString)
+    .UseStrongTypes());`;
 
 const constructionSnippet = `NonEmptyString name = NonEmptyString.Create(input);   // throws on invalid
 NonEmptyString? safe = NonEmptyString.TryCreate(input); // null on invalid
@@ -95,49 +139,58 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
     lang === "cs" ? (
       <Fragment>
         <p>
-          Před časem jsem dělal review endpointu, který byl podle všech checklistů hotový. Kompiloval se, měl testy, měl dokonce XML
-          dokumentaci. Jeho request objekt byl obalený validačními atributy, controller si e-mail stejně naparsoval ručně, protože
-          <code>[EmailAddress]</code> pustí i nesmysl, a service, kterou volal, ty samé hodnoty prověřila potřetí. Skutečná business logika
-          — důvod, proč ten endpoint existuje — se ve vlastních strážích ztrácela.
+          Když jsem dělal na backendu tohohle webu, pořád jsem narážel na to samé tření — a nebyla to záludná chyba ani chytrý algoritmus.
+          Byla to validace. Přesněji řečeno to, kolikrát jsem musel to samé pravidlo napsat znovu. Ne z lajdáctví — každá vrstva má jinou
+          práci a žádná z nich nemůže věřit té nad sebou.
         </p>
 
         <p>
-          To není nijak výjimečný endpoint. Tak vypadá většina endpointů. Když se request DTO skládá ze <code>string</code> a
-          <code>int</code>, je každé pole lhář, dokud se neprokáže opak — a to prokazování je na vás: v controlleru, pak znovu v service,
-          která controlleru tak docela nevěří, a pak znovu v doméně, která nevěří ani jednomu z nich.
+          Vezměte si jeden endpoint, který zakládá objednávku. Jeho request DTO nese validační atributy, protože z nich vzniká OpenAPI
+          schéma — frontend si z toho dokumentu generuje klienta i nápovědu k formulářům, takže pravidla musí být deklarovaná tam.
+          Controller pak ta samá pravidla prověří ještě jednou, aby špatný request selhal hned s <code>400</code>, a ne až o tři databázové
+          dotazy později. A service za ním je ověří potřetí, protože se k ní nedostanete jen přes tenhle controller. Tři kopie jednoho
+          pravidla — a každé pole je lhář, dokud ho každá vrstva neusvědčí z opaku.
         </p>
 
         <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
 
         <p>
-          Atributy si na hranici HTTP svoje odpracují — většinou. <code>[Required]</code> pořád pustí řetězec ze samých mezer a
-          <code>[EmailAddress]</code> je proslule benevolentní, takže si controller e-mail stejně naparsuje přes <code>MailAddress</code>.
-          Řekněme, že hranice je zhruba pokrytá. Pak ale request dorazí do service:
+          Ty atributy dělají dvojí práci: vynutí <code>400</code> na hranici a zároveň se objeví v OpenAPI dokumentu. Ale dostanou vás jen
+          do určité míry. Všimněte si, co tam <em>není</em> — žádné <code>[Required]</code>. Při zapnutých nullable reference types je
+          non-nullable <code>string</code> už tak povinný a ví to jak validace modelu, tak generované schéma; atribut by byl jen šum. Co v
+          krabici naopak chybí, je <code>[Positive]</code>, takže kladné celé číslo se píše jako <code>[Range(1, int.MaxValue)]</code> — to
+          nejmíň špatné, co dostanete. A <code>[EmailAddress]</code> je proslule benevolentní — pustí i <code>a@b</code> — takže si
+          controller e-mail stejně naparsuje přes <code>MailAddress</code>. Řekněme, že hranice je zhruba pokrytá. Pak ale request dorazí do
+          service:
         </p>
 
         <Code code={beforeServiceSnippet} lang="csharp" themes={codeThemes} />
 
         <p>
-          <code>Place</code> bere <code>string</code> a <code>int</code>. Netuší, že ho nějaký controller prověřil, a nic nebrání jinému
-          volajícímu — background jobu, testu, příštímu endpointu — předat mu <code>""</code> a <code>-1</code>. Tak to kontroluje znovu.
-          Stejná pravidla teď žijí na dvou místech, samostatně se rozjíždějí a každé si pěstuje vlastní testy. To je daň za posílání
+          {" "}
+          <code>PlaceAsync</code> bere obyčejné <code>string</code> a <code>int</code>. Netuší, že ho nějaký controller prověřil, a nic
+          nebrání jinému volajícímu — background jobu, testu, příštímu endpointu — předat mu <code>""</code> a <code>-1</code>. Ten druhý
+          volající často zrovna načetl <code>Order</code> z databáze a předává jeho pole rovnou dál; entita je uložila jako obyčejné
+          sloupce, takže všechno, co se prokázalo na hranici, se ve chvíli uložení zploštilo zpátky na holý <code>string</code>. Tak to
+          service kontroluje znovu — a musí odchytávat výjimky, které z té kontroly můžou vypadnout. Jedno pravidlo teď žije na třech
+          místech — atributy, controller, service — každé se rozjíždí samostatně a každé si pěstuje vlastní testy. To je daň za posílání
           zvalidovaných dat v typech, které si nepamatují, že byly zvalidované.
         </p>
 
         <h2>Parse, don't validate</h2>
 
         <p>
-          Náprava je stará myšlenka z funkcionálního programování: místo kontrolování hodnoty a posílání téhož volného typu dál ji
+          Náprava je stará myšlenka z funkcionálního programování: místo kontrolování hodnoty a posílání téhož volného typu dál ji{" "}
           <em>jednou</em> převeďte do typu, který neplatný stav vůbec neumí reprezentovat. <code>string</code>, který přežil null check, je
-          pořád jen <code>string</code> — výsledek kontroly se zahodí ve chvíli, kdy projde.
-          <code>NonEmptyString</code> si důkaz nese přímo v typu a kompilátor ho vymáhá všude níž.
+          pořád jen <code>string</code> — výsledek kontroly se zahodí ve chvíli, kdy projde. <code>NonEmptyString</code> si důkaz nese přímo
+          v typu a kompilátor ho vymáhá všude níž.
         </p>
 
         <p>
           Přesně tohle pro C# balí můj balíček <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>: malá sada validovaných
-          obálek — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> a spol. nad libovolným
-          <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus algebraické typy
-          <code>Maybe&lt;T&gt;</code> a <code>Result&lt;T, TError&gt;</code>, kterými se to celé skládá dohromady.
+          obálek — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> a spol. nad libovolným{" "}
+          <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus algebraické typy <code>Maybe&lt;T&gt;</code> a{" "}
+          <code>Result&lt;T, TError&gt;</code>, kterými se to celé skládá dohromady.
         </p>
 
         <h2>Ta část „bez jediného řádku“</h2>
@@ -152,11 +205,20 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>
           Trik je v tom, že balíček přináší konvertory pro <code>System.Text.Json</code>, které se nikde neregistrují. Když dorazí payload s
-          prázdným kódem produktu nebo nulovým množstvím, selže už samotná deserializace a ASP.NET Core z ní udělá RFC 7807
-          <code>400</code> s pojmenovaným polem — dřív, než se metoda vašeho endpointu vůbec zavolá. Validační atributy, ruční parsování
-          přes
-          <code>MailAddress</code> i — jakmile <code>Place</code> bere ty samé silné typy — kontroly v service: všechno pryč a nic je
-          nenahradilo. Není tu žádná třída validátoru, žádná polévka z atributů, žádný pipeline behavior. Ty typy <em>jsou</em> ta validace.
+          prázdným kódem produktu nebo nulovým množstvím, selže už samotná deserializace a ASP.NET Core z ní udělá RFC 7807 <code>400</code>{" "}
+          s pojmenovaným polem — dřív, než se metoda vašeho endpointu vůbec zavolá. Validační atributy, ruční parsování přes{" "}
+          <code>MailAddress</code> i strážní klauzule v service — všechno pryč a nic je nenahradilo. Zmizel i <code>try/catch</code>:
+          selhání, která zbyla, nejsou o tvaru dat — neznámý produkt, došlé zásoby — a vrací se jako <code>Result</code>, na který se
+          přepnete, místo výjimek, které chytáte. Není tu žádná třída validátoru, žádná polévka z atributů, žádný pipeline behavior. Ty typy{" "}
+          <em>jsou</em> ta validace.
+        </p>
+
+        <p>
+          A frontend o nic nepřijde. OpenAPI companion (<code>Kalicz.StrongTypes.OpenApi.Swashbuckle</code>, nebo varianta pro{" "}
+          <code>Microsoft.AspNetCore.OpenApi</code>) naučí generátor schématu, co každá obálka znamená: <code>NonEmptyString</code> se
+          objeví jako string s <code>minLength: 1</code>, <code>Positive&lt;int&gt;</code> jako integer s <code>minimum: 1</code>,{" "}
+          <code>Email</code> s <code>format: email</code>. Dokument, ze kterého si frontend generuje klienta, je tak <em>přesnější</em> než
+          ten ručně anotovaný — benevolentní pattern od <code>[EmailAddress]</code> nahradí opravdový <code>format</code>.
         </p>
 
         <h2>Signatury jako dokumentace</h2>
@@ -181,10 +243,27 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
 
+        <h2>Typy dorazí až do databáze</h2>
+
+        <p>
+          Vzpomínáte na entitu, která cestou dovnitř všechno zploštila zpátky na <code>string</code>? Nemusí. Přidejte companion{" "}
+          <code>Kalicz.StrongTypes.EfCore</code> a silné typy se stanou přímo vlastnostmi entity — jediné volání na options builderu navěsí
+          value converter na každou z nich:
+        </p>
+
+        <Code code={entitySnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          Sloupec v databázi zůstává obyčejný <code>varchar</code> nebo <code>int</code>; na disku se nemění nic. Ale <code>Order</code>{" "}
+          načtený za týden se vrátí se stejným <code>Email</code>, <code>NonEmptyString</code> a <code>Positive&lt;int&gt;</code>, se
+          kterými odešel. Volající, který si entitu přečte a předá ji do <code>PlaceAsync</code>, už nemůže vrátit do hry stavy, proti
+          kterým se service dřív bránila — důkaz je uložený spolu s daty, takže na cestě ven není co znovu validovat.
+        </p>
+
         <h2>Méně hraničních případů, méně testů</h2>
 
         <p>
-          Můj nejoblíbenější důsledek je, co se stane s testy. Ty, které do každé vrstvy sypaly <code>null</code>, <code>""</code>,
+          Můj nejoblíbenější důsledek je, co se stane s testy. Ty, které do každé vrstvy sypaly <code>null</code>, <code>""</code>,{" "}
           <code>" "</code> a <code>-1</code>, aby ověřily, že se každá umí ubránit sama? Smazané. Ty stavy jsou nereprezentovatelné, takže
           není co bránit. Zbydou testy o chování — ty, které stojí za to číst. A na hranicích, kde hodnoty z volného vstupu opravdu
           konstruujete, je API explicitní v tom, co zamýšlíte:
@@ -194,19 +273,18 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>
           A pro vlastnosti, které si ověřit chcete, umí doprovodný balíček <code>Kalicz.StrongTypes.FsCheck</code> generovat validní silně
-          typované hodnoty pro property-based testy — vaše generátory tak respektují stejné invarianty jako váš kód. Existuje i EF Core
-          companion s value konvertory.
+          typované hodnoty pro property-based testy — vaše generátory tak respektují stejné invarianty jako váš kód.
         </p>
 
         <h2>Vyzkoušejte to</h2>
 
         <p>
           Backend tohohle webu běží na StrongTypes od kraje ke kraji — request DTO, doménové eventy, stav entit. Pokud vás ten přístup
-          zaujal, na stránce <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdete diagramy a další ukázky, zdrojáky žijí na
+          zaujal, na stránce <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdete diagramy a další ukázky, zdrojáky žijí na{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHubu
           </a>{" "}
-          a balíček je na
+          a balíček je na{" "}
           <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
             NuGetu
           </a>
@@ -217,34 +295,42 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
     ) : (
       <Fragment>
         <p>
-          A while ago I reviewed an endpoint that was, by every checklist, done. It compiled, it had tests, it even had XML docs. Its
-          request object was plastered with validation attributes, its controller still re-parsed the email by hand because{" "}
-          <code>[EmailAddress]</code>
-          waves nonsense through, and the service it called re-checked the same fields a third time. The actual business logic — the reason
-          the endpoint exists — was outnumbered by its own guards.
+          Working on this site's backend, I kept bumping into the same friction — and it wasn't a tricky bug or a clever algorithm. It was
+          validation, and specifically how many times I had to write the same rule down. Not out of sloppiness: each layer has a different
+          job, and none of them can trust the one above it.
         </p>
 
         <p>
-          That's not an unusual endpoint. That's most endpoints. When a request DTO is made of <code>string</code> and
-          <code>int</code>, every field is a liar until proven otherwise, and the proving is on you — in the controller, then again in the
-          service that doesn't quite trust the controller, then again in the domain that doesn't quite trust either of them.
+          Take one endpoint that places an order. Its request DTO carries validation attributes, because those become the OpenAPI schema —
+          the frontend generates its client and its form hints from that document, so the rules have to be declared there. The controller
+          then checks the same rules itself, so a bad request fails fast with a <code>400</code> instead of surfacing three DB queries deep.
+          And the service behind it checks a third time, because it isn't only reachable through that controller. Three copies of one rule —
+          and every field a liar until each layer proves otherwise.
         </p>
 
         <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
 
         <p>
-          The attributes earn their keep at the HTTP edge — mostly. <code>[Required]</code> still lets a whitespace-only string through and
-          <code>[EmailAddress]</code> is famously lax, which is why the controller re-parses the email with <code>MailAddress</code> anyway.
-          Call the boundary roughly covered. Then the request reaches the service:
+          Those attributes pull double duty: they drive the <code>400</code> at the edge and they show up in the OpenAPI document. But they
+          only get you so far. Notice what's <em>not</em> there — no <code>[Required]</code>. Under nullable reference types a non-nullable{" "}
+          <code>string</code> is already required, and both model validation and the generated schema know it, so the attribute would be
+          noise. What the box <em>doesn't</em> give you is a <code>[Positive]</code>, so a positive integer is spelled{" "}
+          <code>[Range(1, int.MaxValue)]</code> — the least-bad thing on offer. And <code>[EmailAddress]</code> is famously lax — it waves{" "}
+          <code>a@b</code> through — so the controller re-parses with <code>MailAddress</code> anyway. Call the boundary roughly covered.
+          Then the request reaches the service:
         </p>
 
         <Code code={beforeServiceSnippet} lang="csharp" themes={codeThemes} />
 
         <p>
-          <code>Place</code> takes a <code>string</code> and an <code>int</code>. It has no idea a controller vetted them, and nothing stops
-          another caller — a background job, a test, next year's endpoint — from handing it <code>""</code> and <code>-1</code>. So it
-          checks again. The same rules now live in two places, drift apart independently, and each grows its own tests. That's the tax on
-          passing validated data around in types that don't remember they were validated.
+          {" "}
+          <code>PlaceAsync</code> takes plain strings and an int. It has no idea a controller vetted them, and nothing stops another caller
+          — a background job, a test, next year's endpoint — from handing it <code>""</code> and <code>-1</code>. Often that other caller
+          has just loaded an <code>Order</code> from the database and passed its fields straight in; the entity stored them as ordinary
+          columns, so whatever was proven at the edge was flattened back to a bare <code>string</code> the moment it was saved. So the
+          service checks again — and it has to catch the exceptions that check can throw. One rule now lives in three places — attributes,
+          controller, service — each drifting independently, each growing its own tests. That's the tax on passing validated data around in
+          types that don't remember they were validated.
         </p>
 
         <h2>Parse, don't validate</h2>
@@ -252,15 +338,15 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           The fix is an old functional-programming idea: instead of checking values and passing the same loose type along, convert the value{" "}
           <em>once</em> into a type that cannot represent the invalid state. A <code>string</code> that survived a null check is still a{" "}
-          <code>string</code> — the check's result is thrown away the moment it passes. A<code>NonEmptyString</code> carries the proof in
+          <code>string</code> — the check's result is thrown away the moment it passes. A <code>NonEmptyString</code> carries the proof in
           the type, and the compiler enforces it everywhere downstream.
         </p>
 
         <p>
           That's what my <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package packages up for C#: a small set of
-          validated wrappers — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> and friends over any
-          <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus the algebraic types
-          <code>Maybe&lt;T&gt;</code> and <code>Result&lt;T, TError&gt;</code> to compose them with.
+          validated wrappers — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> and friends over any{" "}
+          <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus the algebraic types <code>Maybe&lt;T&gt;</code> and{" "}
+          <code>Result&lt;T, TError&gt;</code> to compose them with.
         </p>
 
         <h2>The zero-code part</h2>
@@ -275,11 +361,21 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>
           The trick is that the package ships <code>System.Text.Json</code> converters that need no registration. When a payload arrives
-          with an empty product code or a quantity of zero, deserialization itself fails, and ASP.NET Core turns that into an RFC 7807
+          with an empty product code or a quantity of zero, deserialization itself fails, and ASP.NET Core turns that into an RFC 7807{" "}
           <code>400</code> with the offending field named — before your endpoint method is ever called. The validation attributes, the
-          hand-rolled <code>MailAddress</code> parse, and — once <code>Place</code> takes the same strong types — the service's re-checks:
-          all gone, and nothing replaced them. There is no validator class, no attribute soup, no pipeline behavior. The types <em>are</em>{" "}
-          the validation.
+          hand-rolled <code>MailAddress</code> parse, the guard clauses in the service — all gone, and nothing replaced them. The{" "}
+          <code>try/catch</code> goes too: the failures that remain aren't about the shape of the data — an unknown product, no stock — and
+          they come back as a <code>Result</code> you switch on instead of exceptions you catch. There is no validator class, no attribute
+          soup, no pipeline behavior. The types <em>are</em> the validation.
+        </p>
+
+        <p>
+          And the frontend loses nothing. The OpenAPI companion (<code>Kalicz.StrongTypes.OpenApi.Swashbuckle</code>, or the{" "}
+          <code>Microsoft.AspNetCore.OpenApi</code> variant) teaches the schema generator what each wrapper means:{" "}
+          <code>NonEmptyString</code> shows up as a string with <code>minLength: 1</code>, <code>Positive&lt;int&gt;</code> as an integer
+          with <code>minimum: 1</code>, <code>Email</code> with <code>format: email</code>. The document the frontend generates its client
+          from ends up <em>more</em> accurate than the hand-annotated one was — <code>[EmailAddress]</code>'s lax pattern is replaced by a
+          real <code>format</code>.
         </p>
 
         <h2>Signatures become documentation</h2>
@@ -304,6 +400,24 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
 
+        <h2>The types reach the database</h2>
+
+        <p>
+          Remember the entity that flattened everything back to a <code>string</code> on the way in? It doesn't have to. Add the{" "}
+          <code>Kalicz.StrongTypes.EfCore</code> companion and the strong types become entity properties directly — one call on the options
+          builder attaches a value converter to each:
+        </p>
+
+        <Code code={entitySnippet} lang="csharp" themes={codeThemes} />
+
+        <p>
+          The column on disk is still a plain <code>varchar</code> or <code>int</code>; nothing changes about the storage. But an{" "}
+          <code>Order</code> loaded a week later comes back with the same <code>Email</code>, <code>NonEmptyString</code>, and{" "}
+          <code>Positive&lt;int&gt;</code> it went in with. The caller that reads an entity and hands it to <code>PlaceAsync</code> can't
+          reintroduce the states the service used to defend against — the proof is stored alongside the data, so there's nothing to
+          re-validate on the way back out.
+        </p>
+
         <h2>Fewer edge cases, fewer tests</h2>
 
         <p>
@@ -317,8 +431,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>
           And for the properties you still want to verify, the <code>Kalicz.StrongTypes.FsCheck</code> companion package generates valid
-          strong-typed values for property-based tests, so your generators respect the same invariants your code does. There's an EF Core
-          companion with value converters, too.
+          strong-typed values for property-based tests, so your generators respect the same invariants your code does.
         </p>
 
         <h2>Try it</h2>
@@ -326,11 +439,11 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           The backend behind this very site runs on StrongTypes end to end — request DTOs, domain events, entity state. If the approach
           appeals to you, the <a href={localePath(lang, "strong-types")}>StrongTypes page</a> has diagrams and more examples, the source
-          lives on
+          lives on{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
-          , and the package is on
+          , and the package is on{" "}
           <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
             NuGet
           </a>
