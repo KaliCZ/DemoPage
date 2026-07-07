@@ -17,9 +17,8 @@ public interface IBlogPostCatalog
 
 public sealed class BlogPostCatalog : IBlogPostCatalog
 {
-    // Stream Guids are hand-assigned and permanent: they key the event streams, so they must
-    // never change once a post has data, and a post's two streams must stay distinct because
-    // Marten keeps every stream in one global id namespace.
+    // Hand-assigned and permanent: they key the event streams, so they can't change once a post has
+    // data, and a post's two ids must stay distinct (Marten keeps every stream in one id namespace).
     private static readonly IReadOnlyDictionary<string, BlogPost> Posts =
         new[]
         {

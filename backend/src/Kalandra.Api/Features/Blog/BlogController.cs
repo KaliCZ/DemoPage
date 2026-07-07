@@ -29,20 +29,6 @@ public class BlogController(
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
-    // Any slug that isn't a real published post is a 404. Returns null (no error) and the
-    // resolved post when the slug is known.
-    private ActionResult? ResolvePost(string slug, out BlogPost post)
-    {
-        if (postCatalog.Find(slug) is { } found)
-        {
-            post = found;
-            return null;
-        }
-
-        post = null!;
-        return NotFound();
-    }
-
     // ───── Reactions ─────
 
     [HttpGet("reactions")]
@@ -51,8 +37,8 @@ public class BlogController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GetBlogReactionsResponse>> GetReactions(string slug, CancellationToken ct)
     {
-        if (ResolvePost(slug, out var post) is { } notFound)
-            return notFound;
+        if (postCatalog.Find(slug) is not { } post)
+            return NotFound();
 
         var reactions = await getReactionsHandler.Get(new GetBlogReactionsQuery(post.ReactionsStreamId), ct);
         return GetBlogReactionsResponse.Serialize(reactions, currentUser.User?.Id);
@@ -69,8 +55,8 @@ public class BlogController(
         [FromBody] ToggleBlogReactionRequest request,
         CancellationToken ct)
     {
-        if (ResolvePost(slug, out var post) is { } notFound)
-            return notFound;
+        if (postCatalog.Find(slug) is not { } post)
+            return NotFound();
 
         var command = new ToggleBlogReactionCommand(
             ReactionsStreamId: post.ReactionsStreamId,
@@ -90,8 +76,8 @@ public class BlogController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ListBlogCommentsResponse>> GetComments(string slug, CancellationToken ct)
     {
-        if (ResolvePost(slug, out var post) is { } notFound)
-            return notFound;
+        if (postCatalog.Find(slug) is not { } post)
+            return NotFound();
 
         var comments = await getCommentsHandler.GetForDisplay(new GetBlogCommentsQuery(post.CommentsStreamId), ct);
         return ListBlogCommentsResponse.Serialize(comments);
@@ -108,8 +94,8 @@ public class BlogController(
         [FromBody] PostBlogCommentRequest request,
         CancellationToken ct)
     {
-        if (ResolvePost(slug, out var post) is { } notFound)
-            return notFound;
+        if (postCatalog.Find(slug) is not { } post)
+            return NotFound();
 
         var comment = new BlogCommentPosted(
             CommentId: Guid.NewGuid(),
@@ -143,8 +129,8 @@ public class BlogController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteComment(string slug, Guid commentId, CancellationToken ct)
     {
-        if (ResolvePost(slug, out var post) is { } notFound)
-            return notFound;
+        if (postCatalog.Find(slug) is not { } post)
+            return NotFound();
 
         var command = new DeleteBlogCommentCommand(
             CommentsStreamId: post.CommentsStreamId,
