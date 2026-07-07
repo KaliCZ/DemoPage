@@ -12,4 +12,5 @@ public record CreateJobOfferRequest(
     [MaxLength(100)] string? SalaryRange,
     [MaxLength(200)] string? Location,
     bool IsRemote,
-    [MaxLength(2000)] string? AdditionalNotes);
+    [MaxLength(2000)] string? AdditionalNotes,
+    Guid? Id);

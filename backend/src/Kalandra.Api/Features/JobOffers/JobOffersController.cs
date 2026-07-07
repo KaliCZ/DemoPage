@@ -78,7 +78,12 @@ public class JobOffersController(
         if (!ModelState.IsValid)
             return ValidationProblem();
 
+        // Client-supplied so an accidental resend reuses it and the workflow dedupes to one
+        // offer; we mint one only when a caller omits it.
+        var offerId = request.Id is { } requestedId && requestedId != Guid.Empty ? requestedId : Guid.NewGuid();
+
         var command = new CreateJobOfferCommand(
+            Id: offerId,
             User: AppUser,
             CompanyName: request.CompanyName,
             ContactName: request.ContactName,
@@ -108,8 +113,14 @@ public class JobOffersController(
 
         var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
         var offer = await getDetailHandler.Get(query, ct);
+
+        // Null means the client-supplied id already belongs to someone else's offer: the
+        // store was an idempotent no-op and the detail query hides foreign offers.
+        if (offer == null)
+            return this.ValidationError("Id", CreateOfferError.IdAlreadyUsed);
+
         return CreatedAtAction(nameof(GetDetail), new { id = streamId },
-            GetJobOfferDetailResponse.Serialize(offer!));
+            GetJobOfferDetailResponse.Serialize(offer));
     }
 
     // ───── Edit ─────
@@ -249,8 +260,13 @@ public class JobOffersController(
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
+        // Client-supplied so an accidental resend reuses it and the workflow dedupes to one
+        // comment; we mint one only when a caller omits it.
+        var commentId = request.CommentId is { } requestedId && requestedId != Guid.Empty ? requestedId : Guid.NewGuid();
+
         var command = new AddCommentCommand(
             JobOfferId: id,
+            CommentId: commentId,
             User: AppUser,
             Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());

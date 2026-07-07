@@ -543,6 +543,9 @@ const t = translations[lang];
       });
     }
 
+    // Reused across retries of the current draft so a resend dedupes into one offer server-side.
+    var pendingOfferId = null;
+
     // Form submission
     document.getElementById("job-offer-form")?.addEventListener("submit", async function (e) {
       e.preventDefault();
@@ -584,8 +587,11 @@ const t = translations[lang];
           return;
         }
 
+        pendingOfferId = pendingOfferId || crypto.randomUUID();
+
         var formData = new FormData();
         formData.append("cf-turnstile-response", turnstileResponse);
+        formData.append("Id", pendingOfferId);
         formData.append("CompanyName", form.companyName.value);
         formData.append("ContactName", form.contactName.value);
         formData.append("ContactEmail", form.contactEmail.value);
