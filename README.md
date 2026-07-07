@@ -9,6 +9,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - [**Project**](https://www.kalandra.tech/project) — live roadmap tracking the build progress of this site
 - [**Hire Me**](https://www.kalandra.tech/hire-me) — job offer submission form (requires sign-in)
 - [**Job Offers**](https://www.kalandra.tech/job-offers) — submitted offers with status tracking and admin review
+- [**Blog**](https://www.kalandra.tech/blog) — technical articles with RSS, reactions, and threaded comments
 
 ## Tech stack
 
@@ -16,6 +17,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - **Backend**: ASP.NET Core (.NET 10) with Marten (event sourcing), deployed to Oracle Cloud
 - **Auth**: Supabase Auth (email/password + Google OAuth)
 - **Database**: PostgreSQL (Supabase in production, Docker locally)
+- **Background workflows**: [Temporal](https://temporal.io) — durable store-and-notify for blog comments (self-hosted)
 - **Observability**: [Sentry](https://sentry.io) for errors, traces, and logs (backend via the OpenTelemetry bridge; frontend via the CDN loader script behind a provider-agnostic abstraction)
 - **CI/CD**: GitHub Actions
 

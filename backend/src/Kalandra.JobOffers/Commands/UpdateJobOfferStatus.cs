@@ -13,7 +13,7 @@ public record UpdateJobOfferStatusCommand(
 
 public class UpdateJobOfferStatusHandler(IDocumentSession session)
 {
-    public async Task<Result<JobOffer, UpdateJobOfferStatusError>> HandleAsync(
+    public async Task<Result<JobOffer, UpdateJobOfferStatusError>> UpdateStatusAndSave(
         UpdateJobOfferStatusCommand command, CancellationToken ct)
     {
         var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);

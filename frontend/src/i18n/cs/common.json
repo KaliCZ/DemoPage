@@ -5,6 +5,7 @@
     "projects": "Projekty",
     "projectThisSite": "Tato stránka",
     "projectStrongTypes": "StrongTypes",
+    "blog": "Blog",
     "hireMe": "Najměte mě",
     "mySubmissions": "Mé nabídky",
     "admin": "Administrace",
@@ -71,6 +72,8 @@
     "linkedinAriaLabel": "LinkedIn profil",
     "githubTitle": "GitHub — KaliCZ",
     "githubAriaLabel": "GitHub profil",
+    "rssTitle": "RSS — články z blogu",
+    "rssAriaLabel": "Odebírat blog přes RSS",
     "privacy": "Ochrana osobních údajů",
     "terms": "Podmínky používání"
   }

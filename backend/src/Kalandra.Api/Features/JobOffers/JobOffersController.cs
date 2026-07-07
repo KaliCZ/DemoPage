@@ -92,7 +92,7 @@ public class JobOffersController(
             Files: files,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await createHandler.HandleAsync(command, ct);
+        var result = await createHandler.CreateAndSave(command, ct);
 
         if (result.Error is { } error)
         {
@@ -107,7 +107,7 @@ public class JobOffersController(
         var streamId = result.Success!.Value;
 
         var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
-        var offer = await getDetailHandler.HandleAsync(query, ct);
+        var offer = await getDetailHandler.Get(query, ct);
         return CreatedAtAction(nameof(GetDetail), new { id = streamId },
             GetJobOfferDetailResponse.Serialize(offer!));
     }
@@ -142,7 +142,7 @@ public class JobOffersController(
                 AdditionalNotes: request.AdditionalNotes,
                 Timestamp: timeProvider.GetUtcNow());
 
-            var result = await editHandler.HandleAsync(command, ct);
+            var result = await editHandler.EditAndSave(command, ct);
 
             if (result.Error is { } error)
             {
@@ -180,7 +180,7 @@ public class JobOffersController(
                 Reason: request.Reason,
                 Timestamp: timeProvider.GetUtcNow());
 
-            var result = await cancelHandler.HandleAsync(command, ct);
+            var result = await cancelHandler.CancelAndSave(command, ct);
 
             if (result.Error is { } error)
             {
@@ -220,7 +220,7 @@ public class JobOffersController(
                 Notes: request.AdminNotes,
                 Timestamp: timeProvider.GetUtcNow());
 
-            var result = await updateStatusHandler.HandleAsync(command, ct);
+            var result = await updateStatusHandler.UpdateStatusAndSave(command, ct);
 
             if (result.Error is { } error)
             {
@@ -255,7 +255,7 @@ public class JobOffersController(
             Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await addCommentHandler.HandleAsync(command, ct);
+        var result = await addCommentHandler.AddAndSave(command, ct);
 
         if (result.Error is { } error)
         {
@@ -306,7 +306,7 @@ public class JobOffersController(
     public async Task<ActionResult<GetJobOfferDetailResponse>> GetDetail(Guid id, CancellationToken ct)
     {
         var query = new GetJobOfferDetailQuery(Id: id, User: AppUser);
-        var offer = await getDetailHandler.HandleAsync(query, ct);
+        var offer = await getDetailHandler.Get(query, ct);
         if (offer == null)
             return NotFound();
         return GetJobOfferDetailResponse.Serialize(offer);
@@ -325,7 +325,7 @@ public class JobOffersController(
             FileName: fileName,
             User: AppUser);
 
-        var info = await attachmentHandler.HandleAsync(query, ct);
+        var info = await attachmentHandler.Get(query, ct);
         if (info == null)
             return NotFound();
 
@@ -346,7 +346,7 @@ public class JobOffersController(
     public async Task<ActionResult<JobOfferHistoryResponse>> GetHistory(Guid id, CancellationToken ct)
     {
         var query = new GetJobOfferHistoryQuery(Id: id, User: AppUser);
-        var entries = await historyHandler.HandleAsync(query, ct);
+        var entries = await historyHandler.Get(query, ct);
         if (entries == null)
             return NotFound();
 
@@ -362,7 +362,7 @@ public class JobOffersController(
     public async Task<ActionResult<ListCommentsResponse>> ListComments(Guid id, CancellationToken ct)
     {
         var query = new ListCommentsQuery(JobOfferId: id, User: AppUser);
-        var comments = await listCommentsHandler.HandleAsync(query, ct);
+        var comments = await listCommentsHandler.List(query, ct);
         if (comments == null)
             return NotFound();
 
@@ -385,7 +385,7 @@ public class JobOffersController(
             Page: page,
             PageSize: pageSize);
 
-        var result = await listHandler.HandleAsync(query, ct);
+        var result = await listHandler.List(query, ct);
 
         return new ListJobOffersResponse(
             Items: result.Select(GetJobOfferDetailResponse.Serialize).ToList(),

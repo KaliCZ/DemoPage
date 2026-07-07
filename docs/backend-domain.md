@@ -15,7 +15,7 @@ The domain layer owns the business. It lives in `backend/src/Kalandra.JobOffers/
 
 ## The handler pattern
 
-Every command or query has a handler class with a single public method: `HandleAsync(command, ct)`. Handlers own:
+Every command or query has a handler class with a single public method **named for the operation**, not `HandleAsync`. Drop the `Async` suffix; a method that writes and commits ends in **`AndSave`** (e.g. `CreateAndSave`, `AddAndSave`, `ToggleAndSave`), a read is **`Get`** or **`List`** — so the call site shows whether it persists. Handlers own:
 
 1. **Validation**: invariants that require loading state (e.g. "attachments are ≤ 5" in `CreateJobOffer`, "status is Submitted" via `JobOffer.Edit`).
 2. **Orchestration**: loading the aggregate or event stream, delegating to the entity, persisting changes.
@@ -39,7 +39,7 @@ A handler's validation is the **last line of defence**. The API layer may reject
 ### Queries enforce access control
 
 ```csharp
-public async Task<JobOffer?> HandleAsync(GetJobOfferDetailQuery query, CancellationToken ct)
+public async Task<JobOffer?> Get(GetJobOfferDetailQuery query, CancellationToken ct)
 {
     var offer = await session.LoadAsync<JobOffer>(query.Id, ct);
     if (offer == null)

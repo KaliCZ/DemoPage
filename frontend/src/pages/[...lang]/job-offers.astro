@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import JobOfferDetail from "../../components/JobOfferDetail.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/job-offers.json";
 import csStrings from "../../i18n/cs/job-offers.json";
 import enHireMe from "../../i18n/en/hire-me.json";
@@ -13,6 +14,8 @@ import csCommon from "../../i18n/cs/common.json";
 const translations = { en: enStrings, cs: csStrings };
 const formTranslations = { en: enHireMe, cs: csHireMe };
 const commonTranslations = { en: enCommon, cs: csCommon };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-05-23" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({

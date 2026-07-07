@@ -2,8 +2,10 @@
 import IconEmail from "./icons/IconEmail.astro";
 import IconGitHub from "./icons/IconGitHub.astro";
 import IconLinkedIn from "./icons/IconLinkedIn.astro";
+import IconRss from "./icons/IconRss.astro";
 import type { Locale } from "../i18n/utils";
 import { localePath } from "../i18n/utils";
+import { feed } from "../blog/feeds";
 
 interface Props {
   lang: Locale;
@@ -17,6 +19,8 @@ interface Props {
       linkedinAriaLabel: string;
       githubTitle: string;
       githubAriaLabel: string;
+      rssTitle: string;
+      rssAriaLabel: string;
     };
   };
 }
@@ -64,6 +68,14 @@ const { lang, t } = Astro.props;
         aria-label={t.footer.githubAriaLabel}
       >
         <IconGitHub class="w-5 h-5" />
+      </a>
+      <a
+        class="text-on-surface-variant hover:text-primary transition-colors"
+        href={feed.path}
+        title={t.footer.rssTitle}
+        aria-label={t.footer.rssAriaLabel}
+      >
+        <IconRss class="w-5 h-5" />
       </a>
     </div>
   </div>

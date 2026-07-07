@@ -1,6 +1,10 @@
 using JasperFx;
 using JasperFx.OpenTelemetry;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Blog;
+using Kalandra.Blog.Workflows;
+using Kalandra.Infrastructure.Configuration;
+using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
@@ -8,6 +12,9 @@ using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
 using Marten.Services;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using Temporalio.Extensions.Hosting;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -20,12 +27,18 @@ public static class ServiceCollectionExtensions
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
+        if (!environment.IsDevelopment()
+            && (connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) || connectionString.Contains("127.0.0.1")))
+            throw new InvalidOperationException(
+                "ConnectionStrings:DefaultConnection still points at localhost — a production deploy must set the real database.");
+
         services.AddMarten(options =>
         {
             options.Connection(connectionString);
 
             // Domain-specific Marten configuration
             options.ConfigureJobOffers();
+            options.ConfigureBlog();
 
             // Use snake_case for database identifiers
             options.UseSystemTextJsonForSerialization();
@@ -113,7 +126,13 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IStorageService, SupabaseStorageService>();
-        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
+
+        // The source is built inside the factory (not as its own registration) so a test swapping
+        // IUserInfoService for a fake doesn't leave a stray source that fails DI validation.
+        services.AddSingleton<IUserInfoService>(sp => new CachingUserInfoService(
+            ActivatorUtilities.CreateInstance<SupabaseUserInfoService>(sp),
+            sp.GetRequiredService<IDistributedCache>(),
+            sp.GetRequiredService<ILogger<CachingUserInfoService>>()));
 
         return services;
     }
@@ -147,6 +166,45 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
         services.AddSingleton(TimeProvider.System);
+
+        return services;
+    }
+
+    public static IServiceCollection AddEmailServices(
+        this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
+    {
+        // appsettings.json defaults to the local mail catcher; production overrides Host/Port/Username/Password via env.
+        EmailConfig.AddSingleton(services, configuration, environment);
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        return services;
+    }
+
+    public static IServiceCollection AddTemporal(this IServiceCollection services, IConfiguration configuration)
+    {
+        var config = TemporalConfig.AddSingleton(services, configuration);
+
+        services.AddTemporalClient(options =>
+        {
+            options.TargetHost = config.TargetHost.Value;
+            options.Namespace = config.Namespace.Value;
+        });
+
+        // The API process hosts the worker — no separate deployable.
+        services.AddHostedTemporalWorker(BlogTaskQueue.Name)
+            .AddScopedActivities<BlogCommentActivities>()
+            .AddWorkflow<BlogCommentWorkflow>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddUserInfoCache(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Redis when configured; otherwise an in-process distributed cache so tests and a bare run need no Redis.
+        var redis = configuration.GetConnectionString("redis");
+        if (string.IsNullOrWhiteSpace(redis))
+            services.AddDistributedMemoryCache();
+        else
+            services.AddStackExchangeRedisCache(options => options.Configuration = redis);
 
         return services;
     }

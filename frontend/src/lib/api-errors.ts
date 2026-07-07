@@ -38,10 +38,11 @@ export async function getApiError(response: Response, errorMap: ApiErrorMap): Pr
   return null;
 }
 
-// Expose globally for inline define:vars scripts that can't use ES imports
+// Expose globally for inline define:vars scripts that can't use ES imports.
+// Guarded so server-rendered islands can import this module during prerender.
 declare global {
   interface Window {
     __getApiError: typeof getApiError;
   }
 }
-window.__getApiError = getApiError;
+if (typeof window !== "undefined") window.__getApiError = getApiError;

@@ -2,10 +2,13 @@
 import { Icon } from "astro-icon/components";
 import Layout from "../../layouts/Layout.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/hire-me.json";
 import csStrings from "../../i18n/cs/hire-me.json";
 
 const translations = { en: enStrings, cs: csStrings };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-05-23" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({

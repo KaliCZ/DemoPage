@@ -1,0 +1,27 @@
+# Quadlet unit for the Temporal server (rootless, under the opc user).
+#
+# temporalio/auto-setup provisions its schemas in the same Supabase Postgres the
+# API uses (separate `temporal` and `temporal_visibility` databases) and then
+# runs the server. Config comes from ~/demoPage/kalandra-temporal.env, written by
+# the deploy-temporal workflow. Host networking matches the API units; the server
+# binds loopback only (BIND_ON_IP in the env file), so :7233 is not reachable
+# off the box. The API worker connects at localhost:7233.
+
+[Unit]
+Description=Kalandra Temporal server
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/temporalio/auto-setup:1.29.7
+ContainerName=kalandra-temporal
+Network=host
+EnvironmentFile=%h/demoPage/kalandra-temporal.env
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

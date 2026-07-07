@@ -15,7 +15,8 @@
 *.sln.docstates
 .mcp.json
 
-# Local app configs
+# Local app configs — appsettings.json ships sensible local defaults; the deploy
+# supplies production values as env vars. Never commit Development overrides.
 **/appsettings.Development.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)

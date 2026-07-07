@@ -1,11 +1,13 @@
 using System.Threading.RateLimiting;
 using Kalandra.Api.Infrastructure.Auth;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Kalandra.Api.Infrastructure;
 
 public static class RateLimitPolicies
 {
     public const string HireMeCreateUser = "hire-me-create-user";
+    public const string BlogWrite = "blog-write";
 }
 
 public static class RateLimits
@@ -25,6 +27,15 @@ public static class RateLimits
             QueueLimit = 0,
         };
 
+        // No Turnstile escape hatch here — blog writes have no captcha flow.
+        var blogWriteLimiterOptions = new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = environment.IsDevelopment() ? 1000 : 30,
+            Window = TimeSpan.FromMinutes(1),
+            SegmentsPerWindow = 6,
+            QueueLimit = 0,
+        };
+
         services.AddRateLimiter(options =>
         {
             options.AddPolicy(RateLimitPolicies.HireMeCreateUser, httpContext =>
@@ -39,11 +50,28 @@ public static class RateLimits
                     factory: _ => hireMeLimiterOptions);
             });
 
+            options.AddPolicy(RateLimitPolicies.BlogWrite, httpContext =>
+            {
+                var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().RequiredUser;
+
+                return RateLimitPartition.GetSlidingWindowLimiter(
+                    partitionKey: "user:" + currentUser.Id,
+                    factory: _ => blogWriteLimiterOptions);
+            });
+
             options.OnRejected = async (context, ct) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.ContentType = "application/json";
-                await context.HttpContext.Response.WriteAsync("{\"error\":\"captcha_required\"}", ct);
+
+                // captcha_required is consumed by the hire-me interactive Turnstile flow;
+                // blog writes have no captcha, so they get a plain rate_limited marker.
+                var policyName = context.HttpContext.GetEndpoint()?.Metadata
+                    .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+                var body = policyName == RateLimitPolicies.BlogWrite
+                    ? "{\"error\":\"rate_limited\"}"
+                    : "{\"error\":\"captcha_required\"}";
+                await context.HttpContext.Response.WriteAsync(body, ct);
             };
         });
     }

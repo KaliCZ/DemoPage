@@ -2,6 +2,7 @@ using HealthChecks.UI.Client;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Api.Infrastructure.DataProtection;
+using Kalandra.Blog;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -16,7 +17,10 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        // allowIntegerValues: false so a raw number for an enum field is rejected at
+        // binding (a clean 400) instead of deserializing to an out-of-range value.
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -34,19 +38,24 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<AuthorizeOperationFilter>();
 });
 
-var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration);
-TurnstileConfig.AddSingleton(builder.Services, builder.Configuration);
+var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
+TurnstileConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 
 builder.Services.AddAppMarten(builder.Configuration, builder.Environment);
 builder.Services.AddAppDataProtection();
 Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
+builder.Services.AddUserInfoCache(builder.Configuration);
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile(builder.Environment);
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
+builder.Services.AddBlogDomain();
+BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
+builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
+builder.Services.AddTemporal(builder.Configuration);
 RateLimits.Add(builder.Services, builder.Environment);
 
 builder.Services.AddResponseCompression(options =>

@@ -1,0 +1,23 @@
+# Temporal Web UI on :8233 — published as https://temporal.kalandra.tech through
+# the shared Caddy. Sign-in is Cloudflare Access at the edge; Caddy only accepts
+# connections carrying Cloudflare's origin-pull client cert, so Access can't be
+# bypassed by dialing the VM directly (the UI has no authentication of its own).
+# The OCI security list keeps :8233 itself unreachable from outside.
+
+[Unit]
+Description=Kalandra Temporal UI
+After=network-online.target kalandra-temporal.service
+Wants=network-online.target
+
+[Container]
+Image=docker.io/temporalio/ui:2.51.1
+ContainerName=kalandra-temporal-ui
+Network=host
+Environment=TEMPORAL_ADDRESS=127.0.0.1:7233
+Environment=TEMPORAL_UI_PORT=8233
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

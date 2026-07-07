@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "title": "Blog | kalandra.tech — poznámky z vývoje",
+    "description": "Poznámky z vývoje od Pavla Kalandry — .NET, typově řízený návrh, event sourcing a stavba kalandra.tech ve veřejném režimu."
+  },
+  "index": {
+    "title": "Blog",
+    "subtitle": "Poznámky z vývoje — .NET, typově řízený návrh a stavba tohoto webu.",
+    "empty": "Zatím tu žádné články nejsou. První je na cestě.",
+    "publishedOn": "Publikováno",
+    "updatedOn": "Aktualizováno",
+    "rssLabel": "Odebírat přes RSS",
+    "rssTitle": "RSS kanál všech článků",
+    "language": {
+      "en": "Anglicky",
+      "cs": "Česky"
+    }
+  },
+  "post": {
+    "backToBlog": "Všechny články",
+    "publishedOn": "Publikováno",
+    "updatedOn": "Aktualizováno",
+    "readingTime": "{min} min čtení"
+  },
+  "reactions": {
+    "heading": "Byl článek užitečný?",
+    "signInHint": "Reagovat a komentovat můžete po přihlášení.",
+    "error": "Reakci se nepodařilo uložit. Zkuste to prosím znovu.",
+    "labels": {
+      "ThumbsUp": "Palec nahoru",
+      "ThumbsDown": "Palec dolů",
+      "Heart": "Paráda",
+      "Insightful": "Podnětné",
+      "Rocket": "Skvělé"
+    }
+  },
+  "comments": {
+    "heading": "Komentáře",
+    "empty": "Zatím žádné komentáře. Buďte první!",
+    "signInPrompt": "Do diskuze se zapojíte po přihlášení.",
+    "signInCta": "Přihlásit se",
+    "placeholder": "Napište komentář…",
+    "submit": "Odeslat komentář",
+    "submitting": "Odesílání…",
+    "reply": "Odpovědět",
+    "replyingTo": "Odpověď pro:",
+    "cancel": "Zrušit",
+    "delete": "Smazat",
+    "deleteConfirm": "Smazat tento komentář?",
+    "deleteYes": "Smazat",
+    "deleteNo": "Ponechat",
+    "deleted": "[smazáno]",
+    "loadError": "Komentáře se nepodařilo načíst.",
+    "postError": "Komentář se nepodařilo odeslat. Zkuste to prosím znovu.",
+    "deleteError": "Komentář se nepodařilo smazat. Zkuste to prosím znovu.",
+    "rateLimited": "Přispíváte příliš rychle — zkuste to za minutu.",
+    "errors": {
+      "ParentCommentNotFound": "Komentář, na který odpovídáte, už neexistuje.",
+      "ParentCommentDeleted": "Komentář, na který odpovídáte, byl smazán."
+    }
+  }
+}

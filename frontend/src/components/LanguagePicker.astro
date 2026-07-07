@@ -5,6 +5,8 @@ import { alternateLangUrl } from "../i18n/utils";
 interface Props {
   lang: Locale;
   activePage: string;
+  /** Per-locale target override — pages whose counterpart is not the activePage route (blog posts) pass exact URLs. */
+  langUrls?: Partial<Record<Locale, string>>;
   labels: {
     language: string;
     switchToEnglish: string;
@@ -12,7 +14,7 @@ interface Props {
   };
 }
 
-const { lang, activePage, labels } = Astro.props;
+const { lang, activePage, langUrls, labels } = Astro.props;
 
 // Both flags are always shown so the available pair is visible at a glance; the
 // active locale is highlighted and the other dimmed. Flags are inline SVG (not
@@ -29,7 +31,7 @@ const options: { locale: Locale; label: string }[] = [
       const active = lang === opt.locale;
       return (
         <a
-          href={alternateLangUrl(opt.locale, activePage)}
+          href={langUrls?.[opt.locale] ?? alternateLangUrl(opt.locale, activePage)}
           hreflang={opt.locale}
           title={opt.label}
           aria-label={opt.label}

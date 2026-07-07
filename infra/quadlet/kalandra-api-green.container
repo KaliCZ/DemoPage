@@ -17,7 +17,7 @@ Wants=network-online.target
 Image=ghcr.io/kalicz/demopage/api:latest
 ContainerName=kalandra-api-green
 Network=host
-EnvironmentFile=%h/kalandra-api.env
+EnvironmentFile=%h/demoPage/kalandra-api.env
 Environment=ASPNETCORE_HTTP_PORTS=8081
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Pull=missing

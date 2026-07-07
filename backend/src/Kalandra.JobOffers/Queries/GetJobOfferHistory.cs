@@ -32,7 +32,7 @@ public record JobOfferHistoryEntry(
 
 public class GetJobOfferHistoryHandler(IQuerySession session)
 {
-    public async Task<IReadOnlyList<JobOfferHistoryEntry>?> HandleAsync(
+    public async Task<IReadOnlyList<JobOfferHistoryEntry>?> Get(
         GetJobOfferHistoryQuery query, CancellationToken ct)
     {
         var offer = await session.LoadAsync<JobOffer>(query.Id, ct);

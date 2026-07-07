@@ -55,15 +55,28 @@ try
         .WithDockerGroup(dockerGroup);
     var kalandraDb = postgres.AddDatabase("kalandra");
 
+    // Temporal dev server (in-memory) — the API hosts a worker and needs it up to start.
+    var temporal = builder.AddContainer("temporal", "temporalio/temporal", "1.7.2")
+        .WithArgs("server", "start-dev", "--ip", "0.0.0.0")
+        .WithEndpoint(targetPort: 7233, name: "server")
+        .WithHttpEndpoint(targetPort: 8233, name: "ui")
+        .WithDockerGroup(dockerGroup);
+    var temporalEndpoint = temporal.GetEndpoint("server");
+
     // launchProfileName: null bypasses launchSettings.json's :5000 so parallel AppHosts get distinct API ports.
     var api = builder.AddProject<Projects.Kalandra_Api>("api", launchProfileName: null)
         .WithReference(kalandraDb, connectionName: "DefaultConnection")
         .WaitFor(kalandraDb)
+        .WithEnvironment("Temporal__TargetHost", ReferenceExpression.Create(
+            $"{temporalEndpoint.Property(EndpointProperty.Host)}:{temporalEndpoint.Property(EndpointProperty.Port)}"))
+        .WaitFor(temporal)
         .WithHttpEndpoint()
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
         .WithIconName("Server");
 
     var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
+    // No WaitFor(api): the UI comes up immediately rather than blocking on the API's own DB/Temporal wait;
+    // a fetch before the API is ready just errors and recovers on the next call.
     builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
         .WithHttpEndpoint(env: "PORT")
         .WithReference(api)
@@ -71,8 +84,7 @@ try
         // Empty PUBLIC_API_URL forces relative fetches through Vite's /api proxy, overriding any stale .env.local.
         .WithEnvironment("PUBLIC_API_URL", "")
         .WithExternalHttpEndpoints()
-        .WithIconName("Globe")
-        .WaitFor(api);
+        .WithIconName("Globe");
 
     // Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
     builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
@@ -86,11 +98,11 @@ try
     try
     {
         // Sync wait: Mutex has thread affinity, so an `await` could resume on a different thread and break ReleaseMutex.
-        app.StartAsync().WaitAsync(TimeSpan.FromSeconds(20)).GetAwaiter().GetResult();
+        app.StartAsync().WaitAsync(TimeSpan.FromSeconds(40)).GetAwaiter().GetResult();
     }
     catch (TimeoutException)
     {
-        Console.Error.WriteLine("AppHost startup timed out after 20s — a resource (likely Postgres) failed to become healthy. Check `docker ps` and the Aspire dashboard.");
+        Console.Error.WriteLine("AppHost startup timed out after 40s — a resource (likely Postgres or Temporal) failed to become healthy. Check `docker ps` and the Aspire dashboard.");
         Environment.Exit(1);
     }
 }

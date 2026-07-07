@@ -5,6 +5,7 @@
     "projects": "Projects",
     "projectThisSite": "This Site",
     "projectStrongTypes": "StrongTypes",
+    "blog": "Blog",
     "hireMe": "Hire Me",
     "mySubmissions": "My Submissions",
     "admin": "Admin",
@@ -71,6 +72,8 @@
     "linkedinAriaLabel": "LinkedIn profile",
     "githubTitle": "GitHub — KaliCZ",
     "githubAriaLabel": "GitHub profile",
+    "rssTitle": "RSS — blog posts",
+    "rssAriaLabel": "Subscribe to the blog RSS feed",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   }

@@ -10,7 +10,7 @@ public record AttachmentInfoResult(AttachmentInfo Attachment, string StoragePath
 
 public class GetAttachmentInfoHandler(IQuerySession session)
 {
-    public async Task<AttachmentInfoResult?> HandleAsync(
+    public async Task<AttachmentInfoResult?> Get(
         GetAttachmentInfoQuery query, CancellationToken ct)
     {
         var offer = await session.LoadAsync<JobOffer>(query.JobOfferId, ct);

@@ -21,17 +21,19 @@ public class SupabaseUserInfoService(
     public async Task<Dictionary<Guid, UserPublicInfo>> GetUserInfoAsync(
         IEnumerable<Guid> userIds, CancellationToken ct)
     {
-        var result = new Dictionary<Guid, UserPublicInfo>();
+        var distinct = userIds.Distinct().ToArray();
+        var infos = await Task.WhenAll(distinct.Select(FetchUserInfoAsync));
 
-        foreach (var userId in userIds.Distinct())
-        {
-            var info = await FetchUserInfoAsync(userId);
-            if (info != null)
-                result[userId] = info;
-        }
+        var result = new Dictionary<Guid, UserPublicInfo>();
+        for (var i = 0; i < distinct.Length; i++)
+            if (infos[i] is { } info)
+                result[distinct[i]] = info;
 
         return result;
     }
+
+    // No cache here — eviction is the caching decorator's job.
+    public Task EvictAsync(Guid userId, CancellationToken ct) => Task.CompletedTask;
 
     private async Task<UserPublicInfo?> FetchUserInfoAsync(Guid userId)
     {

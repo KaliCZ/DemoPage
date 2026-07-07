@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "title": "Blog | kalandra.tech — Engineering Notes",
+    "description": "Engineering notes by Pavel Kalandra — .NET, type-driven design, event sourcing, and building kalandra.tech in public."
+  },
+  "index": {
+    "title": "Blog",
+    "subtitle": "Engineering notes — .NET, type-driven design, and building this site in public.",
+    "empty": "No posts yet. The first one is on its way.",
+    "publishedOn": "Published",
+    "updatedOn": "Updated",
+    "rssLabel": "Subscribe via RSS",
+    "rssTitle": "RSS feed of all posts",
+    "language": {
+      "en": "English",
+      "cs": "Czech"
+    }
+  },
+  "post": {
+    "backToBlog": "All posts",
+    "publishedOn": "Published",
+    "updatedOn": "Updated",
+    "readingTime": "{min} min read"
+  },
+  "reactions": {
+    "heading": "Was this useful?",
+    "signInHint": "Sign in to leave a reaction or comment.",
+    "error": "Your reaction could not be saved. Please try again.",
+    "labels": {
+      "ThumbsUp": "Thumbs up",
+      "ThumbsDown": "Thumbs down",
+      "Heart": "Love it",
+      "Insightful": "Insightful",
+      "Rocket": "Ship it"
+    }
+  },
+  "comments": {
+    "heading": "Comments",
+    "empty": "No comments yet. Be the first!",
+    "signInPrompt": "Sign in to join the discussion.",
+    "signInCta": "Sign In",
+    "placeholder": "Write a comment…",
+    "submit": "Post comment",
+    "submitting": "Posting…",
+    "reply": "Reply",
+    "replyingTo": "Replying to",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this comment?",
+    "deleteYes": "Delete",
+    "deleteNo": "Keep",
+    "deleted": "[deleted]",
+    "loadError": "Comments could not be loaded.",
+    "postError": "Your comment could not be posted. Please try again.",
+    "deleteError": "The comment could not be deleted. Please try again.",
+    "rateLimited": "You're posting too fast — try again in a minute.",
+    "errors": {
+      "ParentCommentNotFound": "The comment you're replying to no longer exists.",
+      "ParentCommentDeleted": "The comment you're replying to was deleted."
+    }
+  }
+}

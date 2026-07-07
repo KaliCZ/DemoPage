@@ -99,20 +99,29 @@ test.describe("Avatar Flow", () => {
     await page.fill("#contactEmail", "avatar@test.com");
     await page.fill("#jobTitle", "Avatar Engineer");
     await page.fill("#description", "Testing avatars in comments end-to-end.");
-    await page.evaluate(() => {
-      let input = document.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
-      if (!input) {
-        input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "cf-turnstile-response";
-        document.getElementById("job-offer-form")?.appendChild(input);
-      }
-      input.value = "test-token";
-    });
+    // The submit handler reads the first [name="cf-turnstile-response"] input.
+    // The real widget can render at any moment and prepend an empty one, so
+    // stamp every matching input (and re-stamp right before confirming).
+    const stampTurnstileToken = () =>
+      page.evaluate(() => {
+        const inputs = document.querySelectorAll<HTMLInputElement>('[name="cf-turnstile-response"]');
+        if (inputs.length === 0) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = "cf-turnstile-response";
+          document.getElementById("job-offer-form")?.appendChild(input);
+          input.value = "test-token";
+          return;
+        }
+        inputs.forEach((input) => (input.value = "test-token"));
+      });
+
+    await stampTurnstileToken();
     await page.click("#submit-btn");
     // The incomplete-submission confirmation appears because optional fields
     // are left blank; confirm to proceed.
     await expect(page.locator("#confirm-incomplete-dialog")).toBeVisible();
+    await stampTurnstileToken();
     await page.click("#confirm-incomplete-confirm");
     await expect(page).toHaveURL(/\/job-offers#/, { timeout: 15000 });
 

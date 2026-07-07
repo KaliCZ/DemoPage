@@ -12,7 +12,7 @@ public class ListJobOffersHandler(IQuerySession session)
 {
     private const int MaxPageSize = 100;
 
-    public async Task<IPagedList<JobOffer>> HandleAsync(ListJobOffersQuery query, CancellationToken ct)
+    public async Task<IPagedList<JobOffer>> List(ListJobOffersQuery query, CancellationToken ct)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(query.Page, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(query.PageSize, 1);

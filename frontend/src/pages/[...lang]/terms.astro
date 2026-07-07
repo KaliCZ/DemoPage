@@ -1,10 +1,13 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { locales, defaultLocale, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/terms.json";
 import csStrings from "../../i18n/cs/terms.json";
 
 const translations = { en: enStrings, cs: csStrings };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-04-13" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({

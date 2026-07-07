@@ -1,0 +1,128 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../layouts/Layout.astro";
+import BlogReactions from "./blog/BlogReactions.vue";
+import BlogComments from "./blog/BlogComments.vue";
+import { locales, localePath, type Locale } from "../i18n/utils";
+import { postLocales, type BlogPostMetadata } from "../blog/types";
+import enBlog from "../i18n/en/blog.json";
+import csBlog from "../i18n/cs/blog.json";
+
+interface Props {
+  metadata: BlogPostMetadata;
+  lang: Locale;
+}
+
+const { metadata, lang } = Astro.props;
+const t = lang === "cs" ? csBlog : enBlog;
+
+// The slug is the last path segment — identical for /blog/x and /cs/blog/x —
+// and keys the post's reaction and comment streams in the backend.
+const slug = Astro.url.pathname.replace(/\/$/, "").split("/").pop()!;
+const pagePath = `blog/${slug}`;
+
+// blogPostStaticPaths only builds routes for declared languages, so the variant exists.
+const variant = metadata.variants[lang]!;
+const availableLocales = postLocales(metadata);
+// The language picker jumps to the translated post, or to the blog index when no translation exists.
+const langUrls = Object.fromEntries(
+  locales.map((locale) => [locale, localePath(locale, availableLocales.includes(locale) ? pagePath : "blog")]),
+) as Record<Locale, string>;
+
+const pubDate = new Date(metadata.pubDate);
+const updatedDate = metadata.updatedDate ? new Date(metadata.updatedDate) : undefined;
+const dateLocale = lang === "cs" ? "cs-CZ" : "en-US";
+const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
+
+// Reading estimate from the rendered body (only the active language's slot renders); code blocks don't count.
+const contentHtml = await Astro.slots.render("default");
+const wordCount = contentHtml
+  .replace(/<pre[\s\S]*?<\/pre>/gi, " ")
+  .replace(/<[^>]*>/g, " ")
+  .split(/\s+/)
+  .filter(Boolean).length;
+const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+const readingTimeLabel = t.post.readingTime.replace("{min}", String(readingMinutes));
+---
+
+<Layout
+  title={`${variant.title} | kalandra.tech`}
+  description={variant.summary}
+  activePage="blog"
+  lang={lang}
+  pagePath={pagePath}
+  alternateLocales={availableLocales}
+  langUrls={langUrls}
+  ogType="article"
+>
+  <Fragment slot="head">
+    <meta property="article:published_time" content={pubDate.toISOString()} />
+    {updatedDate && <meta property="article:modified_time" content={updatedDate.toISOString()} />}
+    {metadata.tags.map((tag) => <meta property="article:tag" content={tag} />)}
+  </Fragment>
+
+  <article class="max-w-6xl mx-auto px-4 md:px-8">
+    <header class="mb-10">
+      <a
+        href={localePath(lang, "blog")}
+        class="inline-flex items-center gap-1 mb-6 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
+      >
+        <Icon name="material-symbols:arrow-back" class="size-4" aria-hidden="true" />
+        {t.post.backToBlog}
+      </a>
+      <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter leading-tight mb-4">
+        {variant.title}
+      </h1>
+      <p class="font-label text-sm text-on-surface-variant">
+        <time datetime={metadata.pubDate}>{formatDate(pubDate)}</time>
+        {" · "}
+        <span>{readingTimeLabel}</span>
+        {
+          updatedDate && metadata.updatedDate && (
+            <span>
+              {" · "}
+              {t.post.updatedOn} <time datetime={metadata.updatedDate}>{formatDate(updatedDate)}</time>
+            </span>
+          )
+        }
+      </p>
+      {
+        metadata.tags.length > 0 && (
+          <ul class="flex flex-wrap gap-2 mt-4" role="list">
+            {metadata.tags.map((tag) => (
+              <li class="px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/30 text-xs font-label text-on-surface-variant">
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    <div class="prose prose-lg max-w-none font-body">
+      <Fragment set:html={contentHtml} />
+    </div>
+
+    <footer class="mt-16 pt-10 border-t border-outline-variant/30 space-y-14">
+      <div>
+        <BlogReactions client:idle apiUrl={apiUrl} slug={slug} t={t.reactions} />
+        <!-- Static hint so signed-out visitors aren't left to discover the
+             sign-in requirement by clicking. The signed-out-only tier only
+             covers the pre-paint window; the script below owns it afterwards. -->
+        <p id="blog-signin-hint" class="signed-out-only font-body text-sm text-on-surface-variant mt-3">
+          {t.reactions.signInHint}
+        </p>
+      </div>
+      <BlogComments client:idle apiUrl={apiUrl} slug={slug} lang={lang} t={t.comments} />
+    </footer>
+  </article>
+
+  <script>
+    window.addEventListener("auth-change", (event) => {
+      const hint = document.getElementById("blog-signin-hint");
+      hint?.classList.toggle("hidden", !!(event as CustomEvent).detail?.user);
+    });
+  </script>
+</Layout>

@@ -1,0 +1,167 @@
+name: deploy-temporal
+
+# Temporal is a backing service like the database — kept out of the app pipeline
+# (ci-cd.yml) because it changes rarely and the app deploy assumes it is already
+# running. Manual trigger only: initial setup, a version bump of the units, or
+# recovery. Idempotent — a warm re-run with unchanged config leaves the running
+# server alone.
+#
+# Persistence lives in the SAME Supabase Postgres the API uses, in dedicated
+# `temporal` and `temporal_visibility` databases that auto-setup creates on the
+# first (cold) run. Required configuration:
+#   vars.TEMPORAL_DB_HOST        — Supabase Postgres host (direct/session, not the transaction pooler)
+#   vars.TEMPORAL_DB_PORT        — usually 5432
+#   secrets.TEMPORAL_DB_USER     — Postgres role allowed to create databases
+#   secrets.TEMPORAL_DB_PASSWORD
+#
+# The Web UI at temporal.kalandra.tech is gated by Cloudflare Access, configured
+# in the Cloudflare dashboard (not here): an Access application on the hostname,
+# a proxied DNS record, and zone-level "Authenticated Origin Pulls" so Caddy can
+# verify requests really come through Cloudflare (see infra/quadlet/temporal.caddy).
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-temporal
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-temporal:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Sync Temporal Quadlet units to VM (staging)
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          source: "infra/quadlet/kalandra-temporal.container,infra/quadlet/kalandra-temporal-ui.container,infra/quadlet/temporal.caddy"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/temporal-staging/"
+          strip_components: 2
+          # Own staging dir under ~/demoPage/, wiped per run — never shared with the app deploy's staging.
+          rm: true
+
+      - name: Bring up Temporal
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        env:
+          TEMPORAL_DB_HOST: ${{ vars.TEMPORAL_DB_HOST }}
+          TEMPORAL_DB_PORT: ${{ vars.TEMPORAL_DB_PORT }}
+          TEMPORAL_DB_USER: ${{ secrets.TEMPORAL_DB_USER }}
+          TEMPORAL_DB_PASSWORD: ${{ secrets.TEMPORAL_DB_PASSWORD }}
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          # A cold first-init runs both schema setups against Supabase before the
+          # server listens; warm restarts are up in seconds.
+          command_timeout: 10m
+          envs: TEMPORAL_DB_HOST,TEMPORAL_DB_PORT,TEMPORAL_DB_USER,TEMPORAL_DB_PASSWORD
+          script: |
+            set -euo pipefail
+            UNIT_DIR="$HOME/.config/containers/systemd"
+            APP_DIR="$HOME/demoPage"
+            STAGING="$APP_DIR/temporal-staging"
+            mkdir -p "$UNIT_DIR" "$APP_DIR"
+
+            command -v podman >/dev/null 2>&1 \
+              || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+            podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
+              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+            [ -d /srv/caddy/sites ] \
+              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+
+            wait_for_listen() {  # $1=unit  $2=port  $3=timeout_secs
+              unit="$1"; port="$2"; timeout="$3"; waited=0
+              echo "Waiting for $unit on :$port (up to ${timeout}s)…"
+              while :; do
+                if systemctl --user is-failed --quiet "$unit"; then
+                  echo "::error::$unit entered a failed state"
+                  systemctl --user status "$unit" --no-pager | head -40 || true
+                  journalctl --user -u "$unit" --no-pager | tail -60 || true
+                  return 1
+                fi
+                if ss -ltn | grep -q ":$port "; then echo "$unit listening on :$port"; return 0; fi
+                if [ "$waited" -ge "$timeout" ]; then
+                  echo "::error::$unit did not listen on :$port within ${timeout}s"
+                  systemctl --user status "$unit" --no-pager | head -40 || true
+                  journalctl --user -u "$unit" --no-pager | tail -60 || true
+                  return 1
+                fi
+                sleep 3; waited=$((waited + 3))
+              done
+            }
+
+            # ----- 1. Server env. TLS on, host verification off — Supabase's cert
+            # chain isn't in the VM's trust store, and the connection is
+            # egress-only to a pinned host. -----
+            umask 077
+            cat > "$APP_DIR/kalandra-temporal.env.new" << EOF
+            DB=postgres12
+            DB_PORT=${TEMPORAL_DB_PORT}
+            POSTGRES_SEEDS=${TEMPORAL_DB_HOST}
+            POSTGRES_USER=${TEMPORAL_DB_USER}
+            POSTGRES_PWD=${TEMPORAL_DB_PASSWORD}
+            DBNAME=temporal
+            VISIBILITY_DBNAME=temporal_visibility
+            POSTGRES_TLS_ENABLED=true
+            POSTGRES_TLS_DISABLE_HOST_VERIFICATION=true
+            SQL_TLS_ENABLED=true
+            SQL_TLS_DISABLE_HOST_VERIFICATION=true
+            DEFAULT_NAMESPACE=default
+            DEFAULT_NAMESPACE_RETENTION=168h
+            BIND_ON_IP=127.0.0.1
+            TEMPORAL_BROADCAST_ADDRESS=127.0.0.1
+            TEMPORAL_ADDRESS=127.0.0.1:7233
+            EOF
+            NEEDS_RESTART=0
+            cmp -s "$APP_DIR/kalandra-temporal.env.new" "$APP_DIR/kalandra-temporal.env" 2>/dev/null || NEEDS_RESTART=1
+            mv -f "$APP_DIR/kalandra-temporal.env.new" "$APP_DIR/kalandra-temporal.env"
+
+            # ----- 2. Install units; restart only when the env or a unit changed —
+            # a warm no-op re-run must not bounce a healthy server. -----
+            cmp -s "$STAGING/kalandra-temporal.container" "$UNIT_DIR/kalandra-temporal.container" 2>/dev/null || NEEDS_RESTART=1
+            cp "$STAGING/kalandra-temporal.container" "$STAGING/kalandra-temporal-ui.container" "$UNIT_DIR/"
+            systemctl --user daemon-reload
+
+            systemctl --user reset-failed kalandra-temporal.service 2>/dev/null || true
+            if [ "$NEEDS_RESTART" = 1 ] || ! systemctl --user is-active --quiet kalandra-temporal.service; then
+              systemctl --user restart kalandra-temporal.service
+            else
+              echo "env + unit unchanged and server already up — leaving it running"
+            fi
+            wait_for_listen kalandra-temporal.service 7233 420 || exit 1
+
+            systemctl --user reset-failed kalandra-temporal-ui.service 2>/dev/null || true
+            systemctl --user restart kalandra-temporal-ui.service
+            wait_for_listen kalandra-temporal-ui.service 8233 90 || exit 1
+
+            # ----- 3. Publish the UI at temporal.kalandra.tech through the shared Caddy.
+            # Sign-in is Cloudflare Access at the edge; Caddy verifies the connection
+            # actually came through Cloudflare via the Authenticated Origin Pulls client
+            # cert (see temporal.caddy). Refresh Cloudflare's AOP CA here — they rotate
+            # it occasionally — but keep the previous copy if the download hiccups.
+            CA_DEST=/srv/caddy/certs/cloudflare-origin-pull-ca.pem
+            if curl -fsS --max-time 30 https://developers.cloudflare.com/ssl/static/authenticated_origin_pull_ca.pem -o "$CA_DEST.new" \
+               && [ -s "$CA_DEST.new" ]; then
+              mv -f "$CA_DEST.new" "$CA_DEST"
+            elif [ -s "$CA_DEST" ]; then
+              echo "CA download failed — keeping the existing $CA_DEST"
+              rm -f "$CA_DEST.new"
+            else
+              echo "::error::could not fetch the Cloudflare origin-pull CA and none exists on the VM yet"
+              rm -f "$CA_DEST.new"
+              exit 1
+            fi
+            command -v chcon >/dev/null 2>&1 && chcon -t container_file_t "$CA_DEST" || true
+
+            cp "$STAGING/temporal.caddy" /srv/caddy/sites/temporal.caddy
+            command -v chcon >/dev/null 2>&1 && chcon -t container_file_t /srv/caddy/sites/temporal.caddy || true
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+            echo "Temporal up — server :7233 (loopback), UI https://temporal.kalandra.tech (Cloudflare Access). The API worker connects at localhost:7233."

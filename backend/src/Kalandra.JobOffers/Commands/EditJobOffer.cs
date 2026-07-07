@@ -21,7 +21,7 @@ public record EditJobOfferCommand(
 
 public class EditJobOfferHandler(IDocumentSession session)
 {
-    public async Task<Result<JobOffer, EditJobOfferError>> HandleAsync(
+    public async Task<Result<JobOffer, EditJobOfferError>> EditAndSave(
         EditJobOfferCommand command, CancellationToken ct)
     {
         var stream = await session.Events.FetchForWriting<JobOffer>(command.Id, ct);

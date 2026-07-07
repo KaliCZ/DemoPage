@@ -63,10 +63,17 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          # Exact pin (matching package.json) — resolving "latest" is a GitHub API
+          # call that rate-limits on shared runners.
+          version: 2.108.0
 
       - name: Start local Supabase in background
         run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
+
+      # The API hosts a Temporal worker and needs the server at startup; the dev
+      # server boots in seconds while the .NET/Node setup below overlaps.
+      - name: Start Temporal dev server
+        run: docker run -d --name temporal-dev -p 7233:7233 temporalio/temporal:1.7.2 server start-dev --ip 0.0.0.0 --headless
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -335,11 +342,12 @@ jobs:
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           # App slot units only (the shared Caddy units live under infra/host/,
-          # host-managed per SETUP.md §3.3). Land them in a staging dir; the
+          # host-managed per SETUP.md §3.3). Land them in this app's staging dir
+          # under ~/demoPage/ (parallel to ~/hampap/ on the shared box); the
           # deploy installs only the slot it's deploying to, leaving the other
           # slot's live unit (and its pinned production image) untouched.
           source: "infra/quadlet/*.container"
-          target: "/home/${{ vars.OCI_USERNAME }}/quadlet-staging/"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/quadlet-staging/"
           strip_components: 2
 
       - name: Sync Caddy routing fragment to VM
@@ -351,7 +359,7 @@ jobs:
           # Kalandra's routing template (port filled in at deploy time). The
           # shared Caddy that loads it is host infra, not synced here.
           source: "infra/quadlet/kalandra.caddy"
-          target: "/home/${{ vars.OCI_USERNAME }}/"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/"
           strip_components: 2
 
       - name: Deploy to Oracle Cloud (blue-green)
@@ -362,6 +370,12 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           SENTRY_DSN: ${{ secrets.BACKEND_SENTRY_DSN }}
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
+          BLOG_AUTHOR_NOTIFICATION_EMAIL: ${{ vars.BLOG_AUTHOR_NOTIFICATION_EMAIL }}
           # Digest-pinned, not :latest — the exact build verified by this run
           # is what runs and what comes back after a reboot.
           IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -370,12 +384,13 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,IMAGE_REF,EXPECTED_SHA
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM_EMAIL,BLOG_AUTHOR_NOTIFICATION_EMAIL,IMAGE_REF,EXPECTED_SHA
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
             UNIT_DIR="$HOME/.config/containers/systemd"
-            STAGING="$HOME/quadlet-staging"
+            APP_DIR="$HOME/demoPage"
+            STAGING="$APP_DIR/quadlet-staging"
             SITE_CONF=/srv/caddy/sites/kalandra.caddy
 
             # ----- 0. Preconditions: shared infra must already exist -----
@@ -390,15 +405,24 @@ jobs:
               || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
 
             umask 077
+            mkdir -p "$APP_DIR"
 
             # App secrets, read by both slots via EnvironmentFile. Rewritten
             # every deploy so rotated secrets propagate when a slot (re)starts.
-            cat > "$HOME/kalandra-api.env" << EOF
+            cat > "$APP_DIR/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
             Supabase__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             Sentry__Dsn=${SENTRY_DSN}
+            Temporal__TargetHost=localhost:7233
+            Email__Host=${SMTP_HOST}
+            Email__Port=${SMTP_PORT}
+            Email__Username=${SMTP_USERNAME}
+            Email__Password=${SMTP_PASSWORD}
+            Email__FromEmail=${SMTP_FROM_EMAIL}
+            Email__FromName=kalandra.tech
+            Blog__AuthorNotificationEmail=${BLOG_AUTHOR_NOTIFICATION_EMAIL}
             EOF
 
             # ----- 1. Determine which slot is currently active -----
@@ -463,7 +487,7 @@ jobs:
             # (it re-reads the root + all imports and applies gracefully); it does
             # not modify the file. This is the promotion step — until now Caddy
             # was still routing to the old (production) slot.
-            sed "s/__PORT__/${NEW_PORT}/" "$HOME/kalandra.caddy" > "$SITE_CONF"
+            sed "s/__PORT__/${NEW_PORT}/" "$APP_DIR/kalandra.caddy" > "$SITE_CONF"
             # Oracle Linux enforces SELinux; relabel the freshly-written fragment
             # so the Caddy container can read it (the unit's :z relabel only runs
             # at container start). opc owns the file, so no sudo. No-op where
@@ -528,9 +552,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          # Full history required for git-based sitemap lastmod in astro.config.mjs
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

@@ -9,10 +9,13 @@ import IconGitHub from "../../components/icons/IconGitHub.astro";
 import IconLinkedIn from "../../components/icons/IconLinkedIn.astro";
 import OnThisPage from "../../components/OnThisPage.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/about.json";
 import csStrings from "../../i18n/cs/about.json";
 
 const translations = { en: enStrings, cs: csStrings };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-05-11" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({

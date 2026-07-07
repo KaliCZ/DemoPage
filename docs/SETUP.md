@@ -318,6 +318,25 @@ the retired slot's unit, so a reboot brings back exactly the live version.
 (see §4). It pins each unit's `Image=` to an immutable digest, never `:latest`,
 so a restart can't drift onto a different build.
 
+#### On-disk layout (per-app home folder)
+
+Each app keeps its VM-side files in its own folder under `opc`'s home, so the
+shared box stays legible: demopage under `~/demoPage/`, hampap under `~/hampap/`.
+demopage's deploys write there:
+
+| Path | Written by | Purpose |
+|------|-----------|---------|
+| `~/demoPage/kalandra-api.env` | app deploy (§4), every run | API secrets — the slots' `EnvironmentFile` |
+| `~/demoPage/kalandra-temporal.env` | deploy-temporal, on change | Temporal server config |
+| `~/demoPage/kalandra.caddy` | app deploy, every run | Routing template (`__PORT__` filled in at deploy time) |
+| `~/demoPage/quadlet-staging/` | app deploy | Scratch: API `.container` units before install |
+| `~/demoPage/temporal-staging/` | deploy-temporal | Scratch: Temporal units + `temporal.caddy` (wiped each run) |
+
+The installed Quadlet units (`~/.config/containers/systemd/`), the Caddy site
+fragments and certs (`/srv/caddy/`) live in their shared locations — namespaced
+by filename (`kalandra-*`, `kalandra.caddy`, `temporal.caddy`), so they never
+collide with another app's.
+
 #### Port Allocation (shared host)
 
 Every app runs with `Network=host`, so they all share the host's port space.
@@ -330,10 +349,13 @@ rule is **don't collide**. Give each app a contiguous block and record it here.
 |-------------|-----------------------------|----------------------------------------------------|
 | 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
 | 8080 / 8081 | kalandra (demopage) API     | blue / green slots. **API only** — the website is SSG, built and hosted off-box, so it has no port here. |
-| 8090 / 8091 | *reserved* — next app (hampap) | Suggested next block; claim it when adding the app. |
+| 7233 / 8233 | kalandra (demopage) Temporal | Server / Web UI, both loopback-only. UI published at `temporal.kalandra.tech` through Caddy; see [`deploy-temporal.yml`](../.github/workflows/deploy-temporal.yml). |
+| 3001, 6379, 13000–13001, 18080–18090 | hampap (neighbor app) | Not demopage's — listed so demopage's blocks stay clear of it: Zitadel-login, Redis, web, API, worker, MCP, Zitadel. Source of truth is the hampap repo's `docs/infrastructure.md` port map, which reciprocally records demopage's ports. |
 
-When adding an app, take the next free block (e.g. `81xx`), set its container's
-listen port accordingly, and add a row above before wiring up its Caddy fragment.
+When adding an app, take the next free block (e.g. `81xx`) — cross-check the
+hampap row and its linked map so the block is free across the whole shared host,
+not just within demopage — set its container's listen port accordingly, and add a
+row above before wiring up its Caddy fragment.
 An app that ships a server-rendered (non-SSG) web tier needs its own port for
 that too — give it the next slot in the same block.
 
@@ -345,7 +367,7 @@ pieces make that work, all established by host setup / the first deploy:
 
 - **Linger** (`sudo loginctl enable-linger opc`, set in host setup) keeps the `opc` user's `systemd --user` instance running across SSH logouts *and* reboots; without it, `--user` services only exist while someone is logged in.
 - **Quadlet `[Install] WantedBy=default.target`** in each `.container` file makes the generated units start on boot — the shared Caddy and the live API slot. A completed deploy removes the retired slot's unit file, so only the production slot's unit is present at rest.
-- **Persisted on-disk state** — `~/kalandra-api.env` (secrets) and the digest baked into the live slot's unit `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
+- **Persisted on-disk state** — `~/demoPage/kalandra-api.env` (secrets) and the digest baked into the live slot's unit `Image=`, plus `/srv/caddy/sites/*.caddy` + `/srv/caddy/certs` (routing + TLS) and Caddy's named volumes. So Caddy comes back routing to the last-active slot and the API starts with its secrets and the same pinned image.
 
 On a cold boot exactly one slot starts — the production slot, since the deploy removed the other slot's unit — and Caddy routes to the port its persisted fragment names. No traffic is lost. (If a reboot interrupts a deploy before the swap, the old unit is still present and comes back as production; the next deploy recreates the other slot.)
 
@@ -392,9 +414,9 @@ sudo loginctl enable-linger "$USER"
 
 #### 3.3.2 Per-site TLS certificate
 
-For each hostname Caddy serves (here, `api.kalandra.tech` for demopage):
+Demopage serves two hostnames (`api.kalandra.tech` and `temporal.kalandra.tech`) with the one `kalandra.pem`/`kalandra.key` pair, so the certificate must cover both:
 
-1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostname `api.kalandra.tech`, 15-year validity, PEM format.
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostnames `*.kalandra.tech` + `kalandra.tech` (the dashboard's default), 15-year validity, PEM format. A pair issued for `api.kalandra.tech` alone fails Cloudflare's Full (strict) check on `temporal.kalandra.tech` — re-issue with the wildcard and overwrite the pair if you started single-hostname.
 2. Save the pair to `/srv/caddy/certs` (owned by `opc`, so no `sudo`), named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
 
 ```bash
@@ -585,13 +607,23 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 | `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
 | `SENTRY_CI_TOKEN` | Sentry **organization auth token** (scope `org:ci`) used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **Settings → Auth Tokens** (org level). Mapped to `SENTRY_AUTH_TOKEN` at build time. Omitting it silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
+| `SMTP_USERNAME` | Login for the SMTP relay that sends blog comment notifications |
+| `SMTP_PASSWORD` | Password for the SMTP relay |
+| `TEMPORAL_DB_USER` | Postgres role for Temporal's persistence — must be able to create databases on the first `deploy-temporal` run (`postgres` works) |
+| `TEMPORAL_DB_PASSWORD` | Password for that role |
 
-Plus these repository **variables** (Settings → Variables → Actions) used by the same source-map upload step:
+Plus these repository **variables** (Settings → Variables → Actions):
 
 | Variable | Value |
 |----------|-------|
-| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. |
-| `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project |
+| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. Used by the source-map upload step. |
+| `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project, for the same upload step |
+| `SMTP_HOST` | SMTP relay hostname — production refuses to start while this is `localhost` |
+| `SMTP_PORT` | SMTP relay port (typically `587`) |
+| `SMTP_FROM_EMAIL` | From address on notification mail (e.g. `blog@kalandra.tech`) |
+| `BLOG_AUTHOR_NOTIFICATION_EMAIL` | Mailbox that receives new-comment notifications — a real address, not `.local` |
+| `TEMPORAL_DB_HOST` | The `Host=` from `DB_CONNECTION_STRING` (`db.<project-ref>.supabase.co`) — the direct/session host, **not** the transaction pooler |
+| `TEMPORAL_DB_PORT` | `5432` |
 
 The org lives in Sentry's EU region (the DSN host is `ingest.de.sentry.io`), but no `SENTRY_URL` is
 set — the org auth token embeds its own region endpoint and the upload routes there automatically.

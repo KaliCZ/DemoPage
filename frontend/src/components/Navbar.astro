@@ -11,6 +11,7 @@ type ActivePage =
   | "projects"
   | "project"
   | "strong-types"
+  | "blog"
   | "hire-me"
   | "job-offers"
   | "admin/job-offers"
@@ -22,6 +23,8 @@ type ActivePage =
 interface Props {
   activePage: ActivePage;
   lang: Locale;
+  /** Language-picker target override per locale — see Layout's prop of the same name. */
+  langUrls?: Partial<Record<Locale, string>>;
   t: {
     nav: {
       home: string;
@@ -29,6 +32,7 @@ interface Props {
       projects: string;
       projectThisSite: string;
       projectStrongTypes: string;
+      blog: string;
       hireMe: string;
       mySubmissions: string;
       admin: string;
@@ -47,7 +51,7 @@ interface Props {
   };
 }
 
-const { activePage, lang, t } = Astro.props;
+const { activePage, lang, langUrls, t } = Astro.props;
 
 // One ordered list of nav items, in the order they appear on the bar.
 // Items with `children` are rendered as a hover dropdown on desktop (the parent
@@ -81,6 +85,7 @@ const navItems: NavItem[] = [
       { label: t.nav.projectStrongTypes, page: "strong-types", icon: "package-2", active: activePage === "strong-types" },
     ],
   },
+  { label: t.nav.blog, page: "blog", active: activePage === "blog" },
   { label: t.nav.hireMe, page: "hire-me", active: activePage === "hire-me" },
 ];
 ---
@@ -105,6 +110,7 @@ const navItems: NavItem[] = [
       <LanguagePicker
         lang={lang}
         activePage={activePage}
+        langUrls={langUrls}
         labels={{ language: t.a11y.language, switchToEnglish: t.a11y.switchToEnglish, switchToCzech: t.a11y.switchToCzech }}
       />
       <!-- Auth (mobile) -->
@@ -191,6 +197,7 @@ const navItems: NavItem[] = [
       <LanguagePicker
         lang={lang}
         activePage={activePage}
+        langUrls={langUrls}
         labels={{ language: t.a11y.language, switchToEnglish: t.a11y.switchToEnglish, switchToCzech: t.a11y.switchToCzech }}
       />
       <!-- Auth (desktop) -->

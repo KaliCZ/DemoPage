@@ -35,6 +35,14 @@ Domain rule violation  →  Handler error enum  →  API error enum  →  RFC 78
 
 The two-enum split (handler enum ↔ API error enum) ensures domain refactoring cannot silently break the frontend. See `docs/backend-api.md` for the full rule.
 
+## Background workflows (Temporal)
+
+Blog comments are the first Temporal-backed flow: `BlogCommentWorkflow` (`Kalandra.Blog/Workflows/`) stores the comment and sends the notification emails as two activities of one durable workflow, so neither can happen without the other. The API process hosts the worker (`AddTemporal` in `ServiceCollectionExtensions`); the controller drives the workflow with update-with-start — the HTTP response returns as soon as the store activity lands, notifications continue asynchronously with retries. Activities must be idempotent (retried on failure); the store dedupes by comment id.
+
+- **Dev server**: Aspire runs `temporalio/temporal server start-dev` (also started by `npm run test:e2e` and the CI e2e job); integration tests spin one per test class via Testcontainers.
+- **Production**: `temporalio/auto-setup` on the VM, persistence in the same Supabase Postgres (`temporal` + `temporal_visibility` databases), deployed by the one-off `deploy-temporal` workflow. The Web UI is published at temporal.kalandra.tech behind Cloudflare Access; Caddy additionally requires Cloudflare's Authenticated Origin Pulls client certificate, so the edge sign-in cannot be bypassed by connecting to the VM directly — the UI itself has no authentication.
+- **Email**: `IEmailSender` (`Kalandra.Infrastructure/Email/`). The real SMTP sender is registered whenever the `Email` config section exists; a logging no-op is allowed only in Development without config — production refuses to start unconfigured.
+
 ## Where to put new code
 
 | You want to add...                                  | Goes in                                                                |
@@ -48,4 +56,5 @@ The two-enum split (handler enum ↔ API error enum) ensures domain refactoring 
 | A new aggregate field that needs filtering          | Property on the entity + `Duplicate(j => j.Field)` in `MartenConfiguration` |
 | A new business domain                               | New `Kalandra.{Domain}/` project + `Add{Domain}Domain()` extension     |
 | A new external HTTP integration                     | `Kalandra.Infrastructure/{Concern}/` + typed `HttpClient` registration |
+| A new background workflow                           | `Kalandra.{Domain}/Workflows/` + register it on the worker in `AddTemporal` |
 | A new role                                          | Add to `UserRole` enum + `RequireRole` policy                          |
