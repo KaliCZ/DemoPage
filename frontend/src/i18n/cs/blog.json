@@ -19,7 +19,8 @@
   "post": {
     "backToBlog": "Všechny články",
     "publishedOn": "Publikováno",
-    "updatedOn": "Aktualizováno"
+    "updatedOn": "Aktualizováno",
+    "readingTime": "{min} min čtení"
   },
   "reactions": {
     "heading": "Byl článek užitečný?",

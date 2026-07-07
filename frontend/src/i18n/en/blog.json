@@ -19,7 +19,8 @@
   "post": {
     "backToBlog": "All posts",
     "publishedOn": "Published",
-    "updatedOn": "Updated"
+    "updatedOn": "Updated",
+    "readingTime": "{min} min read"
   },
   "reactions": {
     "heading": "Was this useful?",
