@@ -284,7 +284,15 @@ details > summary + * {
   letter-spacing: -0.025em;
 }
 
-/* Shiki dual-theme code blocks: flip to the dark palette under `.dark`. */
+/* Shiki code blocks (see BlogCode.astro): the themes bring the token colors,
+   but the block surface comes from the design system — the theme's own white
+   background is invisible against the cream page. */
+.astro-code {
+  background-color: var(--color-surface-container-low) !important;
+  border: 1px solid var(--color-outline-variant);
+}
+
+/* Flip to the dark palette under `.dark`. */
 .dark .astro-code,
 .dark .astro-code span {
   color: var(--shiki-dark) !important;

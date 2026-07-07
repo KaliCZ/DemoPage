@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import BlogCode from "../../../components/BlogCode.astro";
 import BlogPostLayout from "../../../components/BlogPostLayout.astro";
 import { blogPostStaticPaths, type BlogPostMetadata } from "../../../blog/types";
 import { defaultLocale, localePath, type Locale } from "../../../i18n/utils";
@@ -24,8 +24,6 @@ export const metadata: BlogPostMetadata = {
 export const getStaticPaths = () => blogPostStaticPaths(metadata);
 
 const lang = (Astro.params.lang ?? defaultLocale) as Locale;
-
-const codeThemes = { light: "github-light", dark: "github-dark" } as const;
 
 const beforeSnippet = `public record CreateOrderRequest(
     [EmailAddress] string CustomerEmail,
@@ -161,14 +159,14 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           příležitostí zanést chybu jen tím, že jednu z nich zapomenete upravit.
         </p>
 
-        <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={beforeSnippet} lang="csharp" />
 
         <p>
           Všimněte si, že data annotations ověří e-mailovou adresu. Ale pořád máte jen string. Podobně je celé číslo ověřené jako kladné,
           jenže tu informaci nijak nevyužijete. Pak request dorazí do služby:
         </p>
 
-        <Code code={beforeServiceSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={beforeServiceSnippet} lang="csharp" />
 
         <p>
           {" "}
@@ -202,11 +200,11 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>Jeden řádek na instalaci:</p>
 
-        <Code code="dotnet add package Kalicz.StrongTypes" lang="shell" themes={codeThemes} />
+        <BlogCode code="dotnet add package Kalicz.StrongTypes" lang="shell" />
 
         <p>Pak už jen request record vymění primitivy za typy, které říkají, co skutečně znamenají:</p>
 
-        <Code code={afterSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={afterSnippet} lang="csharp" />
 
         <p>
           Data annotations jsou pryč. Ruční parsování přes <code>MailAddress</code> je pryč. Všechny informace o hodnotách teď žijí přímo v
@@ -219,17 +217,17 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           zaregistrujte ho:
         </p>
 
-        <Code code={openApiSetupSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={openApiSetupSnippet} lang="csharp" />
 
         <p>Request výše pak vygeneruje přesně ta omezení, která klient potřebuje:</p>
 
-        <Code code={openApiSnippet} lang="jsonc" themes={codeThemes} />
+        <BlogCode code={openApiSnippet} lang="jsonc" />
 
         <h2>Signatury jako dokumentace</h2>
 
         <p>Nejhezčí na tom je, o kolik je díky tomu kód srozumitelnější. Každá metoda může vyslovit své skutečné požadavky:</p>
 
-        <Code code={signatureSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={signatureSnippet} lang="csharp" />
 
         <p>
           Druhá signatura odpovídá na otázky, které vás ta první nutí dohledávat: ne, kód nemůže být prázdný; ne, nulové množství sem
@@ -242,7 +240,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           hodnota v signatuře, ne překvápko v podobě výjimky:
         </p>
 
-        <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={resultSnippet} lang="csharp" />
 
         <h2>Typy dorazí až do databáze</h2>
 
@@ -251,7 +249,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           se silné typy stanou přímo vlastnostmi entity — jediné volání na options builderu navěsí value converter na každou z nich:
         </p>
 
-        <Code code={entitySnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={entitySnippet} lang="csharp" />
 
         <p>
           Sloupec v databázi je pořád obyčejný <code>varchar</code> nebo <code>int</code>; na úložišti se nemění nic. Ale EF Core teď
@@ -268,7 +266,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           stojí za to číst. A tam, kde hodnoty konstruujete, je API explicitní v tom, co zamýšlíte:
         </p>
 
-        <Code code={constructionSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={constructionSnippet} lang="csharp" />
 
         <p>
           A pro vlastnosti, které si ověřit chcete, umí doprovodný balíček <code>Kalicz.StrongTypes.FsCheck</code> generovat validní silně
@@ -308,14 +306,14 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           forgetting to update one of them.
         </p>
 
-        <Code code={beforeSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={beforeSnippet} lang="csharp" />
 
         <p>
           Notice that data annotations validate the email address. But you still only have a string. Similarly, the integer is validated to
           be positive, but you can't actually use that guarantee. Then the request reaches the service:
         </p>
 
-        <Code code={beforeServiceSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={beforeServiceSnippet} lang="csharp" />
 
         <p>
           {" "}
@@ -349,11 +347,11 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>One line to install:</p>
 
-        <Code code="dotnet add package Kalicz.StrongTypes" lang="shell" themes={codeThemes} />
+        <BlogCode code="dotnet add package Kalicz.StrongTypes" lang="shell" />
 
         <p>Then the request record swaps its primitives for types that mean what they say:</p>
 
-        <Code code={afterSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={afterSnippet} lang="csharp" />
 
         <p>
           Data annotations are gone. Mapping to MailAddress is gone. All the information about the values now lives in the types. And
@@ -366,17 +364,17 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           register it:
         </p>
 
-        <Code code={openApiSetupSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={openApiSetupSnippet} lang="csharp" />
 
         <p>Then the request above emits exactly the constraints a client needs:</p>
 
-        <Code code={openApiSnippet} lang="jsonc" themes={codeThemes} />
+        <BlogCode code={openApiSnippet} lang="jsonc" />
 
         <h2>Signatures become documentation</h2>
 
         <p>The nicest part is how it makes your code much easier to understand. Every method gets to state its real requirements:</p>
 
-        <Code code={signatureSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={signatureSnippet} lang="csharp" />
 
         <p>
           The second signature answers questions the first one forces you to research: no, the code can't be empty; no, zero quantity can't
@@ -389,7 +387,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           becomes a value in the signature instead of a surprise exception:
         </p>
 
-        <Code code={resultSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={resultSnippet} lang="csharp" />
 
         <h2>The types reach the database</h2>
 
@@ -399,7 +397,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           to each:
         </p>
 
-        <Code code={entitySnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={entitySnippet} lang="csharp" />
 
         <p>
           The DB column is still a plain <code>varchar</code> or <code>int</code>; nothing changes about the storage. But EF Core now
@@ -415,7 +413,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           remains are tests about behavior — the ones worth reading. And the API for constructing these types is very explicit about intent:
         </p>
 
-        <Code code={constructionSnippet} lang="csharp" themes={codeThemes} />
+        <BlogCode code={constructionSnippet} lang="csharp" />
 
         <p>
           And for the properties you still want to verify, the <code>Kalicz.StrongTypes.FsCheck</code> companion package generates valid
