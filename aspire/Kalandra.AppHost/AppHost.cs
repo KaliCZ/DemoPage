@@ -75,6 +75,8 @@ try
         .WithIconName("Server");
 
     var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
+    // No WaitFor(api): the UI comes up immediately rather than blocking on the API's own DB/Temporal wait;
+    // a fetch before the API is ready just errors and recovers on the next call.
     builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
         .WithHttpEndpoint(env: "PORT")
         .WithReference(api)
@@ -82,8 +84,7 @@ try
         // Empty PUBLIC_API_URL forces relative fetches through Vite's /api proxy, overriding any stale .env.local.
         .WithEnvironment("PUBLIC_API_URL", "")
         .WithExternalHttpEndpoints()
-        .WithIconName("Globe")
-        .WaitFor(api);
+        .WithIconName("Globe");
 
     // Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
     builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
@@ -97,11 +98,11 @@ try
     try
     {
         // Sync wait: Mutex has thread affinity, so an `await` could resume on a different thread and break ReleaseMutex.
-        app.StartAsync().WaitAsync(TimeSpan.FromSeconds(20)).GetAwaiter().GetResult();
+        app.StartAsync().WaitAsync(TimeSpan.FromSeconds(40)).GetAwaiter().GetResult();
     }
     catch (TimeoutException)
     {
-        Console.Error.WriteLine("AppHost startup timed out after 20s — a resource (likely Postgres) failed to become healthy. Check `docker ps` and the Aspire dashboard.");
+        Console.Error.WriteLine("AppHost startup timed out after 40s — a resource (likely Postgres or Temporal) failed to become healthy. Check `docker ps` and the Aspire dashboard.");
         Environment.Exit(1);
     }
 }
