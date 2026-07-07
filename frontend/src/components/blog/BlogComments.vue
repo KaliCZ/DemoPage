@@ -56,6 +56,7 @@ const draft = ref("");
 const replyTo = ref<CommentDto | null>(null);
 const submitting = ref(false);
 const confirmingDeleteId = ref<string | null>(null);
+const composer = ref<HTMLTextAreaElement | null>(null);
 
 /** Depth-first flattening of the reply tree — keeps the template a single v-for. */
 const thread = computed(() => {
@@ -127,6 +128,7 @@ function openSignIn() {
 
 function startReply(comment: CommentDto) {
   replyTo.value = comment;
+  composer.value?.focus();
 }
 
 async function submit() {
@@ -248,6 +250,7 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         </button>
       </div>
       <textarea
+        ref="composer"
         v-model="draft"
         :placeholder="props.t.placeholder"
         :aria-label="props.t.placeholder"
