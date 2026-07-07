@@ -108,7 +108,7 @@ Rules:
 1. The main event stream at the aggregate's own `Guid` — holds submission, edits, status changes, cancellations.
 2. A **comment stream** at a deterministic UUID v5 derived from the aggregate ID via `CommentStreamId.For(jobOfferId)`.
 
-Comments are kept separate because they are high-volume, append-only, and do not affect the main aggregate's state. Putting them on the main stream would bloat the snapshot and force every rebuild to replay every comment. `AddCommentHandler` writes to `CommentStreamId.For(...)`, not to the aggregate's stream:
+Comments are kept separate because they are high-volume, append-only, and do not affect the main aggregate's state. Putting them on the main stream would bloat the snapshot and force every rebuild to replay every comment. `StoreJobOfferCommentHandler` writes to `CommentStreamId.For(...)`, not to the aggregate's stream:
 
 ```csharp
 session.Events.Append(CommentStreamId.For(command.JobOfferId), commentEvent);

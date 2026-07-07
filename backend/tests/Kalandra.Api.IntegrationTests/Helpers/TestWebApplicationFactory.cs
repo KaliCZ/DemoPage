@@ -44,6 +44,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Supabase:ServiceKey", "test-service-key");
         builder.UseSetting("Temporal:TargetHost", $"127.0.0.1:{_temporal.GetMappedPublicPort(7233)}");
         builder.UseSetting("Blog:AuthorNotificationEmail", "author@kalandra.local");
+        builder.UseSetting("JobOffers:OwnerNotificationEmail", "owner@kalandra.local");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IEmailSender>();

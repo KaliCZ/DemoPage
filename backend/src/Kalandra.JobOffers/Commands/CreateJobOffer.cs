@@ -3,8 +3,10 @@ using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
-using Marten;
+using Kalandra.JobOffers.Workflows;
 using StrongTypes;
+using Temporalio.Api.Enums.V1;
+using Temporalio.Client;
 
 namespace Kalandra.JobOffers.Commands;
 
@@ -30,7 +32,7 @@ public record CreateJobOfferCommand(
     IReadOnlyList<CreateJobOfferFile> Files,
     DateTimeOffset Timestamp);
 
-public class CreateJobOfferHandler(IDocumentSession session, IStorageService storageService)
+public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageService storageService)
 {
     private const int MaxAttachments = 5;
     private const long MaxTotalBytes = 15 * 1024 * 1024; // 15 MB
@@ -48,7 +50,11 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         "image/webp",
     };
 
-    public async Task<Result<Guid, CreateJobOfferError>> CreateAndSave(
+    /// <summary>
+    /// Drives the durable submission flow: store + notify share one workflow, and the
+    /// update returns once the offer is stored — notifications continue async.
+    /// </summary>
+    public async Task<Result<Guid, CreateJobOfferError>> Create(
         CreateJobOfferCommand command, CancellationToken ct)
     {
         // Validate attachments
@@ -98,8 +104,22 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
             Attachments: uploadedAttachments,
             Timestamp: command.Timestamp);
 
-        session.Events.StartStream<JobOffer>(streamId, submitted);
-        await session.SaveChangesAsync(ct);
+        var input = new JobOfferSubmittedWorkflowInput(streamId, submitted);
+
+        var startOperation = WithStartWorkflowOperation.Create(
+            (JobOfferSubmittedWorkflow workflow) => workflow.RunAsync(input),
+            new(id: JobOfferSubmittedWorkflow.IdFor(streamId), taskQueue: JobOffersTaskQueue.Name)
+            {
+                // An internal RPC retry reattaches instead of failing.
+                IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
+            });
+
+        // Cancellation frees the request if the client disconnects; the workflow keeps
+        // running — durability is the point.
+        await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
+            (JobOfferSubmittedWorkflow workflow) => workflow.StoreJobOfferAsync(input),
+            new(startOperation) { Rpc = new() { CancellationToken = ct } });
+
         return streamId;
     }
 }

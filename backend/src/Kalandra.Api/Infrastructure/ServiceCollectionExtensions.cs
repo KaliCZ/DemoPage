@@ -10,6 +10,7 @@ using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
+using Kalandra.JobOffers.Workflows;
 using Marten;
 using Marten.Services;
 using Microsoft.Extensions.Caching.Distributed;
@@ -189,10 +190,15 @@ public static class ServiceCollectionExtensions
             options.Namespace = config.Namespace.Value;
         });
 
-        // The API process hosts the worker — no separate deployable.
+        // The API process hosts the workers — no separate deployable.
         services.AddHostedTemporalWorker(BlogTaskQueue.Name)
             .AddScopedActivities<BlogCommentActivities>()
             .AddWorkflow<BlogCommentWorkflow>();
+
+        services.AddHostedTemporalWorker(JobOffersTaskQueue.Name)
+            .AddScopedActivities<JobOfferActivities>()
+            .AddWorkflow<JobOfferSubmittedWorkflow>()
+            .AddWorkflow<JobOfferCommentWorkflow>();
 
         return services;
     }

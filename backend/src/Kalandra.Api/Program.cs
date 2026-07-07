@@ -52,6 +52,7 @@ builder.Services.AddTurnstile(builder.Environment);
 builder.Services.AddAuthAdminServices();
 builder.Services.AddApiServices();
 builder.Services.AddJobOffersDomain();
+JobOffersNotificationsConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddBlogDomain();
 BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
