@@ -35,7 +35,6 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
   - [3.4 Enable IPv6 on the VCN](#34-enable-ipv6-on-the-vcn)
   - [3.5 DNS](#35-dns)
   - [3.6 Migrating an Existing Box](#36-migrating-an-existing-box-one-time)
-  - [3.7 Move DemoPage Into Its App Folder](#37-move-demopage-into-its-app-folder-one-time)
 - [4. CI/CD Configuration](#4-cicd-configuration)
   - [4.1 GitHub Repository Secrets](#41-github-repository-secrets)
   - [4.2 GitHub Actions Environment](#42-github-actions-environment)
@@ -351,9 +350,12 @@ rule is **don't collide**. Give each app a contiguous block and record it here.
 | 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
 | 8080 / 8081 | kalandra (demopage) API     | blue / green slots. **API only** — the website is SSG, built and hosted off-box, so it has no port here. |
 | 7233 / 8233 | kalandra (demopage) Temporal | Server / Web UI, both loopback-only. UI published at `temporal.kalandra.tech` through Caddy; see [`deploy-temporal.yml`](../.github/workflows/deploy-temporal.yml). |
+| 3001, 6379, 13000–13001, 18080–18090 | hampap (neighbor app) | Not demopage's — listed so demopage's blocks stay clear of it: Zitadel-login, Redis, web, API, worker, MCP, Zitadel. Source of truth is the hampap repo's `docs/infrastructure.md` port map, which reciprocally records demopage's ports. |
 
-When adding an app, take the next free block (e.g. `81xx`), set its container's
-listen port accordingly, and add a row above before wiring up its Caddy fragment.
+When adding an app, take the next free block (e.g. `81xx`) — cross-check the
+hampap row and its linked map so the block is free across the whole shared host,
+not just within demopage — set its container's listen port accordingly, and add a
+row above before wiring up its Caddy fragment.
 An app that ships a server-rendered (non-SSG) web tier needs its own port for
 that too — give it the next slot in the same block.
 
@@ -577,30 +579,6 @@ can be done any time.
 > **Sequencing:** do steps 1–5 right around merging the deploy PR — migrate the
 > box, then merge so the new pipeline takes over. Avoid pushing to `main` in the
 > gap (an old-pipeline deploy would rewrite the now-ignored `~/Caddyfile`).
-
-### 3.7 Move DemoPage Into Its App Folder (one-time)
-
-demopage's VM-side files used to sit loose at the top of `~` (`~/kalandra-api.env`,
-`~/kalandra.caddy`, `~/quadlet-staging/`); they now live under `~/demoPage/`
-(§3.2, "On-disk layout"), alongside hampap's `~/hampap/`. **The pipeline does no
-migration** — it just reads and writes under `~/demoPage/`. So move the existing
-files once, as `opc`, right before merging the branch that introduces the folder:
-
-```bash
-mkdir -p ~/demoPage
-mv ~/kalandra-api.env ~/kalandra.caddy ~/quadlet-staging ~/demoPage/ 2>/dev/null || true
-# Repoint the currently-running slot's unit at the new env path so a reboot before
-# the next deploy still finds it (no restart needed — the live container already
-# loaded its env; the unit change only matters on the next start).
-sed -i 's#%h/kalandra-api.env#%h/demoPage/kalandra-api.env#' ~/.config/containers/systemd/kalandra-api-*.container
-systemctl --user daemon-reload
-```
-
-Then merge. The next deploy writes into the folder that already holds the live
-slot's env file; the blue-green swap is otherwise unchanged (no real outage). The
-shared pieces never move: the installed Quadlet units stay in
-`~/.config/containers/systemd/` and the Caddy fragment/cert stay under
-`/srv/caddy/` — both namespaced by filename, so hampap is untouched throughout.
 
 ---
 
