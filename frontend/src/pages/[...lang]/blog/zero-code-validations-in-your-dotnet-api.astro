@@ -357,8 +357,12 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           That's what my <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package packages up for C#: a small set of
           validated wrappers — <code>NonEmptyString</code>, <code>Email</code>, <code>Positive&lt;T&gt;</code> and friends over any{" "}
           <code>INumber&lt;T&gt;</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> — plus the algebraic types <code>Maybe&lt;T&gt;</code> and{" "}
-          <code>Result&lt;T, TError&gt;</code> to compose them with. <code>Interval&lt;T&gt;</code> for representing start + end is coming
-          soon. I'll write a separate blog post about that one.
+          <code>Result&lt;T, TError&gt;</code> to compose them with.
+        </p>
+
+        <p>
+          I will also be extending the library in the future. For example, <code>Interval&lt;T&gt;</code> is coming to make it easier to
+          represent start + end with validations that end is after start. I'll write a separate blog post about that one.
         </p>
 
         <h2>The zero-code part</h2>
