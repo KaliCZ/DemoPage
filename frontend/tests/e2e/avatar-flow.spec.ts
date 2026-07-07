@@ -123,7 +123,7 @@ test.describe("Avatar Flow", () => {
     await expect(page.locator("#confirm-incomplete-dialog")).toBeVisible();
     await stampTurnstileToken();
     await page.click("#confirm-incomplete-confirm");
-    await expect(page).toHaveURL(/\/job-offers#/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/job-offers\/detail\?id=/, { timeout: 15000 });
 
     // Wait for the offer detail to load
     await expect(page.locator("#offer-detail-section")).toBeVisible({

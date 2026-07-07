@@ -277,7 +277,7 @@ const t = translations[lang];
       validationStrings: t.form.validation,
       apiErrorMap: t.form.errors,
       incompleteFieldLabels: t.form.confirmIncomplete.fields,
-      jobOffersPath: localePath(lang, "job-offers"),
+      offerDetailPath: localePath(lang, "job-offers/detail"),
     }}
   >
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
@@ -650,7 +650,7 @@ const t = translations[lang];
         interactiveCaptchaMode = false;
         window.observability?.track("job-offer-submitted", { offerId: offer.id });
         sessionStorage.setItem("snackbar", JSON.stringify({ message: successText, type: "success" }));
-        window.location.href = jobOffersPath + "#" + offer.id;
+        window.location.href = offerDetailPath + "?id=" + offer.id;
       } catch (err) {
         window.__showSnackbar?.(err.message || errorText, "error");
         if (submitBtn) {

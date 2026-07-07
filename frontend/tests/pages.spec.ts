@@ -34,6 +34,24 @@ test.describe("Page rendering", () => {
     await expect(page.locator("#offers-list-section")).toBeHidden();
   });
 
+  test("job-offers detail page shows login prompt when not authenticated", async ({ page }) => {
+    await page.goto("/job-offers/detail?id=00000000-0000-0000-0000-000000000001");
+    await expect(page.locator("#login-prompt")).toBeVisible();
+    await expect(page.locator("#offer-detail-section")).toBeHidden();
+  });
+
+  test("admin job-offers detail page shows access denied when not authenticated", async ({ page }) => {
+    await page.goto("/admin/job-offers/detail?id=00000000-0000-0000-0000-000000000001");
+    await expect(page.locator("#admin-loading")).toBeHidden({ timeout: 10000 });
+    await expect(page.locator("#access-denied")).toBeVisible();
+    await expect(page.locator("#offer-detail-section")).toBeHidden();
+  });
+
+  test("legacy job-offers hash deep link redirects to the detail page", async ({ page }) => {
+    await page.goto("/job-offers#00000000-0000-0000-0000-000000000001");
+    await expect(page).toHaveURL("/job-offers/detail?id=00000000-0000-0000-0000-000000000001");
+  });
+
   test("about page loads", async ({ page }) => {
     await page.goto("/about");
     await expect(page).toHaveTitle(/About/);

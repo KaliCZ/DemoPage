@@ -3,6 +3,18 @@
     "title": "Admin — Všechny nabídky — kalandra.tech",
     "description": "Přehled a správa všech odeslaných pracovních nabídek."
   },
+  "detailMeta": {
+    "title": "Admin — Detail nabídky — kalandra.tech",
+    "description": "Přehled a správa odeslané pracovní nabídky."
+  },
+  "detail": {
+    "contact": "Kontakt",
+    "location": "Lokalita",
+    "salary": "Mzdové rozpětí",
+    "submittedOn": "Odesláno",
+    "description": "Popis",
+    "additionalNotes": "Další poznámky"
+  },
   "hero": {
     "title": "Všechny nabídky",
     "subtitle": "Přehled všech odeslaných pracovních nabídek."

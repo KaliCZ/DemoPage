@@ -30,6 +30,7 @@ public class JobOfferNotificationsTests
         Guid? commenterUserId = null,
         Guid? offerAuthorUserId = null,
         string offerAuthorEmail = "offer-author@test.com") => new(
+        JobOfferId: Guid.NewGuid(),
         Comment: new JobOfferCommentAdded(
             CommentId: Guid.NewGuid(),
             UserId: commenterUserId ?? Guid.NewGuid(),

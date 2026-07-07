@@ -3,6 +3,18 @@
     "title": "Admin — All Submissions — kalandra.tech",
     "description": "Review and manage all submitted job offers."
   },
+  "detailMeta": {
+    "title": "Admin — Submission Detail — kalandra.tech",
+    "description": "Review and manage a submitted job offer."
+  },
+  "detail": {
+    "contact": "Contact",
+    "location": "Location",
+    "salary": "Salary",
+    "submittedOn": "Submitted",
+    "description": "Description",
+    "additionalNotes": "Additional Notes"
+  },
   "hero": {
     "title": "All Submissions",
     "subtitle": "Review all submitted job offers."

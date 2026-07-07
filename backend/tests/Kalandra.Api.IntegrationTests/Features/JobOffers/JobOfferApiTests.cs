@@ -690,12 +690,13 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
 
         var response = await client.PostAsync("/api/job-offers", content, Ct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var offerId = AssertValidGuid(await ParseJsonAsync(response), "id");
 
         var email = Assert.Single(await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1));
         Assert.Equal("owner@kalandra.local", email.To.Address);
         Assert.Equal("New job offer: Senior Developer at Acme Corp", email.Subject.Value);
         Assert.Contains("john@acme.com", email.TextBody.Value);
-        Assert.Contains("https://www.kalandra.tech/admin/job-offers", email.TextBody.Value);
+        Assert.Contains($"https://www.kalandra.tech/admin/job-offers/detail?id={offerId}", email.TextBody.Value);
     }
 
     [Fact]
@@ -715,7 +716,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var email = Assert.Single(emails);
         Assert.Equal("owner@kalandra.local", email.To.Address);
         Assert.StartsWith("New comment on job offer", email.Subject.Value);
-        Assert.Contains("https://www.kalandra.tech/admin/job-offers", email.TextBody.Value);
+        Assert.Contains($"https://www.kalandra.tech/admin/job-offers/detail?id={id}", email.TextBody.Value);
     }
 
     [Fact]
@@ -736,7 +737,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var email = Assert.Single(emails);
         Assert.Equal("notified-author@test.com", email.To.Address);
         Assert.StartsWith("New comment on your job offer", email.Subject.Value);
-        Assert.Contains("https://www.kalandra.tech/job-offers", email.TextBody.Value);
+        Assert.Contains($"https://www.kalandra.tech/job-offers/detail?id={id}", email.TextBody.Value);
     }
 
     [Fact]

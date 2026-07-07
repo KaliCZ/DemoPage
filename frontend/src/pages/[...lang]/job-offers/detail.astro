@@ -1,0 +1,168 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../../layouts/Layout.astro";
+import JobOfferDetail from "../../../components/job-offers/JobOfferDetail.vue";
+import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
+import enStrings from "../../../i18n/en/job-offers.json";
+import csStrings from "../../../i18n/cs/job-offers.json";
+import enHireMe from "../../../i18n/en/hire-me.json";
+import csHireMe from "../../../i18n/cs/hire-me.json";
+import enCommon from "../../../i18n/en/common.json";
+import csCommon from "../../../i18n/cs/common.json";
+
+const translations = { en: enStrings, cs: csStrings };
+const formTranslations = { en: enHireMe, cs: csHireMe };
+const commonTranslations = { en: enCommon, cs: csCommon };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+const f = formTranslations[lang].form;
+const c = commonTranslations[lang];
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
+const listPath = localePath(lang, "job-offers");
+---
+
+<Layout title={t.detailMeta.title} description={t.detailMeta.description} activePage="job-offers" pagePath="job-offers/detail" lang={lang}>
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-8 mb-16">
+    <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
+    </h1>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">
+      {t.hero.subtitle}
+    </p>
+  </section>
+
+  <!-- Loading (shown until auth check completes) -->
+  <section id="auth-loading" class="max-w-5xl mx-auto px-8 mb-16">
+    <div class="text-center py-12">
+      <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
+    </div>
+  </section>
+
+  <!-- Login prompt. `signed-out-only` hooks Layout's pre-paint CSS so this
+       is shown immediately for signed-out users, before supabase loads. -->
+  <section id="login-prompt" class="signed-out-only hidden max-w-5xl mx-auto px-8 mb-16">
+    <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
+      <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
+        {t.loginPrompt.title}
+      </h2>
+      <p class="text-on-surface-variant font-body mb-6">
+        {t.loginPrompt.description}
+      </p>
+      <button
+        id="offers-sign-in"
+        type="button"
+        class="px-6 py-3 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+      >
+        {t.loginPrompt.signInButton}
+      </button>
+    </div>
+  </section>
+
+  <!-- Offer detail. `signed-in-only` keeps it visible for signed-in users
+       during the supabase init delay. -->
+  <section id="offer-detail-section" class="signed-in-only hidden max-w-3xl mx-auto px-8 mb-16">
+    <a
+      id="back-to-list"
+      href={listPath}
+      class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8"
+    >
+      <Icon name="material-symbols:arrow-back" class="size-[18px]" aria-hidden="true" />
+      {t.list.back}
+    </a>
+    <JobOfferDetail
+      client:idle
+      apiUrl={apiUrl}
+      isAdmin={false}
+      listPath={listPath}
+      lang={lang}
+      t={{
+        statusLabels: {
+          Submitted: t.list.submitted,
+          InReview: t.list.inReview,
+          LetsTalk: t.list.accepted,
+          Declined: t.list.declined,
+          Cancelled: t.list.cancelled,
+        },
+        remote: t.list.remote,
+        fields: t.detail,
+        attachments: {
+          title: t.list.attachments,
+          download: t.list.download,
+          downloadFailed: c.errors.downloadFailed,
+        },
+        comments: {
+          title: t.list.comments,
+          empty: t.list.commentsEmpty,
+          placeholder: t.list.commentPlaceholder,
+          send: t.list.commentSend,
+        },
+        history: {
+          title: t.list.history,
+          empty: t.list.historyEmpty,
+          fieldLabels: t.list.fieldLabels,
+          changed: t.list.fieldChanged,
+          before: t.list.fieldBefore,
+          after: t.list.fieldAfter,
+          yes: t.list.fieldYes,
+          no: t.list.fieldNo,
+        },
+        userActions: {
+          edit: t.list.edit,
+          cancel: t.list.cancel,
+          cancelConfirm: t.list.cancelConfirm,
+          cancelReason: t.list.cancelReason,
+          cancelButton: t.list.cancelButton,
+        },
+        editForm: {
+          labels: {
+            companyName: f.companyName,
+            companyNamePlaceholder: f.companyNamePlaceholder,
+            contactName: f.contactName,
+            contactNamePlaceholder: f.contactNamePlaceholder,
+            contactEmail: f.contactEmail,
+            contactEmailPlaceholder: f.contactEmailPlaceholder,
+            jobTitle: f.jobTitle,
+            jobTitlePlaceholder: f.jobTitlePlaceholder,
+            description: f.description,
+            descriptionPlaceholder: f.descriptionPlaceholder,
+            salaryRange: f.salaryRange,
+            salaryRangePlaceholder: f.salaryRangePlaceholder,
+            location: f.location,
+            locationPlaceholder: f.locationPlaceholder,
+            isRemote: f.isRemote,
+            additionalNotes: f.additionalNotes,
+            additionalNotesPlaceholder: f.additionalNotesPlaceholder,
+          },
+          save: t.list.editSave,
+          discard: t.list.editCancel,
+          clearNotAllowed: t.list.editClearNotAllowed,
+          validation: f.validation,
+        },
+        errors: c.errors,
+        apiErrors: t.errors,
+      }}
+    />
+  </section>
+
+  <script>
+    import { openAuthDialog, wireAuthGate } from "../../../lib/auth";
+
+    wireAuthGate({ loadingId: "auth-loading", blockedId: "login-prompt", contentId: "offer-detail-section" });
+    document.getElementById("offers-sign-in")?.addEventListener("click", openAuthDialog);
+
+    // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
+    // Wake up the database (see hire-me.astro for details) — notification
+    // emails deep-link straight to this page.
+    fetch(`${import.meta.env.PUBLIC_API_URL || ""}/health`).catch(() => {});
+  </script>
+</Layout>

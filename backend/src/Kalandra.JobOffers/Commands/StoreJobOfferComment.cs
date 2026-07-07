@@ -9,6 +9,7 @@ public record StoreJobOfferCommentCommand(Guid JobOfferId, JobOfferCommentAdded 
 
 /// <summary>The stored comment plus the offer fields that notification planning and email bodies need.</summary>
 public record StoredJobOfferComment(
+    Guid JobOfferId,
     JobOfferCommentAdded Comment,
     Guid OfferAuthorUserId,
     Email OfferAuthorEmail,
@@ -28,6 +29,7 @@ public class StoreJobOfferCommentHandler(IDocumentSession session)
             return AddCommentError.NotAuthorized;
 
         var stored = new StoredJobOfferComment(
+            JobOfferId: command.JobOfferId,
             Comment: command.Comment,
             OfferAuthorUserId: offer.UserId,
             OfferAuthorEmail: offer.UserEmail,

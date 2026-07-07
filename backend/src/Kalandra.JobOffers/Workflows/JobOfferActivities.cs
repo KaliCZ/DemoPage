@@ -32,7 +32,7 @@ public class JobOfferActivities(
     public async Task SendSubmittedNotificationAsync(string recipientEmail, JobOfferSubmittedWorkflowInput input)
     {
         var ct = ActivityExecutionContext.Current.CancellationToken;
-        await emailSender.SendAsync(BuildSubmittedEmail(recipientEmail, input.Submitted), ct);
+        await emailSender.SendAsync(BuildSubmittedEmail(recipientEmail, input.JobOfferId, input.Submitted), ct);
     }
 
     [Activity]
@@ -57,12 +57,12 @@ public class JobOfferActivities(
         await emailSender.SendAsync(BuildCommentEmail(notification, stored), ct);
     }
 
-    private static EmailMessage BuildSubmittedEmail(string recipientEmail, JobOfferSubmitted submitted)
+    private static EmailMessage BuildSubmittedEmail(string recipientEmail, Guid jobOfferId, JobOfferSubmitted submitted)
     {
         var offerLabel = $"{submitted.JobTitle.Value} at {submitted.CompanyName.Value}";
         var subject = $"New job offer: {offerLabel}";
         var body = $"{submitted.ContactName.Value} ({submitted.ContactEmail.Value.Address}) submitted a job offer: " +
-            $"{offerLabel}.\n\n{submitted.Description.Value}\n\n{SiteUrl}/admin/job-offers";
+            $"{offerLabel}.\n\n{submitted.Description.Value}\n\n{AdminOfferUrl(jobOfferId)}";
 
         return new EmailMessage(new MailAddress(recipientEmail), subject.ToNonEmpty(), body.ToNonEmpty());
     }
@@ -75,12 +75,19 @@ public class JobOfferActivities(
         {
             JobOfferCommentNotificationKind.NewCommentForOwner => (
                 $"New comment on job offer: {offerLabel}",
-                $"{comment.UserName.Value} commented on the job offer {offerLabel}:\n\n{comment.Content.Value}\n\n{SiteUrl}/admin/job-offers"),
+                $"{comment.UserName.Value} commented on the job offer {offerLabel}:\n\n{comment.Content.Value}\n\n{AdminOfferUrl(stored.JobOfferId)}"),
             JobOfferCommentNotificationKind.NewCommentForOfferAuthor => (
                 $"New comment on your job offer: {offerLabel}",
-                $"{comment.UserName.Value} commented on your job offer {offerLabel}:\n\n{comment.Content.Value}\n\n{SiteUrl}/job-offers"),
+                $"{comment.UserName.Value} commented on your job offer {offerLabel}:\n\n{comment.Content.Value}\n\n{AuthorOfferUrl(stored.JobOfferId)}"),
         };
 
         return new EmailMessage(new MailAddress(notification.RecipientEmail), subject.ToNonEmpty(), body.ToNonEmpty());
     }
+
+    // Workflows in flight across the deploy that added JobOfferId replay it as Guid.Empty — fall back to the list page.
+    private static string AdminOfferUrl(Guid jobOfferId) =>
+        jobOfferId == Guid.Empty ? $"{SiteUrl}/admin/job-offers" : $"{SiteUrl}/admin/job-offers/detail?id={jobOfferId}";
+
+    private static string AuthorOfferUrl(Guid jobOfferId) =>
+        jobOfferId == Guid.Empty ? $"{SiteUrl}/job-offers" : $"{SiteUrl}/job-offers/detail?id={jobOfferId}";
 }

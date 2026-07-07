@@ -3,6 +3,18 @@
     "title": "Mé nabídky — kalandra.tech",
     "description": "Zobrazení odeslaných pracovních nabídek."
   },
+  "detailMeta": {
+    "title": "Detail nabídky — kalandra.tech",
+    "description": "Detail vaší odeslané pracovní nabídky."
+  },
+  "detail": {
+    "contact": "Kontakt",
+    "location": "Lokalita",
+    "salary": "Mzdové rozpětí",
+    "submittedOn": "Odesláno",
+    "description": "Popis",
+    "additionalNotes": "Další poznámky"
+  },
   "hero": {
     "title": "Mé nabídky",
     "subtitle": "Sledujte stav vašich odeslaných pracovních nabídek."
