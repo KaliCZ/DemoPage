@@ -6,21 +6,14 @@ ARG COMMIT_SHA=unknown
 ARG TARGETARCH
 WORKDIR /src
 
-# Copy only csproj files first so the restore layer is cached unless a
-# csproj actually changes.
-COPY src/Kalandra.Api/Kalandra.Api.csproj           src/Kalandra.Api/
-COPY src/Kalandra.Infrastructure/Kalandra.Infrastructure.csproj src/Kalandra.Infrastructure/
-COPY src/Kalandra.JobOffers/Kalandra.JobOffers.csproj src/Kalandra.JobOffers/
-
-RUN dotnet restore src/Kalandra.Api/Kalandra.Api.csproj -a $TARGETARCH
-
-# Copy the rest of the context (sources + root config such as .editorconfig, so
-# analyzer severities apply in-container). .dockerignore defines what's excluded.
+# Copy the whole context (.dockerignore is the blacklist of what to leave out)
+# and publish the API, which pulls in every project it references. Publishing the
+# API — not an enumerated project list — is what decides what gets built, so a
+# newly added project needs no change here.
 COPY . .
 RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -c Release \
     -a $TARGETARCH \
-    --no-restore \
     -o /app \
     -p:SourceRevisionId=$COMMIT_SHA
 
