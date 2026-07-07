@@ -414,9 +414,9 @@ sudo loginctl enable-linger "$USER"
 
 #### 3.3.2 Per-site TLS certificate
 
-For each hostname Caddy serves (here, `api.kalandra.tech` for demopage):
+Demopage serves two hostnames (`api.kalandra.tech` and `temporal.kalandra.tech`) with the one `kalandra.pem`/`kalandra.key` pair, so the certificate must cover both:
 
-1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostname `api.kalandra.tech`, 15-year validity, PEM format.
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostnames `*.kalandra.tech` + `kalandra.tech` (the dashboard's default), 15-year validity, PEM format. A pair issued for `api.kalandra.tech` alone fails Cloudflare's Full (strict) check on `temporal.kalandra.tech` — re-issue with the wildcard and overwrite the pair if you started single-hostname.
 2. Save the pair to `/srv/caddy/certs` (owned by `opc`, so no `sudo`), named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
 
 ```bash
@@ -607,13 +607,23 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 | `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
 | `SENTRY_CI_TOKEN` | Sentry **organization auth token** (scope `org:ci`) used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **Settings → Auth Tokens** (org level). Mapped to `SENTRY_AUTH_TOKEN` at build time. Omitting it silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
+| `SMTP_USERNAME` | Login for the SMTP relay that sends blog comment notifications |
+| `SMTP_PASSWORD` | Password for the SMTP relay |
+| `TEMPORAL_DB_USER` | Postgres role for Temporal's persistence — must be able to create databases on the first `deploy-temporal` run (`postgres` works) |
+| `TEMPORAL_DB_PASSWORD` | Password for that role |
 
-Plus these repository **variables** (Settings → Variables → Actions) used by the same source-map upload step:
+Plus these repository **variables** (Settings → Variables → Actions):
 
 | Variable | Value |
 |----------|-------|
-| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. |
-| `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project |
+| `SENTRY_ORG` | Sentry organisation slug (visible in the URL — `https://<org>.sentry.io`). Optional with an org auth token, which already carries the org. Used by the source-map upload step. |
+| `SENTRY_PROJECT` | Slug of the **frontend (Browser JavaScript)** project, for the same upload step |
+| `SMTP_HOST` | SMTP relay hostname — production refuses to start while this is `localhost` |
+| `SMTP_PORT` | SMTP relay port (typically `587`) |
+| `SMTP_FROM_EMAIL` | From address on notification mail (e.g. `blog@kalandra.tech`) |
+| `BLOG_AUTHOR_NOTIFICATION_EMAIL` | Mailbox that receives new-comment notifications — a real address, not `.local` |
+| `TEMPORAL_DB_HOST` | The `Host=` from `DB_CONNECTION_STRING` (`db.<project-ref>.supabase.co`) — the direct/session host, **not** the transaction pooler |
+| `TEMPORAL_DB_PORT` | `5432` |
 
 The org lives in Sentry's EU region (the DSN host is `ingest.de.sentry.io`), but no `SENTRY_URL` is
 set — the org auth token embeds its own region endpoint and the upload routes there automatically.
