@@ -13,5 +13,7 @@ public class FakeUserInfoService : IUserInfoService
             .Where(Profiles.ContainsKey)
             .ToDictionary(id => id, id => Profiles[id]));
 
+    public Task EvictAsync(Guid userId, CancellationToken ct) => Task.CompletedTask;
+
     public Task PingAsync(CancellationToken ct) => Task.CompletedTask;
 }

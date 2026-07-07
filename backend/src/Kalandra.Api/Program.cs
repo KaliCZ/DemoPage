@@ -13,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 Observability.Add(builder);
 
+ProductionConfigGuard.Validate(builder.Configuration, builder.Environment);
+
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -46,6 +48,7 @@ builder.Services.AddAppDataProtection();
 Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
+builder.Services.AddUserInfoCache(builder.Configuration);
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile(builder.Environment);
 builder.Services.AddAuthAdminServices();

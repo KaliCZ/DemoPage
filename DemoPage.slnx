@@ -7,6 +7,7 @@
   <Project Path="backend/tests/Kalandra.Api.IntegrationTests/Kalandra.Api.IntegrationTests.csproj" />
   <Project Path="backend/tests/Kalandra.Blog.Tests/Kalandra.Blog.Tests.csproj" />
   <Project Path="backend/tests/Kalandra.JobOffers.Tests/Kalandra.JobOffers.Tests.csproj" />
+  <Project Path="backend/tests/Kalandra.Infrastructure.Tests/Kalandra.Infrastructure.Tests.csproj" />
   <Folder Name="/docs/">
     <File Path="docs/SETUP.md" />
     <File Path="CLAUDE.md" />

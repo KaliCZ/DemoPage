@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E test for the blog reactions + comments flow against the real backend:
@@ -42,6 +46,12 @@ const driftUser = {
   fullName: "E2E Drift User",
 };
 
+const avatarChangeUser = {
+  email: `e2e-blog-avatar-${Date.now()}@test.local`,
+  password: "test-password-123",
+  fullName: "E2E Avatar Change User",
+};
+
 /** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
 async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
   const query = `to:"${to}" "${containing}"`;
@@ -63,7 +73,7 @@ test.describe("Blog Flow", () => {
   let sharedCommentText = "";
 
   test.beforeAll(async ({ request }) => {
-    for (const user of [testUser, replyingUser, driftUser]) {
+    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser]) {
       const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
         headers: {
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -248,5 +258,73 @@ test.describe("Blog Flow", () => {
       // Toggle back so this probe leaves reaction counts untouched.
       await request.post(`${API_URL}/api/blog/${slug}/reactions/toggle`, { headers, data: { kind: "ThumbsUp" } });
     }
+  });
+
+  test("a profile picture change shows on the author's past blog comments", async ({ page }) => {
+    const portrait200 = path.join(__dirname, "..", "..", "public", "images", "pavel-portrait-200.webp");
+    const portrait400 = path.join(__dirname, "..", "..", "public", "images", "pavel-portrait-400.webp");
+
+    const signIn = ({ email, password }: { email: string; password: string }) =>
+      page.evaluate(
+        async ({ email, password }) => {
+          const supabase = await (window as any).__supabaseReady;
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw new Error(`Sign-in failed: ${error.message}`);
+        },
+        { email, password },
+      );
+
+    // Wait for the profile page's eviction ping so the upload has fully applied
+    // (preview updated + server cache dropped) before we read the URL or navigate away.
+    const uploadAvatar = async (file: string) => {
+      const evicted = page.waitForResponse((r) => r.url().includes("/api/users/me/refresh") && r.request().method() === "POST");
+      await page.locator("#avatar-file-input").setInputFiles(file);
+      await evicted;
+      return page.locator("#avatar-preview-img").getAttribute("src");
+    };
+
+    // Sign in on the profile page and set an initial avatar.
+    await page.goto("/profile");
+    await signIn(avatarChangeUser);
+    await expect(page.locator("#avatar-change-btn")).toBeVisible();
+    await uploadAvatar(portrait200);
+
+    // Post a comment, then reload so it renders from the server with the resolved avatar.
+    await page.goto(POST_PATH);
+    const comments = page.locator('section[aria-label="Comments"]');
+    const commentText = `E2E avatar-change ${Date.now()}`;
+    await comments.getByRole("textbox").fill(commentText);
+    await comments.getByRole("button", { name: "Post comment" }).click();
+    await expect(comments.locator("li").filter({ hasText: commentText }).first()).toBeVisible();
+
+    await page.reload();
+    const firstAvatar = page
+      .locator('section[aria-label="Comments"]')
+      .locator("li")
+      .filter({ hasText: commentText })
+      .first()
+      .locator("img")
+      .first();
+    await expect(firstAvatar).toBeVisible();
+    const firstSrc = await firstAvatar.getAttribute("src");
+    expect(firstSrc).toContain("/storage/v1/object/public/avatars/");
+
+    // Change the avatar; the profile page evicts this user's server-side cache.
+    await page.goto("/profile");
+    await expect(page.locator("#avatar-change-btn")).toBeVisible();
+    const newAvatarSrc = await uploadAvatar(portrait400);
+    expect(newAvatarSrc).not.toBe(firstSrc);
+
+    // Revisit the post — the past comment reflects the new avatar, not the cached one.
+    await page.goto(POST_PATH);
+    const finalAvatar = page
+      .locator('section[aria-label="Comments"]')
+      .locator("li")
+      .filter({ hasText: commentText })
+      .first()
+      .locator("img")
+      .first();
+    await expect(finalAvatar).toBeVisible();
+    await expect.poll(async () => finalAvatar.getAttribute("src"), { timeout: 10000 }).toBe(newAvatarSrc);
   });
 });

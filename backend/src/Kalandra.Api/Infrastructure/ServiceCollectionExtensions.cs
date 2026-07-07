@@ -12,6 +12,8 @@ using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
 using Marten;
 using Marten.Services;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Temporalio.Extensions.Hosting;
 
 namespace Kalandra.Api.Infrastructure;
@@ -119,7 +121,13 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IStorageService, SupabaseStorageService>();
-        services.AddSingleton<IUserInfoService, SupabaseUserInfoService>();
+
+        // The source is built inside the factory (not as its own registration) so a test swapping
+        // IUserInfoService for a fake doesn't leave a stray source that fails DI validation.
+        services.AddSingleton<IUserInfoService>(sp => new CachingUserInfoService(
+            ActivatorUtilities.CreateInstance<SupabaseUserInfoService>(sp),
+            sp.GetRequiredService<IDistributedCache>(),
+            sp.GetRequiredService<ILogger<CachingUserInfoService>>()));
 
         return services;
     }
@@ -181,6 +189,18 @@ public static class ServiceCollectionExtensions
         services.AddHostedTemporalWorker(BlogTaskQueue.Name)
             .AddScopedActivities<BlogCommentActivities>()
             .AddWorkflow<BlogCommentWorkflow>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddUserInfoCache(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Redis when configured; otherwise an in-process distributed cache so tests and a bare run need no Redis.
+        var redis = configuration.GetConnectionString("redis");
+        if (string.IsNullOrWhiteSpace(redis))
+            services.AddDistributedMemoryCache();
+        else
+            services.AddStackExchangeRedisCache(options => options.Configuration = redis);
 
         return services;
     }

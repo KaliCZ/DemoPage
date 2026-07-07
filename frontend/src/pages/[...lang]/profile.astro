@@ -198,6 +198,20 @@ const t = translations[lang];
       return div.innerHTML;
     }
 
+    // Drop this user's cached profile on the backend so a name/avatar change shows on their past
+    // comments immediately instead of waiting out the cache TTL.
+    async function refreshServerUserCache() {
+      try {
+        var token = await window.__getAccessToken?.();
+        if (!token) return;
+        await fetch(apiUrl + "/api/users/me/refresh", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+          keepalive: true, // still fires if the user navigates away right after saving
+        });
+      } catch {}
+    }
+
     window.addEventListener("auth-change", function (e) {
       var user = e.detail?.user;
       var loginPrompt = document.getElementById("login-prompt");
@@ -511,6 +525,7 @@ const t = translations[lang];
           data: { full_name: newName },
         });
         if (result.error) throw result.error;
+        await refreshServerUserCache();
 
         window.observability?.track("display-name-updated");
         window.__showSnackbar?.(strings.displayName.success, "success");
@@ -668,7 +683,7 @@ const t = translations[lang];
 
         // Build public URL with cache-busting timestamp
         var { data: urlData } = supabase.storage.from("avatars").getPublicUrl(storagePath);
-        var avatarUrl = urlData.publicUrl + "?t=" + Math.floor(Date.now() / 1000);
+        var avatarUrl = urlData.publicUrl + "?t=" + Date.now();
 
         // Update user metadata with new avatar URL
         var { error: updateError } = await supabase.auth.updateUser({
@@ -700,6 +715,7 @@ const t = translations[lang];
           delete uiCache[currentUser.id];
           localStorage.setItem("userInfoCache", JSON.stringify(uiCache));
         } catch {}
+        await refreshServerUserCache();
 
         window.observability?.track("avatar-updated");
         window.__showSnackbar?.(strings.avatar.success, "success");
