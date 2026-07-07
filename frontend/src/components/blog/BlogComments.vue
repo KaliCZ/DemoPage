@@ -131,6 +131,9 @@ function startReply(comment: CommentDto) {
   composer.value?.focus();
 }
 
+// Reused across retries of the current draft so a resend dedupes into one comment server-side.
+let pendingCommentId: string | null = null;
+
 async function submit() {
   const content = draft.value.trim();
   if (!content || submitting.value) return;
@@ -138,6 +141,7 @@ async function submit() {
   // Latch before the first await so a rapid second click can't race in behind
   // the token fetch and post the comment twice.
   submitting.value = true;
+  pendingCommentId ??= crypto.randomUUID();
   try {
     const token = await authToken();
     if (!token) {
@@ -148,7 +152,7 @@ async function submit() {
     const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ content, parentCommentId: replyTo.value?.id ?? null }),
+      body: JSON.stringify({ commentId: pendingCommentId, content, parentCommentId: replyTo.value?.id ?? null }),
     });
     if (res.status === 429) {
       (window as any).__showSnackbar?.(props.t.rateLimited, "error", 8000);
@@ -170,6 +174,7 @@ async function submit() {
     comments.value = [...comments.value, created];
     draft.value = "";
     replyTo.value = null;
+    pendingCommentId = null;
   } catch {
     (window as any).__showSnackbar?.(props.t.postError, "error", 8000);
   } finally {

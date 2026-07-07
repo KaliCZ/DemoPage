@@ -97,8 +97,12 @@ public class BlogController(
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
 
+        // Client-supplied so an accidental resend reuses it and the workflow dedupes to one
+        // comment; we mint one only when a caller omits it.
+        var commentId = request.CommentId is { } id && id != Guid.Empty ? id : Guid.NewGuid();
+
         var comment = new BlogCommentPosted(
-            CommentId: Guid.NewGuid(),
+            CommentId: commentId,
             ParentCommentId: request.ParentCommentId,
             UserId: AppUser.Id,
             UserEmail: AppUser.Email,

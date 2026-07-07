@@ -191,6 +191,28 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     [Fact]
+    public async Task PostComment_ResentWithTheSameClientId_IsStoredOnce()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "dedupe@test.com");
+        var commentId = Guid.NewGuid();
+
+        // An accidental resend (double-submit, retry) carries the same client-generated id.
+        var first = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { commentId, content = "Only once" }, Ct);
+        var second = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { commentId, content = "Only once" }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var firstId = (await ParseJsonAsync(first)).GetProperty("id").GetString();
+        var secondId = (await ParseJsonAsync(second)).GetProperty("id").GetString();
+        Assert.Equal(commentId.ToString(), firstId);
+        Assert.Equal(firstId, secondId);
+
+        var comments = (await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/comments", Ct))).GetProperty("comments");
+        Assert.Equal(1, comments.GetArrayLength());
+    }
+
+    [Fact]
     public async Task Comments_AreReadableAnonymously_AsAThread()
     {
         var slug = NewSlug();
