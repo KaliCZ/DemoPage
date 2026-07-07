@@ -229,10 +229,22 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
 
     <!-- Composer -->
     <div v-if="viewerChecked && viewerId" class="mb-10">
-      <div v-if="replyTo" class="flex items-center gap-2 mb-2 text-sm font-label text-on-surface-variant">
-        <span>{{ props.t.replyingTo }} {{ replyTo.authorDisplayName }}</span>
-        <button type="button" class="text-primary hover:underline cursor-pointer" @click="replyTo = null">
-          {{ props.t.cancel }}
+      <div v-if="replyTo" class="mb-2 flex items-start gap-2 rounded-lg border-l-4 border-primary bg-surface-container-low py-2 pr-2 pl-3">
+        <div class="min-w-0 flex-1">
+          <p class="font-label text-xs font-semibold text-primary">{{ props.t.replyingTo }} {{ replyTo.authorDisplayName }}</p>
+          <p class="mt-0.5 line-clamp-3 font-body text-sm text-on-surface-variant break-words whitespace-pre-line">
+            {{ replyTo.content }}
+          </p>
+        </div>
+        <button
+          type="button"
+          :aria-label="props.t.cancel"
+          class="shrink-0 rounded-md p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface cursor-pointer"
+          @click="replyTo = null"
+        >
+          <svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true">
+            <path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6z" />
+          </svg>
         </button>
       </div>
       <textarea
@@ -242,6 +254,8 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         rows="3"
         maxlength="5000"
         class="w-full rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3 font-body text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary/50 focus:outline-none resize-y"
+        @keydown.enter.ctrl.prevent="submit"
+        @keydown.enter.meta.prevent="submit"
       ></textarea>
       <div class="flex justify-end mt-2">
         <button
