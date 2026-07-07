@@ -692,6 +692,12 @@ const t = translations[lang];
 
         if (updateError) throw updateError;
 
+        // Evict the server cache now, in parallel with the session refresh below —
+        // issued this early (and with keepalive), it still lands if the tab closes
+        // right after saving. Must stay after updateUser: evicting sooner would let
+        // a concurrent read re-cache the old profile.
+        var serverCacheRefreshed = refreshServerUserCache();
+
         // Update preview immediately — avatarUrl is already confirmed by the
         // successful upload + metadata update above, so we don't need to wait
         // for getUser() to reflect it.
@@ -715,7 +721,7 @@ const t = translations[lang];
           delete uiCache[currentUser.id];
           localStorage.setItem("userInfoCache", JSON.stringify(uiCache));
         } catch {}
-        await refreshServerUserCache();
+        await serverCacheRefreshed;
 
         window.observability?.track("avatar-updated");
         window.__showSnackbar?.(strings.avatar.success, "success");
