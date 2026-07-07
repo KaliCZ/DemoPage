@@ -27,6 +27,10 @@ public sealed class BlogPostCatalog : IBlogPostCatalog
                 Slug: BlogPostSlug.TryCreate("zero-code-validations-in-your-dotnet-api")!.Value,
                 CommentsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000c0"),
                 ReactionsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000e0")),
+            new BlogPost(
+                Slug: BlogPostSlug.TryCreate("hello-world")!.Value,
+                CommentsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000c0"),
+                ReactionsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000e0")),
         }.ToDictionary(post => post.Slug.Value, StringComparer.Ordinal);
 
     public BlogPost? Find(BlogPostSlug slug) => Posts.GetValueOrDefault(slug.Value);
