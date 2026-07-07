@@ -443,6 +443,8 @@ const c = commonTranslations[lang];
 
     async function showDetail(id, skipHashUpdate) {
       currentOfferId = id;
+      // The retry-dedup comment id must not leak onto a different offer's draft.
+      pendingCommentId = null;
       if (!skipHashUpdate) history.pushState(null, "", "#" + id);
       document.getElementById("offers-list-section")?.classList.add("hidden");
       document.getElementById("offer-detail-section")?.classList.remove("hidden");
@@ -802,12 +804,16 @@ const c = commonTranslations[lang];
       await showDetail(currentOfferId);
     });
 
+    // Reused across retries of the current draft so a resend dedupes into one comment server-side.
+    var pendingCommentId = null;
+
     // Send comment
     async function sendComment() {
       var input = document.getElementById("comment-input");
       var content = input?.value?.trim();
       if (!content || !currentOfferId) return;
 
+      pendingCommentId = pendingCommentId || crypto.randomUUID();
       try {
         var res = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
           method: "POST",
@@ -815,7 +821,7 @@ const c = commonTranslations[lang];
             "Content-Type": "application/json",
             Authorization: "Bearer " + currentToken,
           },
-          body: JSON.stringify({ content: content }),
+          body: JSON.stringify({ content: content, commentId: pendingCommentId }),
         });
       } catch (e) {
         showError();
@@ -824,6 +830,7 @@ const c = commonTranslations[lang];
 
       if (res.ok) {
         if (input) input.value = "";
+        pendingCommentId = null;
         var commentsRes = await fetch(apiUrl + "/api/job-offers/" + currentOfferId + "/comments", {
           headers: { Authorization: "Bearer " + currentToken },
         });

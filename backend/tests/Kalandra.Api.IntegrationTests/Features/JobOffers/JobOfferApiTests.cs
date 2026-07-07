@@ -107,6 +107,41 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task Create_ResentWithTheSameClientId_IsStoredOnce()
+    {
+        Authenticate(email: "create-dedupe@test.com");
+        var offerId = Guid.NewGuid();
+
+        // An accidental resend (double-submit, retry) carries the same client-generated id.
+        var first = await client.PostAsync("/api/job-offers",
+            CreateValidFormContent(overrides: new() { ["Id"] = offerId.ToString() }), Ct);
+        var second = await client.PostAsync("/api/job-offers",
+            CreateValidFormContent(overrides: new() { ["Id"] = offerId.ToString() }), Ct);
+
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, second.StatusCode);
+        Assert.Equal(offerId.ToString(), (await ParseJsonAsync(first)).GetProperty("id").GetString());
+        Assert.Equal(offerId.ToString(), (await ParseJsonAsync(second)).GetProperty("id").GetString());
+
+        var mine = await ParseJsonAsync(await client.GetAsync("/api/job-offers/mine", Ct));
+        Assert.Equal(1, mine.GetProperty("items").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Create_WithAnotherUsersOfferId_Returns400_WithoutLeakingTheOffer()
+    {
+        var (id, _) = await CreateOfferAs("id-owner@test.com");
+
+        Authenticate(email: "id-thief@test.com");
+        var response = await client.PostAsync("/api/job-offers",
+            CreateValidFormContent(overrides: new() { ["Id"] = id }), Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await ParseJsonAsync(response);
+        Assert.Equal("IdAlreadyUsed", problem.GetProperty("errors").GetProperty("Id")[0].GetString());
+    }
+
+    [Fact]
     public async Task Edit_WithFieldOverMaxLength_Returns400_WithFieldError()
     {
         var (id, _) = await CreateOfferAs("editmax@test.com");
@@ -161,6 +196,25 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             Ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddComment_ResentWithTheSameClientId_IsStoredOnce()
+    {
+        var (id, _) = await CreateOfferAs("comment-dedupe@test.com");
+        var commentId = Guid.NewGuid();
+
+        // An accidental resend (double-submit, retry) carries the same client-generated id.
+        var first = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { commentId, content = "Only once" }, Ct);
+        var second = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { commentId, content = "Only once" }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.Equal(commentId.ToString(), (await ParseJsonAsync(first)).GetProperty("id").GetString());
+        Assert.Equal(commentId.ToString(), (await ParseJsonAsync(second)).GetProperty("id").GetString());
+
+        var comments = (await ParseJsonAsync(await client.GetAsync($"/api/job-offers/{id}/comments", Ct))).GetProperty("comments");
+        Assert.Equal(1, comments.GetArrayLength());
     }
 
     [Fact]

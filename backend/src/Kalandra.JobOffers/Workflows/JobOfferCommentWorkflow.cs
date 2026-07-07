@@ -33,20 +33,23 @@ public class JobOfferCommentWorkflow
     {
         await Workflow.WaitConditionAsync(() => storeOutcome != null);
 
-        if (storeOutcome!.Stored is not { } stored)
-            return; // rejected by domain validation — nothing to notify
+        if (storeOutcome!.Stored is { } stored)
+        {
+            var notifications = await Workflow.ExecuteActivityAsync(
+                (JobOfferActivities activities) => activities.PlanCommentNotifications(stored),
+                Options);
 
-        var notifications = await Workflow.ExecuteActivityAsync(
-            (JobOfferActivities activities) => activities.PlanCommentNotifications(stored),
-            Options);
+            // One activity per email so a failed send retries on its own instead of re-delivering the rest.
+            var sends = notifications
+                .Select(notification => Workflow.ExecuteActivityAsync(
+                    (JobOfferActivities activities) => activities.SendCommentNotificationAsync(notification, stored),
+                    Options))
+                .ToList();
+            await Task.WhenAll(sends);
+        }
 
-        // One activity per email so a failed send retries on its own instead of re-delivering the rest.
-        var sends = notifications
-            .Select(notification => Workflow.ExecuteActivityAsync(
-                (JobOfferActivities activities) => activities.SendCommentNotificationAsync(notification, stored),
-                Options))
-            .ToList();
-        await Task.WhenAll(sends);
+        // Closing while a late client-retry update is still storing would abort it with an RPC error.
+        await Workflow.WaitConditionAsync(() => Workflow.AllHandlersFinished);
     }
 
     [WorkflowUpdate]

@@ -10,6 +10,7 @@ namespace Kalandra.JobOffers.Commands;
 
 public record AddCommentCommand(
     Guid JobOfferId,
+    Guid CommentId,
     CurrentUser User,
     NonEmptyString Content,
     DateTimeOffset Timestamp);
@@ -24,7 +25,7 @@ public class AddCommentHandler(ITemporalClient temporalClient)
         AddCommentCommand command, CancellationToken ct)
     {
         var comment = new JobOfferCommentAdded(
-            CommentId: Guid.NewGuid(),
+            CommentId: command.CommentId,
             UserId: command.User.Id,
             UserEmail: command.User.Email,
             UserName: command.User.FullName,
@@ -37,7 +38,7 @@ public class AddCommentHandler(ITemporalClient temporalClient)
             (JobOfferCommentWorkflow workflow) => workflow.RunAsync(input),
             new(id: JobOfferCommentWorkflow.IdFor(comment.CommentId), taskQueue: JobOffersTaskQueue.Name)
             {
-                // An internal RPC retry reattaches instead of failing.
+                // A client retry of the same request reattaches instead of failing.
                 IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
             });
 

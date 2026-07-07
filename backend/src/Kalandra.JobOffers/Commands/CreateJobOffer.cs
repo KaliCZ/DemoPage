@@ -19,6 +19,7 @@ public record CreateJobOfferFile(
     Stream Content);
 
 public record CreateJobOfferCommand(
+    Guid Id,
     CurrentUser User,
     NonEmptyString CompanyName,
     NonEmptyString ContactName,
@@ -68,7 +69,7 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
             return CreateJobOfferError.DisallowedContentType;
 
         // Upload attachments
-        var streamId = Guid.NewGuid();
+        var streamId = command.Id;
         var uploadedAttachments = new List<AttachmentInfo>();
 
         if (command.Files.Count > 0)
@@ -110,7 +111,7 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
             (JobOfferSubmittedWorkflow workflow) => workflow.RunAsync(input),
             new(id: JobOfferSubmittedWorkflow.IdFor(streamId), taskQueue: JobOffersTaskQueue.Name)
             {
-                // An internal RPC retry reattaches instead of failing.
+                // A client retry of the same request reattaches instead of failing.
                 IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
             });
 

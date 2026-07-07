@@ -17,7 +17,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - **Backend**: ASP.NET Core (.NET 10) with Marten (event sourcing), deployed to Oracle Cloud
 - **Auth**: Supabase Auth (email/password + Google OAuth)
 - **Database**: PostgreSQL (Supabase in production, Docker locally)
-- **Background workflows**: [Temporal](https://temporal.io) — durable store-and-notify for blog comments (self-hosted)
+- **Background workflows**: [Temporal](https://temporal.io) — durable store-and-notify email notifications for blog comments and job offers (self-hosted)
 - **Observability**: [Sentry](https://sentry.io) for errors, traces, and logs (backend via the OpenTelemetry bridge; frontend via the CDN loader script behind a provider-agnostic abstraction)
 - **CI/CD**: GitHub Actions
 

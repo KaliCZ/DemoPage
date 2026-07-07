@@ -15,7 +15,7 @@ import csCommon from "../../i18n/cs/common.json";
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
 
-export const pageMeta: PageMeta = { updatedDate: "2026-05-23" };
+export const pageMeta: PageMeta = { updatedDate: "2026-07-07" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({
@@ -376,6 +376,7 @@ const tocItems = [
                 const isFaded = "faded" in version && version.faded;
                 const hasPricing = "pricingTable" in version && version.pricingTable;
                 const hasDetails = "details" in version && version.details;
+                const hasTime = "time" in version && version.time;
                 const hasDates = "dates" in version && version.dates;
 
                 const versionContent = (
@@ -392,15 +393,16 @@ const tocItems = [
                     <h3 class:list={["font-headline text-2xl font-bold text-on-surface", version.done ? "mb-2" : "mb-4"]}>
                       {version.title}
                     </h3>
-                    {"time" in version && version.time && (
+                    {(hasTime || hasDates) && (
                       <p
                         class:list={[
                           "font-label text-xs text-on-surface-variant",
                           "nextTime" in version && version.nextTime ? "mb-1" : "mb-4",
                         ]}
                       >
-                        {version.time}
-                        {hasDates && <span class="text-on-surface-variant"> · {version.dates}</span>}
+                        {hasTime && version.time}
+                        {hasTime && hasDates && " · "}
+                        {hasDates && version.dates}
                       </p>
                     )}
                     {"nextTime" in version && version.nextTime && (

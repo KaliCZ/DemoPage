@@ -39,6 +39,9 @@ public class JobOfferSubmittedWorkflow
                 Options))
             .ToList();
         await Task.WhenAll(sends);
+
+        // Closing while a late client-retry update is still storing would abort it with an RPC error.
+        await Workflow.WaitConditionAsync(() => Workflow.AllHandlersFinished);
     }
 
     [WorkflowUpdate]
