@@ -92,7 +92,7 @@ public class JobOffersController(
             Files: files,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await createHandler.CreateAndSave(command, ct);
+        var result = await createHandler.Create(command, ct);
 
         if (result.Error is { } error)
         {
@@ -255,7 +255,7 @@ public class JobOffersController(
             Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await addCommentHandler.AddAndSave(command, ct);
+        var result = await addCommentHandler.Add(command, ct);
 
         if (result.Error is { } error)
         {

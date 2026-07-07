@@ -625,6 +625,82 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(AdminUserId.ToString(), commentArray[0].GetProperty("userId").GetString());
     }
 
+    // ───── Notification emails (via the Temporal workflows) ─────
+
+    [Fact]
+    public async Task Create_NotifiesTheOwner()
+    {
+        var marker = $"Owner should hear about this offer {Guid.NewGuid():N}";
+        Authenticate("submitter@test.com");
+        var content = CreateValidFormContent(overrides: new() { ["Description"] = marker });
+
+        var response = await client.PostAsync("/api/job-offers", content, Ct);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var email = Assert.Single(await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1));
+        Assert.Equal("owner@kalandra.local", email.To.Address);
+        Assert.Equal("New job offer: Senior Developer at Acme Corp", email.Subject.Value);
+        Assert.Contains("john@acme.com", email.TextBody.Value);
+        Assert.Contains("https://www.kalandra.tech/admin/job-offers", email.TextBody.Value);
+    }
+
+    [Fact]
+    public async Task OfferAuthorsComment_NotifiesOnlyTheOwner()
+    {
+        var (id, _) = await CreateOfferAs("commenting-author@test.com");
+
+        var marker = $"Author asking for an update {Guid.NewGuid():N}";
+        var response = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { content = marker }, Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1);
+        // Grace period: a wrong extra notification would arrive moments later.
+        await Task.Delay(1500, Ct);
+        emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(marker))];
+
+        var email = Assert.Single(emails);
+        Assert.Equal("owner@kalandra.local", email.To.Address);
+        Assert.StartsWith("New comment on job offer", email.Subject.Value);
+        Assert.Contains("https://www.kalandra.tech/admin/job-offers", email.TextBody.Value);
+    }
+
+    [Fact]
+    public async Task OwnersComment_NotifiesOnlyTheOfferAuthor()
+    {
+        var (id, _) = await CreateOfferAs("notified-author@test.com");
+
+        AuthenticateAs(AdminUserId, "owner@kalandra.local", isAdmin: true);
+        var marker = $"Owner replying to the offer {Guid.NewGuid():N}";
+        var response = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { content = marker }, Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1);
+        // Grace period: a wrong extra notification would arrive moments later.
+        await Task.Delay(1500, Ct);
+        emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(marker))];
+
+        var email = Assert.Single(emails);
+        Assert.Equal("notified-author@test.com", email.To.Address);
+        Assert.StartsWith("New comment on your job offer", email.Subject.Value);
+        Assert.Contains("https://www.kalandra.tech/job-offers", email.TextBody.Value);
+    }
+
+    [Fact]
+    public async Task NonOwnerAdminsComment_NotifiesOwnerAndOfferAuthor()
+    {
+        var (id, _) = await CreateOfferAs("watched-author@test.com");
+
+        AuthenticateAs(AdminUserId, "second-admin@test.com", isAdmin: true);
+        var marker = $"Second admin chiming in {Guid.NewGuid():N}";
+        var response = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { content = marker }, Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 2);
+        Assert.Equal(2, emails.Length);
+        Assert.Contains(emails, m => m.To.Address == "owner@kalandra.local");
+        Assert.Contains(emails, m => m.To.Address == "watched-author@test.com");
+    }
+
     // ───── Attachments ─────
 
     [Fact]
@@ -673,6 +749,20 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     // ───── Helpers ─────
 
     private static readonly Guid AdminUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+    private async Task<Kalandra.Infrastructure.Email.EmailMessage[]> WaitForEmailsAsync(
+        Func<Kalandra.Infrastructure.Email.EmailMessage, bool> predicate, int expectedCount)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(20);
+        while (DateTime.UtcNow < deadline)
+        {
+            var matches = factory.EmailSender.Sent.Where(predicate).ToArray();
+            if (matches.Length >= expectedCount)
+                return matches;
+            await Task.Delay(200, Ct);
+        }
+        return [.. factory.EmailSender.Sent.Where(predicate)];
+    }
 
     private Guid Authenticate(
         string email = "test@example.com",
