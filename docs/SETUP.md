@@ -607,7 +607,7 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (public, mapped to `PUBLIC_TURNSTILE_SITE_KEY` at frontend build time) |
 | `BACKEND_SENTRY_DSN` | DSN from the Sentry **backend (.NET)** project — written to `Sentry__Dsn` at deploy time. **Required in production**; the API throws on startup if it's missing. |
 | `SENTRY_CI_TOKEN` | Sentry **organization auth token** (scope `org:ci`) used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **Settings → Auth Tokens** (org level). Mapped to `SENTRY_AUTH_TOKEN` at build time. Omitting it silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
-| `SMTP_USERNAME` | Login for the SMTP relay that sends blog comment notifications |
+| `SMTP_USERNAME` | Login for the SMTP relay that sends notification emails (blog comments, job offers) |
 | `SMTP_PASSWORD` | Password for the SMTP relay |
 | `TEMPORAL_DB_USER` | Postgres role for Temporal's persistence — must be able to create databases on the first `deploy-temporal` run (`postgres` works) |
 | `TEMPORAL_DB_PASSWORD` | Password for that role |
@@ -621,7 +621,8 @@ Plus these repository **variables** (Settings → Variables → Actions):
 | `SMTP_HOST` | SMTP relay hostname — production refuses to start while this is `localhost` |
 | `SMTP_PORT` | SMTP relay port (typically `587`) |
 | `SMTP_FROM_EMAIL` | From address on notification mail (e.g. `blog@kalandra.tech`) |
-| `BLOG_AUTHOR_NOTIFICATION_EMAIL` | Mailbox that receives new-comment notifications — a real address, not `.local` |
+| `BLOG_AUTHOR_NOTIFICATION_EMAIL` | Mailbox that receives blog new-comment notifications — a real address, not `.local` |
+| `JOB_OFFERS_OWNER_NOTIFICATION_EMAIL` | Mailbox that receives job-offer notifications (new offers and comments) — a real address, not `.local` |
 | `TEMPORAL_DB_HOST` | The `Host=` from `DB_CONNECTION_STRING` (`db.<project-ref>.supabase.co`) — the direct/session host, **not** the transaction pooler |
 | `TEMPORAL_DB_PORT` | `5432` |
 

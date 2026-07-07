@@ -14,7 +14,7 @@
     "statusLabel": "Status",
     "statusValue": "Usable MVP",
     "versionLabel": "Current Version",
-    "versionValue": "v2.0",
+    "versionValue": "v4.0",
     "timeLabel": "Rollout Time",
     "timeValue": "32 hours",
     "timeNote": "See roadmap for breakdown.",
@@ -34,8 +34,7 @@
     "architecture": "Architecture",
     "decisions": "Architecture Decisions",
     "roadmap": "Roadmap",
-    "lessonsLearned": "Lessons Learned",
-    "openQuestions": "Open Questions"
+    "lessonsLearned": "Lessons Learned"
   },
   "techStack": {
     "title": "Engineered With",
@@ -280,10 +279,10 @@
         "context": "Need a testing approach that provides high confidence with minimal mocking, covering the full stack from API endpoints to database.",
         "decision": "Three layers of testing, all running in parallel in CI/CD. Each blocks deployment on failure.",
         "why": [
-          "Backend integration tests (main focus): xUnit + Testcontainers — real PostgreSQL, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, external services like Slack/email will be mocked), but the database is real so most functionality is easy to assert",
+          "Backend integration tests (main focus): xUnit + Testcontainers — real PostgreSQL and a real Temporal dev server, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, outbound email is captured by an in-memory fake and asserted), but the database is real so most functionality is easy to assert",
           "Backend unit tests: for domain logic and pure functions where integration tests would be overkill",
           "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, and dark mode",
-          "E2E tests: Playwright against the full running application — working auth, working DB, everything real. Only external systems like Slack and email can't be asserted",
+          "E2E tests: Playwright against the full running application — working auth, working DB, everything real. Only truly external side effects like actual email delivery can't be asserted",
           "CI/CD: All three test suites run in parallel, all block deployment on failure"
         ]
       }
@@ -300,6 +299,7 @@
         "verdict": "Would probably do it again just for the setup simplicity on personal projects. Not on commercial projects with real budgets.",
         "observations": [
           "Free PostgreSQL is cool and worth it on its own",
+          "Temporal's persistence fits into the same Supabase PostgreSQL (temporal + temporal_visibility databases) — no extra database to run",
           {
             "text": "Auth has some rough edges — e.g. email provider issues",
             "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605",
@@ -330,20 +330,6 @@
         "observations": [
           "Already had places where a router would help — e.g. shared header, footer, and auth status across pages",
           "SSG is simpler for deploy setup, but in real circumstances you just pay for the infrastructure and don't worry about it"
-        ]
-      }
-    ]
-  },
-  "openQuestions": {
-    "title": "Open Questions",
-    "items": [
-      {
-        "title": "Temporal + Supabase Database",
-        "description": "Temporal requires its own database. Pointing it at the Supabase PostgreSQL might eat into the free tier's connection, storage, and egress limits.",
-        "options": [
-          "Use Supabase PostgreSQL for Temporal — monitor quota usage",
-          "Run a separate SQLite or PostgreSQL instance on the VPS for Temporal",
-          "Fall back to Azure Queue Storage if Temporal overhead is too high"
         ]
       }
     ]
@@ -439,17 +425,36 @@
         "number": 3,
         "title": "Emails, Slack & Observability",
         "done": false,
-        "faded": true,
-        "description": "Email confirmations and Slack notifications on job offer submissions and status changes. Full observability stack: Sentry for errors, traces, and logs, PostHog for product analytics.",
+        "description": "Partially shipped: email notifications are live (Temporal-backed, see v4) and Sentry covers errors, traces, and logs. Remaining: Slack notifications, emails on status changes, and PostHog product analytics.",
         "side": "left"
       },
       {
         "number": 4,
         "title": "Background Tasks",
-        "done": false,
-        "faded": true,
-        "description": "Move emails and notifications into background processing. Self-hosted Temporal on the backend VPS with retry semantics. Fallback: Azure Queue Storage.",
-        "side": "right"
+        "done": true,
+        "dates": "Jul 7, 2026",
+        "description": "Emails and notifications run as durable background workflows: self-hosted Temporal on the backend VPS with retry semantics, persisting into the Supabase PostgreSQL. Storing a comment or job offer and sending its notifications share one workflow — neither happens without the other.",
+        "side": "right",
+        "detailsLabel": "What was done",
+        "details": [
+          {
+            "author": "claude",
+            "text": "Self-hosted Temporal server on the VPS, persisting into the Supabase PostgreSQL"
+          },
+          {
+            "author": "claude",
+            "text": "Durable store-and-notify workflows with retries: blog comments, job offer submissions, and job offer comments all notify the right people by email"
+          },
+          {
+            "author": "claude",
+            "text": "Temporal Web UI at temporal.kalandra.tech behind Cloudflare Access"
+          },
+          { "author": "pavel", "text": "Brevo SMTP relay and Cloudflare Access setup" },
+          {
+            "author": "claude",
+            "text": "Aspire runs a local Temporal dev server; integration tests assert the delivered emails against a real one via Testcontainers"
+          }
+        ]
       },
       {
         "number": 5,

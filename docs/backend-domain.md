@@ -1,6 +1,6 @@
 # Domain Layer
 
-The domain layer owns the business. It lives in `backend/src/Kalandra.JobOffers/` and is the only place where business rules, invariants, and event shapes are defined. It has no reference to ASP.NET Core and does not know what HTTP is. Its dependencies are `Marten` (event store) and `Kalandra.Infrastructure` (cross-cutting types like `CurrentUser`, `IStorageService`).
+The domain layer owns the business. It lives in the domain projects (`backend/src/Kalandra.JobOffers/`, `backend/src/Kalandra.Blog/`) and is the only place where business rules, invariants, and event shapes are defined. It has no reference to ASP.NET Core and does not know what HTTP is. Its dependencies are `Marten` (event store), `Temporalio` (durable workflows, see `docs/backend-architecture.md` → "Background workflows"), and `Kalandra.Infrastructure` (cross-cutting types like `CurrentUser`, `IStorageService`). This doc uses `Kalandra.JobOffers` as the running example.
 
 ## Table of contents
 
@@ -31,7 +31,7 @@ A handler's validation is the **last line of defence**. The API layer may reject
 
 ## Commands, queries, handlers
 
-- **Commands** mutate state. Their return type is `Result<TSuccess, TError>` where `TSuccess` is either the new stream ID (on create) or the updated aggregate (on edit/cancel/change-status). They take an `IDocumentSession` (read-write).
+- **Commands** mutate state. Their return type is `Result<TSuccess, TError>` where `TSuccess` is either the new stream ID (on create) or the updated aggregate (on edit/cancel/change-status). They take an `IDocumentSession` (read-write). Commands that also notify (create offer, add comment, post blog comment) instead take an `ITemporalClient` and drive a durable workflow whose store activity owns the write.
 - **Queries** read state. They return `T?` (null for not-found or not-authorized) or a result record. They take an `IQuerySession` (read-only).
 - Both are registered as `Scoped` in `ServiceRegistration.AddJobOffersDomain()`.
 - The command / query / handler live in the **same file** with matching names: `CreateJobOffer.cs` holds `CreateJobOfferCommand`, `CreateJobOfferError`, and `CreateJobOfferHandler`.

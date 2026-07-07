@@ -14,7 +14,7 @@
     "statusLabel": "Stav",
     "statusValue": "Použitelné MVP",
     "versionLabel": "Aktuální verze",
-    "versionValue": "v2.0",
+    "versionValue": "v4.0",
     "timeLabel": "Čas nasazení",
     "timeValue": "32 hodin",
     "timeNote": "Viz roadmap pro rozpis.",
@@ -34,8 +34,7 @@
     "architecture": "Architektura",
     "decisions": "Architektonická rozhodnutí",
     "roadmap": "Plán vývoje",
-    "lessonsLearned": "Poučení z projektu",
-    "openQuestions": "Otevřené otázky"
+    "lessonsLearned": "Poučení z projektu"
   },
   "techStack": {
     "title": "Postaveno na",
@@ -280,10 +279,10 @@
         "context": "Potřebujeme testovací přístup, který poskytuje vysokou jistotu s minimem mockování a pokrývá celý stack od API endpointů po databázi.",
         "decision": "Tři vrstvy testování, všechny běží paralelně v CI/CD. Každá blokuje deployment při selhání.",
         "why": [
-          "Backend integrační testy (hlavní zaměření): xUnit + Testcontainers — reálný PostgreSQL, celé API přes WebApplicationFactory. Mockovat co nejméně (auth je mockovaný, externí služby jako Slack/email budou mockované), ale databáze je reálná, takže většinu funkcionality lze snadno ověřit",
+          "Backend integrační testy (hlavní zaměření): xUnit + Testcontainers — reálný PostgreSQL a reálný Temporal dev server, celé API přes WebApplicationFactory. Mockovat co nejméně (auth je mockovaný, odchozí emaily zachytává in-memory fake a testy je ověřují), ale databáze je reálná, takže většinu funkcionality lze snadno ověřit",
           "Backend unit testy: pro doménovou logiku a čisté funkce, kde by integrační testy byly zbytečně složité",
           "Frontend page testy: Playwright — builduje statický web, ověřuje renderování, navigaci, i18n a dark mode",
-          "E2E testy: Playwright proti celé běžící aplikaci — fungující auth, fungující DB, vše reálné. Pouze externí systémy jako Slack a email nelze ověřit",
+          "E2E testy: Playwright proti celé běžící aplikaci — fungující auth, fungující DB, vše reálné. Pouze skutečně externí efekty jako reálné doručení emailu nelze ověřit",
           "CI/CD: Všechny tři testovací sady běží paralelně, všechny blokují deployment při selhání"
         ]
       }
@@ -300,6 +299,7 @@
         "verdict": "Asi bych to udělal znovu pro jednoduchost nastavení u osobních projektů. Ne u komerčních projektů se skutečným rozpočtem.",
         "observations": [
           "PostgreSQL zdarma je super a samo o sobě stojí za to",
+          "Persistence Temporalu se vešla do stejné Supabase PostgreSQL (databáze temporal a temporal_visibility) — žádná další databáze navíc",
           {
             "text": "Auth má některé hrubé hrany — např. problémy s email providerem",
             "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605",
@@ -330,20 +330,6 @@
         "observations": [
           "Už teď byly místa, kde by pomohl router — např. sdílený header, footer a auth status napříč stránkami",
           "SSG je jednodušší pro nastavení deploye, ale v reálných podmínkách prostě zaplatíte za infrastrukturu a neřešíte to"
-        ]
-      }
-    ]
-  },
-  "openQuestions": {
-    "title": "Otevřené otázky",
-    "items": [
-      {
-        "title": "Temporal + Supabase databáze",
-        "description": "Temporal vyžaduje vlastní databázi. Napojení na Supabase PostgreSQL by mohlo vyčerpat limity free tieru pro připojení, úložiště a egress.",
-        "options": [
-          "Použít Supabase PostgreSQL pro Temporal — monitorovat využití kvóty",
-          "Spustit samostatnou SQLite nebo PostgreSQL instanci na VPS pro Temporal",
-          "Přejít na Azure Queue Storage, pokud je režie Temporalu příliš vysoká"
         ]
       }
     ]
@@ -439,17 +425,36 @@
         "number": 3,
         "title": "Emaily, Slack a observabilita",
         "done": false,
-        "faded": true,
-        "description": "Emailová potvrzení a Slack notifikace při podání pracovních nabídek a změnách stavu. Kompletní observability stack: Sentry pro chyby, traces a logy, PostHog pro produktovou analytiku.",
+        "description": "Částečně hotovo: emailové notifikace běží (přes Temporal, viz v4) a Sentry pokrývá chyby, traces a logy. Zbývá: Slack notifikace, emaily při změnách stavu a PostHog produktová analytika.",
         "side": "left"
       },
       {
         "number": 4,
         "title": "Úlohy na pozadí",
-        "done": false,
-        "faded": true,
-        "description": "Přesun emailů a notifikací do zpracování na pozadí. Self-hosted Temporal na backend VPS s retry sémantikou. Záloha: Azure Queue Storage.",
-        "side": "right"
+        "done": true,
+        "dates": "7. 7. 2026",
+        "description": "Emaily a notifikace běží jako durable workflow na pozadí: self-hosted Temporal na backend VPS s retry sémantikou, persistence v Supabase PostgreSQL. Uložení komentáře či pracovní nabídky a rozeslání notifikací sdílí jeden workflow — jedno se nestane bez druhého.",
+        "side": "right",
+        "detailsLabel": "Co se udělalo",
+        "details": [
+          {
+            "author": "claude",
+            "text": "Self-hosted Temporal server na VPS, persistence v Supabase PostgreSQL"
+          },
+          {
+            "author": "claude",
+            "text": "Durable store-and-notify workflow s retry: komentáře na blogu, podání pracovních nabídek i komentáře k nabídkám notifikují správné lidi emailem"
+          },
+          {
+            "author": "claude",
+            "text": "Temporal Web UI na temporal.kalandra.tech za Cloudflare Access"
+          },
+          { "author": "pavel", "text": "Brevo SMTP relay a nastavení Cloudflare Access" },
+          {
+            "author": "claude",
+            "text": "Aspire spouští lokální Temporal dev server; integrační testy ověřují doručené emaily proti skutečnému přes Testcontainers"
+          }
+        ]
       },
       {
         "number": 5,
