@@ -1,10 +1,9 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import IconRss from "../../../components/icons/IconRss.astro";
+import BlogRssLink from "../../../components/BlogRssLink.astro";
 import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import type { PageMeta } from "../../../lib/page-meta";
 import { publishedPosts, resolveVariant } from "../../../blog/posts";
-import { feed } from "../../../blog/feeds";
 import enStrings from "../../../i18n/en/blog.json";
 import csStrings from "../../../i18n/cs/blog.json";
 
@@ -35,14 +34,7 @@ const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "
       <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">
         {t.index.subtitle}
       </p>
-      <a
-        href={feed.path}
-        title={t.index.rssTitle}
-        class="inline-flex items-center gap-2 mt-6 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
-      >
-        <IconRss class="w-4 h-4 text-tertiary" />
-        {t.index.rssLabel}
-      </a>
+      <BlogRssLink label={t.rss.label} title={t.rss.title} class="mt-6" />
     </div>
 
     {posts.length === 0 && <p class="font-body text-on-surface-variant">{t.index.empty}</p>}

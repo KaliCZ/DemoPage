@@ -9,12 +9,14 @@
     "empty": "No posts yet. The first one is on its way.",
     "publishedOn": "Published",
     "updatedOn": "Updated",
-    "rssLabel": "Subscribe via RSS",
-    "rssTitle": "RSS feed of all posts",
     "language": {
       "en": "English",
       "cs": "Czech"
     }
+  },
+  "rss": {
+    "label": "Subscribe via RSS",
+    "title": "RSS feed of all posts"
   },
   "post": {
     "backToBlog": "All posts",

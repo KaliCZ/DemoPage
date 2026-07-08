@@ -1,0 +1,21 @@
+---
+import IconRss from "./icons/IconRss.astro";
+import { feed } from "../blog/feeds";
+
+interface Props {
+  label: string;
+  title: string;
+  class?: string;
+}
+
+const { label, title, class: className } = Astro.props;
+---
+
+<a
+  href={feed.path}
+  title={title}
+  class:list={["inline-flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors", className]}
+>
+  <IconRss class="w-4 h-4 text-tertiary" />
+  {label}
+</a>

@@ -9,12 +9,14 @@
     "empty": "Zatím tu žádné články nejsou. První je na cestě.",
     "publishedOn": "Publikováno",
     "updatedOn": "Aktualizováno",
-    "rssLabel": "Odebírat přes RSS",
-    "rssTitle": "RSS kanál všech článků",
     "language": {
       "en": "Anglicky",
       "cs": "Česky"
     }
+  },
+  "rss": {
+    "label": "Odebírat přes RSS",
+    "title": "RSS kanál všech článků"
   },
   "post": {
     "backToBlog": "Všechny články",
