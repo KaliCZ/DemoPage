@@ -24,8 +24,10 @@ public class BlogController(
     ToggleBlogReactionHandler toggleReactionHandler,
     PostBlogCommentHandler postCommentHandler,
     DeleteBlogCommentHandler deleteCommentHandler,
+    RecordBlogPostReadHandler recordReadHandler,
     GetBlogReactionsHandler getReactionsHandler,
-    GetBlogCommentsHandler getCommentsHandler) : ControllerBase
+    GetBlogCommentsHandler getCommentsHandler,
+    GetBlogPostStatsHandler getStatsHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
@@ -66,6 +68,44 @@ public class BlogController(
 
         var reactions = await toggleReactionHandler.ToggleAndSave(command, ct);
         return GetBlogReactionsResponse.Serialize(reactions, AppUser.Id);
+    }
+
+    // ───── Reads ─────
+
+    [HttpPost("reads")]
+    [EnableRateLimiting(RateLimitPolicies.BlogWrite)]
+    [ProducesResponseType<RecordBlogPostReadResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RecordBlogPostReadResponse>> RecordRead(string slug, CancellationToken ct)
+    {
+        if (postCatalog.Find(slug) is not { } post)
+            return NotFound();
+
+        var command = new RecordBlogPostReadCommand(
+            ReadsStreamId: post.ReadsStreamId,
+            UserId: AppUser.Id,
+            Timestamp: timeProvider.GetUtcNow());
+
+        var previousReadCount = await recordReadHandler.RecordAndSave(command, ct);
+        return new RecordBlogPostReadResponse(previousReadCount);
+    }
+
+    // ───── Stats ─────
+
+    /// <summary>Batch stats for the blog index; the absolute route sidesteps the class-level {slug} template.</summary>
+    [HttpGet("/api/blog/stats")]
+    [AllowAnonymous]
+    [ProducesResponseType<GetBlogStatsResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetBlogStatsResponse>> GetStats(
+        [FromQuery(Name = "slug")] string[] slugs,
+        CancellationToken ct)
+    {
+        // Unknown slugs are dropped, not errors — the frontend owns the post list and may briefly lead the catalog.
+        var posts = slugs.Distinct(StringComparer.Ordinal).Select(postCatalog.Find).OfType<BlogPost>().ToArray();
+
+        var stats = await getStatsHandler.List(new GetBlogPostStatsQuery(posts, currentUser.User?.Id), ct);
+        return GetBlogStatsResponse.Serialize(stats);
     }
 
     // ───── Comments ─────

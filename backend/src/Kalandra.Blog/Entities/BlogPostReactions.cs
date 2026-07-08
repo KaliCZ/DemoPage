@@ -21,6 +21,9 @@ public class BlogPostReactions
     public int CountOf(BlogReactionKind kind) =>
         ReactionsByUser.Values.Count(kinds => kinds.Contains(kind));
 
+    public int TotalCount() =>
+        ReactionsByUser.Values.Sum(kinds => kinds.Count);
+
     public IReadOnlyCollection<BlogReactionKind> KindsOf(Guid userId) =>
         ReactionsByUser.TryGetValue(userId, out var kinds) ? kinds : [];
 

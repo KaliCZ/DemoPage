@@ -157,6 +157,121 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(HttpStatusCode.BadRequest, numberResponse.StatusCode);
     }
 
+    // ───── Reads ─────
+
+    [Fact]
+    public async Task RecordRead_WithoutAuth_Returns401()
+    {
+        SignOut();
+
+        var response = await client.PostAsync($"/api/blog/{NewSlug()}/reads", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordRead_CountsEveryViewOfTheSameUser()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "rereader@test.com");
+
+        foreach (var expectedPreviousCount in new[] { 0, 1, 2 })
+        {
+            var response = await client.PostAsync($"/api/blog/{slug}/reads", content: null, Ct);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var json = await ParseJsonAsync(response);
+            Assert.Equal(expectedPreviousCount, json.GetProperty("previousReadCount").GetInt32());
+        }
+    }
+
+    [Fact]
+    public async Task RecordRead_IsCountedPerUser()
+    {
+        var slug = NewSlug();
+
+        Authenticate(userId: Guid.NewGuid(), email: "reader-one@test.com");
+        await client.PostAsync($"/api/blog/{slug}/reads", content: null, Ct);
+        await client.PostAsync($"/api/blog/{slug}/reads", content: null, Ct);
+
+        Authenticate(userId: Guid.NewGuid(), email: "reader-two@test.com");
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/reads", content: null, Ct));
+
+        Assert.Equal(0, response.GetProperty("previousReadCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordRead_IsIsolatedPerSlug()
+    {
+        Authenticate(email: "slug-hopper@test.com");
+        await client.PostAsync($"/api/blog/{NewSlug()}/reads", content: null, Ct);
+
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{NewSlug()}/reads", content: null, Ct));
+
+        Assert.Equal(0, response.GetProperty("previousReadCount").GetInt32());
+    }
+
+    // ───── Stats ─────
+
+    [Fact]
+    public async Task Stats_AggregatesReadsAndReactionsPerPost()
+    {
+        var slugA = NewSlug();
+        var slugB = NewSlug();
+        var viewerId = Guid.NewGuid();
+
+        Authenticate(userId: viewerId, email: "stats-viewer@test.com");
+        await client.PostAsync($"/api/blog/{slugA}/reads", content: null, Ct);
+        await client.PostAsync($"/api/blog/{slugA}/reads", content: null, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Heart" }, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Rocket" }, Ct);
+
+        Authenticate(userId: Guid.NewGuid(), email: "stats-other@test.com");
+        await client.PostAsync($"/api/blog/{slugA}/reads", content: null, Ct);
+
+        Authenticate(userId: viewerId, email: "stats-viewer@test.com");
+        var response = await client.GetAsync($"/api/blog/stats?slug={slugA}&slug={slugB}", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var posts = (await ParseJsonAsync(response)).GetProperty("posts");
+        Assert.Equal(2, posts.GetArrayLength());
+
+        var statsA = FindPostStats(posts, slugA);
+        Assert.Equal(3, statsA.GetProperty("totalReads").GetInt32());
+        Assert.Equal(2, statsA.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(2, statsA.GetProperty("viewerReads").GetInt32());
+
+        var statsB = FindPostStats(posts, slugB);
+        Assert.Equal(0, statsB.GetProperty("totalReads").GetInt32());
+        Assert.Equal(0, statsB.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(0, statsB.GetProperty("viewerReads").GetInt32());
+    }
+
+    [Fact]
+    public async Task Stats_Anonymous_SeesTotalsButNoViewerReads()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "stats-anon-seed@test.com");
+        await client.PostAsync($"/api/blog/{slug}/reads", content: null, Ct);
+
+        SignOut();
+        var response = await client.GetAsync($"/api/blog/stats?slug={slug}", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var stats = FindPostStats((await ParseJsonAsync(response)).GetProperty("posts"), slug);
+        Assert.Equal(1, stats.GetProperty("totalReads").GetInt32());
+        Assert.Equal(JsonValueKind.Null, stats.GetProperty("viewerReads").ValueKind);
+    }
+
+    [Fact]
+    public async Task Stats_RepeatedSlug_ReturnsOneEntry()
+    {
+        SignOut();
+        var slug = NewSlug();
+
+        var response = await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}&slug={slug}", Ct));
+
+        Assert.Equal(1, response.GetProperty("posts").GetArrayLength());
+    }
+
     // ───── Comments ─────
 
     [Fact]
@@ -493,6 +608,16 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
     /// <summary>Unique per test — the factory shares one database across the class.</summary>
     private static string NewSlug() => $"post-{Guid.NewGuid():N}";
+
+    private static JsonElement FindPostStats(JsonElement posts, string slug)
+    {
+        foreach (var post in posts.EnumerateArray())
+        {
+            if (post.GetProperty("slug").GetString() == slug)
+                return post;
+        }
+        throw new InvalidOperationException($"Stats response has no entry for slug '{slug}'");
+    }
 
     private void Authenticate(Guid? userId = null, string email = "test@example.com", bool isAdmin = false)
     {

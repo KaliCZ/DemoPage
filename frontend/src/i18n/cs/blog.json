@@ -12,7 +12,18 @@
     "language": {
       "en": "Anglicky",
       "cs": "Česky"
-    }
+    },
+    "sortLabel": "Seřadit podle",
+    "sortRecent": "Nejnovější",
+    "sortReactions": "Nejvíce reakcí",
+    "sortViews": "Nejvíce zobrazení",
+    "unreadOnly": "Jen nepřečtené",
+    "unreadEmpty": "Všechny články už máte přečtené.",
+    "statViews": "Zobrazení",
+    "statReactions": "Reakce",
+    "paginationPrev": "Předchozí",
+    "paginationNext": "Další",
+    "paginationPage": "Stránka {current} z {total}"
   },
   "rss": {
     "label": "Odebírat přes RSS",
@@ -23,6 +34,12 @@
     "publishedOn": "Publikováno",
     "updatedOn": "Aktualizováno",
     "readingTime": "{min} min čtení"
+  },
+  "readState": {
+    "notReadYet": "Zatím nepřečteno",
+    "readOnce": "Přečteno 1×",
+    "readTimes": "Přečteno {count}×",
+    "signInHint": "Po přihlášení uvidíte, které články jste už četli."
   },
   "reactions": {
     "heading": "Byl článek užitečný?",

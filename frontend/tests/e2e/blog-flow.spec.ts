@@ -58,6 +58,13 @@ const pendingReactionUser = {
   fullName: "E2E Pending Reaction User",
 };
 
+// Fresh per run so the read-count progression asserted below is deterministic.
+const readTrackingUser = {
+  email: `e2e-blog-reader-${Date.now()}@test.local`,
+  password: "test-password-123",
+  fullName: "E2E Read Tracking User",
+};
+
 /** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
 async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
   const query = `to:"${to}" "${containing}"`;
@@ -79,7 +86,7 @@ test.describe("Blog Flow", () => {
   let sharedCommentText = "";
 
   test.beforeAll(async ({ request }) => {
-    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser, pendingReactionUser]) {
+    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser, pendingReactionUser, readTrackingUser]) {
       const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
         headers: {
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -165,6 +172,49 @@ test.describe("Blog Flow", () => {
 
     await expect(heart).toHaveAttribute("aria-pressed", "true");
     await expect(heart.locator("span").nth(1)).toHaveText(String(countBefore + 1));
+  });
+
+  test("read tracking counts the reader's views and drives the index unread filter", async ({ page }) => {
+    // Signed out: the post shows the tracking hint, the index hides the unread filter.
+    await page.goto(POST_PATH);
+    await expect(page.getByText("Sign in to track your reading.")).toBeVisible();
+    await page.goto("/blog");
+    await expect(page.locator("#blog-sort")).toBeVisible();
+    await expect(page.locator("#blog-unread-filter")).toHaveCount(0);
+
+    // First signed-in view records a read but reports the state before it.
+    await page.goto(POST_PATH);
+    await page.evaluate(
+      async ({ email, password }) => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) throw new Error("Supabase client not available");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(`Sign-in failed: ${error.message}`);
+      },
+      { email: readTrackingUser.email, password: readTrackingUser.password },
+    );
+    await expect(page.getByText("Not read yet")).toBeVisible();
+    await expect(page.getByText("Sign in to track your reading.")).not.toBeVisible();
+
+    // Every page load is one read; the label always shows the count so far.
+    await page.reload();
+    await expect(page.getByText("Read once")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("Read 2 times")).toBeVisible();
+
+    // The index card reflects all three recorded reads and the unread filter drops it.
+    await page.goto("/blog");
+    const readCard = page.locator("ul[role=list] > li").filter({ hasText: "Zero-Code Validations" });
+    await expect(readCard.getByText("Read 3 times")).toBeVisible();
+    await expect(page.locator("#blog-unread-filter")).toBeVisible();
+    await page.locator("#blog-unread-filter input").check();
+    await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Hello, World/ })).toBeVisible();
+    await page.locator("#blog-unread-filter input").uncheck();
+
+    // Sorting by views puts the post with recorded reads first.
+    await page.locator("#blog-sort").selectOption("views");
+    await expect(page.locator("ul[role=list] > li").first().locator("h2")).toContainText("Zero-Code Validations");
   });
 
   test("signed-in user reacts, comments, replies, and deletes", async ({ page, request }) => {

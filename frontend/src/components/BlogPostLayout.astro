@@ -4,6 +4,7 @@ import Layout from "../layouts/Layout.astro";
 import BlogRssLink from "./BlogRssLink.astro";
 import BlogReactions from "./blog/BlogReactions.vue";
 import BlogComments from "./blog/BlogComments.vue";
+import BlogReadStatus from "./blog/BlogReadStatus.vue";
 import { locales, localePath, type Locale } from "../i18n/utils";
 import { postLocales, type BlogPostMetadata } from "../blog/types";
 import enBlog from "../i18n/en/blog.json";
@@ -92,6 +93,12 @@ const readingTimeLabel = t.post.readingTime.replace("{min}", String(readingMinut
           )
         }
       </p>
+      <!-- Personal read tracking: signed-in readers get their count from the island;
+           signed-out ones get a static hint (same tier handling as blog-signin-hint). -->
+      <p class="font-label text-sm text-on-surface-variant mt-1">
+        <span id="blog-read-tracking-hint" class="signed-out-only">{t.readState.signInHint}</span>
+        <BlogReadStatus client:idle apiUrl={apiUrl} slug={slug} t={t.readState} />
+      </p>
       {
         metadata.tags.length > 0 && (
           <ul class="flex flex-wrap gap-2 mt-4" role="list">
@@ -146,8 +153,8 @@ const readingTimeLabel = t.post.readingTime.replace("{min}", String(readingMinut
 
     window.addEventListener("auth-change", (event) => {
       const signedIn = !!(event as CustomEvent).detail?.user;
-      document.getElementById("blog-signin-hint")?.classList.toggle("hidden", signedIn);
-      document.getElementById("blog-signin-cta")?.classList.toggle("hidden", signedIn);
+      for (const id of ["blog-signin-hint", "blog-read-tracking-hint", "blog-signin-cta"])
+        document.getElementById(id)?.classList.toggle("hidden", signedIn);
     });
   </script>
 </Layout>

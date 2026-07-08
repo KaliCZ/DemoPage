@@ -15,7 +15,8 @@ public sealed class TestBlogPostCatalog : IBlogPostCatalog
     public BlogPost? Find(string slug) => new(
         slug,
         CommentsStreamId: DeriveId(slug, "comments"),
-        ReactionsStreamId: DeriveId(slug, "reactions"));
+        ReactionsStreamId: DeriveId(slug, "reactions"),
+        ReadsStreamId: DeriveId(slug, "reads"));
 
     private static Guid DeriveId(string slug, string kind)
     {

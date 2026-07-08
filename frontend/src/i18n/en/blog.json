@@ -12,7 +12,18 @@
     "language": {
       "en": "English",
       "cs": "Czech"
-    }
+    },
+    "sortLabel": "Sort by",
+    "sortRecent": "Most recent",
+    "sortReactions": "Most reactions",
+    "sortViews": "Most views",
+    "unreadOnly": "Unread only",
+    "unreadEmpty": "You've read every post.",
+    "statViews": "Views",
+    "statReactions": "Reactions",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "paginationPage": "Page {current} of {total}"
   },
   "rss": {
     "label": "Subscribe via RSS",
@@ -23,6 +34,12 @@
     "publishedOn": "Published",
     "updatedOn": "Updated",
     "readingTime": "{min} min read"
+  },
+  "readState": {
+    "notReadYet": "Not read yet",
+    "readOnce": "Read once",
+    "readTimes": "Read {count} times",
+    "signInHint": "Sign in to track your reading."
   },
   "reactions": {
     "heading": "Was this useful?",
