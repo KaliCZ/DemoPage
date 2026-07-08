@@ -45,14 +45,15 @@ Every route page lives in `pages/[...lang]/` and uses Astro's rest parameter to 
 ## Styling
 
 - **Utility classes in markup** — the default. Use Tailwind classes directly on elements.
-- **`global.css`** — design tokens (`--color-*`, `--font-*`), base element resets, and dark mode overrides. This is the design system, not a dumping ground.
+- **`theme.css`** — the design system: every `--color-*` and `--font-*` token, light values plus the `.dark` overrides. All app colors (header, footer, forms, code blocks) resolve from here — never hardcode a color elsewhere.
+- **`global.css`** — base element resets, font loading, and shared component styling that consume the tokens. Not a dumping ground.
 - **Scoped `<style>` in components** — for component-specific styles that can't be expressed as utilities (complex selectors, animations, pseudo-elements).
 
 Avoid a separate CSS file per component. Astro's scoped `<style>` handles isolation.
 
 ## Dark mode
 
-Uses `.dark` class toggled on `<html>`. CSS custom properties in `global.css` are overridden under `.dark`. Flash prevention: `Layout.astro` applies `.no-transitions` on load and removes it after a frame.
+Uses `.dark` class toggled on `<html>`. CSS custom properties in `theme.css` are overridden under `.dark`. Flash prevention: `Layout.astro` applies `.no-transitions` on load and removes it after a frame.
 
 All new UI must work in both modes. Use the semantic colour tokens (`bg-background`, `text-on-surface`, etc.) rather than hardcoded colours.
 
@@ -86,7 +87,7 @@ Posts are first-class Astro pages, not a CMS — git is the source of truth.
 - **A post declares its languages** via `variants` — English-only, Czech-only, or both. Each declared language gets its own title/summary and its own route (`/blog/<slug>`, `/cs/blog/<slug>`); undeclared languages get nothing (no route, no feed item, no sitemap URL, no hreflang claim). Declare a language only when title, summary, AND body are written in it — no half-translations.
 - Bilingual bodies live in the same post file, switched with `lang === "cs" ? <Fragment>…</Fragment> : <Fragment>…</Fragment>`; code snippets stay shared (code comments remain English by convention).
 - `draft: true` keeps a post in git but out of the build entirely — no page, no feed entry, no sitemap entry.
-- Wrap the content in `BlogPostLayout`; use `<BlogCode>` (`src/components/BlogCode.astro`) for snippets — it owns the shared syntax-highlight theme (`src/lib/code-theme.ts`), whose colors are `--code-*` variables that `global.css` aliases to design tokens, so blocks match the palette and flip with `.dark` automatically. Don't pass per-post themes. The layout narrows hreflang to the declared languages and points the language picker at the translated post, or at the blog index when no translation exists.
+- Wrap the content in `BlogPostLayout`; use `<BlogCode>` (`src/components/BlogCode.astro`) for snippets — it owns the shared syntax-highlight theme (`src/lib/code-theme.ts`), whose colors are `--code-*` variables that `theme.css` aliases to design tokens, so blocks match the palette and flip with `.dark` automatically. Don't pass per-post themes. The layout narrows hreflang to the declared languages and points the language picker at the translated post, or at the blog index when no translation exists.
 - The index lists every post at both locales; an entry without a variant in the current language shows its own language's title with a language chip and links across (`lang`/`hreflang` attributes mark the foreign text).
 - One feed at `/rss.xml` for the whole blog (identity in `src/blog/feeds.ts`), summary-only, advertised via `<link rel="alternate">` on every page. One item per post: since RSS has no per-item language field, each item title is prefixed with its language tags (`[EN]`, `[CS]`, or `[EN]/[CS]`) and a bilingual post shows both titles (`[EN]/[CS] English / Czech`, default locale first). The item links to its default-locale page (the post carries the language switcher); the description is the default-locale summary. Per-language feeds were tried and dropped — for a mostly-English personal blog, one feed a reader subscribes to once beats making them choose a language edition.
 
