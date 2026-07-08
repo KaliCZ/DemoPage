@@ -11,8 +11,8 @@ public class StoreJobOfferHandler(IDocumentSession session)
 {
     public async Task<Result<Guid, CreateJobOfferError>> StoreAndSave(StoreJobOfferCommand command, CancellationToken ct)
     {
-        // Idempotent under Temporal activity retries and client resends: the submitter's
-        // own offer already in the store is a success, never started twice.
+        // Ids are client-minted per draft, so the same user resending one is a retry of the
+        // same offer (a no-op success) — any other user is claiming an id that isn't theirs.
         if (await session.LoadAsync<JobOffer>(command.JobOfferId, ct) is { } existing)
             return existing.UserId == command.Submitted.UserId
                 ? command.JobOfferId
