@@ -45,14 +45,15 @@ Every route page lives in `pages/[...lang]/` and uses Astro's rest parameter to 
 ## Styling
 
 - **Utility classes in markup** — the default. Use Tailwind classes directly on elements.
-- **`global.css`** — design tokens (`--color-*`, `--font-*`), base element resets, and dark mode overrides. This is the design system, not a dumping ground.
+- **`theme.css`** — the design system: every `--color-*` and `--font-*` token, light values plus the `.dark` overrides. All app colors (header, footer, forms, code blocks) resolve from here — never hardcode a color elsewhere.
+- **`global.css`** — base element resets, font loading, and shared component styling that consume the tokens. Not a dumping ground.
 - **Scoped `<style>` in components** — for component-specific styles that can't be expressed as utilities (complex selectors, animations, pseudo-elements).
 
 Avoid a separate CSS file per component. Astro's scoped `<style>` handles isolation.
 
 ## Dark mode
 
-Uses `.dark` class toggled on `<html>`. CSS custom properties in `global.css` are overridden under `.dark`. Flash prevention: `Layout.astro` applies `.no-transitions` on load and removes it after a frame.
+Uses `.dark` class toggled on `<html>`. CSS custom properties in `theme.css` are overridden under `.dark`. Flash prevention: `Layout.astro` applies `.no-transitions` on load and removes it after a frame.
 
 All new UI must work in both modes. Use the semantic colour tokens (`bg-background`, `text-on-surface`, etc.) rather than hardcoded colours.
 

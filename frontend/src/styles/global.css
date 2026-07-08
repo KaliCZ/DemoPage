@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Design tokens (colors + fonts, light and dark) live in theme.css; this file
+   holds base styles and shared component styling that consume them. */
+@import "./theme.css";
+
 /* Bind Tailwind's `dark:` variant to the `.dark` class on <html>, not the
    `prefers-color-scheme` media query. Our design tokens in this file are
    scoped to `.dark`, so the variant must match — otherwise `dark:` utilities
@@ -92,60 +96,6 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* ============================================
-   Design System: "The Digital Architect"
-   Based on Stitch export + DESIGN.md
-   ============================================ */
-
-@theme {
-  /* --- Light Mode Colors (default) — warm cream palette --- */
-  --color-background: #fdfcf9;
-  --color-surface: #fdfcf9;
-  --color-surface-container-lowest: #fdfcf9;
-  --color-surface-container-low: #faf6ec;
-  --color-surface-container: #f7f2e3;
-  --color-surface-container-high: #f2ecdb;
-  --color-surface-container-highest: #f0e9d4;
-  --color-surface-variant: #e0dfe8;
-  --color-surface-dim: #dbd7d3;
-  --color-surface-bright: #f9f7f3;
-
-  --color-on-surface: #1a1a1a;
-  --color-on-surface-variant: #45464f;
-  --color-on-background: #1b1b1f;
-
-  --color-primary: #4858ab;
-  --color-primary-container: #dee0ff;
-  --color-on-primary: #ffffff;
-  --color-on-primary-container: #00105b;
-  --color-primary-fixed: #dee0ff;
-  --color-primary-fixed-dim: #bac3ff;
-  --color-inverse-primary: #bac3ff;
-
-  --color-secondary: #535f67;
-  --color-secondary-container: #d7e4ec;
-  --color-on-secondary: #ffffff;
-
-  --color-tertiary: #006a6a;
-  --color-tertiary-container: #93f2f2;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-fixed-dim: #76d6d5;
-
-  --color-outline: #767680;
-  --color-outline-variant: #b0b0be;
-
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-
-  --color-inverse-surface: #313030;
-  --color-inverse-on-surface: #f4f0ef;
-
-  /* --- Typography --- */
-  --font-headline: "Manrope", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-label: "Space Grotesk", sans-serif;
-}
-
 /* Base styles */
 body {
   font-family: var(--font-body);
@@ -205,53 +155,6 @@ details > summary + * {
   ::view-transition-new(root) {
     animation: none;
   }
-}
-
-/* ============================================
-   Dark Mode Overrides
-   Applied when <html class="dark">
-   ============================================ */
-.dark {
-  --color-background: #0a0a0a;
-  --color-surface: #0a0a0a;
-  --color-surface-container-lowest: #0d0d0d;
-  --color-surface-container-low: #171717;
-  --color-surface-container: #1c1c1c;
-  --color-surface-container-high: #252525;
-  --color-surface-container-highest: #2f2f2f;
-  --color-surface-variant: #353534;
-  --color-surface-dim: #131313;
-  --color-surface-bright: #393939;
-
-  --color-on-surface: #e5e2e1;
-  --color-on-surface-variant: #c5c5d4;
-  --color-on-background: #e5e2e1;
-
-  --color-primary: #bac3ff;
-  --color-primary-container: #4453a7;
-  --color-on-primary: #15267b;
-  --color-on-primary-container: #c9cfff;
-  --color-primary-fixed: #dee0ff;
-  --color-primary-fixed-dim: #bac3ff;
-  --color-inverse-primary: #4858ab;
-
-  --color-secondary: #bbc8d0;
-  --color-secondary-container: #3c494f;
-  --color-on-secondary: #263238;
-
-  --color-tertiary: #76d6d5;
-  --color-tertiary-container: #006565;
-  --color-on-tertiary: #003737;
-  --color-tertiary-fixed-dim: #76d6d5;
-
-  --color-outline: #8f909e;
-  --color-outline-variant: #454652;
-
-  --color-error: #ffb4ab;
-  --color-error-container: #93000a;
-
-  --color-inverse-surface: #e5e2e1;
-  --color-inverse-on-surface: #313030;
 }
 
 /* ============================================
