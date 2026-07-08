@@ -210,14 +210,20 @@ test.describe("Blog", () => {
     await expect(page).toHaveURL("/blog");
   });
 
-  test("blog index and footer expose the single RSS feed in both locales", async ({ page }) => {
+  test("blog index, blog posts, and footer expose the single RSS feed in both locales", async ({ page }) => {
     await page.goto("/blog");
     await expect(page.getByRole("link", { name: "Subscribe via RSS" })).toHaveAttribute("href", "/rss.xml");
     await expect(page.getByRole("link", { name: "Subscribe to the blog RSS feed" })).toHaveAttribute("href", "/rss.xml");
 
+    await page.goto("/blog/zero-code-validations-in-your-dotnet-api");
+    await expect(page.getByRole("link", { name: "Subscribe via RSS" })).toHaveAttribute("href", "/rss.xml");
+
     await page.goto("/cs/blog");
     await expect(page.getByRole("link", { name: "Odebírat přes RSS" })).toHaveAttribute("href", "/rss.xml");
     await expect(page.getByRole("link", { name: "Odebírat blog přes RSS" })).toHaveAttribute("href", "/rss.xml");
+
+    await page.goto("/cs/blog/zero-code-validations-in-your-dotnet-api");
+    await expect(page.getByRole("link", { name: "Odebírat přes RSS" })).toHaveAttribute("href", "/rss.xml");
   });
 
   test("every page advertises the one feed for autodiscovery", async ({ page }) => {

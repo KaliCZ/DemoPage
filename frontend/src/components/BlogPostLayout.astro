@@ -1,6 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 import Layout from "../layouts/Layout.astro";
+import BlogRssLink from "./BlogRssLink.astro";
 import BlogReactions from "./blog/BlogReactions.vue";
 import BlogComments from "./blog/BlogComments.vue";
 import { locales, localePath, type Locale } from "../i18n/utils";
@@ -65,13 +66,16 @@ const readingTimeLabel = t.post.readingTime.replace("{min}", String(readingMinut
 
   <article class="max-w-6xl mx-auto px-4 md:px-8">
     <header class="mb-10">
-      <a
-        href={localePath(lang, "blog")}
-        class="inline-flex items-center gap-1 mb-6 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
-      >
-        <Icon name="material-symbols:arrow-back" class="size-4" aria-hidden="true" />
-        {t.post.backToBlog}
-      </a>
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <a
+          href={localePath(lang, "blog")}
+          class="inline-flex items-center gap-1 text-sm font-label text-on-surface-variant hover:text-primary transition-colors"
+        >
+          <Icon name="material-symbols:arrow-back" class="size-4" aria-hidden="true" />
+          {t.post.backToBlog}
+        </a>
+        <BlogRssLink label={t.rss.label} title={t.rss.title} />
+      </div>
       <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter leading-tight mb-4">
         {variant.title}
       </h1>
