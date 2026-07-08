@@ -16,10 +16,11 @@ public class JobOfferActivities(
     private const string SiteUrl = "https://www.kalandra.tech";
 
     [Activity]
-    public async Task StoreJobOfferAsync(JobOfferSubmittedWorkflowInput input)
+    public async Task<StoreJobOfferOutcome> StoreJobOfferAsync(JobOfferSubmittedWorkflowInput input)
     {
         var ct = ActivityExecutionContext.Current.CancellationToken;
-        await storeOfferHandler.StoreAndSave(new StoreJobOfferCommand(input.JobOfferId, input.Submitted), ct);
+        var result = await storeOfferHandler.StoreAndSave(new StoreJobOfferCommand(input.JobOfferId, input.Submitted), ct);
+        return new StoreJobOfferOutcome(result.Error);
     }
 
     [Activity]

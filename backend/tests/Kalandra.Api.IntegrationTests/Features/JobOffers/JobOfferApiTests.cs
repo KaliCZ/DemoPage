@@ -133,12 +133,17 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var (id, _) = await CreateOfferAs("id-owner@test.com");
 
         Authenticate(email: "id-thief@test.com");
+        var marker = $"Never-stored offer must not notify {Guid.NewGuid():N}";
         var response = await client.PostAsync("/api/job-offers",
-            CreateValidFormContent(overrides: new() { ["Id"] = id }), Ct);
+            CreateValidFormContent(overrides: new() { ["Id"] = id, ["Description"] = marker }), Ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await ParseJsonAsync(response);
         Assert.Equal("IdAlreadyUsed", problem.GetProperty("errors").GetProperty("Id")[0].GetString());
+
+        // Grace period: a notification for the rejected submission would arrive moments later.
+        await Task.Delay(1500, Ct);
+        Assert.DoesNotContain(factory.EmailSender.Sent, m => m.TextBody.Value.Contains(marker));
     }
 
     [Fact]
