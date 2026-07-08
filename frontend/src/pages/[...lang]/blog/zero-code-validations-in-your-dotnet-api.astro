@@ -193,19 +193,6 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           <code>Result&lt;T, TError&gt;</code>, kterými se to celé skládá dohromady.
         </p>
 
-        <p>Vedle sebe ten rozdíl vypadá takhle — validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
-
-        <img
-          src={strongTypesDiagrams.impact.src}
-          data-src-dark={strongTypesDiagrams.impact.srcDark}
-          alt="Dvoupanelový diagram: bez StrongTypes každá vrstva znovu validuje tentýž obyčejný string; se StrongTypes se hodnota naparsuje jednou na JSON hranici a NonEmptyString nese záruku přes controller, služby i databázi"
-          width={990}
-          height={945}
-          loading="lazy"
-          decoding="async"
-          class="block w-full h-auto"
-        />
-
         <p>
           Knihovnu hodlám do budoucna rozšiřovat. Například chystám <code>Interval&lt;T&gt;</code>, který usnadní reprezentovat začátek +
           konec s validací, že konec je po začátku. O něm napíšu samostatný článek.
@@ -292,6 +279,19 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <h2>Vyzkoušejte to</h2>
 
+        <p>Celý ten posun v jednom obrázku — validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
+
+        <img
+          src={strongTypesDiagrams.impact.src}
+          data-src-dark={strongTypesDiagrams.impact.srcDark}
+          alt="Dvoupanelový diagram: bez StrongTypes každá vrstva znovu validuje tentýž obyčejný string; se StrongTypes se hodnota naparsuje jednou na JSON hranici a NonEmptyString nese záruku přes controller, služby i databázi"
+          width={990}
+          height={945}
+          loading="lazy"
+          decoding="async"
+          class="block w-full h-auto"
+        />
+
         <p>
           I backend tohohle webu běží na StrongTypes — request DTO, doménové eventy, stav entit. Pokud vás ten přístup zaujal, na stránce{" "}
           <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdete diagramy a další ukázky, zdrojáky žijí na{" "}
@@ -352,19 +352,6 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           numerical types such as <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> and others — plus the algebraic types{" "}
           <code>Maybe&lt;T&gt;</code> and <code>Result&lt;T, TError&gt;</code> to compose them with.
         </p>
-
-        <p>Side by side, the difference looks like this — validation repeated at every layer versus parsed once at the boundary:</p>
-
-        <img
-          src={strongTypesDiagrams.impact.src}
-          data-src-dark={strongTypesDiagrams.impact.srcDark}
-          alt="Two-panel diagram: without StrongTypes, every layer re-validates the same plain string; with StrongTypes, the value is parsed once at the JSON boundary and NonEmptyString carries the guarantee through controller, services, and database"
-          width={990}
-          height={945}
-          loading="lazy"
-          decoding="async"
-          class="block w-full h-auto"
-        />
 
         <p>
           I'll also keep extending the library. For example, <code>Interval&lt;T&gt;</code> is coming to make it easier to represent a start
@@ -451,6 +438,19 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <h2>Try it</h2>
+
+        <p>The whole shift in one picture — validation repeated at every layer versus parsed once at the boundary:</p>
+
+        <img
+          src={strongTypesDiagrams.impact.src}
+          data-src-dark={strongTypesDiagrams.impact.srcDark}
+          alt="Two-panel diagram: without StrongTypes, every layer re-validates the same plain string; with StrongTypes, the value is parsed once at the JSON boundary and NonEmptyString carries the guarantee through controller, services, and database"
+          width={990}
+          height={945}
+          loading="lazy"
+          decoding="async"
+          class="block w-full h-auto"
+        />
 
         <p>
           Even the backend behind this very site runs on StrongTypes — request DTOs, domain events, entity state. If the approach appeals to
