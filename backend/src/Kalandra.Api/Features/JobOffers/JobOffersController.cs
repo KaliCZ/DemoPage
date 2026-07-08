@@ -106,6 +106,7 @@ public class JobOffersController(
                 CreateJobOfferError.TooManyAttachments => this.ValidationError("attachments", CreateOfferError.TooManyAttachments),
                 CreateJobOfferError.TotalSizeTooLarge => this.ValidationError("attachments", CreateOfferError.TotalSizeTooLarge),
                 CreateJobOfferError.DisallowedContentType => this.ValidationError("attachments", CreateOfferError.DisallowedContentType),
+                CreateJobOfferError.IdAlreadyUsed => this.ValidationError("Id", CreateOfferError.IdAlreadyUsed),
             };
         }
 
@@ -113,14 +114,8 @@ public class JobOffersController(
 
         var query = new GetJobOfferDetailQuery(Id: streamId, User: AppUser);
         var offer = await getDetailHandler.Get(query, ct);
-
-        // Null means the client-supplied id already belongs to someone else's offer: the
-        // store was an idempotent no-op and the detail query hides foreign offers.
-        if (offer == null)
-            return this.ValidationError("Id", CreateOfferError.IdAlreadyUsed);
-
         return CreatedAtAction(nameof(GetDetail), new { id = streamId },
-            GetJobOfferDetailResponse.Serialize(offer));
+            GetJobOfferDetailResponse.Serialize(offer!));
     }
 
     // ───── Edit ─────
