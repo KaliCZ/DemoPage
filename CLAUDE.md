@@ -27,7 +27,7 @@ dotnet build                         # Backend only
 npm --prefix frontend run build      # Frontend only
 ```
 
-**Always run `npm test` to verify changes.** Do not run subsets (`dotnet test`, `npm --prefix frontend test`, etc.) as a substitute — always run the full suite.
+**Run `npm test` when a change touches logic or structure.** Content-only changes (blog copy, translations, page text) don't need the suite locally. When you do run tests, run the full suite — no subsets (`dotnet test`, `npm --prefix frontend test`, etc.) as a substitute. Pushing and letting CI run the tests is a viable strategy; what's non-negotiable is a PR left sitting with a failing build — after pushing, check the CI result and fix any failure.
 
 ## Design Principles
 
