@@ -120,7 +120,7 @@ When you need a similar separate stream for a different concept, follow the same
 
 Each feature defines its own error enum next to its handler or entity. Examples:
 
-- `CreateJobOfferError { TooManyAttachments, TotalSizeTooLarge, DisallowedContentType }` — in `Commands/CreateJobOffer.cs`
+- `CreateJobOfferError { TooManyAttachments, TotalSizeTooLarge, DisallowedContentType, IdAlreadyUsed }` — in `Commands/CreateJobOffer.cs`
 - `EditJobOfferError { NotFound, NotAuthorized, NotSubmittedStatus }` — in `Entities/JobOffer.cs` (used by both `JobOffer.Edit` and `EditJobOfferHandler`)
 - `AddCommentError { NotFound, NotAuthorized }` — in `Entities/JobOffer.cs`
 

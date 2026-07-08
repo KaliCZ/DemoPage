@@ -48,7 +48,8 @@ public class JobOfferCommentWorkflow
             await Task.WhenAll(sends);
         }
 
-        // Closing while a late client-retry update is still storing would abort it with an RPC error.
+        // Temporal's prescribed completion guard (message-passing docs): returning while a
+        // client retry's update is still storing would abort that update with an RPC error.
         await Workflow.WaitConditionAsync(() => Workflow.AllHandlersFinished);
     }
 
