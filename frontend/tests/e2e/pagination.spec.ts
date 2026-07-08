@@ -131,7 +131,7 @@ test.describe("Job Offers Pagination", () => {
     await expect(page.locator("#pagination-next")).toBeDisabled();
 
     // Page 2 should have 1 offer (21 total, 20 per page)
-    await expect(page.locator("#offers-grid > div")).toHaveCount(1);
+    await expect(page.locator("#offers-grid > a")).toHaveCount(1);
 
     // Click previous
     await page.click("#pagination-prev");

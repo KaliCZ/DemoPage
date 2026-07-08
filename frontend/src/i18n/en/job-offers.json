@@ -3,6 +3,18 @@
     "title": "My Submissions — kalandra.tech",
     "description": "View your submitted job offers."
   },
+  "detailMeta": {
+    "title": "Submission Detail — kalandra.tech",
+    "description": "Detail of your submitted job offer."
+  },
+  "detail": {
+    "contact": "Contact",
+    "location": "Location",
+    "salary": "Salary",
+    "submittedOn": "Submitted",
+    "description": "Description",
+    "additionalNotes": "Additional Notes"
+  },
   "hero": {
     "title": "My Submissions",
     "subtitle": "Track the status of your submitted job offers."

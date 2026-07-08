@@ -59,12 +59,14 @@ All new UI must work in both modes. Use the semantic colour tokens (`bg-backgrou
 
 ## Client-side JavaScript
 
-Two tiers, chosen by how much state the UI owns:
+Two tiers, chosen by what the code does:
 
-- **Vanilla `<script>` blocks** — the default for page-level wiring: toggles, fetch-and-render lists, form submission. `<script>` tags go at the bottom of the page or component file, prefer `data-*` attributes for JS hooks, one concern per script block.
-- **Vue 3 islands** (`@astrojs/vue`) — for stateful, data-driven widgets where manual DOM bookkeeping would outweigh the framework cost (e.g. `BlogReactions.vue` / `BlogComments.vue` with optimistic updates and threaded rendering). Load with `client:idle` and pass translations and config as props. Don't retrofit existing vanilla pages to Vue without a reason.
+- **Vanilla `<script>` blocks** — page-level wiring and anything that must run before or at first paint: visibility toggles driven by `auth-change` (see `lib/auth.ts` `wireAuthGate`), pre-paint `is:inline` scripts (theme, the `auth-known-in/out` tiers), Layout's global bootstrap, small one-shot handlers. `<script>` tags go at the bottom of the page or component file, prefer `data-*` attributes for JS hooks, one concern per script block. A vanilla script must never assemble HTML from strings — if it needs `innerHTML` and manual escaping to render data, it belongs in the Vue tier.
+- **Vue 3 islands** (`@astrojs/vue`) — data-driven views: anything that fetches server data and renders it, or forms with client-side state and validation (`BlogReactions.vue` / `BlogComments.vue`, the job-offers list/detail islands under `components/job-offers/`). Vue's template escaping removes the hand-rolled XSS surface that string-built HTML carries. Load with `client:idle` and pass translations and config as props — a focused subset, not whole translation files.
 
-Auth plumbing is identical in both tiers: `window.__getAccessToken()`, `window.__getUser()`, `window.__openAuthDialog()`, and the `auth-change` window event.
+Islands hydrate after first paint, so they can't own a page's auth gating: the login-prompt/content sections stay static Astro markup toggled by the pre-paint CSS tiers plus a vanilla wiring script, and the island (re)loads its data on `auth-change`.
+
+Auth plumbing is identical in both tiers: `window.__getAccessToken()`, `window.__getUser()`, `window.__openAuthDialog()`, and the `auth-change` window event (typed wrappers in `lib/auth.ts` for module code).
 
 ## Auth on the frontend
 

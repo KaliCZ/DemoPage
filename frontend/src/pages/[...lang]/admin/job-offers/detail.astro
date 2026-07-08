@@ -1,12 +1,12 @@
 ---
 import { Icon } from "astro-icon/components";
-import Layout from "../../../layouts/Layout.astro";
-import JobOffersList from "../../../components/job-offers/JobOffersList.vue";
-import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
-import enStrings from "../../../i18n/en/admin-job-offers.json";
-import csStrings from "../../../i18n/cs/admin-job-offers.json";
-import enCommon from "../../../i18n/en/common.json";
-import csCommon from "../../../i18n/cs/common.json";
+import Layout from "../../../../layouts/Layout.astro";
+import JobOfferDetail from "../../../../components/job-offers/JobOfferDetail.vue";
+import { locales, defaultLocale, localePath, type Locale } from "../../../../i18n/utils";
+import enStrings from "../../../../i18n/en/admin-job-offers.json";
+import csStrings from "../../../../i18n/cs/admin-job-offers.json";
+import enCommon from "../../../../i18n/en/common.json";
+import csCommon from "../../../../i18n/cs/common.json";
 
 const translations = { en: enStrings, cs: csStrings };
 const commonTranslations = { en: enCommon, cs: csCommon };
@@ -22,10 +22,16 @@ const t = translations[lang];
 const c = commonTranslations[lang];
 
 const apiUrl = import.meta.env.PUBLIC_API_URL || "";
-const detailPath = localePath(lang, "admin/job-offers/detail");
+const listPath = localePath(lang, "admin/job-offers");
 ---
 
-<Layout title={t.meta.title} description={t.meta.description} activePage="admin/job-offers" lang={lang}>
+<Layout
+  title={t.detailMeta.title}
+  description={t.detailMeta.description}
+  activePage="admin/job-offers"
+  pagePath="admin/job-offers/detail"
+  lang={lang}
+>
   <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
@@ -62,16 +68,23 @@ const detailPath = localePath(lang, "admin/job-offers/detail");
     </div>
   </section>
 
-  <!-- Offers list -->
-  <section id="offers-list-section" class="hidden max-w-5xl mx-auto px-8 mb-16">
-    <JobOffersList
+  <!-- Offer detail -->
+  <section id="offer-detail-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
+    <a
+      id="back-to-list"
+      href={listPath}
+      class="flex items-center gap-2 text-sm font-label text-on-surface-variant hover:text-primary transition-colors mb-8"
+    >
+      <Icon name="material-symbols:arrow-back" class="size-[18px]" aria-hidden="true" />
+      {t.list.back}
+    </a>
+    <JobOfferDetail
       client:idle
       apiUrl={apiUrl}
       isAdmin={true}
-      detailPath={detailPath}
+      listPath={listPath}
       lang={lang}
       t={{
-        filterByStatus: t.list.filterByStatus,
         statusLabels: {
           Submitted: t.list.submitted,
           InReview: t.list.inReview,
@@ -80,30 +93,47 @@ const detailPath = localePath(lang, "admin/job-offers/detail");
           Cancelled: t.list.cancelled,
         },
         remote: t.list.remote,
-        emptyTitle: t.empty.title,
-        emptyDescription: t.empty.description,
-        paginationPrev: t.list.paginationPrev,
-        paginationNext: t.list.paginationNext,
-        paginationPage: t.list.paginationPage,
+        fields: { ...t.detail, submittedBy: t.list.submittedBy },
+        attachments: {
+          title: t.list.attachments,
+          download: t.list.download,
+          downloadFailed: c.errors.downloadFailed,
+        },
+        comments: {
+          title: t.list.comments,
+          empty: t.list.commentsEmpty,
+          placeholder: t.list.commentPlaceholder,
+          send: t.list.commentSend,
+        },
+        history: {
+          title: t.list.history,
+          empty: t.list.historyEmpty,
+          fieldLabels: t.list.fieldLabels,
+          changed: t.list.fieldChanged,
+          before: t.list.fieldBefore,
+          after: t.list.fieldAfter,
+          yes: t.list.fieldYes,
+          no: t.list.fieldNo,
+        },
+        admin: {
+          updateStatus: t.list.updateStatus,
+          notesPlaceholder: t.list.adminNotes,
+          save: t.list.save,
+        },
         errors: c.errors,
         apiErrors: t.errors,
       }}
     />
   </section>
 
-  <script is:inline define:vars={{ detailPath }}>
-    // Legacy deep links used a hash (`/admin/job-offers#<id>`); forward them to the detail page.
-    var legacyOfferId = location.hash.slice(1);
-    if (legacyOfferId) location.replace(detailPath + "?id=" + encodeURIComponent(legacyOfferId));
-  </script>
-
   <script>
-    import { wireAuthGate } from "../../../lib/auth";
+    import { wireAuthGate } from "../../../../lib/auth";
 
-    wireAuthGate({ loadingId: "admin-loading", blockedId: "access-denied", contentId: "offers-list-section", requireAdmin: true });
+    wireAuthGate({ loadingId: "admin-loading", blockedId: "access-denied", contentId: "offer-detail-section", requireAdmin: true });
 
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
-    // Wake up the database (see hire-me.astro for details).
+    // Wake up the database (see hire-me.astro for details) — notification
+    // emails deep-link straight to this page.
     fetch(`${import.meta.env.PUBLIC_API_URL || ""}/health`).catch(() => {});
   </script>
 </Layout>
