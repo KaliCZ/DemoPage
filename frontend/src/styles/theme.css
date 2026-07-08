@@ -103,3 +103,20 @@
   --color-inverse-surface: #e5e2e1;
   --color-inverse-on-surface: #313030;
 }
+
+/* ============================================
+   Code-block syntax palette
+   Consumed by the Shiki theme in lib/code-theme.ts, which colors every
+   token with these variables. Aliases resolve at use time, so `.dark`
+   flips them through the tokens above.
+   ============================================ */
+.astro-code {
+  --code-background: var(--color-surface-container-low);
+  --code-foreground: var(--color-on-surface);
+  --code-comment: var(--color-on-surface-variant);
+  --code-keyword: var(--color-primary);
+  --code-string: var(--color-error);
+  --code-constant: var(--color-secondary);
+  --code-type: var(--color-tertiary);
+  --code-function: var(--color-tertiary);
+}

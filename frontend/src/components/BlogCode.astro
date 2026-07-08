@@ -4,7 +4,7 @@ import type { ComponentProps } from "astro/types";
 import { designTokenCodeTheme } from "../lib/code-theme";
 
 // The one place that picks the syntax-highlight theme, so every post's code
-// blocks match. The theme's colors resolve from design tokens in global.css.
+// blocks match. The theme's colors resolve from design tokens in theme.css.
 type CodeProps = ComponentProps<typeof Code>;
 
 interface Props {

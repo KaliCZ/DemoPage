@@ -187,20 +187,10 @@ details > summary + * {
   letter-spacing: -0.025em;
 }
 
-/* Shiki code blocks (see BlogCode.astro): the theme's colors are the aliases
-   below, so syntax highlighting comes from the design system and flips with
-   `.dark` through the tokens themselves. */
+/* Shiki code blocks (see BlogCode.astro); their colors come from the
+   `--code-*` aliases in theme.css. */
 .astro-code {
   border: 1px solid var(--color-outline-variant);
-
-  --code-background: var(--color-surface-container-low);
-  --code-foreground: var(--color-on-surface);
-  --code-comment: var(--color-on-surface-variant);
-  --code-keyword: var(--color-primary);
-  --code-string: var(--color-error);
-  --code-constant: var(--color-secondary);
-  --code-type: var(--color-tertiary);
-  --code-function: var(--color-tertiary);
 }
 
 /* Inline code: a distinct chip so it stands out from body text. Shiki blocks
