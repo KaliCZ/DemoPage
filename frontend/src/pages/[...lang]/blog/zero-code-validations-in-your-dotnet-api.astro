@@ -10,17 +10,17 @@ export const metadata: BlogPostMetadata = {
     en: {
       title: "Zero-Code Validations in Your .NET API",
       summary:
-        "How swapping primitive strings and ints for Kalicz.StrongTypes turned request validation into something the JSON deserializer and the compiler do for me — less code, honest signatures, and far fewer edge cases to test.",
+        "Add validations by swapping primitive types like strings and ints for Kalicz.StrongTypes NonEmptyString, Positive<int> etc. Let ASP.NET parse on the API boundary for free and the compiler guarantees the rest.",
     },
     cs: {
       title: "Validace v .NET API bez jediného řádku kódu",
       summary:
-        "Jak výměna primitivních stringů a intů za Kalicz.StrongTypes proměnila validaci requestů v práci pro JSON deserializér a kompilátor — méně kódu, upřímné signatury a mnohem méně hraničních případů k testování.",
+        "Přidej validace výměnou primitivních typů jako string a int za Kalicz.StrongTypes NonEmptyString, Positive<int> atd. Nech ASP.NET parsovat data z requestů a compiler garantuje zbytek.",
     },
   },
   pubDate: "2026-07-04",
-  updatedDate: "2026-07-08",
-  tags: ["dotnet", "csharp", "strong-types", "api-design", "validations"],
+  updatedDate: "2026-07-09",
+  tags: ["dotnet", "csharp", "strong-types", "type-safety", "api-design", "validations"],
 };
 
 export const getStaticPaths = () => blogPostStaticPaths(metadata);
@@ -309,16 +309,17 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
     ) : (
       <Fragment>
         <p>
-          On one of my previous projects, I noticed friction that sometimes caused bugs. It was validation — specifically, how many times I
-          had to write the same rule down.
+          On one of my previous projects, I noticed an issue. It was validations. Specifically, how many times I had to write the same rule
+          down.
         </p>
 
         <p>
-          Take this example endpoint that places an order. Data annotations validate the request DTO — those become the OpenAPI schema,
-          enabling the frontend's validations. The controller then checks rules that can't be expressed in OpenAPI, and it fails fast,
-          before any DB queries run. And the service with the business logic checks a third time, because it isn't only reachable through
-          that controller and it has to guarantee validity. Three copies of one rule — and plenty of room to introduce bugs just by
-          forgetting to update one of them.
+          {" "}
+          // TODO: can i make this a list? Take this example endpoint that places an order. Data annotations validate the request DTO, those
+          become the OpenAPI schema, enabling the frontend's validations. The controller then checks rules that can't be expressed in
+          OpenAPI, and it fails fast, before any DB queries run. And the service with the business logic checks a third time, because it
+          isn't only reachable through that controller and it has to guarantee validity. Three copies of one rule — and plenty of room to
+          introduce bugs just by forgetting to update one of them.
         </p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
