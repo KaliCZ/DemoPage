@@ -153,13 +153,24 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           musel napsat to samé pravidlo znovu.
         </p>
 
-        <p>
-          Vezměte si tenhle ukázkový endpoint, který zakládá objednávku. Request DTO validují data annotations — z nich vzniká OpenAPI
-          schéma, ze kterého frontend generuje svoje validace. Controller pak kontroluje pravidla, která se do OpenAPI zapsat nedají, ale
-          chceme selhat rychle, dřív než se spustí databázové dotazy. A služby s business logikou to prověří potřetí, protože se k nim
-          nedostanete jen přes tenhle controller a jejich zodpovědnost je zaručit validitu dat. Tři kopie jednoho pravidla — a spousta
-          příležitostí zanést chybu jen tím, že jednu z nich zapomenete upravit.
-        </p>
+        <p>Vezměte si tenhle ukázkový endpoint, který zakládá objednávku. To samé pravidlo se cestou napíše třikrát:</p>
+
+        <ol>
+          <li>
+            <strong>Data annotations</strong> validují request DTO — z nich vzniká OpenAPI schéma, ze kterého frontend generuje svoje
+            validace.
+          </li>
+          <li>
+            <strong>Controller</strong> pak kontroluje pravidla, která se do OpenAPI zapsat nedají, a chce selhat rychle, dřív než se spustí
+            databázové dotazy.
+          </li>
+          <li>
+            <strong>Služba</strong> s business logikou to prověří potřetí, protože se k ní nedostanete jen přes tenhle controller a její
+            zodpovědnost je zaručit validitu dat.
+          </li>
+        </ol>
+
+        <p>Tři kopie jednoho pravidla — a spousta příležitostí zanést chybu jen tím, že jednu z nich zapomenete upravit.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
@@ -313,14 +324,23 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           down.
         </p>
 
-        <p>
-          {" "}
-          // TODO: can i make this a list? Take this example endpoint that places an order. Data annotations validate the request DTO, those
-          become the OpenAPI schema, enabling the frontend's validations. The controller then checks rules that can't be expressed in
-          OpenAPI, and it fails fast, before any DB queries run. And the service with the business logic checks a third time, because it
-          isn't only reachable through that controller and it has to guarantee validity. Three copies of one rule — and plenty of room to
-          introduce bugs just by forgetting to update one of them.
-        </p>
+        <p>Take this example endpoint that places an order. The same rule gets written three times along the way:</p>
+
+        <ol>
+          <li>
+            <strong>Data annotations</strong> validate the request DTO, and those become the OpenAPI schema, enabling the frontend's
+            validations.
+          </li>
+          <li>
+            <strong>The controller</strong> then checks rules that can't be expressed in OpenAPI, failing fast before any DB queries run.
+          </li>
+          <li>
+            <strong>The service</strong> with the business logic checks a third time, because it isn't only reachable through that
+            controller and it has to guarantee validity.
+          </li>
+        </ol>
+
+        <p>Three copies of one rule — and plenty of room to introduce bugs just by forgetting to update one of them.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
