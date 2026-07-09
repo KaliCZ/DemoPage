@@ -13,12 +13,19 @@ namespace Kalandra.Api.Infrastructure;
 /// </summary>
 internal sealed class SupabaseAuthHealthCheck(IUserInfoService userInfoService) : IHealthCheck
 {
+    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(5);
+
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
         try
         {
-            await userInfoService.PingAsync(ct);
+            // Gotrue's admin client ignores cancellation, so the timeout is enforced here, not via the check registration.
+            await userInfoService.PingAsync(ct).WaitAsync(ProbeTimeout, ct);
             return HealthCheckResult.Healthy("Supabase Auth admin API reachable with the configured service key.");
+        }
+        catch (TimeoutException ex)
+        {
+            return HealthCheckResult.Unhealthy($"Supabase Auth admin API did not respond within {ProbeTimeout.TotalSeconds:0}s.", ex);
         }
         catch (Exception ex)
         {
