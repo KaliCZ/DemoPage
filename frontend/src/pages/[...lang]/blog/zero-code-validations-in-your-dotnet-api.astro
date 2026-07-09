@@ -168,7 +168,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           </li>
         </ol>
 
-        <p>Tři různá místa — a snadno zaneseš chybu jenom tím, že jedno z nich zapomeneš upravit.</p>
+        <p>Tři různá místa a snadno zaneseš chybu jenom tím, že jedno z nich zapomeneš upravit.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
@@ -189,7 +189,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           Řešení je stará myšlenka z funkcionálního programování: místo kontrolování hodnoty a posílání téhož volného typu dál ji{" "}
           <em>jednou</em> převeď do typu, který neplatný stav vůbec neumí reprezentovat. <code>int</code>, který právě prošel kontrolou{" "}
-          <code>&gt; 0</code>, je pořád jen <code>int</code> — důkaz se zahodí ve chvíli, kdy kontrola projde, takže další metoda níž musí
+          <code>&gt; 0</code>, je pořád jen <code>int</code>. Důkaz se zahodí ve chvíli, kdy kontrola projde, takže další metoda níž musí
           kontrolovat znovu. <code>Positive&lt;int&gt;</code> si ten důkaz nese přímo v typu a kompilátor ho vymáhá všude níž.
         </p>
 
@@ -203,7 +203,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <p>
-          Nezmínil jsem tady zdaleka všechno, co knihovna nabízí — pokud tě to zajímá, mrkni na{" "}
+          Nezmínil jsem tady zdaleka všechno, co knihovna nabízí, pokud tě to zajímá, mrkni na{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
@@ -250,12 +250,12 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <p>
-          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code> — chyba se
-          stane hodnotou v signatuře, ne překvapením v podobě výjimky:
+          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code>. Chyba se stane
+          hodnotou v signatuře, ne překvapením v podobě výjimky:
         </p>
 
         <p>
-          Ale hlavně — když si tenhle kód přečteš za pět měsíců, nemusíš si pamatovat kontext. Nemusíš zjišťovat, odkud hodnoty přicházejí a
+          Ale hlavně, když si tenhle kód přečteš za pět měsíců, nemusíš si pamatovat kontext. Nemusíš zjišťovat, odkud hodnoty přicházejí a
           co všechno můžou obsahovat. A noví lidé v týmu se tě nemusí vyptávat. Kód prostě velmi přesně popisuje, co se děje. Přidává
           jasnost a kontext.
         </p>
@@ -281,7 +281,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>
           Počet potřebných unit testů rapidně klesl. Tyhle hraniční případy prostě nejsou možné. Jako <code>NonEmptyString</code> nepředáš{" "}
-          <code>null</code>, <code>""</code> ani <code>" "</code>. Do množství nepředáš <code>-1</code>. Zbydou testy o chování — ty, které
+          <code>null</code>, <code>""</code> ani <code>" "</code>. Do množství nepředáš <code>-1</code>. Zbydou testy o chování. Ty, které
           maji smysl. A API pro tvorbu těchto typů je velmi explicitní v tom, co chceš dělat:
         </p>
 
@@ -296,7 +296,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <h2>Vyzkoušej to</h2>
 
-        <p>Celý ten posun v jednom obrázku — validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
+        <p>Celý ten posun v jednom obrázku. Validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
 
         <img
           src={strongTypesDiagrams.impact.src}
