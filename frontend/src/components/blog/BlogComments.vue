@@ -20,8 +20,6 @@ const props = defineProps<{
   t: {
     heading: string;
     empty: string;
-    signInPrompt: string;
-    signInCta: string;
     placeholder: string;
     submit: string;
     submitting: string;
@@ -275,19 +273,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
           {{ submitting ? props.t.submitting : props.t.submit }}
         </button>
       </div>
-    </div>
-    <div
-      v-else-if="viewerChecked"
-      class="mb-10 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-outline-variant/30 bg-surface-container-low px-5 py-4"
-    >
-      <p class="font-body text-sm text-on-surface-variant">{{ props.t.signInPrompt }}</p>
-      <button
-        type="button"
-        class="px-4 py-1.5 rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
-        @click="openSignIn"
-      >
-        {{ props.t.signInCta }}
-      </button>
     </div>
 
     <!-- Thread -->

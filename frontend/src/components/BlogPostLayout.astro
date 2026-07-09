@@ -120,13 +120,34 @@ const readingTimeLabel = t.post.readingTime.replace("{min}", String(readingMinut
         </p>
       </div>
       <BlogComments client:idle apiUrl={apiUrl} slug={slug} lang={lang} t={t.comments} />
+      <!-- Static markup like the hint above: the comments island hydrates after paint, so it can't own auth-gated UI. -->
+      <section
+        id="blog-signin-cta"
+        class="signed-out-only bg-surface-container rounded-2xl border border-outline-variant/40 p-6 md:p-8 text-center"
+      >
+        <Icon name="material-symbols:forum" class="size-9 text-primary mb-3 mx-auto block" aria-hidden="true" />
+        <h2 class="font-headline text-xl font-bold text-on-surface mb-2">{t.signInCta.title}</h2>
+        <p class="font-body text-sm text-on-surface-variant mb-5">{t.signInCta.description}</p>
+        <button
+          id="blog-signin-cta-button"
+          type="button"
+          class="px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+        >
+          {t.signInCta.button}
+        </button>
+      </section>
     </footer>
   </article>
 
   <script>
+    import { openAuthDialog } from "../lib/auth";
+
+    document.getElementById("blog-signin-cta-button")?.addEventListener("click", openAuthDialog);
+
     window.addEventListener("auth-change", (event) => {
-      const hint = document.getElementById("blog-signin-hint");
-      hint?.classList.toggle("hidden", !!(event as CustomEvent).detail?.user);
+      const signedIn = !!(event as CustomEvent).detail?.user;
+      document.getElementById("blog-signin-hint")?.classList.toggle("hidden", signedIn);
+      document.getElementById("blog-signin-cta")?.classList.toggle("hidden", signedIn);
     });
   </script>
 </Layout>

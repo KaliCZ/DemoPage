@@ -39,8 +39,6 @@
   "comments": {
     "heading": "Comments",
     "empty": "No comments yet. Be the first!",
-    "signInPrompt": "Sign in to join the discussion.",
-    "signInCta": "Sign In",
     "placeholder": "Write a comment…",
     "submit": "Post comment",
     "submitting": "Posting…",
@@ -60,5 +58,10 @@
       "ParentCommentNotFound": "The comment you're replying to no longer exists.",
       "ParentCommentDeleted": "The comment you're replying to was deleted."
     }
+  },
+  "signInCta": {
+    "title": "Join the discussion",
+    "description": "Sign in to leave a reaction or share your thoughts in the comments.",
+    "button": "Sign In"
   }
 }
