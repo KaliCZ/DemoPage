@@ -101,12 +101,20 @@ test.describe("Blog Flow", () => {
     // The static signed-out hint renders without any JS or island hydration.
     await expect(page.getByText("Sign in to leave a reaction or comment.")).toBeVisible();
 
-    const comments = page.locator('section[aria-label="Comments"]');
-    await expect(comments.getByRole("button", { name: "Sign In" })).toBeVisible();
+    // The static sign-in CTA below the comments also renders without hydration.
+    const signInCta = page.locator("#blog-signin-cta");
+    await expect(signInCta.getByRole("button", { name: "Sign In" })).toBeVisible();
 
     // A signed-out reaction click opens the auth dialog instead of calling the API.
     await reactions.getByRole("button", { name: "Thumbs up" }).click();
     await expect(page.locator("#auth-dialog")).toBeVisible();
+    await page.locator("#auth-dialog-close").click();
+    await expect(page.locator("#auth-dialog")).not.toBeVisible();
+
+    // The CTA button opens the same dialog.
+    await signInCta.getByRole("button", { name: "Sign In" }).click();
+    await expect(page.locator("#auth-dialog")).toBeVisible();
+    await page.locator("#auth-dialog-close").click();
 
     // The API itself refuses anonymous writes.
     const toggleResponse = await request.post(`${API_URL}/api/blog/${SLUG}/reactions/toggle`, {
@@ -158,8 +166,9 @@ test.describe("Blog Flow", () => {
     await expect(reloadedThumbsUp).toHaveAttribute("aria-pressed", "true");
     await expect(reloadedThumbsUp.locator("span").nth(1)).toHaveText(String(countBefore + 1));
 
-    // Signed in, the static hint is gone (Layout's auth-known-in tier hides it).
+    // Signed in, the static hint and the sign-in CTA are gone (Layout's auth-known-in tier hides them).
     await expect(page.getByText("Sign in to leave a reaction or comment.")).not.toBeVisible();
+    await expect(page.locator("#blog-signin-cta")).not.toBeVisible();
 
     // Post a top-level comment.
     const comments = page.locator('section[aria-label="Comments"]');

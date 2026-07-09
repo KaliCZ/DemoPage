@@ -39,8 +39,6 @@
   "comments": {
     "heading": "Komentáře",
     "empty": "Zatím žádné komentáře. Buďte první!",
-    "signInPrompt": "Do diskuze se zapojíte po přihlášení.",
-    "signInCta": "Přihlásit se",
     "placeholder": "Napište komentář…",
     "submit": "Odeslat komentář",
     "submitting": "Odesílání…",
@@ -60,5 +58,10 @@
       "ParentCommentNotFound": "Komentář, na který odpovídáte, už neexistuje.",
       "ParentCommentDeleted": "Komentář, na který odpovídáte, byl smazán."
     }
+  },
+  "signInCta": {
+    "title": "Zapojte se do diskuze",
+    "description": "Přihlaste se a přidejte reakci nebo se podělte o svůj názor v komentářích.",
+    "button": "Přihlásit se"
   }
 }
