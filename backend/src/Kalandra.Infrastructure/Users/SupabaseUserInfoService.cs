@@ -5,8 +5,11 @@ namespace Kalandra.Infrastructure.Users;
 
 public class SupabaseUserInfoService(
     IGotrueAdminClient<Supabase.Gotrue.User> adminAuthClient,
-    ILogger<SupabaseUserInfoService> logger) : IUserInfoService
+    ILogger<SupabaseUserInfoService> logger,
+    TimeSpan? fetchTimeout = null) : IUserInfoService
 {
+    private readonly TimeSpan _fetchTimeout = fetchTimeout ?? TimeSpan.FromSeconds(3);
+
     public async Task PingAsync(CancellationToken ct)
     {
         // perPage=1 keeps the round-trip minimal; we only need to confirm the key is accepted.
@@ -22,7 +25,7 @@ public class SupabaseUserInfoService(
         IEnumerable<Guid> userIds, CancellationToken ct)
     {
         var distinct = userIds.Distinct().ToArray();
-        var infos = await Task.WhenAll(distinct.Select(FetchUserInfoAsync));
+        var infos = await Task.WhenAll(distinct.Select(userId => FetchUserInfoAsync(userId, ct)));
 
         var result = new Dictionary<Guid, UserPublicInfo>();
         for (var i = 0; i < distinct.Length; i++)
@@ -35,11 +38,12 @@ public class SupabaseUserInfoService(
     // No cache here — eviction is the caching decorator's job.
     public Task EvictAsync(Guid userId, CancellationToken ct) => Task.CompletedTask;
 
-    private async Task<UserPublicInfo?> FetchUserInfoAsync(Guid userId)
+    private async Task<UserPublicInfo?> FetchUserInfoAsync(Guid userId, CancellationToken ct)
     {
         try
         {
-            var user = await adminAuthClient.GetUserById(userId.ToString());
+            // Gotrue's admin client ignores cancellation, so the timeout is enforced here — a hung Supabase must cost a missing profile, not a stalled page.
+            var user = await adminAuthClient.GetUserById(userId.ToString()).WaitAsync(_fetchTimeout, ct);
             if (user == null)
                 return null;
 
@@ -76,6 +80,10 @@ public class SupabaseUserInfoService(
             displayName ??= user.Email?.Split('@')[0] ?? userId.ToString();
 
             return new UserPublicInfo(displayName, avatarUrl);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
