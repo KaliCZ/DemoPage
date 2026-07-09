@@ -113,7 +113,7 @@ const signatureSnippet = `// Before: every caller re-checks, every reader wonder
 Task<Order> PlaceAsync(string email, string code, int quantity);
 
 // After: the signature is the contract.
-Task<Order> PlaceAsync(Email email, NonEmptyString code, Positive<int> quantity);`;
+Task<Result<Order, PlaceOrderError>> PlaceAsync(Email email, NonEmptyString code, Positive<int> quantity);`;
 
 const resultSnippet = `public async Task<Result<Order, PlaceOrderError>> PlaceAsync(Email email, NonEmptyString code, Positive<int> quantity)
 {
