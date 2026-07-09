@@ -153,7 +153,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           pravidlo znovu.
         </p>
 
-        <p>Vezměte si tenhle ukázkový endpoint, který zakládá objednávku. Validace probíhá na třech místech:</p>
+        <p>Vezmi si tenhle ukázkový endpoint, který zakládá objednávku. Validace probíhá na třech místech:</p>
 
         <ol>
           <li>
@@ -169,13 +169,13 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           </li>
         </ol>
 
-        <p>Tři různá místa — a snadno zanesete chybu jen tím, že jedno z nich zapomenete upravit.</p>
+        <p>Tři různá místa — a snadno zaneseš chybu jenom tím, že jedno z nich zapomeneš upravit.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
         <p>
-          Data annotations ověří e-mailovou adresu, ale pořád máte jen string. Podobně je celé číslo ověřené jako kladné, jenže tu záruku
-          nijak nevyužijete. Pak se dostaneme do služby:
+          Data annotations ověří e-mailovou adresu, ale pořád mám jen string. Podobně je celé číslo ověřené jako kladné, jenže tu informaci
+          nikde nedržím. Pak se dostaneme do služby:
         </p>
 
         <BlogCode code={beforeServiceSnippet} lang="csharp" />
@@ -189,36 +189,36 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <p>
           Řešení je stará myšlenka z funkcionálního programování: místo kontrolování hodnoty a posílání téhož volného typu dál ji{" "}
-          <em>jednou</em> převeďte do typu, který neplatný stav vůbec neumí reprezentovat. <code>int</code>, který právě prošel kontrolou{" "}
+          <em>jednou</em> převeď do typu, který neplatný stav vůbec neumí reprezentovat. <code>int</code>, který právě prošel kontrolou{" "}
           <code>&gt; 0</code>, je pořád jen <code>int</code> — důkaz se zahodí ve chvíli, kdy kontrola projde, takže další metoda níž musí
           kontrolovat znovu. <code>Positive&lt;int&gt;</code> si ten důkaz nese přímo v typu a kompilátor ho vymáhá všude níž.
         </p>
 
         <p>
-          Přesně na to jsem postavil balíček <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>. Je to malá sada C# typů.
+          Přesně na to jsem postavil balíček <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>. Je to malá kolekce C# typů.
           Například <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code>, pár numerických typů jako{" "}
           <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> a další užitečné typy a pomocníky.{" "}
           <code>Result&lt;T, TError&gt;</code> je další mimořádně užitečný typ, který umí reprezentovat úspěšný nebo chybový stav vaší
-          operace. A pak je tu <code>Maybe&lt;T&gt;</code>, který vám pomůže reprezentovat tři stavy ve vašem API. Hodí se třeba, když
-          chcete rozlišit mezi nastavením hodnoty na něco, nastavením hodnoty na nic a neměněním hodnoty.
+          operace. A pak je tu <code>Maybe&lt;T&gt;</code>, který pomůže reprezentovat tři stavy v API. Hodí se třeba, když chceš rozlišit
+          mezi změnou hodnoty na něco, změnou hodnoty na nic a neměněním hodnoty.
         </p>
 
         <p>
-          Nezmínil jsem tady zdaleka všechno, co knihovna nabízí — pokud vás to zajímá, mrkněte na{" "}
+          Nezmínil jsem tady zdaleka všechno, co knihovna nabízí — pokud tě to zajímá, mrkni na{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
-          . Knihovnu navíc hodlám dál rozšiřovat. Například chystám <code>Interval&lt;T&gt;</code>, který usnadní reprezentovat rozsah
-          začátek + konec s validací, že konec je po začátku. O něm napíšu samostatný článek.
+          . Knihovnu hodlám dál rozšiřovat. Například chystám <code>Interval&lt;T&gt;</code>, který usnadní reprezentovat rozsah začátek +
+          konec s validací, že konec je po začátku. O něm napíšu samostatný článek.
         </p>
 
-        <h2>Ta část „bez jediného řádku“</h2>
+        <h2>„Bez jediného řádku“</h2>
 
         <p>Stačí jeden řádek na instalaci:</p>
 
         <BlogCode code="dotnet add package Kalicz.StrongTypes" lang="shell" />
 
-        <p>A můžete rovnou začít typy používat. Třeba takhle:</p>
+        <p>A můžeš rovnou začít typy používat. Třeba takhle:</p>
 
         <BlogCode code={afterSnippet} lang="csharp" />
 
@@ -246,20 +246,19 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <BlogCode code={signatureSnippet} lang="csharp" />
 
         <p>
-          Druhá signatura odpovídá na otázky, které vás ta první nutí dohledávat: ne, kód nemůže být prázdný; ne, nulové množství sem
-          nedoteče; ano, tyhle hodnoty můžete poslat rovnou do persistence vrstvy. Kolegové na review se přestanou ptát „a co když je
-          množství nula?“, protože ta otázka už neprojde typovou kontrolou.
+          Druhá signatura odpovídá na otázky, které tě bys s tou první musel dohledávat: kód nemůže být prázdný, množství nemuže být nula.
+          Kolegové na review se přestanou ptát „a co když je množství -3?“, protože to nejde zkompilovat.
         </p>
 
         <p>
-          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code> — selhání se
+          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code> — chyba se
           stane hodnotou v signatuře, ne překvapením v podobě výjimky:
         </p>
 
         <p>
-          Ale hlavně — když si tenhle kód přečtete za pět měsíců, nemusíte si pamatovat kontext. Nemusíte zjišťovat, odkud hodnoty
-          přicházejí a co všechno můžou obsahovat. A noví lidé v týmu se vás nemusí vyptávat. Kód prostě velmi přesně popisuje, co se děje.
-          Přidává jasnost a kontext.
+          Ale hlavně — když si tenhle kód přečteš za pět měsíců, nemusíš si pamatovat kontext. Nemusíš zjišťovat, odkud hodnoty přicházejí a
+          co všechno můžou obsahovat. A noví lidé v týmu se tě nemusí vyptávat. Kód prostě velmi přesně popisuje, co se děje. Přidává
+          jasnost a kontext.
         </p>
 
         <BlogCode code={resultSnippet} lang="csharp" />
@@ -267,36 +266,36 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <h2>Typy dorazí až do databáze</h2>
 
         <p>
-          Když entitu načtete do kontextu přes EF Core, museli byste validovat znovu. Ale s balíčkem <code>Kalicz.StrongTypes.EfCore</code>{" "}
-          se silné typy stanou přímo vlastnostmi entity. Jediné volání na options builderu navěsí value converter na každý z nich:
+          Když entitu načteš do kontextu přes EF Core, musel bys validovat znovu. Ale s balíčkem <code>Kalicz.StrongTypes.EfCore</code> se
+          silné typy stanou přímo vlastnostmi entity. Jediné volání na options builderu navěsí value converter na každý z nich:
         </p>
 
         <BlogCode code={entitySnippet} lang="csharp" />
 
         <p>
           Sloupec v databázi je pořád obyčejný <code>varchar</code> nebo <code>int</code>, na úložišti se nemění nic. Ale EF Core teď
-          nedovolí uložit neplatné hodnoty. A když se pokusíte neplatná data z databáze načíst, dostanete hlasitý pád místo tiché null
-          hodnoty. Naparsovaná informace tak zůstane zachovaná napořád. Entitu si můžete načíst a bezpečně zavolat <code>PlaceAsync</code>.
+          nedovolí uložit neplatné hodnoty. A když se pokusíš neplatná data z databáze načíst, dostaneš hlasitou chybu místo tiché null
+          hodnoty. Naparsovaná informace tak zůstane zachovaná napořád. Entitu si můžeš načíst a bezpečně zavolat <code>PlaceAsync</code>.
         </p>
 
         <h2>Méně hraničních případů, méně testů</h2>
 
         <p>
-          Počet potřebných unit testů rapidně klesl. Tyhle hraniční případy prostě nejsou možné. Jako <code>NonEmptyString</code> nepředáte{" "}
-          <code>null</code>, <code>""</code> ani <code>" "</code>. Do množství nepředáte <code>-1</code>. Zbydou testy o chování — ty, které
-          stojí za to číst. A API pro konstrukci těchto typů je velmi explicitní v tom, co zamýšlíte:
+          Počet potřebných unit testů rapidně klesl. Tyhle hraniční případy prostě nejsou možné. Jako <code>NonEmptyString</code> nepředáš{" "}
+          <code>null</code>, <code>""</code> ani <code>" "</code>. Do množství nepředáš <code>-1</code>. Zbydou testy o chování — ty, které
+          maji smysl. A API pro tvorbu těchto typů je velmi explicitní v tom, co chceš dělat:
         </p>
 
         <BlogCode code={constructionSnippet} lang="csharp" />
 
         <p>
-          A pro vlastnosti, které si ověřit chcete, vám property-based testing dovolí napsat jednu testovací metodu a prohnat skrz ni stovky
+          A pro vlastnosti, které si ověřit chceš, ti property-based testing dovolí napsat jednu testovací metodu a prohnat skrz ni stovky
           různých hodnot. Balíček <code>Kalicz.StrongTypes.FsCheck</code> generuje validní silně typované hodnoty pro property-based testy,
-          takže vaše generátory respektují stejné invarianty jako váš kód. Napište mi do komentářů, jestli byste o property-based testingu
-          chtěli samostatný článek.
+          takže tvoje generátory respektují stejné invarianty jako váš kód. Napiš mi do komentářů, jestli by o property-based testingu chtěl
+          samostatný článek.
         </p>
 
-        <h2>Vyzkoušejte to</h2>
+        <h2>Vyzkoušej to</h2>
 
         <p>Celý ten posun v jednom obrázku — validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
 
@@ -312,8 +311,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         />
 
         <p>
-          I backend za tímhle webem běží na StrongTypes. Request DTO, doménové eventy, stav entit. Pokud vás ten přístup zaujal, na stránce{" "}
-          <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdete diagramy a další ukázky, zdrojáky žijí na{" "}
+          I backend za tímhle webem běží na StrongTypes. Request DTO, doménové eventy, stav entit. Pokud tě ten přístup zaujal, na stránce{" "}
+          <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdeš diagramy a další ukázky, zdrojáky žijí na{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHubu
           </a>{" "}
@@ -321,7 +320,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
             NuGetu
           </a>
-          . Začněte jedním request recordem. Smažte guard clauses, které tím ztratí smysl. Do odpoledne budete vědět, že ho chcete všude.
+          . Začni jedním request recordem. Smaž guard clauses, které tím ztratí smysl. Do odpoledne budeš vědět, že to chceš všude.
         </p>
       </Fragment>
     ) : (
@@ -424,9 +423,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <BlogCode code={signatureSnippet} lang="csharp" />
 
         <p>
-          The second signature answers questions the first one forces you to research: no, the code can't be empty; no, zero quantity can't
-          happen here; yes, you can pass this straight to the persistence layer. Reviewers stop asking "what if the quantity is zero?"
-          because the question no longer type-checks.
+          The second signature answers questions the first one forces you to research: the code can't be empty, quantity can't be zero.
+          Reviewers stop asking "what if the quantity is minus three?" because the question no longer type-checks.
         </p>
 
         <p>
@@ -435,7 +433,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <p>
-          But most importantly - when you read this code in 5 months, you don't need to remember the context. You don't need to get familiar
+          But most importantly, when you read this code in 5 months, you don't need to remember the context. You don't need to get familiar
           with where the values are coming from and what they could contain. Also new hires don't need to ask you questions. The code simply
           describes what is going on very precisely. Adding clarity and context.
         </p>
