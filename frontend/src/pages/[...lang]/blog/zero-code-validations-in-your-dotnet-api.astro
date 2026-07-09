@@ -324,29 +324,28 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           down.
         </p>
 
-        <p>Take this example endpoint that places an order. The same rule gets written three times along the way:</p>
+        <p>Take this example endpoint that places an order. Validation is on three places:</p>
 
         <ol>
           <li>
-            <strong>Data annotations</strong> validate the request DTO, and those become the OpenAPI schema, enabling the frontend's
-            validations.
+            <strong>Data annotations</strong> validate the request DTO automatically and expose the OpenAPI json schema.
           </li>
           <li>
-            <strong>The controller</strong> then checks rules that can't be expressed in OpenAPI, failing fast before any DB queries run.
+            <strong>The controller</strong> checks rules that can't be expressed in OpenAPI, so that we fail fast before any DB queries run.
           </li>
           <li>
-            <strong>The service</strong> with the business logic checks a third time, because it isn't only reachable through that
-            controller and it has to guarantee validity.
+            <strong>The service</strong> with business logic has to check again, because you could call it from a different place. For
+            example in a background job after fetching some entity from the database.
           </li>
         </ol>
 
-        <p>Three copies of one rule — and plenty of room to introduce bugs just by forgetting to update one of them.</p>
+        <p>Three different places and you can easily introduce bugs just by forgetting to update one of them.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
         <p>
-          Notice that data annotations validate the email address. But you still only have a string. Similarly, the integer is validated to
-          be positive, but you can't actually use that guarantee. Then the request reaches the service:
+          Data annotations validate the email address, but you still only have a string. Similarly, the integer is validated to be positive,
+          but you can't actually use that guarantee. Then we reach the service:
         </p>
 
         <BlogCode code={beforeServiceSnippet} lang="csharp" />
@@ -360,7 +359,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <h2>Parse, don't validate</h2>
 
         <p>
-          The fix is an old functional-programming idea: instead of checking a value and passing the same loose type along, convert it{" "}
+          The solution is an old functional-programming idea: instead of checking a value and passing the same loose type along, convert it{" "}
           <em>once</em> into a type that cannot represent the invalid state. An <code>int</code> that just passed a <code>&gt; 0</code>{" "}
           check is still an <code>int</code> — the proof is discarded the moment the check succeeds, so the next method down has to check
           all over again. A <code>Positive&lt;int&gt;</code> carries that proof in the type itself, and the compiler enforces it everywhere
@@ -368,15 +367,18 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <p>
-          That's what my <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package packages up for C#: a small set of
-          validated wrappers — <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code>, and a few
-          numerical types such as <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> and others — plus the algebraic types{" "}
-          <code>Maybe&lt;T&gt;</code> and <code>Result&lt;T, TError&gt;</code> to compose them with.
+          That's what I built <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package for. It's a small set of C# types.
+          For example <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code>, a few numerical types such
+          as <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> and other useful types and helpers.
+          <code>Result&lt;T, TError&gt;</code> is another super useful type that can represent a success or error state of your operations.
+          And there's also a <code>Maybe&lt;T&gt;</code> that can help you represent 3 states in your API. Useful for example when you want
+          to differentiate between updating a value to something, updating a value to nothing and not updating a value.
         </p>
 
         <p>
-          I'll also keep extending the library. For example, <code>Interval&lt;T&gt;</code> is coming to make it easier to represent a start
-          + end range, validating that the end comes after the start. I'll write a separate blog post about that one.
+          I haven't mentioned all the things inside the library here, if you're interested, go check it out {here}. I'll also keep extending
+          the library. For example, <code>Interval&lt;T&gt;</code> is coming to make it easier to represent a start + end range, validating
+          that the end comes after the start. I'll write a separate blog post about that one.
         </p>
 
         <h2>The zero-code part</h2>
