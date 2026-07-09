@@ -58,8 +58,7 @@ public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request
 
 const beforeServiceSnippet = `public async Task<Order> PlaceAsync(string customerEmail, string productCode, int quantity)
 {
-    // The controller already checked all this. But PlaceAsync takes plain strings
-    // and an int, so it can be called from anywhere — and it can't trust that it was.
+    // Must be checked. Even though the controller already checked all this.
     if (string.IsNullOrWhiteSpace(productCode))
         throw new ArgumentException("Product code is required.", nameof(productCode));
     if (quantity <= 0)
@@ -68,7 +67,7 @@ const beforeServiceSnippet = `public async Task<Order> PlaceAsync(string custome
     if (!await catalog.ContainsAsync(productCode))
         throw new UnknownProductException(productCode);
 
-    // ...the same guards as the API, one layer down — then the real work.
+    // The real work here.
 }`;
 
 const afterSnippet = `public record CreateOrderRequest(
@@ -106,7 +105,7 @@ const openApiSnippet = `{
   "quantity": { "type": "integer", "format": "int32", "minimum": 0, "exclusiveMinimum": true } // Positive<int>
 }`;
 
-const openApiSetupSnippet = `// Program.cs — install Kalicz.StrongTypes.OpenApi.Swashbuckle, then one call
+const openApiSetupSnippet = `// Program.cs - install Kalicz.StrongTypes.OpenApi.Swashbuckle, then one call
 builder.Services.AddSwaggerGen(options => options.AddStrongTypes());`;
 
 const signatureSnippet = `// Before: every caller re-checks, every reader wonders.
@@ -134,7 +133,7 @@ const entitySnippet = `public sealed class Order
     public Positive<int> Quantity { get; init; }
 }
 
-// Program.cs — StrongTypes registration for db context.
+// Program.cs - StrongTypes registration for db context.
 services.AddDbContext<ShopDbContext>(options => options
     .UseNpgsql(connectionString)
     .UseStrongTypes());`;
