@@ -20,7 +20,7 @@ public class CachingUserInfoService(
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(24);
 
     private readonly TimeSpan _secondEvictionDelay = secondEvictionDelay ?? TimeSpan.FromSeconds(5);
-    private readonly TimeSpan _negativeTtl = negativeTtl ?? TimeSpan.FromMinutes(1);
+    private readonly TimeSpan _negativeTtl = negativeTtl ?? TimeSpan.FromSeconds(10);
 
     private static string Key(Guid userId) => $"userinfo:{userId}";
 
@@ -30,31 +30,29 @@ public class CachingUserInfoService(
         var result = new Dictionary<Guid, UserPublicInfo>();
         var misses = new List<Guid>();
 
-        foreach (var userId in userIds.Distinct())
+        // Cache round-trips run concurrently: IDistributedCache has no batch API, but the Redis
+        // client pipelines concurrent commands into shared round-trips (the MGET/MSET effect).
+        var distinct = userIds.Distinct().ToArray();
+        var reads = await Task.WhenAll(distinct.Select(userId => TryReadAsync(userId, ct)));
+        for (var i = 0; i < distinct.Length; i++)
         {
-            var (found, cached) = await TryReadAsync(userId, ct);
+            var (found, cached) = reads[i];
             if (cached is not null)
-                result[userId] = cached;
+                result[distinct[i]] = cached;
             else if (!found)
-                misses.Add(userId);
+                misses.Add(distinct[i]);
             // found with a null profile = a live negative entry; skip the source until it expires.
         }
 
         if (misses.Count > 0)
         {
             var fetched = await source.GetUserInfoAsync(misses, ct);
-            foreach (var userId in misses)
-            {
-                if (fetched.TryGetValue(userId, out var info))
-                {
-                    result[userId] = info;
-                    await WriteAsync(userId, info, Ttl, ct);
-                }
-                else
-                {
-                    await WriteAsync(userId, info: null, _negativeTtl, ct);
-                }
-            }
+            foreach (var (userId, info) in fetched)
+                result[userId] = info;
+
+            await Task.WhenAll(misses.Select(userId => fetched.TryGetValue(userId, out var info)
+                ? WriteAsync(userId, info, Ttl, ct)
+                : WriteAsync(userId, info: null, _negativeTtl, ct)));
         }
 
         return result;
