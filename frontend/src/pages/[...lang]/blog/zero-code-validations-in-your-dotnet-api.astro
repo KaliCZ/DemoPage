@@ -10,17 +10,17 @@ export const metadata: BlogPostMetadata = {
     en: {
       title: "Zero-Code Validations in Your .NET API",
       summary:
-        "How swapping primitive strings and ints for Kalicz.StrongTypes turned request validation into something the JSON deserializer and the compiler do for me — less code, honest signatures, and far fewer edge cases to test.",
+        "Add validations by swapping primitive types like strings and ints for Kalicz.StrongTypes NonEmptyString, Positive<int> etc. Let ASP.NET parse on the API boundary for free and the compiler guarantees the rest.",
     },
     cs: {
       title: "Validace v .NET API bez jediného řádku kódu",
       summary:
-        "Jak výměna primitivních stringů a intů za Kalicz.StrongTypes proměnila validaci requestů v práci pro JSON deserializér a kompilátor — méně kódu, upřímné signatury a mnohem méně hraničních případů k testování.",
+        "Přidej validace výměnou primitivních typů jako string a int za Kalicz.StrongTypes NonEmptyString, Positive<int> atd. Nech ASP.NET parsovat data z requestů a compiler garantuje zbytek.",
     },
   },
   pubDate: "2026-07-04",
-  updatedDate: "2026-07-08",
-  tags: ["dotnet", "csharp", "strong-types", "api-design", "validations"],
+  updatedDate: "2026-07-09",
+  tags: ["dotnet", "csharp", "strong-types", "type-safety", "api-design", "validations"],
 };
 
 export const getStaticPaths = () => blogPostStaticPaths(metadata);
@@ -58,8 +58,7 @@ public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request
 
 const beforeServiceSnippet = `public async Task<Order> PlaceAsync(string customerEmail, string productCode, int quantity)
 {
-    // The controller already checked all this. But PlaceAsync takes plain strings
-    // and an int, so it can be called from anywhere — and it can't trust that it was.
+    // Must be checked. Even though the controller already checked all this.
     if (string.IsNullOrWhiteSpace(productCode))
         throw new ArgumentException("Product code is required.", nameof(productCode));
     if (quantity <= 0)
@@ -68,7 +67,7 @@ const beforeServiceSnippet = `public async Task<Order> PlaceAsync(string custome
     if (!await catalog.ContainsAsync(productCode))
         throw new UnknownProductException(productCode);
 
-    // ...the same guards as the API, one layer down — then the real work.
+    // The real work here.
 }`;
 
 const afterSnippet = `public record CreateOrderRequest(
@@ -106,7 +105,7 @@ const openApiSnippet = `{
   "quantity": { "type": "integer", "format": "int32", "minimum": 0, "exclusiveMinimum": true } // Positive<int>
 }`;
 
-const openApiSetupSnippet = `// Program.cs — install Kalicz.StrongTypes.OpenApi.Swashbuckle, then one call
+const openApiSetupSnippet = `// Program.cs - install Kalicz.StrongTypes.OpenApi.Swashbuckle, then one call
 builder.Services.AddSwaggerGen(options => options.AddStrongTypes());`;
 
 const signatureSnippet = `// Before: every caller re-checks, every reader wonders.
@@ -134,7 +133,7 @@ const entitySnippet = `public sealed class Order
     public Positive<int> Quantity { get; init; }
 }
 
-// Program.cs — StrongTypes registration for db context.
+// Program.cs - StrongTypes registration for db context.
 services.AddDbContext<ShopDbContext>(options => options
     .UseNpgsql(connectionString)
     .UseStrongTypes());`;
@@ -149,74 +148,88 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
     lang === "cs" ? (
       <Fragment>
         <p>
-          Na jednom z minulých projektů jsem narazil na problém, který občas vytvářel chyby. Byly to validace — konkrétně to, kolikrát jsem
-          musel napsat to samé pravidlo znovu.
+          Na jednom z minulých projektů jsem si všiml jednoho problému. Byly to validace. Konkrétně to, kolikrát jsem musel napsat to samé
+          pravidlo znovu.
         </p>
 
-        <p>
-          Vezměte si tenhle ukázkový endpoint, který zakládá objednávku. Request DTO validují data annotations — z nich vzniká OpenAPI
-          schéma, ze kterého frontend generuje svoje validace. Controller pak kontroluje pravidla, která se do OpenAPI zapsat nedají, ale
-          chceme selhat rychle, dřív než se spustí databázové dotazy. A služby s business logikou to prověří potřetí, protože se k nim
-          nedostanete jen přes tenhle controller a jejich zodpovědnost je zaručit validitu dat. Tři kopie jednoho pravidla — a spousta
-          příležitostí zanést chybu jen tím, že jednu z nich zapomenete upravit.
-        </p>
+        <p>Vezmi si tenhle ukázkový endpoint, který zakládá objednávku. Validace probíhá na třech místech:</p>
+
+        <ol>
+          <li>
+            <strong>Data annotations</strong> automaticky validují request DTO a vystaví OpenAPI JSON schéma.
+          </li>
+          <li>
+            <strong>Controller</strong> kontroluje pravidla, která se v OpenAPI vyjádřit nedají, abychom selhali rychle, ještě než se spustí
+            jakékoli databázové dotazy.
+          </li>
+          <li>
+            <strong>Služba</strong> s business logikou musí kontrolovat znovu, protože ji můžete zavolat i odjinud. Například z background
+            jobu poté, co si z databáze načtete nějakou entitu.
+          </li>
+        </ol>
+
+        <p>Tři různá místa a snadno zaneseš chybu jenom tím, že jedno z nich zapomeneš upravit.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
         <p>
-          Všimněte si, že data annotations ověří e-mailovou adresu. Ale pořád máte jen string. Podobně je celé číslo ověřené jako kladné,
-          jenže tu informaci nijak nevyužijete. Pak request dorazí do služby:
+          Data annotations ověří e-mailovou adresu, ale pořád mám jen string. Podobně je celé číslo ověřené jako kladné, jenže tu informaci
+          nikde nedržím. Pak se dostaneme do služby:
         </p>
 
         <BlogCode code={beforeServiceSnippet} lang="csharp" />
 
         <p>
-          {" "}
-          <code>PlaceAsync</code> nakonec ručí za to, že všechno funguje. Může ho zavolat controller, ale klidně i nějaký background worker
-          nebo jiný endpoint. Takže musíme validovat znovu.
+          <code>PlaceAsync</code> nakonec ručí za to, že všechno funguje. Může ho zavolat controller, ale klidně i background worker nebo
+          jiný endpoint. Takže musí validovat znovu.
         </p>
 
         <h2>Parsuj, nevaliduj</h2>
 
         <p>
           Řešení je stará myšlenka z funkcionálního programování: místo kontrolování hodnoty a posílání téhož volného typu dál ji{" "}
-          <em>jednou</em> převeďte do typu, který neplatný stav vůbec neumí reprezentovat. <code>int</code>, který právě prošel kontrolou{" "}
-          <code>&gt; 0</code>, je pořád jen <code>int</code> — důkaz se zahodí ve chvíli, kdy kontrola projde, takže další metoda níž musí
+          <em>jednou</em> převeď do typu, který neplatný stav vůbec neumí reprezentovat. <code>int</code>, který právě prošel kontrolou{" "}
+          <code>&gt; 0</code>, je pořád jen <code>int</code>. Důkaz se zahodí ve chvíli, kdy kontrola projde, takže další metoda níž musí
           kontrolovat znovu. <code>Positive&lt;int&gt;</code> si ten důkaz nese přímo v typu a kompilátor ho vymáhá všude níž.
         </p>
 
         <p>
-          Přesně tohle pro C# umožňuje můj balíček <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>: malá sada validovaných
-          typů — <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code> a také různých numerických typů
-          jako
-          <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> atd. — plus algebraické typy <code>Maybe&lt;T&gt;</code> a{" "}
-          <code>Result&lt;T, TError&gt;</code>, kterými se to celé skládá dohromady.
+          Přesně na to jsem postavil balíček <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>. Je to malá kolekce C# typů.
+          Například <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code>, pár numerických typů jako{" "}
+          <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> a další užitečné typy a pomocníky.{" "}
+          <code>Result&lt;T, TError&gt;</code> je další mimořádně užitečný typ, který umí reprezentovat úspěšný nebo chybový stav vaší
+          operace. A pak je tu <code>Maybe&lt;T&gt;</code>, který pomůže reprezentovat tři stavy v API. Hodí se třeba, když chceš rozlišit
+          mezi změnou hodnoty na něco, změnou hodnoty na nic a neměněním hodnoty.
         </p>
 
         <p>
-          Knihovnu hodlám do budoucna rozšiřovat. Například chystám <code>Interval&lt;T&gt;</code>, který usnadní reprezentovat začátek +
+          Nezmínil jsem tady zdaleka všechno, co knihovna nabízí, pokud tě to zajímá, mrkni na{" "}
+          <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+          . Knihovnu hodlám dál rozšiřovat. Například chystám <code>Interval&lt;T&gt;</code>, který usnadní reprezentovat rozsah začátek +
           konec s validací, že konec je po začátku. O něm napíšu samostatný článek.
         </p>
 
-        <h2>Ta část „bez jediného řádku“</h2>
+        <h2>„Bez jediného řádku“</h2>
 
-        <p>Jeden řádek na instalaci:</p>
+        <p>Stačí jeden řádek na instalaci:</p>
 
         <BlogCode code="dotnet add package Kalicz.StrongTypes" lang="shell" />
 
-        <p>Pak už jen request record vymění primitivy za typy, které říkají, co skutečně znamenají:</p>
+        <p>A můžeš rovnou začít typy používat. Třeba takhle:</p>
 
         <BlogCode code={afterSnippet} lang="csharp" />
 
         <p>
-          Data annotations jsou pryč. Ruční parsování přes <code>MailAddress</code> je pryč. Všechny informace o hodnotách teď žijí přímo v
-          typech. A protože metoda vrací <code>Result</code> místo házení výjimek, kompilátor přesně ví, jaké chyby můžou nastat.
+          Data annotations jsou pryč. Mapování na <code>MailAddress</code> je pryč. Všechny informace o hodnotách teď žijí přímo v typech. A
+          protože metoda místo házení výjimek vrací <code>Result</code>, kompilátor přesně ví, jaké chyby můžou nastat.
         </p>
 
         <p>
-          Všechny typy se serializují do JSONu a zpátky bez jakékoli konfigurace. A stejně tak se aktualizuje OpenAPI schéma — přidejte
-          balíček <code>Kalicz.StrongTypes.OpenApi.Swashbuckle</code> (nebo variantu pro <code>Microsoft.AspNetCore.OpenApi</code>) a
-          zaregistrujte ho:
+          Všechny typy se serializují do JSONu a zpátky bez jakékoli konfigurace. A stejně tak se správně aktualizuje OpenAPI schéma. Stačí
+          přidat balíček <code>Kalicz.StrongTypes.OpenApi.Swashbuckle</code> (nebo variantu pro <code>Microsoft.AspNetCore.OpenApi</code>) a
+          zaregistrovat ho:
         </p>
 
         <BlogCode code={openApiSetupSnippet} lang="csharp" />
@@ -232,54 +245,58 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <BlogCode code={signatureSnippet} lang="csharp" />
 
         <p>
-          Druhá signatura odpovídá na otázky, které vás ta první nutí dohledávat: ne, kód nemůže být prázdný; ne, nulové množství sem
-          nedoteče; ano, můžete tyto hodnoty poslat rovnou do DB entity. Kolegové na review se přestanou ptát „a co když je tohle prázdné?“,
-          protože ta otázka už neprojde přes typovou kontrolu.
+          Druhá signatura odpovídá na otázky, které tě bys s tou první musel dohledávat: kód nemůže být prázdný, množství nemuže být nula.
+          Kolegové na review se přestanou ptát „a co když je množství -3?“, protože to nejde zkompilovat.
         </p>
 
         <p>
-          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code> — selhání je
-          hodnota v signatuře, ne překvápko v podobě výjimky:
+          Business pravidla, která selhat legitimně <em>můžou</em>, dostanou totéž přes <code>Result&lt;T, TError&gt;</code>. Chyba se stane
+          hodnotou v signatuře, ne překvapením v podobě výjimky:
+        </p>
+
+        <p>
+          Ale hlavně, když si tenhle kód přečteš za pět měsíců, nemusíš si pamatovat kontext. Nemusíš zjišťovat, odkud hodnoty přicházejí a
+          co všechno můžou obsahovat. A noví lidé v týmu se tě nemusí vyptávat. Kód prostě velmi přesně popisuje, co se děje. Přidává
+          jasnost a kontext.
         </p>
 
         <BlogCode code={resultSnippet} lang="csharp" />
 
-        <h2>Typy dorazí až do databáze</h2>
+        <h2>Typy uložíš i databáze</h2>
 
         <p>
-          Když entitu načtete do kontextu přes EF Core, museli byste validovat znovu. Ale s balíčkem <code>Kalicz.StrongTypes.EfCore</code>{" "}
-          se silné typy stanou přímo vlastnostmi entity — jediné volání na options builderu navěsí value converter na každou z nich:
+          Když entitu načteš do kontextu přes EF Core, musel bys validovat znovu. Ale s balíčkem <code>Kalicz.StrongTypes.EfCore</code> se
+          silné typy stanou přímo vlastnostmi entity. Jediné volání na options builderu navěsí value converter na každý z nich:
         </p>
 
         <BlogCode code={entitySnippet} lang="csharp" />
 
         <p>
-          Sloupec v databázi je pořád obyčejný <code>varchar</code> nebo <code>int</code>; na úložišti se nemění nic. Ale EF Core teď
-          nedovolí uložit neplatné hodnoty. A když se pokusíte neplatná data z databáze načíst, dostanete hlasitou výjimku místo tiché chyby
-          v podobě null hodnoty. Naparsovaná informace tak zůstane zachovaná napořád — entitu si můžete načíst a bezpečně zavolat{" "}
-          <code>PlaceAsync</code>.
+          Sloupec v databázi je pořád obyčejný <code>varchar</code> nebo <code>int</code>, na úložišti se nemění nic. Ale EF Core teď
+          nedovolí uložit neplatné hodnoty. A když se pokusíš neplatná data z databáze načíst, dostaneš hlasitou chybu místo tiché null
+          hodnoty. Naparsovaná informace tak zůstane zachovaná napořád. Entitu si můžeš načíst a bezpečně zavolat <code>PlaceAsync</code>.
         </p>
 
-        <h2>Méně hraničních případů, méně testů</h2>
+        <h2>Méně edge-casů, méně testů</h2>
 
         <p>
-          Počet potřebných unit testů rapidně klesl — tyhle hraniční případy prostě nejsou možné. Jako <code>NonEmptyString</code> nepředáte{" "}
-          <code>null</code>, <code>""</code> ani <code>" "</code>. Do množství nepředáte <code>-1</code>. Zbydou testy o chování — ty, které
-          stojí za to číst. A tam, kde hodnoty konstruujete, je API explicitní v tom, co zamýšlíte:
+          Počet potřebných unit testů rapidně klesl. Tyhle hraniční případy prostě nejsou možné. Jako <code>NonEmptyString</code> nepředáš{" "}
+          <code>null</code>, <code>""</code> ani <code>" "</code>. Do množství nepředáš <code>-1</code>. Zbydou testy o chování. Ty, které
+          maji smysl. A API pro tvorbu těchto typů je velmi explicitní v tom, co chceš dělat:
         </p>
 
         <BlogCode code={constructionSnippet} lang="csharp" />
 
         <p>
-          A pro vlastnosti, které si ověřit chcete, umí doprovodný balíček <code>Kalicz.StrongTypes.FsCheck</code> generovat validní silně
-          typované hodnoty pro property-based testy, takže vaše generátory respektují stejné invarianty jako váš kód. Property-based testing
-          vám dovolí napsat jednu testovací metodu a prohnat skrz ní stovky různých hodnot. Napište mi do komentářů, jestli byste o něm
-          chtěli samostatný článek.
+          A pro vlastnosti, které si ověřit chceš, ti property-based testing dovolí napsat jednu testovací metodu a prohnat skrz ni stovky
+          různých hodnot. Balíček <code>Kalicz.StrongTypes.FsCheck</code> generuje validní silně typované hodnoty pro property-based testy,
+          takže tvoje generátory respektují stejné invarianty jako váš kód. Napiš mi do komentářů, jestli by o property-based testingu chtěl
+          samostatný článek.
         </p>
 
-        <h2>Vyzkoušejte to</h2>
+        <h2>Vyzkoušej to</h2>
 
-        <p>Celý ten posun v jednom obrázku — validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
+        <p>Celý ten posun v jednom obrázku. Validace opakovaná v každé vrstvě versus jedno naparsování na hranici:</p>
 
         <img
           src={strongTypesDiagrams.impact.src}
@@ -293,8 +310,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         />
 
         <p>
-          I backend tohohle webu běží na StrongTypes — request DTO, doménové eventy, stav entit. Pokud vás ten přístup zaujal, na stránce{" "}
-          <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdete diagramy a další ukázky, zdrojáky žijí na{" "}
+          I backend za tímhle webem běží na StrongTypes. Request DTO, doménové eventy, stav entit. Pokud tě ten přístup zaujal, na stránce{" "}
+          <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdeš diagramy a další ukázky, zdrojáky žijí na{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHubu
           </a>{" "}
@@ -302,36 +319,43 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
             NuGetu
           </a>
-          . Začněte jedním request recordem. Smažte guard clauses, které tím ztratí smysl. Do odpoledne budete vědět, jestli ho chcete
-          všude.
+          . Začni jedním request recordem. Smaž guard clauses, které tím ztratí smysl. Do odpoledne budeš vědět, že to chceš všude.
         </p>
       </Fragment>
     ) : (
       <Fragment>
         <p>
-          On one of my previous projects, I noticed friction that sometimes caused bugs. It was validation — specifically, how many times I
-          had to write the same rule down.
+          On one of my previous projects, I noticed an issue. It was validations. Specifically, how many times I had to write the same rule
+          down.
         </p>
 
-        <p>
-          Take this example endpoint that places an order. Data annotations validate the request DTO — those become the OpenAPI schema,
-          enabling the frontend's validations. The controller then checks rules that can't be expressed in OpenAPI, and it fails fast,
-          before any DB queries run. And the service with the business logic checks a third time, because it isn't only reachable through
-          that controller and it has to guarantee validity. Three copies of one rule — and plenty of room to introduce bugs just by
-          forgetting to update one of them.
-        </p>
+        <p>Take this example endpoint that places an order. Validation is on three places:</p>
+
+        <ol>
+          <li>
+            <strong>Data annotations</strong> validate the request DTO automatically and expose the OpenAPI json schema.
+          </li>
+          <li>
+            <strong>The controller</strong> checks rules that can't be expressed in OpenAPI, so that we fail fast before any DB queries run.
+          </li>
+          <li>
+            <strong>The service</strong> with business logic has to check again, because you could call it from a different place. For
+            example in a background job after fetching some entity from the database.
+          </li>
+        </ol>
+
+        <p>Three different places and you can easily introduce bugs just by forgetting to update one of them.</p>
 
         <BlogCode code={beforeSnippet} lang="csharp" />
 
         <p>
-          Notice that data annotations validate the email address. But you still only have a string. Similarly, the integer is validated to
-          be positive, but you can't actually use that guarantee. Then the request reaches the service:
+          Data annotations validate the email address, but you still only have a string. Similarly, the integer is validated to be positive,
+          but you can't actually use that guarantee. Then we reach the service:
         </p>
 
         <BlogCode code={beforeServiceSnippet} lang="csharp" />
 
         <p>
-          {" "}
           <code>PlaceAsync</code> is ultimately responsible for making sure everything works. It can be called from the controller, but also
           from a background worker or another endpoint. So it has to validate again.
         </p>
@@ -339,32 +363,38 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <h2>Parse, don't validate</h2>
 
         <p>
-          The fix is an old functional-programming idea: instead of checking a value and passing the same loose type along, convert it{" "}
+          The solution is an old functional-programming idea: instead of checking a value and passing the same loose type along, convert it{" "}
           <em>once</em> into a type that cannot represent the invalid state. An <code>int</code> that just passed a <code>&gt; 0</code>{" "}
-          check is still an <code>int</code> — the proof is discarded the moment the check succeeds, so the next method down has to check
-          all over again. A <code>Positive&lt;int&gt;</code> carries that proof in the type itself, and the compiler enforces it everywhere
+          check is still an <code>int</code>. The proof is discarded the moment the check succeeds, so the next method down has to check all
+          over again. A <code>Positive&lt;int&gt;</code> carries that proof in the type itself, and the compiler enforces it everywhere
           downstream.
         </p>
 
         <p>
-          That's what my <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package packages up for C#: a small set of
-          validated wrappers — <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code>, and a few
-          numerical types such as <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> and others — plus the algebraic types{" "}
-          <code>Maybe&lt;T&gt;</code> and <code>Result&lt;T, TError&gt;</code> to compose them with.
+          That's what I built <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a> package for. It's a small set of C# types.
+          For example <code>NonEmptyString</code>, <code>Email</code>, <code>NonEmptyEnumerable&lt;T&gt;</code>, a few numerical types such
+          as <code>Positive&lt;T&gt;</code>, <code>NonNegative&lt;T&gt;</code> and other useful types and helpers.{" "}
+          <code>Result&lt;T, TError&gt;</code> is another super useful type that can represent a success or error state of your operations.
+          And there's also a <code>Maybe&lt;T&gt;</code> that can help you represent 3 states in your API. Useful for example when you want
+          to differentiate between updating a value to something, updating a value to nothing and not updating a value.
         </p>
 
         <p>
-          I'll also keep extending the library. For example, <code>Interval&lt;T&gt;</code> is coming to make it easier to represent a start
-          + end range, validating that the end comes after the start. I'll write a separate blog post about that one.
+          I haven't mentioned all the things inside the library here, if you're interested, go check it out{" "}
+          <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
+            here
+          </a>
+          . I'll also keep extending the library. For example, <code>Interval&lt;T&gt;</code> is coming to make it easier to represent a
+          start + end range, validating that the end comes after the start. I'll write a separate blog post about that one.
         </p>
 
         <h2>The zero-code part</h2>
 
-        <p>One line to install:</p>
+        <p>Just one line to install:</p>
 
         <BlogCode code="dotnet add package Kalicz.StrongTypes" lang="shell" />
 
-        <p>Then the request record swaps its primitives for types that mean what they say:</p>
+        <p>And you can go ahead and start using the types. For example like this:</p>
 
         <BlogCode code={afterSnippet} lang="csharp" />
 
@@ -374,7 +404,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <p>
-          All the types serialize to and from JSON out of the box. And the OpenAPI schema is also properly updated — add the{" "}
+          All the types serialize to and from JSON out of the box. And the OpenAPI schema is also properly updated. Simply add the{" "}
           <code>Kalicz.StrongTypes.OpenApi.Swashbuckle</code> package (or the <code>Microsoft.AspNetCore.OpenApi</code> variant) and
           register it:
         </p>
@@ -392,14 +422,19 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <BlogCode code={signatureSnippet} lang="csharp" />
 
         <p>
-          The second signature answers questions the first one forces you to research: no, the code can't be empty; no, zero quantity can't
-          happen here; yes, you can pass this straight to the persistence layer. Reviewers stop asking "what if the quantity is zero?"
-          because the question no longer type-checks.
+          The second signature answers questions the first one forces you to research: the code can't be empty, quantity can't be zero.
+          Reviewers stop asking "what if the quantity is minus three?" because the question no longer type-checks.
         </p>
 
         <p>
-          Business rules that <em>can</em> legitimately fail get the same treatment with <code>Result&lt;T, TError&gt;</code> — failure
+          Business rules that <em>can</em> legitimately fail get the same treatment with <code>Result&lt;T, TError&gt;</code>. The failure
           becomes a value in the signature instead of a surprise exception:
+        </p>
+
+        <p>
+          But most importantly, when you read this code in 5 months, you don't need to remember the context. You don't need to get familiar
+          with where the values are coming from and what they could contain. Also new hires don't need to ask you questions. The code simply
+          describes what is going on very precisely. Adding clarity and context.
         </p>
 
         <BlogCode code={resultSnippet} lang="csharp" />
@@ -407,39 +442,40 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <h2>The types reach the database</h2>
 
         <p>
-          If you load an entity into context via EF core, you'd have to validate again. But with the <code>Kalicz.StrongTypes.EfCore</code>{" "}
-          companion package, the strong types become entity properties directly — one call on the options builder attaches a value converter
-          to each:
+          When you load an entity into context via EF core, you'd have to validate again. But with the{" "}
+          <code>Kalicz.StrongTypes.EfCore</code> package, the strong types become entity properties directly. One call on the options
+          builder attaches a value converter to each type:
         </p>
 
         <BlogCode code={entitySnippet} lang="csharp" />
 
         <p>
-          The DB column is still a plain <code>varchar</code> or <code>int</code>; nothing changes about the storage. But EF Core now
-          doesn't allow storing invalid values, and if you try to load invalid values from the DB, you get a loud crash instead of a silent
-          null. So the parsed information is kept forever — you can load the entity and call <code>PlaceAsync</code> safely.
+          The DB column is still a plain <code>varchar</code> or <code>int</code>, nothing changes about the storage. But EF Core now
+          doesn't allow storing invalid values. And if you try to load invalid values from the DB, you get a loud crash instead of a silent
+          null. So the parsed information is kept forever. You can load the entity and call <code>PlaceAsync</code> safely.
         </p>
 
         <h2>Fewer edge cases, fewer tests</h2>
 
         <p>
-          The number of unit tests needed has dropped massively — these edge cases are simply not possible anymore. You can't pass{" "}
+          The number of unit tests needed has dropped massively. The edge cases are simply not possible anymore. You can't pass{" "}
           <code>null</code>, <code>""</code>, or <code>" "</code> as a NonEmptyString. You can't pass <code>-1</code> into quantity. What
-          remains are tests about behavior — the ones worth reading. And the API for constructing these types is very explicit about intent:
+          remains are tests about behavior. The ones that make sense. And the API for constructing these types is very explicit about
+          intent:
         </p>
 
         <BlogCode code={constructionSnippet} lang="csharp" />
 
         <p>
-          And for the properties you still want to verify, the <code>Kalicz.StrongTypes.FsCheck</code> companion package generates valid
-          strong-typed values for property-based tests, so your generators respect the same invariants your code does. Property-based
-          testing lets you define one test method and run hundreds of different values through it. Let me know in a comment if you'd like a
-          separate blog post about that.
+          And for the properties you still want to verify, property-based testing lets you define one test method and run hundreds of
+          different values through it. The <code>Kalicz.StrongTypes.FsCheck</code> package generates valid strong-typed values for
+          property-based tests, so your generators respect the same invariants your code does. Let me know in a comment if you'd like a
+          separate blog post about property based testing.
         </p>
 
         <h2>Try it</h2>
 
-        <p>The whole shift in one picture — validation repeated at every layer versus parsed once at the boundary:</p>
+        <p>The whole shift in one picture. Validation repeated at every layer versus parsed once at the boundary:</p>
 
         <img
           src={strongTypesDiagrams.impact.src}
@@ -453,7 +489,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         />
 
         <p>
-          Even the backend behind this very site runs on StrongTypes — request DTOs, domain events, entity state. If the approach appeals to
+          Even the backend behind this very site runs on StrongTypes. Request DTOs, domain events, entity state. If the approach appeals to
           you, the <a href={localePath(lang, "strong-types")}>StrongTypes page</a> has diagrams and more examples, the source lives on{" "}
           <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
             GitHub
@@ -462,8 +498,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
             NuGet
           </a>
-          . Start with one request record. Delete the guard clauses that become redundant. You'll know within an afternoon whether you want
-          it everywhere.
+          . Start with one request record. Delete the guard clauses that become redundant. You'll know within an afternoon that you want it
+          everywhere.
         </p>
       </Fragment>
     )
