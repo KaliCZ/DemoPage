@@ -366,8 +366,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           The solution is an old functional-programming idea: instead of checking a value and passing the same loose type along, convert it{" "}
           <em>once</em> into a type that cannot represent the invalid state. An <code>int</code> that just passed a <code>&gt; 0</code>{" "}
-          check is still an <code>int</code> — the proof is discarded the moment the check succeeds, so the next method down has to check
-          all over again. A <code>Positive&lt;int&gt;</code> carries that proof in the type itself, and the compiler enforces it everywhere
+          check is still an <code>int</code>. The proof is discarded the moment the check succeeds, so the next method down has to check all
+          over again. A <code>Positive&lt;int&gt;</code> carries that proof in the type itself, and the compiler enforces it everywhere
           downstream.
         </p>
 
@@ -428,7 +428,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         </p>
 
         <p>
-          Business rules that <em>can</em> legitimately fail get the same treatment with <code>Result&lt;T, TError&gt;</code> — failure
+          Business rules that <em>can</em> legitimately fail get the same treatment with <code>Result&lt;T, TError&gt;</code>. The failure
           becomes a value in the signature instead of a surprise exception:
         </p>
 
@@ -461,7 +461,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
         <p>
           The number of unit tests needed has dropped massively. The edge cases are simply not possible anymore. You can't pass{" "}
           <code>null</code>, <code>""</code>, or <code>" "</code> as a NonEmptyString. You can't pass <code>-1</code> into quantity. What
-          remains are tests about behavior — the ones worth reading. And the API for constructing these types is very explicit about intent:
+          remains are tests about behavior. The ones that make sense. And the API for constructing these types is very explicit about
+          intent:
         </p>
 
         <BlogCode code={constructionSnippet} lang="csharp" />
@@ -475,7 +476,7 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
 
         <h2>Try it</h2>
 
-        <p>The whole shift in one picture — validation repeated at every layer versus parsed once at the boundary:</p>
+        <p>The whole shift in one picture. Validation repeated at every layer versus parsed once at the boundary:</p>
 
         <img
           src={strongTypesDiagrams.impact.src}
