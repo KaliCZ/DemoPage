@@ -105,4 +105,51 @@ public class CachingUserInfoServiceTests
         Assert.Equal("Fresh", combined[fresh].DisplayName);
         Assert.Equal(2, source.Calls);
     }
+
+    [Fact]
+    public async Task UnresolvedProfile_IsNotRefetchedWhileTheNegativeEntryLives()
+    {
+        var service = Build(out var source);
+        var unknown = Guid.NewGuid();
+
+        var first = await service.GetUserInfoAsync([unknown], Ct);
+        var second = await service.GetUserInfoAsync([unknown], Ct);
+
+        Assert.Empty(first);
+        Assert.Empty(second);
+        Assert.Equal(1, source.Calls);
+    }
+
+    [Fact]
+    public async Task UnresolvedProfile_IsRefetchedAfterTheNegativeEntryExpires()
+    {
+        var source = new CountingUserInfoService();
+        var cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+        var service = new CachingUserInfoService(source, cache, NullLogger<CachingUserInfoService>.Instance,
+            negativeTtl: TimeSpan.FromMilliseconds(50));
+        var userId = Guid.NewGuid();
+
+        await service.GetUserInfoAsync([userId], Ct);
+        source.Profiles[userId] = new UserPublicInfo("Late Arrival", null);
+        await Task.Delay(200, Ct);
+        var afterExpiry = await service.GetUserInfoAsync([userId], Ct);
+
+        Assert.Equal("Late Arrival", afterExpiry[userId].DisplayName);
+        Assert.Equal(2, source.Calls);
+    }
+
+    [Fact]
+    public async Task Evict_AlsoClearsANegativeEntry()
+    {
+        var service = Build(out var source);
+        var userId = Guid.NewGuid();
+
+        await service.GetUserInfoAsync([userId], Ct);
+        source.Profiles[userId] = new UserPublicInfo("Now Exists", null);
+        await service.EvictAsync(userId, Ct);
+        var afterEvict = await service.GetUserInfoAsync([userId], Ct);
+
+        Assert.Equal("Now Exists", afterEvict[userId].DisplayName);
+        Assert.Equal(2, source.Calls);
+    }
 }
