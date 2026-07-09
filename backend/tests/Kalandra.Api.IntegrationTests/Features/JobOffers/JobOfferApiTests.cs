@@ -806,6 +806,16 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Health_ReportsTemporalHealthy()
+    {
+        var response = await client.GetAsync("/health", Ct);
+
+        var json = await ParseJsonAsync(response);
+        var temporal = json.GetProperty("entries").GetProperty("temporal");
+        Assert.Equal("Healthy", temporal.GetProperty("status").GetString());
+    }
+
     // ───── Helpers ─────
 
     private static readonly Guid AdminUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
