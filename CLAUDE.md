@@ -27,6 +27,8 @@ dotnet build                         # Backend only
 npm --prefix frontend run build      # Frontend only
 ```
 
+**When asked to run the app for manual testing, always start the full stack with `npm run aspire`** — never the frontend dev server alone. Without the backend, every API-backed feature (comments, reactions, job offers) fails with a 502 from the Vite proxy.
+
 **Run `npm test` when a change touches logic or structure.** Content-only changes (blog copy, translations, page text) don't need the suite locally. When you do run tests, run the full suite — no subsets (`dotnet test`, `npm --prefix frontend test`, etc.) as a substitute. Pushing and letting CI run the tests is a viable strategy; what's non-negotiable is a PR left sitting with a failing build — after pushing, check the CI result and fix any failure.
 
 ## Design Principles

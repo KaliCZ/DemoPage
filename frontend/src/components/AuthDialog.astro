@@ -10,6 +10,7 @@
  * Supabase client is a shared singleton from lib/supabase.ts so both this
  * component and Layout.astro use the same instance.
  */
+import { Icon } from "astro-icon/components";
 import IconGoogle from "./icons/IconGoogle.astro";
 import type { Locale } from "../i18n/utils";
 import enCommon from "../i18n/en/common.json";
@@ -27,6 +28,15 @@ const t = lang === "cs" ? csCommon : enCommon;
   id="auth-dialog"
   class="m-auto bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 max-w-sm w-full backdrop:bg-black/50"
 >
+  <button
+    type="button"
+    id="auth-dialog-close"
+    aria-label={t.auth.close}
+    title={t.auth.close}
+    class="absolute top-4 right-4 rounded-lg p-2.5 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface cursor-pointer"
+  >
+    <Icon name="material-symbols:close" class="size-6" aria-hidden="true" />
+  </button>
   <div class="space-y-5">
     <div>
       <h2 id="auth-dialog-title" class="font-headline text-xl font-bold text-on-surface">
@@ -93,14 +103,6 @@ const t = lang === "cs" ? csCommon : enCommon;
     >
       <IconGoogle class="w-5 h-5" />
       {t.auth.continueWithGoogle}
-    </button>
-
-    <button
-      type="button"
-      id="auth-dialog-close"
-      class="w-full px-4 py-2 rounded-xl text-sm font-label text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-    >
-      {t.auth.cancel}
     </button>
   </div>
 </dialog>
@@ -370,6 +372,22 @@ const t = lang === "cs" ? csCommon : enCommon;
   });
   document.getElementById("auth-dialog-close")?.addEventListener("click", () => {
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
+  });
+
+  // Clicks on the backdrop and on the dialog's own padding both target the <dialog>, so hit-test
+  // the rect; the press must also start outside so a text-selection drag can't close it.
+  const authDialogElement = document.getElementById("auth-dialog") as HTMLDialogElement | null;
+  const outsideAuthDialog = (event: MouseEvent) => {
+    if (!authDialogElement) return false;
+    const rect = authDialogElement.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+  };
+  let authDialogPressStartedOutside = false;
+  authDialogElement?.addEventListener("pointerdown", (event) => {
+    authDialogPressStartedOutside = outsideAuthDialog(event);
+  });
+  authDialogElement?.addEventListener("click", (event) => {
+    if (authDialogPressStartedOutside && outsideAuthDialog(event)) authDialogElement.close();
   });
   // Allow Enter key to submit
   document.getElementById("auth-password")?.addEventListener("keydown", (e) => {

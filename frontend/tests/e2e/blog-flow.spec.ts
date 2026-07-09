@@ -105,16 +105,17 @@ test.describe("Blog Flow", () => {
     const signInCta = page.locator("#blog-signin-cta");
     await expect(signInCta.getByRole("button", { name: "Sign In" })).toBeVisible();
 
-    // A signed-out reaction click opens the auth dialog instead of calling the API.
+    // A signed-out reaction click opens the auth dialog; the top-right X closes it.
     await reactions.getByRole("button", { name: "Thumbs up" }).click();
     await expect(page.locator("#auth-dialog")).toBeVisible();
     await page.locator("#auth-dialog-close").click();
     await expect(page.locator("#auth-dialog")).not.toBeVisible();
 
-    // The CTA button opens the same dialog.
+    // The CTA button opens the same dialog; a click on the backdrop closes it.
     await signInCta.getByRole("button", { name: "Sign In" }).click();
     await expect(page.locator("#auth-dialog")).toBeVisible();
-    await page.locator("#auth-dialog-close").click();
+    await page.mouse.click(10, 10);
+    await expect(page.locator("#auth-dialog")).not.toBeVisible();
 
     // The API itself refuses anonymous writes.
     const toggleResponse = await request.post(`${API_URL}/api/blog/${SLUG}/reactions/toggle`, {
