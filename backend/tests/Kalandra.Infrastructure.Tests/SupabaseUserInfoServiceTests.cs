@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Kalandra.Infrastructure.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -85,6 +86,21 @@ public class SupabaseUserInfoServiceTests
 
         Assert.Equal("Ada", result[responsive].DisplayName);
         Assert.False(result.ContainsKey(hung));
+    }
+
+    [Fact]
+    public async Task TwentyHungFetches_TimeOutTogetherNotSequentially()
+    {
+        var service = Build(_ => new TaskCompletionSource<User?>().Task, fetchTimeout: TimeSpan.FromMilliseconds(100));
+        var userIds = Enumerable.Range(0, 20).Select(_ => Guid.NewGuid()).ToArray();
+        var stopwatch = Stopwatch.StartNew();
+
+        var result = await service.GetUserInfoAsync(userIds, Ct);
+
+        stopwatch.Stop();
+        Assert.Empty(result);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1),
+            $"20 hung fetches took {stopwatch.Elapsed} — the per-user timeout must apply in parallel, not sequentially.");
     }
 
     [Fact]

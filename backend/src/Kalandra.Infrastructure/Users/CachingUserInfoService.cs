@@ -7,16 +7,20 @@ namespace Kalandra.Infrastructure.Users;
 /// <summary>
 /// Caches author profiles so a comment thread doesn't re-fetch each one from Supabase on every load.
 /// Profile edits bypass this service, so freshness rests on the TTL plus an explicit <see cref="EvictAsync"/>.
+/// Profiles the source can't resolve are cached briefly too, so a Supabase outage costs one bounded
+/// fetch per author per window instead of one per page load.
 /// </summary>
 public class CachingUserInfoService(
     IUserInfoService source,
     IDistributedCache cache,
     ILogger<CachingUserInfoService> logger,
-    TimeSpan? secondEvictionDelay = null) : IUserInfoService
+    TimeSpan? secondEvictionDelay = null,
+    TimeSpan? negativeTtl = null) : IUserInfoService
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(24);
 
     private readonly TimeSpan _secondEvictionDelay = secondEvictionDelay ?? TimeSpan.FromSeconds(5);
+    private readonly TimeSpan _negativeTtl = negativeTtl ?? TimeSpan.FromMinutes(1);
 
     private static string Key(Guid userId) => $"userinfo:{userId}";
 
@@ -28,19 +32,28 @@ public class CachingUserInfoService(
 
         foreach (var userId in userIds.Distinct())
         {
-            if (await TryReadAsync(userId, ct) is { } cached)
+            var (found, cached) = await TryReadAsync(userId, ct);
+            if (cached is not null)
                 result[userId] = cached;
-            else
+            else if (!found)
                 misses.Add(userId);
+            // found with a null profile = a live negative entry; skip the source until it expires.
         }
 
         if (misses.Count > 0)
         {
             var fetched = await source.GetUserInfoAsync(misses, ct);
-            foreach (var (userId, info) in fetched)
+            foreach (var userId in misses)
             {
-                result[userId] = info;
-                await WriteAsync(userId, info, ct);
+                if (fetched.TryGetValue(userId, out var info))
+                {
+                    result[userId] = info;
+                    await WriteAsync(userId, info, Ttl, ct);
+                }
+                else
+                {
+                    await WriteAsync(userId, info: null, _negativeTtl, ct);
+                }
             }
         }
 
@@ -70,27 +83,27 @@ public class CachingUserInfoService(
 
     public Task PingAsync(CancellationToken ct) => source.PingAsync(ct);
 
-    private async Task<UserPublicInfo?> TryReadAsync(Guid userId, CancellationToken ct)
+    private async Task<(bool Found, UserPublicInfo? Info)> TryReadAsync(Guid userId, CancellationToken ct)
     {
         try
         {
             var bytes = await cache.GetAsync(Key(userId), ct);
-            return bytes is null ? null : JsonSerializer.Deserialize<UserPublicInfo>(bytes);
+            return bytes is null ? (false, null) : (true, JsonSerializer.Deserialize<UserPublicInfo>(bytes));
         }
         catch (Exception ex)
         {
             // A cache hiccup must never fail the request — fall back to the source.
             logger.LogWarning(ex, "User-info cache read failed for {UserId}", userId);
-            return null;
+            return (false, null);
         }
     }
 
-    private async Task WriteAsync(Guid userId, UserPublicInfo info, CancellationToken ct)
+    private async Task WriteAsync(Guid userId, UserPublicInfo? info, TimeSpan ttl, CancellationToken ct)
     {
         try
         {
             var bytes = JsonSerializer.SerializeToUtf8Bytes(info);
-            var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = Ttl };
+            var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = ttl };
             await cache.SetAsync(Key(userId), bytes, options, ct);
         }
         catch (Exception ex)
