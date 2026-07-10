@@ -1,0 +1,110 @@
+---
+// Hero diagram for the zero-code-validations blog post: one validation rule
+// written three times because the type carries no proof between layers.
+interface Props {
+  ariaLabel: string;
+  class?: string;
+}
+
+const { ariaLabel, class: className } = Astro.props;
+
+const monoFont = "ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace";
+---
+
+<div class:list={["overflow-x-auto", className]}>
+  <svg viewBox="0 0 1040 204" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[640px]" role="img" aria-label={ariaLabel}>
+    <defs>
+      <marker id="rvd-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--color-outline)"></path>
+      </marker>
+    </defs>
+
+    <!-- Check badges: the same rule, counted three times -->
+    <rect x="70" y="16" width="200" height="26" rx="13" fill="var(--color-error-container)"></rect>
+    <text x="170" y="33" text-anchor="middle" fill="var(--color-error)" font-family="var(--font-label)" font-size="11.5" font-weight="700">
+      check #1 · data annotations
+    </text>
+
+    <rect x="422" y="16" width="196" height="26" rx="13" fill="var(--color-error-container)"></rect>
+    <text x="520" y="33" text-anchor="middle" fill="var(--color-error)" font-family="var(--font-label)" font-size="11.5" font-weight="700">
+      check #2 · manual re-check
+    </text>
+
+    <rect x="780" y="16" width="180" height="26" rx="13" fill="var(--color-error-container)"></rect>
+    <text x="870" y="33" text-anchor="middle" fill="var(--color-error)" font-family="var(--font-label)" font-size="11.5" font-weight="700">
+      check #3 · guard clauses
+    </text>
+
+    <!-- Request DTO -->
+    <g>
+      <rect
+        x="20"
+        y="58"
+        width="300"
+        height="100"
+        rx="8"
+        fill="var(--color-surface-container)"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"></rect>
+      <rect x="20" y="58" width="4" height="100" rx="2" fill="var(--color-error)"></rect>
+      <text x="36" y="84" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="14" font-weight="600">Request DTO</text>
+      <text x="36" y="112" fill="var(--color-error)" font-family={monoFont} font-size="11.5" font-weight="600">[EmailAddress]</text>
+      <text x="36" y="132" fill="var(--color-on-surface-variant)" font-family={monoFont} font-size="11.5">string CustomerEmail;</text>
+    </g>
+
+    <!-- Arrow: DTO → Controller -->
+    <line x1="320" y1="112" x2="368" y2="112" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#rvd-arrow)"></line>
+    <text x="345" y="100" text-anchor="middle" fill="var(--color-on-surface-variant)" font-family={monoFont} font-size="12">string</text>
+
+    <!-- Controller -->
+    <g>
+      <rect
+        x="370"
+        y="58"
+        width="300"
+        height="100"
+        rx="8"
+        fill="var(--color-surface-container)"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"></rect>
+      <rect x="370" y="58" width="4" height="100" rx="2" fill="var(--color-error)"></rect>
+      <text x="386" y="84" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="14" font-weight="600">Controller</text>
+      <text x="386" y="112" fill="var(--color-error)" font-family={monoFont} font-size="11.5" font-weight="600">
+        if (!MailAddress.TryCreate(email, …))
+      </text>
+      <text x="406" y="132" fill="var(--color-on-surface-variant)" font-family={monoFont} font-size="11.5">return ValidationProblem();</text
+      >
+    </g>
+
+    <!-- Arrow: Controller → Service -->
+    <line x1="670" y1="112" x2="718" y2="112" stroke="var(--color-outline)" stroke-width="1.5" marker-end="url(#rvd-arrow)"></line>
+    <text x="695" y="100" text-anchor="middle" fill="var(--color-on-surface-variant)" font-family={monoFont} font-size="12">string</text>
+
+    <!-- Service -->
+    <g>
+      <rect
+        x="720"
+        y="58"
+        width="300"
+        height="100"
+        rx="8"
+        fill="var(--color-surface-container)"
+        stroke="var(--color-outline-variant)"
+        stroke-width="1"></rect>
+      <rect x="720" y="58" width="4" height="100" rx="2" fill="var(--color-error)"></rect>
+      <text x="736" y="84" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="14" font-weight="600">Service</text>
+      <text x="736" y="112" fill="var(--color-error)" font-family={monoFont} font-size="11.5" font-weight="600">
+        if (!MailAddress.TryCreate(email, …))
+      </text>
+      <text x="756" y="132" fill="var(--color-on-surface-variant)" font-family={monoFont} font-size="11.5"
+        >throw new ArgumentException();</text
+      >
+    </g>
+
+    <!-- Punchline -->
+    <text x="20" y="192" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="13">
+      Three copies of one rule — the value stays a plain <tspan font-family={monoFont} fill="var(--color-error)">string</tspan> between layers,
+      so no layer can trust the one before it.
+    </text>
+  </svg>
+</div>

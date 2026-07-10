@@ -1,6 +1,7 @@
 ---
 import BlogCode from "../../../components/BlogCode.astro";
 import BlogPostLayout from "../../../components/BlogPostLayout.astro";
+import RepeatedValidationsDiagram from "../../../components/RepeatedValidationsDiagram.astro";
 import { blogPostStaticPaths, type BlogPostMetadata } from "../../../blog/types";
 import { defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import { strongTypesDiagrams } from "../../../lib/strong-types-diagrams";
@@ -19,7 +20,7 @@ export const metadata: BlogPostMetadata = {
     },
   },
   pubDate: "2026-07-04",
-  updatedDate: "2026-07-09",
+  updatedDate: "2026-07-10",
   tags: ["dotnet", "csharp", "strong-types", "type-safety", "api-design", "validations"],
 };
 
@@ -151,6 +152,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           Na jednom z minulých projektů jsem si všiml jednoho problému. Byly to validace. Konkrétně to, kolikrát jsem musel napsat to samé
           pravidlo znovu.
         </p>
+
+        <RepeatedValidationsDiagram ariaLabel="Jedno pravidlo napsané třikrát" />
 
         <p>Vezmi si tenhle ukázkový endpoint, který zakládá objednávku. Validace probíhá na třech místech:</p>
 
@@ -328,6 +331,8 @@ NonEmptyString? fluent = input.AsNonEmpty();             // same, as an extensio
           On one of my previous projects, I noticed an issue. It was validations. Specifically, how many times I had to write the same rule
           down.
         </p>
+
+        <RepeatedValidationsDiagram ariaLabel="One validation rule written three times" />
 
         <p>Take this example endpoint that places an order. Validation is on three places:</p>
 
