@@ -262,7 +262,7 @@ test.describe("Blog", () => {
     // Bilingual post: the Czech URL is a first-class sitemap entry, not just an alternate.
     expect(body).toContain("<loc>https://www.kalandra.tech/cs/blog/zero-code-validations-in-your-dotnet-api</loc>");
     // The post's updatedDate — it wins over pubDate for <lastmod>.
-    expect(body).toContain("<lastmod>2026-07-09</lastmod>");
+    expect(body).toContain("<lastmod>2026-07-10</lastmod>");
     expect(body).toContain('hreflang="cs"');
     expect(body).not.toContain("/profile");
     expect(body).not.toContain("/admin");
