@@ -30,17 +30,15 @@ public class CachingUserInfoService(
         var result = new Dictionary<Guid, UserPublicInfo>();
         var misses = new List<Guid>();
 
-        // Cache round-trips run concurrently: IDistributedCache has no batch API, but the Redis
-        // client pipelines concurrent commands into shared round-trips (the MGET/MSET effect).
-        var distinct = userIds.Distinct().ToArray();
-        var reads = await Task.WhenAll(distinct.Select(userId => TryReadAsync(userId, ct)));
-        for (var i = 0; i < distinct.Length; i++)
+        // Concurrent, not batched — IDistributedCache has no batch API; overlapping the
+        // single-key calls is what removes the sequential round-trip wait.
+        var reads = await Task.WhenAll(userIds.Distinct().Select(userId => TryReadAsync(userId, ct)));
+        foreach (var (userId, found, cached) in reads)
         {
-            var (found, cached) = reads[i];
             if (cached is not null)
-                result[distinct[i]] = cached;
+                result[userId] = cached;
             else if (!found)
-                misses.Add(distinct[i]);
+                misses.Add(userId);
             // found with a null profile = a live negative entry; skip the source until it expires.
         }
 
@@ -81,18 +79,18 @@ public class CachingUserInfoService(
 
     public Task PingAsync(CancellationToken ct) => source.PingAsync(ct);
 
-    private async Task<(bool Found, UserPublicInfo? Info)> TryReadAsync(Guid userId, CancellationToken ct)
+    private async Task<(Guid UserId, bool Found, UserPublicInfo? Info)> TryReadAsync(Guid userId, CancellationToken ct)
     {
         try
         {
             var bytes = await cache.GetAsync(Key(userId), ct);
-            return bytes is null ? (false, null) : (true, JsonSerializer.Deserialize<UserPublicInfo>(bytes));
+            return bytes is null ? (userId, false, null) : (userId, true, JsonSerializer.Deserialize<UserPublicInfo>(bytes));
         }
         catch (Exception ex)
         {
             // A cache hiccup must never fail the request — fall back to the source.
             logger.LogWarning(ex, "User-info cache read failed for {UserId}", userId);
-            return (false, null);
+            return (userId, false, null);
         }
     }
 
