@@ -460,6 +460,13 @@ jobs:
             done
             echo "New slot is healthy on port $NEW_PORT."
 
+            # Degraded still returns 200 and passes the gate by design (a Temporal outage must
+            # not roll back an API deploy) — but surface it as a pipeline warning, not silence.
+            SLOT_STATUS=$(curl -sf "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+            if [ "$SLOT_STATUS" != "Healthy" ]; then
+              echo "::warning::New slot passed the gate but reports '${SLOT_STATUS:-unknown}' — check the /health entries (e.g. Temporal)."
+            fi
+
             # ----- 6. Point our site at the new port (promotion) and reload -----
             # We write ONLY our own fragment, /srv/caddy/sites/kalandra.caddy —
             # never the shared /srv/caddy/Caddyfile, which is set up once at host

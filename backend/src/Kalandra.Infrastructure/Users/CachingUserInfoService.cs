@@ -20,7 +20,7 @@ public class CachingUserInfoService(
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(24);
 
     private readonly TimeSpan _secondEvictionDelay = secondEvictionDelay ?? TimeSpan.FromSeconds(5);
-    private readonly TimeSpan _negativeTtl = negativeTtl ?? TimeSpan.FromMinutes(1);
+    private readonly TimeSpan _negativeTtl = negativeTtl ?? TimeSpan.FromSeconds(10);
 
     private static string Key(Guid userId) => $"userinfo:{userId}";
 
@@ -30,9 +30,11 @@ public class CachingUserInfoService(
         var result = new Dictionary<Guid, UserPublicInfo>();
         var misses = new List<Guid>();
 
-        foreach (var userId in userIds.Distinct())
+        // Concurrent, not batched — IDistributedCache has no batch API; overlapping the
+        // single-key calls is what removes the sequential round-trip wait.
+        var reads = await Task.WhenAll(userIds.Distinct().Select(userId => TryReadAsync(userId, ct)));
+        foreach (var (userId, found, cached) in reads)
         {
-            var (found, cached) = await TryReadAsync(userId, ct);
             if (cached is not null)
                 result[userId] = cached;
             else if (!found)
@@ -43,18 +45,12 @@ public class CachingUserInfoService(
         if (misses.Count > 0)
         {
             var fetched = await source.GetUserInfoAsync(misses, ct);
-            foreach (var userId in misses)
-            {
-                if (fetched.TryGetValue(userId, out var info))
-                {
-                    result[userId] = info;
-                    await WriteAsync(userId, info, Ttl, ct);
-                }
-                else
-                {
-                    await WriteAsync(userId, info: null, _negativeTtl, ct);
-                }
-            }
+            foreach (var (userId, info) in fetched)
+                result[userId] = info;
+
+            await Task.WhenAll(misses.Select(userId => fetched.TryGetValue(userId, out var info)
+                ? WriteAsync(userId, info, Ttl, ct)
+                : WriteAsync(userId, info: null, _negativeTtl, ct)));
         }
 
         return result;
@@ -83,18 +79,18 @@ public class CachingUserInfoService(
 
     public Task PingAsync(CancellationToken ct) => source.PingAsync(ct);
 
-    private async Task<(bool Found, UserPublicInfo? Info)> TryReadAsync(Guid userId, CancellationToken ct)
+    private async Task<(Guid UserId, bool Found, UserPublicInfo? Info)> TryReadAsync(Guid userId, CancellationToken ct)
     {
         try
         {
             var bytes = await cache.GetAsync(Key(userId), ct);
-            return bytes is null ? (false, null) : (true, JsonSerializer.Deserialize<UserPublicInfo>(bytes));
+            return bytes is null ? (userId, false, null) : (userId, true, JsonSerializer.Deserialize<UserPublicInfo>(bytes));
         }
         catch (Exception ex)
         {
             // A cache hiccup must never fail the request — fall back to the source.
             logger.LogWarning(ex, "User-info cache read failed for {UserId}", userId);
-            return (false, null);
+            return (userId, false, null);
         }
     }
 

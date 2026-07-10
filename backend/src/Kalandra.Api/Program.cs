@@ -71,8 +71,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<CommitHashHealthCheck>("version")
     .AddCheck<SupabaseAuthHealthCheck>("supabase-auth")
     .AddCheck<SupabaseStorageHealthCheck>("supabase-storage")
-    // Degraded, not Unhealthy: the blue/green gate fails the deploy on a 503 from /health, and a Temporal outage must not roll back an unrelated API deploy.
-    .AddCheck<TemporalHealthCheck>("temporal", failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded);
+    .AddCheck<TemporalHealthCheck>("temporal");
 
 var app = builder.Build();
 
