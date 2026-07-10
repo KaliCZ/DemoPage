@@ -52,6 +52,12 @@ const avatarChangeUser = {
   fullName: "E2E Avatar Change User",
 };
 
+const pendingReactionUser = {
+  email: `e2e-blog-pending-${Date.now()}@test.local`,
+  password: "test-password-123",
+  fullName: "E2E Pending Reaction User",
+};
+
 /** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
 async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
   const query = `to:"${to}" "${containing}"`;
@@ -73,7 +79,7 @@ test.describe("Blog Flow", () => {
   let sharedCommentText = "";
 
   test.beforeAll(async ({ request }) => {
-    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser]) {
+    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser, pendingReactionUser]) {
       const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
         headers: {
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -127,6 +133,38 @@ test.describe("Blog Flow", () => {
       data: { content: "anonymous comment" },
     });
     expect(commentResponse.status()).toBe(401);
+  });
+
+  test("a reaction clicked while signed out fires automatically after signing in", async ({ page, request }) => {
+    await page.goto(POST_PATH);
+
+    const reactions = page.locator('section[aria-label="Was this useful?"]');
+    const heart = reactions.getByRole("button", { name: "Love it" });
+
+    // Baseline from the API, not the UI — the rendered count races the island's async fetch.
+    const baseline = await request.get(`${API_URL}/api/blog/${SLUG}/reactions`);
+    const countBefore = (await baseline.json()).counts.heart;
+
+    // Signed out: the click stores the pending reaction and opens the dialog.
+    await heart.click();
+    await expect(page.locator("#auth-dialog")).toBeVisible();
+
+    // Signing in (programmatically — the dialog form path needs a live Turnstile challenge)
+    // must fire the stored reaction without a second click.
+    const toggleSettled = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
+    await page.evaluate(
+      async ({ email, password }) => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) throw new Error("Supabase client not available");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(`Sign-in failed: ${error.message}`);
+      },
+      { email: pendingReactionUser.email, password: pendingReactionUser.password },
+    );
+    expect((await toggleSettled).ok()).toBeTruthy();
+
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
+    await expect(heart.locator("span").nth(1)).toHaveText(String(countBefore + 1));
   });
 
   test("signed-in user reacts, comments, replies, and deletes", async ({ page, request }) => {

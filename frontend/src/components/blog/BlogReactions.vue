@@ -44,13 +44,54 @@ async function authToken(): Promise<string | null> {
   return ((await (window as any).__getAccessToken?.()) as string | null) ?? null;
 }
 
+// A reaction clicked while signed out fires automatically once the sign-in completes.
+// sessionStorage lets the intent survive the Google OAuth redirect.
+const PENDING_REACTION_KEY = "pending-reaction";
+const PENDING_REACTION_TTL_MS = 10 * 60 * 1000;
+
+function rememberPendingReaction(kind: ReactionKind) {
+  try {
+    sessionStorage.setItem(PENDING_REACTION_KEY, JSON.stringify({ slug: props.slug, kind, savedAtUtc: Date.now() }));
+  } catch {
+    // Storage unavailable — the visitor just clicks the reaction again after signing in.
+  }
+}
+
+function takePendingReaction(): ReactionKind | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_REACTION_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(PENDING_REACTION_KEY);
+    const pending = JSON.parse(raw);
+    const isFresh = Date.now() - pending.savedAtUtc <= PENDING_REACTION_TTL_MS;
+    return pending.slug === props.slug && isFresh ? (pending.kind as ReactionKind) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingReaction() {
+  try {
+    sessionStorage.removeItem(PENDING_REACTION_KEY);
+  } catch {
+    // Nothing to clear when storage is unavailable.
+  }
+}
+
+// Bumped when a toggle lands so a slower in-flight load can't overwrite fresher state.
+let loadSequence = 0;
+
 async function loadReactions() {
+  const sequence = ++loadSequence;
   try {
     const token = await authToken();
     const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/reactions`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    if (res.ok) applyState(await res.json());
+    if (res.ok) {
+      const data = await res.json();
+      if (sequence === loadSequence) applyState(data);
+    }
   } catch {
     // Counts are decorative on load — a network hiccup just leaves them at zero.
   }
@@ -61,6 +102,7 @@ async function toggle(kind: ReactionKind) {
 
   const token = await authToken();
   if (!token) {
+    rememberPendingReaction(kind);
     (window as any).__openAuthDialog?.();
     return;
   }
@@ -81,6 +123,7 @@ async function toggle(kind: ReactionKind) {
       body: JSON.stringify({ kind }),
     });
     if (!res.ok) throw new Error(`Reaction toggle failed with ${res.status}`);
+    loadSequence++;
     applyState(await res.json());
   } catch {
     counts[kind] += wasMine ? 1 : -1;
@@ -94,13 +137,29 @@ async function toggle(kind: ReactionKind) {
   }
 }
 
-const refresh = () => void loadReactions();
+const onAuthChange = async (event: Event) => {
+  const user = (event as CustomEvent).detail?.user;
+  const pending = user ? takePendingReaction() : null;
+  await loadReactions();
+  // Toggle only when not already reacted — the visitor may have reacted earlier on another device.
+  if (pending && !mine.value.has(pending)) void toggle(pending);
+};
+
+// Dismissing the dialog without signing in withdraws the stored reaction — a sign-in
+// minutes later (e.g. from the navbar) shouldn't fire it unexpectedly.
+const onAuthDialogClose = async () => {
+  if (!(await authToken())) clearPendingReaction();
+};
 
 onMounted(() => {
   void loadReactions();
-  window.addEventListener("auth-change", refresh);
+  window.addEventListener("auth-change", onAuthChange);
+  document.getElementById("auth-dialog")?.addEventListener("close", onAuthDialogClose);
 });
-onUnmounted(() => window.removeEventListener("auth-change", refresh));
+onUnmounted(() => {
+  window.removeEventListener("auth-change", onAuthChange);
+  document.getElementById("auth-dialog")?.removeEventListener("close", onAuthDialogClose);
+});
 </script>
 
 <template>
