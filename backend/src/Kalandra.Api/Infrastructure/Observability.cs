@@ -1,6 +1,5 @@
 using Kalandra.Infrastructure.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Npgsql;
 using OpenTelemetry;
 using Sentry.OpenTelemetry;
@@ -28,19 +27,20 @@ public static class Observability
         AddOpenTelemetry(builder, sentryConfig, betterStackConfig);
     }
 
+    private const string InnerLoggerFactoryKey = "Observability.InnerLoggerFactory";
+
     // DefaultHealthCheckService logs unhealthy probes at Error/Warning, but a failing probe is
     // expected signal (/health alerting is Better Stack's job) — cap the category at Information
     // so the entries stay in every sink without tripping error alerting such as Sentry issues.
-    private static void CapHealthCheckLogSeverity(IServiceCollection services) =>
+    private static void CapHealthCheckLogSeverity(IServiceCollection services)
+    {
+        services.AddKeyedSingleton<ILoggerFactory, LoggerFactory>(InnerLoggerFactoryKey);
         services.Replace(ServiceDescriptor.Singleton<ILoggerFactory>(serviceProvider =>
             new LevelCappingLoggerFactory(
-                new LoggerFactory(
-                    serviceProvider.GetServices<ILoggerProvider>(),
-                    serviceProvider.GetRequiredService<IOptionsMonitor<LoggerFilterOptions>>(),
-                    serviceProvider.GetRequiredService<IOptions<LoggerFactoryOptions>>(),
-                    serviceProvider.GetService<IExternalScopeProvider>()),
+                serviceProvider.GetRequiredKeyedService<ILoggerFactory>(InnerLoggerFactoryKey),
                 categoryPrefix: "Microsoft.Extensions.Diagnostics.HealthChecks",
                 maximumLevel: LogLevel.Information)));
+    }
 
     private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config)
     {
