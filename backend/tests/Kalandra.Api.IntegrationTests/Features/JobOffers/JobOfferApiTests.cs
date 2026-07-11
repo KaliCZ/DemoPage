@@ -4,6 +4,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Kalandra.Api.IntegrationTests.Helpers;
+using Kalandra.Infrastructure.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kalandra.Api.IntegrationTests.Features.JobOffers;
 
@@ -814,6 +817,14 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var json = await ParseJsonAsync(response);
         var temporal = json.GetProperty("entries").GetProperty("temporal");
         Assert.Equal("Healthy", temporal.GetProperty("status").GetString());
+    }
+
+    // Pins the ILoggerFactory replacement in Observability: unhealthy probes must log at
+    // Information, not Error, or every /health poll against a broken dependency becomes a Sentry issue.
+    [Fact]
+    public void Health_LoggingRunsThroughTheLevelCappingFactory()
+    {
+        Assert.IsType<LevelCappingLoggerFactory>(factory.Services.GetRequiredService<ILoggerFactory>());
     }
 
     // ───── Helpers ─────

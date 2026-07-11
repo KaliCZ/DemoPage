@@ -1,6 +1,8 @@
+using Kalandra.Infrastructure.Logging;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using OpenTelemetry;
-using Sentry.Extensions.Logging;
 using Sentry.OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -21,9 +23,24 @@ public static class Observability
         if (sentryConfig is null && builder.Environment.IsProduction())
             throw new InvalidOperationException("Sentry:Dsn must be configured in production.");
 
+        CapHealthCheckLogSeverity(builder.Services);
         AddSentry(builder, sentryConfig);
         AddOpenTelemetry(builder, sentryConfig, betterStackConfig);
     }
+
+    // DefaultHealthCheckService logs unhealthy probes at Error/Warning, but a failing probe is
+    // expected signal (/health alerting is Better Stack's job) — cap the category at Information
+    // so the entries stay in every sink without tripping error alerting such as Sentry issues.
+    private static void CapHealthCheckLogSeverity(IServiceCollection services) =>
+        services.Replace(ServiceDescriptor.Singleton<ILoggerFactory>(serviceProvider =>
+            new LevelCappingLoggerFactory(
+                new LoggerFactory(
+                    serviceProvider.GetServices<ILoggerProvider>(),
+                    serviceProvider.GetRequiredService<IOptionsMonitor<LoggerFilterOptions>>(),
+                    serviceProvider.GetRequiredService<IOptions<LoggerFactoryOptions>>(),
+                    serviceProvider.GetService<IExternalScopeProvider>()),
+                categoryPrefix: "Microsoft.Extensions.Diagnostics.HealthChecks",
+                maximumLevel: LogLevel.Information)));
 
     private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config)
     {
@@ -55,11 +72,6 @@ public static class Observability
 
             // Filter noise — client disconnects and cancelled requests aren't actionable.
             options.AddExceptionFilterForType<OperationCanceledException>();
-
-            // DefaultHealthCheckService logs every unhealthy probe at Error with the exception
-            // attached; /health alerting is Better Stack's job, so keep it out of Sentry.
-            options.AddLogEntryFilter((category, _, _, _) =>
-                category.StartsWith("Microsoft.Extensions.Diagnostics.HealthChecks", StringComparison.Ordinal));
             options.SetBeforeSend((sentryEvent, _) =>
             {
                 if (sentryEvent.Exception is BadHttpRequestException bre
