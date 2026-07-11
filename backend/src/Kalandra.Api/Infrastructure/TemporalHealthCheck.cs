@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Tasks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Temporalio.Client;
 
@@ -21,7 +22,7 @@ internal sealed class TemporalHealthCheck(ITemporalClient temporalClient) : IHea
         {
             var serving = await temporalClient.Connection
                 .CheckHealthAsync(options: new RpcOptions { CancellationToken = ct })
-                .WaitAsync(ProbeTimeout, ct);
+                .WaitObservedAsync(ProbeTimeout, ct);
             return serving
                 ? HealthCheckResult.Healthy("Temporal server reachable and serving.")
                 : HealthCheckResult.Degraded("Temporal server reachable but not serving.");

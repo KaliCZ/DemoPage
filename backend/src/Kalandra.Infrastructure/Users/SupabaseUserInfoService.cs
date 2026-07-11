@@ -1,3 +1,4 @@
+using Kalandra.Infrastructure.Tasks;
 using Microsoft.Extensions.Logging;
 using Supabase.Gotrue.Interfaces;
 
@@ -43,7 +44,7 @@ public class SupabaseUserInfoService(
         try
         {
             // Gotrue's admin client ignores cancellation, so the timeout is enforced here — a hung Supabase must cost a missing profile, not a stalled page.
-            var user = await adminAuthClient.GetUserById(userId.ToString()).WaitAsync(_fetchTimeout, ct);
+            var user = await adminAuthClient.GetUserById(userId.ToString()).WaitObservedAsync(_fetchTimeout, ct);
             if (user == null)
                 return null;
 

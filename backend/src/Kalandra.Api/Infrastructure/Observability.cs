@@ -1,5 +1,6 @@
 using Npgsql;
 using OpenTelemetry;
+using Sentry.Extensions.Logging;
 using Sentry.OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -54,6 +55,11 @@ public static class Observability
 
             // Filter noise — client disconnects and cancelled requests aren't actionable.
             options.AddExceptionFilterForType<OperationCanceledException>();
+
+            // DefaultHealthCheckService logs every unhealthy probe at Error with the exception
+            // attached; /health alerting is Better Stack's job, so keep it out of Sentry.
+            options.AddLogEntryFilter((category, _, _, _) =>
+                category.StartsWith("Microsoft.Extensions.Diagnostics.HealthChecks", StringComparison.Ordinal));
             options.SetBeforeSend((sentryEvent, _) =>
             {
                 if (sentryEvent.Exception is BadHttpRequestException bre
