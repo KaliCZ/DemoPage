@@ -1,4 +1,5 @@
 using Kalandra.Infrastructure.Storage;
+using Kalandra.Infrastructure.Tasks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Kalandra.Api.Infrastructure;
@@ -21,7 +22,7 @@ internal sealed class SupabaseStorageHealthCheck(IStorageService storageService)
         try
         {
             // Supabase's storage client ignores cancellation, so the timeout is enforced here, not via the check registration.
-            await storageService.PingAsync(ct).WaitAsync(ProbeTimeout, ct);
+            await storageService.PingAsync(ct).WaitObservedAsync(ProbeTimeout, ct);
             return HealthCheckResult.Healthy("Supabase Storage reachable.");
         }
         catch (TimeoutException ex)

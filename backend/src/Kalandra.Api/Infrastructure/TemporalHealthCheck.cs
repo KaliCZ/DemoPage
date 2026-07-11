@@ -17,16 +17,19 @@ internal sealed class TemporalHealthCheck(ITemporalClient temporalClient) : IHea
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
+        // Temporal's client honors cancellation — unlike the Supabase probes, the timeout can
+        // cancel the RPC itself, leaving no abandoned task behind.
+        using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        probeCts.CancelAfter(ProbeTimeout);
         try
         {
             var serving = await temporalClient.Connection
-                .CheckHealthAsync(options: new RpcOptions { CancellationToken = ct })
-                .WaitAsync(ProbeTimeout, ct);
+                .CheckHealthAsync(options: new RpcOptions { CancellationToken = probeCts.Token });
             return serving
                 ? HealthCheckResult.Healthy("Temporal server reachable and serving.")
                 : HealthCheckResult.Degraded("Temporal server reachable but not serving.");
         }
-        catch (TimeoutException ex)
+        catch (Exception ex) when (probeCts.IsCancellationRequested && !ct.IsCancellationRequested)
         {
             return HealthCheckResult.Degraded($"Temporal server did not respond within {ProbeTimeout.TotalSeconds:0}s.", ex);
         }
