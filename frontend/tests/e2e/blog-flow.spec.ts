@@ -183,10 +183,10 @@ test.describe("Blog Flow", () => {
     await expect(heart.locator("span").nth(1)).toHaveText(String(countBefore + 1));
   });
 
-  test("read tracking shows views to everyone and the reader's own count when signed in", async ({ page }) => {
-    // Signed out: the post shows a public view count (not a sign-in nag); the index hides the unread filter.
+  test("read tracking records the reader's own count and drives the unread filter", async ({ page }) => {
+    // Signed out: no sign-in nag on the post; the index hides the unread filter. (Public view/reader
+    // counts are gated off until the pre-rollout traffic is seeded, so they aren't asserted here.)
     await page.goto(POST_PATH);
-    await expect(page.getByText("Views", { exact: true })).toBeAttached();
     await expect(page.getByText("Sign in to track your reading.")).toHaveCount(0);
     await page.goto("/blog");
     await expect(page.locator("#blog-sort")).toBeVisible();
@@ -205,7 +205,7 @@ test.describe("Blog Flow", () => {
     );
     await expect(page.getByText("Not read yet")).toBeVisible();
 
-    // The index now counts the reader among this post's views, the unread filter drops it, and views-sort ranks it first.
+    // The index shows the reader's own read state, and the unread filter drops the post they've read.
     await page.goto("/blog");
     const readCard = page.locator("ul[role=list] > li").filter({ hasText: "Zero-Code Validations" });
     await expect(readCard.getByText("Read once")).toBeVisible();
@@ -213,9 +213,6 @@ test.describe("Blog Flow", () => {
     await page.locator("#blog-unread-filter input").check();
     await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toHaveCount(0);
     await page.locator("#blog-unread-filter input").uncheck();
-
-    await page.locator("#blog-sort").selectOption("views");
-    await expect(page.locator("ul[role=list] > li").first().locator("h2")).toContainText("Zero-Code Validations");
   });
 
   test("signed-in user reacts, comments, replies, and deletes", async ({ page, request }) => {

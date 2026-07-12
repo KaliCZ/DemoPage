@@ -2,8 +2,11 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { getAccessToken, getCurrentUser } from "../../lib/auth";
 import { ensureVisitorLinked, visitorHeaders } from "../../lib/visitor";
+import { SHOW_PUBLIC_STATS } from "../../lib/blog/flags";
 import MaterialIcon from "../icons/MaterialIcon.vue";
 import { materialSymbolPaths as paths } from "../icons/material-symbol-paths";
+
+const showPublicStats = SHOW_PUBLIC_STATS;
 
 const props = defineProps<{
   apiUrl: string;
@@ -69,17 +72,21 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
 </script>
 
 <template>
-  <span v-if="!loaded" class="inline-block h-4 w-24 rounded bg-on-surface/10 animate-pulse align-middle" aria-hidden="true" />
-  <span v-else-if="totalViews !== null" class="inline-flex items-center gap-1.5">
-    <MaterialIcon :d="paths.visibility" class="size-4" />
-    {{ totalViews }}
-    <span class="sr-only">{{ props.t.viewsLabel }}</span>
-    <span aria-hidden="true">·</span>
-    <MaterialIcon :d="paths.person" class="size-4" />
-    {{ uniqueVisitors }}
-    <span class="sr-only">{{ props.t.peopleLabel }}</span>
-    <template v-if="readLabel"
-      ><span aria-hidden="true">·</span> <span>{{ readLabel }}</span></template
-    >
-  </span>
+  <!-- Public view/reader counts are gated until the pre-rollout traffic is seeded; the reader's own count always shows. -->
+  <template v-if="showPublicStats">
+    <span v-if="!loaded" class="inline-block h-4 w-24 rounded bg-on-surface/10 animate-pulse align-middle" aria-hidden="true" />
+    <span v-else-if="totalViews !== null" class="inline-flex items-center gap-1.5">
+      <MaterialIcon :d="paths.visibility" class="size-4" />
+      {{ totalViews }}
+      <span class="sr-only">{{ props.t.viewsLabel }}</span>
+      <span aria-hidden="true">·</span>
+      <MaterialIcon :d="paths.person" class="size-4" />
+      {{ uniqueVisitors }}
+      <span class="sr-only">{{ props.t.peopleLabel }}</span>
+      <template v-if="readLabel"
+        ><span aria-hidden="true">·</span> <span>{{ readLabel }}</span></template
+      >
+    </span>
+  </template>
+  <span v-else-if="readLabel">{{ readLabel }}</span>
 </template>

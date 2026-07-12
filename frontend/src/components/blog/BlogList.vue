@@ -2,8 +2,11 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { getAccessToken, getCurrentUser } from "../../lib/auth";
 import type { BlogListPost, BlogPostStats, BlogStatsResponse } from "../../lib/blog/types";
+import { SHOW_PUBLIC_STATS } from "../../lib/blog/flags";
 import MaterialIcon from "../icons/MaterialIcon.vue";
 import { materialSymbolPaths as paths } from "../icons/material-symbol-paths";
+
+const showPublicStats = SHOW_PUBLIC_STATS;
 
 type SortKey = "recent" | "reactions" | "views";
 
@@ -119,7 +122,7 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         >
           <option value="recent">{{ props.t.sortRecent }}</option>
           <option value="reactions">{{ props.t.sortReactions }}</option>
-          <option value="views">{{ props.t.sortViews }}</option>
+          <option v-if="showPublicStats" value="views">{{ props.t.sortViews }}</option>
         </select>
       </label>
       <label v-if="signedIn" id="blog-unread-filter" class="flex items-center gap-2 text-sm font-label text-on-surface cursor-pointer">
@@ -169,16 +172,19 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
             </li>
           </ul>
           <p v-if="statsLoaded" class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-xs font-label text-on-surface-variant">
-            <span class="inline-flex items-center gap-1.5" :title="props.t.statViews">
-              <MaterialIcon :d="paths.visibility" class="size-4" />
-              {{ stats[post.slug]?.totalViews ?? 0 }}
-              <span class="sr-only">{{ props.t.statViews }}</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5" :title="props.t.statPeople">
-              <MaterialIcon :d="paths.person" class="size-4" />
-              {{ stats[post.slug]?.uniqueVisitors ?? 0 }}
-              <span class="sr-only">{{ props.t.statPeople }}</span>
-            </span>
+            <!-- View/reader counts are gated until the pre-rollout traffic is seeded. -->
+            <template v-if="showPublicStats">
+              <span class="inline-flex items-center gap-1.5" :title="props.t.statViews">
+                <MaterialIcon :d="paths.visibility" class="size-4" />
+                {{ stats[post.slug]?.totalViews ?? 0 }}
+                <span class="sr-only">{{ props.t.statViews }}</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5" :title="props.t.statPeople">
+                <MaterialIcon :d="paths.person" class="size-4" />
+                {{ stats[post.slug]?.uniqueVisitors ?? 0 }}
+                <span class="sr-only">{{ props.t.statPeople }}</span>
+              </span>
+            </template>
             <span class="inline-flex items-center gap-1.5" :title="props.t.statReactions">
               <MaterialIcon :d="paths.favorite" class="size-4" />
               {{ stats[post.slug]?.totalReactions ?? 0 }}
