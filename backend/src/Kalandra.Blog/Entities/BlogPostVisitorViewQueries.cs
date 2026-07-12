@@ -10,16 +10,15 @@ public static class BlogPostVisitorViewQueries
     /// </summary>
     public static async Task<int> CountDistinctViewersAsync(this IQuerySession session, string slug, CancellationToken ct)
     {
-        // Signed-in viewers are real accounts (few), so load their ids and dedupe in memory;
+        // Signed-in viewers are real accounts (few), so load and dedupe them in memory;
         // anonymous viewers are the bulk and stay a database-side count.
-        var signedInViewerIds = await session.Query<BlogPostVisitorView>()
+        var signedInViews = await session.Query<BlogPostVisitorView>()
             .Where(v => v.Slug == slug && v.UserId != null)
-            .Select(v => v.UserId)
             .ToListAsync(ct);
         var anonymousViewers = await session.Query<BlogPostVisitorView>()
             .Where(v => v.Slug == slug && v.UserId == null)
             .CountAsync(ct);
 
-        return signedInViewerIds.Distinct().Count() + anonymousViewers;
+        return signedInViews.Select(v => v.UserId).Distinct().Count() + anonymousViewers;
     }
 }

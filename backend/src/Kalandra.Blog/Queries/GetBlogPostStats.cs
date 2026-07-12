@@ -20,8 +20,9 @@ public class GetBlogPostStatsHandler(IQuerySession session)
                 .Where(v => v.Slug == post.Slug).SumAsync(v => v.ViewCount, ct);
             var uniqueVisitors = await session.CountDistinctViewersAsync(post.Slug, ct);
 
-            // Reaction streams are live-aggregated (see ConfigureBlog); posts are few, so one replay each is fine.
-            var reactions = await session.Events.AggregateStreamAsync<BlogPostReactions>(post.ReactionsStreamId, token: ct);
+            // Each reaction is one row keyed by its reactor, so the row count is already deduped per person.
+            var totalReactions = await session.Query<BlogReaction>()
+                .Where(reaction => reaction.Slug == post.Slug).CountAsync(ct);
 
             int? viewerViews = query.ViewerId is { } viewerId
                 ? await session.Query<BlogPostVisitorView>()
@@ -32,7 +33,7 @@ public class GetBlogPostStatsHandler(IQuerySession session)
                 Slug: post.Slug,
                 TotalViews: totalViews,
                 UniqueVisitors: uniqueVisitors,
-                TotalReactions: reactions?.TotalCount() ?? 0,
+                TotalReactions: totalReactions,
                 ViewerViews: viewerViews));
         }
 

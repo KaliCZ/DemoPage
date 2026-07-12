@@ -5,17 +5,13 @@ using Kalandra.Blog;
 namespace Kalandra.Api.IntegrationTests.Helpers;
 
 /// <summary>
-/// Tests mint a fresh random slug per case for stream isolation, so every slug resolves
-/// here — with stream ids derived from the slug so each case's streams stay isolated. The
-/// production catalog's real gating is covered by BlogPostCatalogTests and the all-posts
-/// reaction E2E.
+/// Tests mint a fresh random slug per case for isolation, so every slug resolves here — with a
+/// comment stream id derived from the slug so each case's stream stays isolated. The production
+/// catalog's real gating is covered by BlogPostCatalogTests and the all-posts reaction E2E.
 /// </summary>
 public sealed class TestBlogPostCatalog : IBlogPostCatalog
 {
-    public BlogPost? Find(string slug) => new(
-        slug,
-        CommentsStreamId: DeriveId(slug, "comments"),
-        ReactionsStreamId: DeriveId(slug, "reactions"));
+    public BlogPost? Find(string slug) => new(slug, CommentsStreamId: DeriveId(slug, "comments"));
 
     private static Guid DeriveId(string slug, string kind)
     {

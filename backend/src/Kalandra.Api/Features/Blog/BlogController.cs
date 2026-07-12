@@ -53,9 +53,9 @@ public class BlogController(
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
 
-        var reactions = await getReactionsHandler.Get(new GetBlogReactionsQuery(post.ReactionsStreamId), ct);
         var visitorId = TryGetVisitorId(out var vid) ? vid : (Guid?)null;
-        return GetBlogReactionsResponse.Serialize(reactions, visitorId, currentUser.User?.Id);
+        var reactions = await getReactionsHandler.Get(new GetBlogReactionsQuery(post.Slug, visitorId, currentUser.User?.Id), ct);
+        return GetBlogReactionsResponse.Serialize(reactions);
     }
 
     [HttpPost("reactions/toggle")]
@@ -75,14 +75,14 @@ public class BlogController(
             return MissingVisitorId();
 
         var command = new ToggleBlogReactionCommand(
-            ReactionsStreamId: post.ReactionsStreamId,
+            Slug: post.Slug,
             VisitorId: visitorId,
             User: currentUser.User,
-            Kind: request.Kind,
-            Timestamp: timeProvider.GetUtcNow());
+            Kind: request.Kind);
 
-        var reactions = await toggleReactionHandler.ToggleAndSave(command, ct);
-        return GetBlogReactionsResponse.Serialize(reactions, visitorId, currentUser.User?.Id);
+        await toggleReactionHandler.ToggleAndSave(command, ct);
+        var reactions = await getReactionsHandler.Get(new GetBlogReactionsQuery(post.Slug, visitorId, currentUser.User?.Id), ct);
+        return GetBlogReactionsResponse.Serialize(reactions);
     }
 
     // ───── Views ─────
@@ -145,7 +145,7 @@ public class BlogController(
         if (!TryGetVisitorId(out var visitorId))
             return MissingVisitorId();
 
-        await linkVisitorHandler.LinkAndSave(new LinkVisitorCommand(visitorId, AppUser.Id, timeProvider.GetUtcNow()), ct);
+        await linkVisitorHandler.LinkAndSave(new LinkVisitorCommand(visitorId, AppUser.Id), ct);
         return NoContent();
     }
 
