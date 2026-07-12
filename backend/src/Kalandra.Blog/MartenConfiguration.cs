@@ -1,4 +1,3 @@
-using JasperFx.Events.Projections;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 using Marten;
@@ -10,8 +9,9 @@ public static class MartenConfiguration
     /// <summary>
     /// Configures Marten for the Blog domain. Comment and reaction streams are
     /// live-aggregated on read — no snapshots, so state and events cannot drift.
-    /// Read streams gain an event per page view and are queried in bulk by the
-    /// stats endpoint, so they get an inline snapshot instead of per-read replay.
+    /// Page views are plain per-(post, visitor) documents rather than a stream:
+    /// they are high-volume and the dedup check is a per-visitor point lookup. Slug/UserId
+    /// are duplicated for the stats aggregate queries; VisitorId for the sign-in attribution query.
     /// </summary>
     public static void ConfigureBlog(this StoreOptions options)
     {
@@ -19,7 +19,10 @@ public static class MartenConfiguration
         options.Events.AddEventType<BlogCommentDeleted>();
         options.Events.AddEventType<BlogReactionAdded>();
         options.Events.AddEventType<BlogReactionRemoved>();
-        options.Events.AddEventType<BlogPostRead>();
-        options.Projections.Snapshot<BlogPostReads>(SnapshotLifecycle.Inline);
+        options.Events.AddEventType<BlogReactorLinked>();
+        options.Schema.For<BlogPostVisitorView>()
+            .Duplicate(v => v.Slug)
+            .Duplicate(v => v.UserId)
+            .Duplicate(v => v.VisitorId);
     }
 }

@@ -1,7 +1,7 @@
 namespace Kalandra.Blog;
 
-/// <summary>A published post's stable identity: its slug and the Guids of its comment, reaction, and read event streams.</summary>
-public sealed record BlogPost(string Slug, Guid CommentsStreamId, Guid ReactionsStreamId, Guid ReadsStreamId);
+/// <summary>A published post's stable identity: its slug and the Guids of its comment and reaction event streams.</summary>
+public sealed record BlogPost(string Slug, Guid CommentsStreamId, Guid ReactionsStreamId);
 
 /// <summary>
 /// The backend's copy of the published blog posts (the posts themselves live in the
@@ -25,13 +25,11 @@ public sealed class BlogPostCatalog : IBlogPostCatalog
             new BlogPost(
                 Slug: "zero-code-validations-in-your-dotnet-api",
                 CommentsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000c0"),
-                ReactionsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000e0"),
-                ReadsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000d0")),
+                ReactionsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000e0")),
             new BlogPost(
                 Slug: "hello-world",
                 CommentsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000c0"),
-                ReactionsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000e0"),
-                ReadsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000d0")),
+                ReactionsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000e0")),
         }.ToDictionary(post => post.Slug, StringComparer.Ordinal);
 
     public BlogPost? Find(string slug) => Posts.GetValueOrDefault(slug);

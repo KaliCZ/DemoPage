@@ -24,12 +24,23 @@ public class BlogController(
     ToggleBlogReactionHandler toggleReactionHandler,
     PostBlogCommentHandler postCommentHandler,
     DeleteBlogCommentHandler deleteCommentHandler,
-    RecordBlogPostReadHandler recordReadHandler,
+    RecordBlogPostViewHandler recordViewHandler,
+    LinkVisitorHandler linkVisitorHandler,
     GetBlogReactionsHandler getReactionsHandler,
     GetBlogCommentsHandler getCommentsHandler,
     GetBlogPostStatsHandler getStatsHandler) : ControllerBase
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
+
+    // The anonymous visitor id the client mints and stores locally; keys views and reactions before sign-in.
+    private bool TryGetVisitorId(out Guid visitorId) =>
+        Guid.TryParse(Request.Headers["X-Visitor-Id"].ToString(), out visitorId);
+
+    private ActionResult MissingVisitorId()
+    {
+        ModelState.AddModelError("visitorId", "Required");
+        return ValidationProblem();
+    }
 
     // ───── Reactions ─────
 
@@ -43,14 +54,15 @@ public class BlogController(
             return NotFound();
 
         var reactions = await getReactionsHandler.Get(new GetBlogReactionsQuery(post.ReactionsStreamId), ct);
-        return GetBlogReactionsResponse.Serialize(reactions, currentUser.User?.Id);
+        var visitorId = TryGetVisitorId(out var vid) ? vid : (Guid?)null;
+        return GetBlogReactionsResponse.Serialize(reactions, visitorId, currentUser.User?.Id);
     }
 
     [HttpPost("reactions/toggle")]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.BlogWrite)]
     [ProducesResponseType<GetBlogReactionsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GetBlogReactionsResponse>> ToggleReaction(
         string slug,
@@ -59,36 +71,43 @@ public class BlogController(
     {
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
+        if (!TryGetVisitorId(out var visitorId))
+            return MissingVisitorId();
 
         var command = new ToggleBlogReactionCommand(
             ReactionsStreamId: post.ReactionsStreamId,
-            User: AppUser,
+            VisitorId: visitorId,
+            User: currentUser.User,
             Kind: request.Kind,
             Timestamp: timeProvider.GetUtcNow());
 
         var reactions = await toggleReactionHandler.ToggleAndSave(command, ct);
-        return GetBlogReactionsResponse.Serialize(reactions, AppUser.Id);
+        return GetBlogReactionsResponse.Serialize(reactions, visitorId, currentUser.User?.Id);
     }
 
-    // ───── Reads ─────
+    // ───── Views ─────
 
-    [HttpPost("reads")]
+    [HttpPost("views")]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.BlogWrite)]
-    [ProducesResponseType<RecordBlogPostReadResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<RecordBlogPostViewResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecordBlogPostReadResponse>> RecordRead(string slug, CancellationToken ct)
+    public async Task<ActionResult<RecordBlogPostViewResponse>> RecordView(string slug, CancellationToken ct)
     {
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
+        if (!TryGetVisitorId(out var visitorId))
+            return MissingVisitorId();
 
-        var command = new RecordBlogPostReadCommand(
-            ReadsStreamId: post.ReadsStreamId,
-            UserId: AppUser.Id,
-            Timestamp: timeProvider.GetUtcNow());
+        var command = new RecordBlogPostViewCommand(
+            Slug: post.Slug,
+            VisitorId: visitorId,
+            UserId: currentUser.User?.Id,
+            NowUtc: timeProvider.GetUtcNow());
 
-        var previousReadCount = await recordReadHandler.RecordAndSave(command, ct);
-        return new RecordBlogPostReadResponse(previousReadCount);
+        var result = await recordViewHandler.RecordAndSave(command, ct);
+        return new RecordBlogPostViewResponse(result.PreviousViewCount, result.TotalViews, result.UniqueVisitors);
     }
 
     // ───── Stats ─────
@@ -106,6 +125,23 @@ public class BlogController(
 
         var stats = await getStatsHandler.List(new GetBlogPostStatsQuery(posts, currentUser.User?.Id), ct);
         return GetBlogStatsResponse.Serialize(stats);
+    }
+
+    // ───── Visitor link ─────
+
+    /// <summary>On sign-in, attributes the visitor's anonymous views and reactions to their account.</summary>
+    [HttpPost("/api/blog/visitor/link")]
+    [EnableRateLimiting(RateLimitPolicies.BlogWrite)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult> LinkVisitor(CancellationToken ct)
+    {
+        if (!TryGetVisitorId(out var visitorId))
+            return MissingVisitorId();
+
+        await linkVisitorHandler.LinkAndSave(new LinkVisitorCommand(visitorId, AppUser.Id, timeProvider.GetUtcNow()), ct);
+        return NoContent();
     }
 
     // ───── Comments ─────

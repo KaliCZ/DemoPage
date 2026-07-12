@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from "vue";
+import { getAccessToken } from "../../lib/auth";
+import { ensureVisitorLinked, visitorHeaders } from "../../lib/visitor";
 
 type ReactionKind = "ThumbsUp" | "ThumbsDown" | "Heart" | "Insightful" | "Rocket";
 
@@ -30,6 +32,8 @@ const counts = reactive<Record<ReactionKind, number>>({
 });
 const mine = ref<Set<ReactionKind>>(new Set());
 const busy = ref(false);
+// Gates a skeleton so the buttons don't flash zeros before the first load lands.
+const loaded = ref(false);
 
 function applyState(data: { counts: Record<string, number>; mine: ReactionKind[] }) {
   counts.ThumbsUp = data.counts.thumbsUp ?? 0;
@@ -40,53 +44,15 @@ function applyState(data: { counts: Record<string, number>; mine: ReactionKind[]
   mine.value = new Set(data.mine);
 }
 
-async function authToken(): Promise<string | null> {
-  return ((await (window as any).__getAccessToken?.()) as string | null) ?? null;
-}
-
-// A reaction clicked while signed out fires automatically once the sign-in completes.
-// sessionStorage lets the intent survive the Google OAuth redirect.
-const PENDING_REACTION_KEY = "pending-reaction";
-const PENDING_REACTION_TTL_MS = 10 * 60 * 1000;
-
-function rememberPendingReaction(kind: ReactionKind) {
-  try {
-    sessionStorage.setItem(PENDING_REACTION_KEY, JSON.stringify({ slug: props.slug, kind, savedAtUtc: Date.now() }));
-  } catch {
-    // Storage unavailable — the visitor just clicks the reaction again after signing in.
-  }
-}
-
-function takePendingReaction(): ReactionKind | null {
-  try {
-    const raw = sessionStorage.getItem(PENDING_REACTION_KEY);
-    if (!raw) return null;
-    sessionStorage.removeItem(PENDING_REACTION_KEY);
-    const pending = JSON.parse(raw);
-    const isFresh = Date.now() - pending.savedAtUtc <= PENDING_REACTION_TTL_MS;
-    return pending.slug === props.slug && isFresh ? (pending.kind as ReactionKind) : null;
-  } catch {
-    return null;
-  }
-}
-
-function clearPendingReaction() {
-  try {
-    sessionStorage.removeItem(PENDING_REACTION_KEY);
-  } catch {
-    // Nothing to clear when storage is unavailable.
-  }
-}
-
 // Bumped when a toggle lands so a slower in-flight load can't overwrite fresher state.
 let loadSequence = 0;
 
 async function loadReactions() {
   const sequence = ++loadSequence;
   try {
-    const token = await authToken();
+    const token = await getAccessToken();
     const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/reactions`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: visitorHeaders(token),
     });
     if (res.ok) {
       const data = await res.json();
@@ -94,20 +60,16 @@ async function loadReactions() {
     }
   } catch {
     // Counts are decorative on load — a network hiccup just leaves them at zero.
+  } finally {
+    loaded.value = true;
   }
 }
 
 async function toggle(kind: ReactionKind) {
   if (busy.value) return;
 
-  const token = await authToken();
-  if (!token) {
-    rememberPendingReaction(kind);
-    (window as any).__openAuthDialog?.();
-    return;
-  }
-
-  // Optimistic flip; the server response is authoritative and replaces it.
+  // Optimistic flip; the server response is authoritative and replaces it. Anyone may
+  // react — signed out, the reaction is keyed to the anonymous visitor id.
   const wasMine = mine.value.has(kind);
   counts[kind] += wasMine ? -1 : 1;
   const optimistic = new Set(mine.value);
@@ -117,9 +79,10 @@ async function toggle(kind: ReactionKind) {
 
   busy.value = true;
   try {
+    const token = await getAccessToken();
     const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/reactions/toggle`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", ...visitorHeaders(token) },
       body: JSON.stringify({ kind }),
     });
     if (!res.ok) throw new Error(`Reaction toggle failed with ${res.status}`);
@@ -138,34 +101,25 @@ async function toggle(kind: ReactionKind) {
 }
 
 const onAuthChange = async (event: Event) => {
-  const user = (event as CustomEvent).detail?.user;
-  const pending = user ? takePendingReaction() : null;
+  // Fold anonymous reactions into the account before reloading, so "mine" reflects them.
+  if ((event as CustomEvent).detail?.user) await ensureVisitorLinked(props.apiUrl);
   await loadReactions();
-  // Toggle only when not already reacted — the visitor may have reacted earlier on another device.
-  if (pending && !mine.value.has(pending)) void toggle(pending);
-};
-
-// Dismissing the dialog without signing in withdraws the stored reaction — a sign-in
-// minutes later (e.g. from the navbar) shouldn't fire it unexpectedly.
-const onAuthDialogClose = async () => {
-  if (!(await authToken())) clearPendingReaction();
 };
 
 onMounted(() => {
   void loadReactions();
   window.addEventListener("auth-change", onAuthChange);
-  document.getElementById("auth-dialog")?.addEventListener("close", onAuthDialogClose);
 });
-onUnmounted(() => {
-  window.removeEventListener("auth-change", onAuthChange);
-  document.getElementById("auth-dialog")?.removeEventListener("close", onAuthDialogClose);
-});
+onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
 </script>
 
 <template>
   <section :aria-label="props.t.heading">
     <h2 class="font-headline text-2xl font-bold tracking-tight mb-4">{{ props.t.heading }}</h2>
-    <div class="flex flex-wrap gap-2">
+    <div v-if="!loaded" class="flex flex-wrap gap-2" aria-hidden="true">
+      <span v-for="{ kind } in REACTIONS" :key="kind" class="h-8 w-16 rounded-full bg-on-surface/10 animate-pulse" />
+    </div>
+    <div v-else class="flex flex-wrap gap-2">
       <button
         v-for="{ kind, emoji } in REACTIONS"
         :key="kind"

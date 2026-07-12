@@ -64,7 +64,7 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
         {
             reactionSession.Events.Append(
                 reactionsStreamId,
-                new BlogReactionAdded(UserId: Guid.NewGuid(), Kind: BlogReactionKind.Heart, Timestamp: DateTimeOffset.UtcNow));
+                new BlogReactionAdded(VisitorId: Guid.NewGuid(), UserId: Guid.NewGuid(), Kind: BlogReactionKind.Heart, Timestamp: DateTimeOffset.UtcNow));
             await reactionSession.SaveChangesAsync(Ct);
         }
 
@@ -88,8 +88,9 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
 
         await using var firstSession = store.LightweightSession();
         await using var secondSession = store.LightweightSession();
-        firstSession.Events.Append(streamId, new BlogReactionAdded(userId, BlogReactionKind.Heart, DateTimeOffset.UtcNow));
-        secondSession.Events.Append(streamId, new BlogReactionAdded(userId, BlogReactionKind.Heart, DateTimeOffset.UtcNow));
+        // Same reactor (userId), different browsers — replay must still converge to one reaction.
+        firstSession.Events.Append(streamId, new BlogReactionAdded(Guid.NewGuid(), userId, BlogReactionKind.Heart, DateTimeOffset.UtcNow));
+        secondSession.Events.Append(streamId, new BlogReactionAdded(Guid.NewGuid(), userId, BlogReactionKind.Heart, DateTimeOffset.UtcNow));
 
         await firstSession.SaveChangesAsync(Ct);
         await secondSession.SaveChangesAsync(Ct);

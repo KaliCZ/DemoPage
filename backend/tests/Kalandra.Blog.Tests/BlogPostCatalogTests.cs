@@ -13,11 +13,11 @@ public class BlogPostCatalogTests
         Assert.Null(Catalog.Find("not-a-real-post"));
 
     [Fact]
-    public void CommentReactionAndReadStreams_AreDistinct()
+    public void CommentAndReactionStreams_AreDistinct()
     {
         // They share one global Marten id namespace, so a copy-paste that collides them
-        // would cross-contaminate a post's comments, reactions, and reads.
+        // would cross-contaminate a post's comments and reactions.
         var post = Catalog.Find("zero-code-validations-in-your-dotnet-api")!;
-        Assert.Distinct([post.CommentsStreamId, post.ReactionsStreamId, post.ReadsStreamId]);
+        Assert.Distinct([post.CommentsStreamId, post.ReactionsStreamId]);
     }
 }

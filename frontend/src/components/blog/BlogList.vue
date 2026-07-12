@@ -19,6 +19,7 @@ const props = defineProps<{
     unreadOnly: string;
     unreadEmpty: string;
     statViews: string;
+    statPeople: string;
     statReactions: string;
     paginationPrev: string;
     paginationNext: string;
@@ -39,9 +40,9 @@ const page = ref(1);
 
 const filteredPosts = computed(() => {
   let posts = props.posts;
-  if (signedIn.value && unreadOnly.value) posts = posts.filter((post) => (stats.value[post.slug]?.viewerReads ?? 0) === 0);
+  if (signedIn.value && unreadOnly.value) posts = posts.filter((post) => (stats.value[post.slug]?.viewerViews ?? 0) === 0);
   if (sortBy.value !== "recent") {
-    const key = sortBy.value === "reactions" ? "totalReactions" : "totalReads";
+    const key = sortBy.value === "reactions" ? "totalReactions" : "totalViews";
     // Stable sort — ties keep the newest-first order of the posts prop.
     posts = [...posts].sort((a, b) => (stats.value[b.slug]?.[key] ?? 0) - (stats.value[a.slug]?.[key] ?? 0));
   }
@@ -55,11 +56,11 @@ const pageIndicator = computed(() =>
 );
 
 function readStateLabel(post: BlogListPost): string | null {
-  const viewerReads = stats.value[post.slug]?.viewerReads;
-  if (viewerReads == null) return null;
-  if (viewerReads === 0) return props.t.readState.notReadYet;
-  if (viewerReads === 1) return props.t.readState.readOnce;
-  return props.t.readState.readTimes.replace("{count}", String(viewerReads));
+  const viewerViews = stats.value[post.slug]?.viewerViews;
+  if (viewerViews == null) return null;
+  if (viewerViews === 0) return props.t.readState.notReadYet;
+  if (viewerViews === 1) return props.t.readState.readOnce;
+  return props.t.readState.readTimes.replace("{count}", String(viewerViews));
 }
 
 async function loadStats() {
@@ -170,8 +171,13 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
           <p v-if="statsLoaded" class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-xs font-label text-on-surface-variant">
             <span class="inline-flex items-center gap-1.5" :title="props.t.statViews">
               <MaterialIcon :d="paths.visibility" class="size-4" />
-              {{ stats[post.slug]?.totalReads ?? 0 }}
+              {{ stats[post.slug]?.totalViews ?? 0 }}
               <span class="sr-only">{{ props.t.statViews }}</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5" :title="props.t.statPeople">
+              <MaterialIcon :d="paths.person" class="size-4" />
+              {{ stats[post.slug]?.uniqueVisitors ?? 0 }}
+              <span class="sr-only">{{ props.t.statPeople }}</span>
             </span>
             <span class="inline-flex items-center gap-1.5" :title="props.t.statReactions">
               <MaterialIcon :d="paths.favorite" class="size-4" />
@@ -179,6 +185,9 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
               <span class="sr-only">{{ props.t.statReactions }}</span>
             </span>
             <span v-if="readStateLabel(post)">{{ readStateLabel(post) }}</span>
+          </p>
+          <p v-else class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4" aria-hidden="true">
+            <span v-for="n in 3" :key="n" class="inline-block h-4 w-12 rounded bg-on-surface/10 animate-pulse" />
           </p>
         </a>
       </li>

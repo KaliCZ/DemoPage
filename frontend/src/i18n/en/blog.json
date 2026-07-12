@@ -20,6 +20,7 @@
     "unreadOnly": "Unread only",
     "unreadEmpty": "You've read every post.",
     "statViews": "Views",
+    "statPeople": "Readers",
     "statReactions": "Reactions",
     "paginationPrev": "Previous",
     "paginationNext": "Next",
@@ -36,14 +37,14 @@
     "readingTime": "{min} min read"
   },
   "readState": {
+    "viewsLabel": "Views",
+    "peopleLabel": "Readers",
     "notReadYet": "Not read yet",
     "readOnce": "Read once",
-    "readTimes": "Read {count} times",
-    "signInHint": "Sign in to track your reading."
+    "readTimes": "Read {count} times"
   },
   "reactions": {
     "heading": "Was this useful?",
-    "signInHint": "Sign in to leave a reaction or comment.",
     "error": "Your reaction could not be saved. Please try again.",
     "labels": {
       "ThumbsUp": "Thumbs up",
@@ -78,7 +79,7 @@
   },
   "signInCta": {
     "title": "Join the discussion",
-    "description": "Sign in to leave a reaction or share your thoughts in the comments.",
+    "description": "Sign in to share your thoughts in the comments.",
     "button": "Sign In"
   }
 }

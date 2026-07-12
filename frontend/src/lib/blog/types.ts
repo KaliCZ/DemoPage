@@ -17,10 +17,11 @@ export interface BlogListPost {
 /** Wire shape of one GET /api/blog/stats entry (BlogPostStatsResponse on the backend). */
 export interface BlogPostStats {
   slug: string;
-  totalReads: number;
+  totalViews: number;
+  uniqueVisitors: number;
   totalReactions: number;
   /** null when the caller is anonymous. */
-  viewerReads: number | null;
+  viewerViews: number | null;
 }
 
 export interface BlogStatsResponse {
