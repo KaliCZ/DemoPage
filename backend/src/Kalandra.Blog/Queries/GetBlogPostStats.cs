@@ -15,12 +15,10 @@ public class GetBlogPostStatsHandler(IQuerySession session)
         var stats = new List<BlogPostStats>(query.Posts.Count);
         foreach (var post in query.Posts)
         {
-            // The slug column is duplicated + indexed, so these are aggregate queries, not row loads.
+            // The slug column is duplicated + indexed, so this is an aggregate query, not a row load.
             var totalViews = await session.Query<BlogPostVisitorView>()
                 .Where(v => v.Slug == post.Slug).SumAsync(v => v.ViewCount, ct);
-            // One document per (post, visitor), so the row count is the number of distinct visitors.
-            var uniqueVisitors = await session.Query<BlogPostVisitorView>()
-                .Where(v => v.Slug == post.Slug).CountAsync(ct);
+            var uniqueVisitors = await session.CountDistinctViewersAsync(post.Slug, ct);
 
             // Reaction streams are live-aggregated (see ConfigureBlog); posts are few, so one replay each is fine.
             var reactions = await session.Events.AggregateStreamAsync<BlogPostReactions>(post.ReactionsStreamId, token: ct);

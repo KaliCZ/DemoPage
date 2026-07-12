@@ -245,6 +245,8 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
         Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
+        // Two browsers, one account — the post reached one person, not two.
+        Assert.Equal(1, response.GetProperty("uniqueVisitors").GetInt32());
     }
 
     [Fact]
@@ -256,6 +258,22 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{NewSlug()}/views", content: null, Ct));
 
         Assert.Equal(0, response.GetProperty("previousViewCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordView_BackdatedTimestamp_SeedsSeparateVisitsPastTheWindow()
+    {
+        var slug = NewSlug();
+        SignOut();
+        SetVisitor(Guid.NewGuid());
+
+        // Seeding replays one visitor's history with backdated timestamps 30 minutes apart;
+        // clearing the 15-minute window, both count as views.
+        await client.PostAsync($"/api/blog/{slug}/views?at=2026-06-01T20:00:00Z", content: null, Ct);
+        var second = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views?at=2026-06-01T20:30:00Z", content: null, Ct));
+
+        Assert.Equal(2, second.GetProperty("totalViews").GetInt32());
+        Assert.Equal(1, second.GetProperty("uniqueVisitors").GetInt32());
     }
 
     // ───── Visitor link (anonymous → account attribution) ─────

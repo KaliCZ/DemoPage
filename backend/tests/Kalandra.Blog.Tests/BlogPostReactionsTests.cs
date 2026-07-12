@@ -44,11 +44,24 @@ public class BlogPostReactionsTests
         var reactions = new BlogPostReactions();
         reactions.Apply(new BlogReactionAdded(VisitorV, UserId: null, BlogReactionKind.Rocket, Now));
 
-        Assert.True(reactions.IsActive(VisitorV, BlogReactionKind.Rocket));
-        Assert.Equal([BlogReactionKind.Rocket], reactions.KindsOf(VisitorV));
+        Assert.Equal([BlogReactionKind.Rocket], reactions.GetByVisitor(VisitorV));
 
         var result = reactions.Toggle(VisitorV, userId: null, BlogReactionKind.Rocket, Now.AddMinutes(1));
         Assert.IsType<BlogReactionRemoved>(result);
+    }
+
+    [Fact]
+    public void SignedIn_And_Anonymous_ReactionsAreTrackedSeparately()
+    {
+        var reactions = new BlogPostReactions();
+        reactions.Apply(new BlogReactionAdded(VisitorV, UserId: null, BlogReactionKind.Heart, Now));
+        reactions.Apply(new BlogReactionAdded(Guid.NewGuid(), UserA, BlogReactionKind.Rocket, Now));
+
+        Assert.Equal([BlogReactionKind.Heart], reactions.GetByVisitor(VisitorV));
+        Assert.Equal([BlogReactionKind.Rocket], reactions.GetByUser(UserA));
+        // A visitor id is not a user id — the two spaces don't leak into each other.
+        Assert.Empty(reactions.GetByUser(VisitorV));
+        Assert.Equal(2, reactions.TotalCount());
     }
 
     [Fact]
@@ -60,7 +73,7 @@ public class BlogPostReactionsTests
         var result = reactions.Toggle(VisitorV, UserA, BlogReactionKind.ThumbsDown, Now.AddMinutes(1));
 
         Assert.IsType<BlogReactionAdded>(result);
-        Assert.True(reactions.IsActive(UserA, BlogReactionKind.ThumbsUp));
+        Assert.Contains(BlogReactionKind.ThumbsUp, reactions.GetByUser(UserA));
     }
 
     [Fact]
@@ -96,11 +109,11 @@ public class BlogPostReactionsTests
         reactions.Apply(new BlogReactionRemoved(VisitorV, UserA, BlogReactionKind.Heart, Now));
 
         Assert.Equal(0, reactions.CountOf(BlogReactionKind.Heart));
-        Assert.False(reactions.IsActive(UserA, BlogReactionKind.Heart));
+        Assert.Empty(reactions.GetByUser(UserA));
     }
 
     [Fact]
-    public void KindsOf_ReturnsOnlyReactorsActiveReactions()
+    public void GetByUser_ReturnsOnlyThatReactorsActiveReactions()
     {
         var reactions = new BlogPostReactions();
         reactions.Apply(new BlogReactionAdded(VisitorV, UserA, BlogReactionKind.ThumbsUp, Now));
@@ -108,8 +121,8 @@ public class BlogPostReactionsTests
         reactions.Apply(new BlogReactionAdded(Guid.NewGuid(), UserB, BlogReactionKind.Heart, Now));
         reactions.Apply(new BlogReactionRemoved(VisitorV, UserA, BlogReactionKind.ThumbsUp, Now.AddMinutes(1)));
 
-        Assert.Equal([BlogReactionKind.Rocket], reactions.KindsOf(UserA));
-        Assert.Empty(reactions.KindsOf(Guid.NewGuid()));
+        Assert.Equal([BlogReactionKind.Rocket], reactions.GetByUser(UserA));
+        Assert.Empty(reactions.GetByUser(Guid.NewGuid()));
     }
 
     [Fact]
@@ -120,8 +133,8 @@ public class BlogPostReactionsTests
 
         reactions.Apply(new BlogReactorLinked(VisitorV, UserA, Now.AddMinutes(1)));
 
-        Assert.Empty(reactions.KindsOf(VisitorV));
-        Assert.Equal([BlogReactionKind.Heart], reactions.KindsOf(UserA));
+        Assert.Empty(reactions.GetByVisitor(VisitorV));
+        Assert.Equal([BlogReactionKind.Heart], reactions.GetByUser(UserA));
         Assert.Equal(1, reactions.CountOf(BlogReactionKind.Heart));
     }
 
@@ -136,6 +149,6 @@ public class BlogPostReactionsTests
         reactions.Apply(new BlogReactorLinked(VisitorV, UserA, Now.AddMinutes(2)));
 
         Assert.Equal(1, reactions.CountOf(BlogReactionKind.ThumbsUp));
-        Assert.Equal([BlogReactionKind.ThumbsUp], reactions.KindsOf(UserA));
+        Assert.Equal([BlogReactionKind.ThumbsUp], reactions.GetByUser(UserA));
     }
 }

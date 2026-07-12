@@ -93,7 +93,12 @@ public class BlogController(
     [ProducesResponseType<RecordBlogPostViewResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecordBlogPostViewResponse>> RecordView(string slug, CancellationToken ct)
+    public async Task<ActionResult<RecordBlogPostViewResponse>> RecordView(
+        string slug,
+        // Temporary: backdates a view so pre-rollout Cloudflare traffic can be seeded past the
+        // 15-minute window. Removed in the follow-up PR once the historical data is in place.
+        [FromQuery] DateTimeOffset? at,
+        CancellationToken ct)
     {
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
@@ -104,7 +109,7 @@ public class BlogController(
             Slug: post.Slug,
             VisitorId: visitorId,
             UserId: currentUser.User?.Id,
-            NowUtc: timeProvider.GetUtcNow());
+            NowUtc: at ?? timeProvider.GetUtcNow());
 
         var result = await recordViewHandler.RecordAndSave(command, ct);
         return new RecordBlogPostViewResponse(result.PreviousViewCount, result.TotalViews, result.UniqueVisitors);

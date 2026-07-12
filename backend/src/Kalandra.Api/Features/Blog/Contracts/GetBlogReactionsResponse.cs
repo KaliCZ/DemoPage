@@ -19,9 +19,9 @@ public record GetBlogReactionsResponse(
     {
         var mine = new HashSet<BlogReactionKind>();
         if (visitorId is { } vid)
-            mine.UnionWith(reactions.KindsOf(vid));
+            mine.UnionWith(reactions.GetByVisitor(vid));
         if (userId is { } uid)
-            mine.UnionWith(reactions.KindsOf(uid));
+            mine.UnionWith(reactions.GetByUser(uid));
 
         return new(
             Counts: new BlogReactionCountsResponse(

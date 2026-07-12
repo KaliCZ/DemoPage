@@ -57,8 +57,7 @@ public class RecordBlogPostViewHandler(IDocumentSession session)
             ? await session.Query<BlogPostVisitorView>().Where(v => v.Slug == command.Slug && v.UserId == userId).SumAsync(v => v.ViewCount, ct)
             : view.ViewCount;
         var postTotal = await session.Query<BlogPostVisitorView>().Where(v => v.Slug == command.Slug).SumAsync(v => v.ViewCount, ct);
-        // One document per (post, visitor), so the row count is the number of distinct visitors.
-        var uniqueVisitors = await session.Query<BlogPostVisitorView>().Where(v => v.Slug == command.Slug).CountAsync(ct);
+        var uniqueVisitors = await session.CountDistinctViewersAsync(command.Slug, ct);
         return new RecordBlogPostViewResult(readerTotal - 1, postTotal, uniqueVisitors);
     }
 }
