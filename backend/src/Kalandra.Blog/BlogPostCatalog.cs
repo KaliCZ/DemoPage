@@ -1,7 +1,7 @@
 namespace Kalandra.Blog;
 
-/// <summary>A published post's stable identity: its slug and the Guids of its comment and reaction event streams.</summary>
-public sealed record BlogPost(string Slug, Guid CommentsStreamId, Guid ReactionsStreamId);
+/// <summary>A published post's stable identity: its slug and the Guid of its comment event stream.</summary>
+public sealed record BlogPost(string Slug, Guid CommentsStreamId);
 
 /// <summary>
 /// The backend's copy of the published blog posts (the posts themselves live in the
@@ -17,19 +17,17 @@ public interface IBlogPostCatalog
 
 public sealed class BlogPostCatalog : IBlogPostCatalog
 {
-    // Hand-assigned and permanent: they key the event streams, so they can't change once a post has
-    // data, and a post's two ids must stay distinct (Marten keeps every stream in one id namespace).
+    // Hand-assigned and permanent: it keys the comment event stream, so it can't change once a post
+    // has comments (Marten keeps every stream in one id namespace).
     private static readonly IReadOnlyDictionary<string, BlogPost> Posts =
         new[]
         {
             new BlogPost(
                 Slug: "zero-code-validations-in-your-dotnet-api",
-                CommentsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000c0"),
-                ReactionsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000e0")),
+                CommentsStreamId: Guid.Parse("b1090001-0000-4000-8000-0000000000c0")),
             new BlogPost(
                 Slug: "hello-world",
-                CommentsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000c0"),
-                ReactionsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000e0")),
+                CommentsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000c0")),
         }.ToDictionary(post => post.Slug, StringComparer.Ordinal);
 
     public BlogPost? Find(string slug) => Posts.GetValueOrDefault(slug);

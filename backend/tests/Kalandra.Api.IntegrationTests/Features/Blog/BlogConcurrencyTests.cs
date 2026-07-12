@@ -49,56 +49,53 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
     }
 
     [Fact]
-    public async Task ReactionAndCommentStreams_DoNotConflict()
+    public async Task DifferentReactorsOnSamePost_DoNotConflict()
     {
-        // A post's comment and reaction streams are two distinct ids; interleaved writers
-        // on them must not collide — a reaction lands between the comment writer's version
-        // check and its save.
-        var commentsStreamId = Guid.NewGuid();
-        var reactionsStreamId = Guid.NewGuid();
-
-        await using var commentSession = store.LightweightSession();
-        commentSession.Events.Append(commentsStreamId, 1, NewComment("Hello"));
-
-        await using (var reactionSession = store.LightweightSession())
-        {
-            reactionSession.Events.Append(
-                reactionsStreamId,
-                new BlogReactionAdded(UserId: Guid.NewGuid(), Kind: BlogReactionKind.Heart, Timestamp: DateTimeOffset.UtcNow));
-            await reactionSession.SaveChangesAsync(Ct);
-        }
-
-        await commentSession.SaveChangesAsync(Ct);
-
-        await using var verifySession = store.LightweightSession();
-        var comments = await verifySession.Events.AggregateStreamAsync<BlogPostComments>(commentsStreamId, token: Ct);
-        var reactions = await verifySession.Events.AggregateStreamAsync<BlogPostReactions>(reactionsStreamId, token: Ct);
-        Assert.Single(comments!.Comments);
-        Assert.Equal(1, reactions!.CountOf(BlogReactionKind.Heart));
-    }
-
-    [Fact]
-    public async Task RacingDuplicateReactionAppends_ConvergeOnReplay()
-    {
-        // Reaction toggles deliberately use plain appends (no stream lock): two racing
-        // "add Heart" writers both commit, and the idempotent Apply makes replay converge
-        // to a single reaction instead of double-counting.
-        var streamId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
+        // Reactions are rows keyed by the reactor, so two people reacting to the same post at
+        // once write different rows — no stream-append version clash, no exception.
+        var slug = Guid.NewGuid().ToString();
 
         await using var firstSession = store.LightweightSession();
         await using var secondSession = store.LightweightSession();
-        firstSession.Events.Append(streamId, new BlogReactionAdded(userId, BlogReactionKind.Heart, DateTimeOffset.UtcNow));
-        secondSession.Events.Append(streamId, new BlogReactionAdded(userId, BlogReactionKind.Heart, DateTimeOffset.UtcNow));
+        firstSession.Store(Reaction(slug, reactorId: Guid.NewGuid(), BlogReactionKind.Heart));
+        secondSession.Store(Reaction(slug, reactorId: Guid.NewGuid(), BlogReactionKind.Heart));
 
         await firstSession.SaveChangesAsync(Ct);
         await secondSession.SaveChangesAsync(Ct);
 
         await using var verifySession = store.LightweightSession();
-        var events = await verifySession.Events.FetchStreamAsync(streamId, token: Ct);
-        Assert.Equal(2, events.Count);
-
-        var reactions = await verifySession.Events.AggregateStreamAsync<BlogPostReactions>(streamId, token: Ct);
-        Assert.Equal(1, reactions!.CountOf(BlogReactionKind.Heart));
+        var hearts = await verifySession.Query<BlogReaction>()
+            .Where(r => r.Slug == slug && r.Kind == BlogReactionKind.Heart).CountAsync(Ct);
+        Assert.Equal(2, hearts);
     }
+
+    [Fact]
+    public async Task SameReactorRacingSameKind_ConvergesToOneRow()
+    {
+        // The same reactor from two browsers keys the same row id, so racing writers upsert to a
+        // single reaction instead of double-counting — and neither throws.
+        var slug = Guid.NewGuid().ToString();
+        var reactorId = Guid.NewGuid();
+
+        await using var firstSession = store.LightweightSession();
+        await using var secondSession = store.LightweightSession();
+        firstSession.Store(Reaction(slug, reactorId, BlogReactionKind.Heart));
+        secondSession.Store(Reaction(slug, reactorId, BlogReactionKind.Heart));
+
+        await firstSession.SaveChangesAsync(Ct);
+        await secondSession.SaveChangesAsync(Ct);
+
+        await using var verifySession = store.LightweightSession();
+        var hearts = await verifySession.Query<BlogReaction>()
+            .Where(r => r.Slug == slug && r.Kind == BlogReactionKind.Heart).CountAsync(Ct);
+        Assert.Equal(1, hearts);
+    }
+
+    private static BlogReaction Reaction(string slug, Guid reactorId, BlogReactionKind kind) => new()
+    {
+        Id = BlogReaction.IdFor(slug, reactorId, kind),
+        Slug = slug,
+        VisitorId = reactorId,
+        Kind = kind,
+    };
 }

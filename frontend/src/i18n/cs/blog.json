@@ -12,7 +12,19 @@
     "language": {
       "en": "Anglicky",
       "cs": "Česky"
-    }
+    },
+    "sortLabel": "Seřadit podle",
+    "sortRecent": "Nejnovější",
+    "sortReactions": "Nejvíce reakcí",
+    "sortViews": "Nejvíce zobrazení",
+    "unreadOnly": "Jen nepřečtené",
+    "unreadEmpty": "Všechny články už máte přečtené.",
+    "statViews": "Zobrazení",
+    "statPeople": "Čtenáři",
+    "statReactions": "Reakce",
+    "paginationPrev": "Předchozí",
+    "paginationNext": "Další",
+    "paginationPage": "Stránka {current} z {total}"
   },
   "rss": {
     "label": "Odebírat přes RSS",
@@ -24,9 +36,15 @@
     "updatedOn": "Aktualizováno",
     "readingTime": "{min} min čtení"
   },
+  "readState": {
+    "viewsLabel": "Zobrazení",
+    "peopleLabel": "Čtenáři",
+    "notReadYet": "Zatím nepřečteno",
+    "readOnce": "Přečteno 1×",
+    "readTimes": "Přečteno {count}×"
+  },
   "reactions": {
     "heading": "Byl článek užitečný?",
-    "signInHint": "Reagovat a komentovat můžete po přihlášení.",
     "error": "Reakci se nepodařilo uložit. Zkuste to prosím znovu.",
     "labels": {
       "ThumbsUp": "Palec nahoru",
@@ -61,7 +79,7 @@
   },
   "signInCta": {
     "title": "Zapojte se do diskuze",
-    "description": "Přihlaste se a přidejte reakci nebo se podělte o svůj názor v komentářích.",
+    "description": "Přihlaste se a podělte se o svůj názor v komentářích.",
     "button": "Přihlásit se"
   }
 }

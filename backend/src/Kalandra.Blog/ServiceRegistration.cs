@@ -16,10 +16,13 @@ public static class ServiceRegistration
         services.AddScoped<PostBlogCommentHandler>();
         services.AddScoped<StoreBlogCommentHandler>();
         services.AddScoped<DeleteBlogCommentHandler>();
+        services.AddScoped<RecordBlogPostViewHandler>();
+        services.AddScoped<LinkVisitorHandler>();
 
         // Query handlers
         services.AddScoped<GetBlogReactionsHandler>();
         services.AddScoped<GetBlogCommentsHandler>();
+        services.AddScoped<GetBlogPostStatsHandler>();
 
         return services;
     }

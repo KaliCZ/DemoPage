@@ -52,10 +52,16 @@ public static class RateLimits
 
             options.AddPolicy(RateLimitPolicies.BlogWrite, httpContext =>
             {
-                var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().RequiredUser;
+                // Anonymous blog writes (views, reactions) key on the client-minted visitor id.
+                // It's spoofable, but these are low-value analytics writes, and the alternative —
+                // one shared anonymous bucket — would let a single caller starve every visitor.
+                var user = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().User;
+                var partitionKey = user is { } signedIn
+                    ? "user:" + signedIn.Id
+                    : "visitor:" + VisitorPartition(httpContext);
 
                 return RateLimitPartition.GetSlidingWindowLimiter(
-                    partitionKey: "user:" + currentUser.Id,
+                    partitionKey: partitionKey,
                     factory: _ => blogWriteLimiterOptions);
             });
 
@@ -79,5 +85,11 @@ public static class RateLimits
     public static void Use(WebApplication app)
     {
         app.UseRateLimiter();
+    }
+
+    private static string VisitorPartition(HttpContext httpContext)
+    {
+        var visitorId = httpContext.Request.Headers["X-Visitor-Id"].ToString();
+        return string.IsNullOrEmpty(visitorId) ? "anonymous" : visitorId;
     }
 }

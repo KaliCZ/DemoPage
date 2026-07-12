@@ -1,4 +1,5 @@
 using Kalandra.Blog.Entities;
+using Kalandra.Blog.Queries;
 
 namespace Kalandra.Api.Features.Blog.Contracts;
 
@@ -13,12 +14,13 @@ public record GetBlogReactionsResponse(
     BlogReactionCountsResponse Counts,
     IReadOnlyList<BlogReactionKind> Mine)
 {
-    public static GetBlogReactionsResponse Serialize(BlogPostReactions reactions, Guid? viewerId) => new(
-        Counts: new BlogReactionCountsResponse(
-            ThumbsUp: reactions.CountOf(BlogReactionKind.ThumbsUp),
-            ThumbsDown: reactions.CountOf(BlogReactionKind.ThumbsDown),
-            Heart: reactions.CountOf(BlogReactionKind.Heart),
-            Insightful: reactions.CountOf(BlogReactionKind.Insightful),
-            Rocket: reactions.CountOf(BlogReactionKind.Rocket)),
-        Mine: viewerId is { } id ? [.. reactions.KindsOf(id)] : []);
+    public static GetBlogReactionsResponse Serialize(BlogReactionSummary summary) =>
+        new(
+            Counts: new BlogReactionCountsResponse(
+                ThumbsUp: summary.CountOf(BlogReactionKind.ThumbsUp),
+                ThumbsDown: summary.CountOf(BlogReactionKind.ThumbsDown),
+                Heart: summary.CountOf(BlogReactionKind.Heart),
+                Insightful: summary.CountOf(BlogReactionKind.Insightful),
+                Rocket: summary.CountOf(BlogReactionKind.Rocket)),
+            Mine: [.. summary.Mine]);
 }

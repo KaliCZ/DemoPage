@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { randomUUID } from "crypto";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
@@ -6,9 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E test for the blog reactions + comments flow against the real backend:
- *   1. Anonymous visitor sees the post with live reaction counts and comments
- *   2. Interacting while signed out opens the auth dialog; the API returns 401
- *   3. After sign-in: toggle a reaction (persists across reload), post a
+ *   1. Anonymous visitor can react (no sign-in), but commenting still needs an account
+ *   2. An anonymous reaction is attributed to the account after signing in
+ *   3. Read tracking records the reader's view and drives the index controls
+ *   4. After sign-in: toggle a reaction (persists across reload), post a
  *      comment, reply to it, and delete the reply (tombstone)
  *
  * Requires local Supabase, backend API at :5000, and frontend at :4321.
@@ -58,6 +60,13 @@ const pendingReactionUser = {
   fullName: "E2E Pending Reaction User",
 };
 
+// Fresh per run so the read-count progression asserted below is deterministic.
+const readTrackingUser = {
+  email: `e2e-blog-reader-${Date.now()}@test.local`,
+  password: "test-password-123",
+  fullName: "E2E Read Tracking User",
+};
+
 /** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
 async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
   const query = `to:"${to}" "${containing}"`;
@@ -79,7 +88,7 @@ test.describe("Blog Flow", () => {
   let sharedCommentText = "";
 
   test.beforeAll(async ({ request }) => {
-    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser, pendingReactionUser]) {
+    for (const user of [testUser, replyingUser, driftUser, avatarChangeUser, pendingReactionUser, readTrackingUser]) {
       const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
         headers: {
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -97,37 +106,42 @@ test.describe("Blog Flow", () => {
     }
   });
 
-  test("anonymous visitor sees reactions and comments but must sign in to interact", async ({ page, request }) => {
+  test("anonymous visitor can react but must sign in to comment", async ({ page, request }) => {
     await page.goto(POST_PATH);
 
     const reactions = page.locator('section[aria-label="Was this useful?"]');
-    await expect(reactions.getByRole("button", { name: "Thumbs up" })).toBeVisible();
+    const thumbsUp = reactions.getByRole("button", { name: "Thumbs up" });
+    await expect(thumbsUp).toBeVisible();
     await expect(reactions.getByRole("button", { name: "Thumbs down" })).toBeVisible();
 
-    // The static signed-out hint renders without any JS or island hydration.
-    await expect(page.getByText("Sign in to leave a reaction or comment.")).toBeVisible();
+    // Anonymous reactions land directly — no auth dialog. Toggle on then off so counts stay put.
+    const toggleOn = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
+    await thumbsUp.click();
+    expect((await toggleOn).ok()).toBeTruthy();
+    await expect(thumbsUp).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("#auth-dialog")).not.toBeVisible();
+    const toggleOff = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
+    await thumbsUp.click();
+    await toggleOff;
+    await expect(thumbsUp).toHaveAttribute("aria-pressed", "false");
 
-    // The static sign-in CTA below the comments also renders without hydration.
+    // The sign-in CTA below the comments opens the dialog; the top-right X and the backdrop both close it.
     const signInCta = page.locator("#blog-signin-cta");
-    await expect(signInCta.getByRole("button", { name: "Sign In" })).toBeVisible();
-
-    // A signed-out reaction click opens the auth dialog; the top-right X closes it.
-    await reactions.getByRole("button", { name: "Thumbs up" }).click();
+    await signInCta.getByRole("button", { name: "Sign In" }).click();
     await expect(page.locator("#auth-dialog")).toBeVisible();
     await page.locator("#auth-dialog-close").click();
     await expect(page.locator("#auth-dialog")).not.toBeVisible();
-
-    // The CTA button opens the same dialog; a click on the backdrop closes it.
     await signInCta.getByRole("button", { name: "Sign In" }).click();
     await expect(page.locator("#auth-dialog")).toBeVisible();
     await page.mouse.click(10, 10);
     await expect(page.locator("#auth-dialog")).not.toBeVisible();
 
-    // The API itself refuses anonymous writes.
-    const toggleResponse = await request.post(`${API_URL}/api/blog/${SLUG}/reactions/toggle`, {
-      data: { kind: "ThumbsUp" },
+    // Reactions accept a visitor id anonymously; comments still require an account.
+    const anonReaction = await request.post(`${API_URL}/api/blog/${SLUG}/reactions/toggle`, {
+      headers: { "X-Visitor-Id": randomUUID() },
+      data: { kind: "Rocket" },
     });
-    expect(toggleResponse.status()).toBe(401);
+    expect(anonReaction.ok()).toBeTruthy();
 
     const commentResponse = await request.post(`${API_URL}/api/blog/${SLUG}/comments`, {
       data: { content: "anonymous comment" },
@@ -135,7 +149,7 @@ test.describe("Blog Flow", () => {
     expect(commentResponse.status()).toBe(401);
   });
 
-  test("a reaction clicked while signed out fires automatically after signing in", async ({ page, request }) => {
+  test("an anonymous reaction is attributed to the account after signing in", async ({ page, request }) => {
     await page.goto(POST_PATH);
 
     const reactions = page.locator('section[aria-label="Was this useful?"]');
@@ -145,13 +159,15 @@ test.describe("Blog Flow", () => {
     const baseline = await request.get(`${API_URL}/api/blog/${SLUG}/reactions`);
     const countBefore = (await baseline.json()).counts.heart;
 
-    // Signed out: the click stores the pending reaction and opens the dialog.
-    await heart.click();
-    await expect(page.locator("#auth-dialog")).toBeVisible();
-
-    // Signing in (programmatically — the dialog form path needs a live Turnstile challenge)
-    // must fire the stored reaction without a second click.
+    // React while signed out — no dialog; the reaction lands under the anonymous visitor id.
     const toggleSettled = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
+    await heart.click();
+    expect((await toggleSettled).ok()).toBeTruthy();
+    await expect(heart).toHaveAttribute("aria-pressed", "true");
+    await expect(heart.locator("span").nth(1)).toHaveText(String(countBefore + 1));
+
+    // Signing in links the visitor to the account: the reaction is folded in — still pressed, not doubled.
+    const linkSettled = page.waitForResponse((response) => response.url().includes("/visitor/link"));
     await page.evaluate(
       async ({ email, password }) => {
         const supabase = await (window as any).__supabaseReady;
@@ -161,10 +177,42 @@ test.describe("Blog Flow", () => {
       },
       { email: pendingReactionUser.email, password: pendingReactionUser.password },
     );
-    expect((await toggleSettled).ok()).toBeTruthy();
+    expect((await linkSettled).ok()).toBeTruthy();
 
     await expect(heart).toHaveAttribute("aria-pressed", "true");
     await expect(heart.locator("span").nth(1)).toHaveText(String(countBefore + 1));
+  });
+
+  test("read tracking records the reader's own count and drives the unread filter", async ({ page }) => {
+    // Signed out: no sign-in nag on the post; the index hides the unread filter. (Public view/reader
+    // counts are gated off until the pre-rollout traffic is seeded, so they aren't asserted here.)
+    await page.goto(POST_PATH);
+    await expect(page.getByText("Sign in to track your reading.")).toHaveCount(0);
+    await page.goto("/blog");
+    await expect(page.locator("#blog-sort")).toBeVisible();
+    await expect(page.locator("#blog-unread-filter")).toHaveCount(0);
+
+    // Sign in on the post: the reader's first view reads as "not read yet" (no prior session).
+    await page.goto(POST_PATH);
+    await page.evaluate(
+      async ({ email, password }) => {
+        const supabase = await (window as any).__supabaseReady;
+        if (!supabase) throw new Error("Supabase client not available");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(`Sign-in failed: ${error.message}`);
+      },
+      { email: readTrackingUser.email, password: readTrackingUser.password },
+    );
+    await expect(page.getByText("Not read yet")).toBeVisible();
+
+    // The index shows the reader's own read state, and the unread filter drops the post they've read.
+    await page.goto("/blog");
+    const readCard = page.locator("ul[role=list] > li").filter({ hasText: "Zero-Code Validations" });
+    await expect(readCard.getByText("Read once")).toBeVisible();
+    await expect(page.locator("#blog-unread-filter")).toBeVisible();
+    await page.locator("#blog-unread-filter input").check();
+    await expect(page.getByRole("link", { name: /Zero-Code Validations/ })).toHaveCount(0);
+    await page.locator("#blog-unread-filter input").uncheck();
   });
 
   test("signed-in user reacts, comments, replies, and deletes", async ({ page, request }) => {
@@ -205,8 +253,7 @@ test.describe("Blog Flow", () => {
     await expect(reloadedThumbsUp).toHaveAttribute("aria-pressed", "true");
     await expect(reloadedThumbsUp.locator("span").nth(1)).toHaveText(String(countBefore + 1));
 
-    // Signed in, the static hint and the sign-in CTA are gone (Layout's auth-known-in tier hides them).
-    await expect(page.getByText("Sign in to leave a reaction or comment.")).not.toBeVisible();
+    // Signed in, the sign-in CTA is gone (Layout's auth-known-in tier hides it).
     await expect(page.locator("#blog-signin-cta")).not.toBeVisible();
 
     // Post a top-level comment.
@@ -299,7 +346,7 @@ test.describe("Blog Flow", () => {
     const slugs = [...new Set([...xml.matchAll(/<loc>https:\/\/www\.kalandra\.tech\/(?:cs\/)?blog\/([^<]+)<\/loc>/g)].map((m) => m[1]))];
     expect(slugs.length, "sitemap should list at least one blog post").toBeGreaterThan(0);
 
-    const headers = { Authorization: `Bearer ${token}` };
+    const headers = { Authorization: `Bearer ${token}`, "X-Visitor-Id": randomUUID() };
     for (const slug of slugs) {
       const on = await request.post(`${API_URL}/api/blog/${slug}/reactions/toggle`, { headers, data: { kind: "ThumbsUp" } });
       expect(on.ok(), `backend rejected a reaction on "${slug}" — add it to BlogPostCatalog`).toBeTruthy();

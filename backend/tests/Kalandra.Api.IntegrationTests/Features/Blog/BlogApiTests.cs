@@ -10,8 +10,25 @@ namespace Kalandra.Api.IntegrationTests.Features.Blog;
 
 public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly HttpClient client = factory.CreateClient();
+    private readonly HttpClient client = NewClientWithVisitor(factory);
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    // Every blog write carries the anonymous visitor id; the client keeps one by default so tests
+    // read like a single browser, and SetVisitor swaps it to stand in for a different browser.
+    private static HttpClient NewClientWithVisitor(TestWebApplicationFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Visitor-Id", Guid.NewGuid().ToString());
+        return client;
+    }
+
+    private void SetVisitor(Guid visitorId)
+    {
+        client.DefaultRequestHeaders.Remove("X-Visitor-Id");
+        client.DefaultRequestHeaders.Add("X-Visitor-Id", visitorId.ToString());
+    }
+
+    private void ClearVisitor() => client.DefaultRequestHeaders.Remove("X-Visitor-Id");
 
     // ───── Reactions ─────
 
@@ -34,13 +51,28 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     [Fact]
-    public async Task ToggleReaction_WithoutAuth_Returns401()
+    public async Task ToggleReaction_Anonymous_RecordsUnderTheVisitor()
+    {
+        var slug = NewSlug();
+        SignOut();
+
+        var response = await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = "ThumbsUp" }, Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var json = await ParseJsonAsync(response);
+        Assert.Equal(1, json.GetProperty("counts").GetProperty("thumbsUp").GetInt32());
+        Assert.Equal("ThumbsUp", json.GetProperty("mine")[0].GetString());
+    }
+
+    [Fact]
+    public async Task ToggleReaction_WithoutVisitorId_Returns400()
     {
         SignOut();
+        ClearVisitor();
 
         var response = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/reactions/toggle", new { kind = "ThumbsUp" }, Ct);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -155,6 +187,211 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
         var numberResponse = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/reactions/toggle", new { kind = 99 }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, numberResponse.StatusCode);
+    }
+
+    // ───── Views ─────
+
+    [Fact]
+    public async Task RecordView_Anonymous_IsAllowed()
+    {
+        SignOut();
+
+        var response = await client.PostAsync($"/api/blog/{NewSlug()}/views", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await ParseJsonAsync(response);
+        Assert.Equal(0, json.GetProperty("previousViewCount").GetInt32());
+        Assert.Equal(1, json.GetProperty("totalViews").GetInt32());
+        Assert.Equal(1, json.GetProperty("uniqueVisitors").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordView_WithoutVisitorId_Returns400()
+    {
+        SignOut();
+        ClearVisitor();
+
+        var response = await client.PostAsync($"/api/blog/{NewSlug()}/views", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordView_RepeatWithinWindow_DoesNotCountAgain()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "rereader@test.com");
+
+        // Two visits milliseconds apart are the same reading session — the second must not bump the count.
+        var first = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+        var second = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+
+        Assert.Equal(0, first.GetProperty("previousViewCount").GetInt32());
+        Assert.Equal(0, second.GetProperty("previousViewCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordView_SecondBrowser_SameUser_ReadsAsReturningReader()
+    {
+        var slug = NewSlug();
+        var userId = Guid.NewGuid();
+        Authenticate(userId: userId, email: "two-devices@test.com");
+
+        SetVisitor(Guid.NewGuid());
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // A second browser is a new visitor row but the same account — the cross-device total counts.
+        SetVisitor(Guid.NewGuid());
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+
+        Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
+        // Two browsers, one account — the post reached one person, not two.
+        Assert.Equal(1, response.GetProperty("uniqueVisitors").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordView_IsIsolatedPerSlug()
+    {
+        Authenticate(email: "slug-hopper@test.com");
+        await client.PostAsync($"/api/blog/{NewSlug()}/views", content: null, Ct);
+
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{NewSlug()}/views", content: null, Ct));
+
+        Assert.Equal(0, response.GetProperty("previousViewCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordView_BackdatedTimestamp_SeedsSeparateVisitsPastTheWindow()
+    {
+        var slug = NewSlug();
+        SignOut();
+        SetVisitor(Guid.NewGuid());
+
+        // Seeding replays one visitor's history with backdated timestamps 30 minutes apart;
+        // clearing the 15-minute window, both count as views.
+        await client.PostAsync($"/api/blog/{slug}/views?at=2026-06-01T20:00:00Z", content: null, Ct);
+        var second = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views?at=2026-06-01T20:30:00Z", content: null, Ct));
+
+        Assert.Equal(2, second.GetProperty("totalViews").GetInt32());
+        Assert.Equal(1, second.GetProperty("uniqueVisitors").GetInt32());
+    }
+
+    // ───── Visitor link (anonymous → account attribution) ─────
+
+    [Fact]
+    public async Task LinkVisitor_WithoutAuth_Returns401()
+    {
+        SignOut();
+
+        var response = await client.PostAsync("/api/blog/visitor/link", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task LinkVisitor_AttributesAnonymousReactionToTheAccount()
+    {
+        var slug = NewSlug();
+        var visitorId = Guid.NewGuid();
+        SetVisitor(visitorId);
+
+        // React anonymously, then sign in and link.
+        SignOut();
+        await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = "Heart" }, Ct);
+
+        Authenticate(userId: Guid.NewGuid(), email: "claimant@test.com");
+        var link = await client.PostAsync("/api/blog/visitor/link", content: null, Ct);
+        Assert.Equal(HttpStatusCode.NoContent, link.StatusCode);
+
+        // The account now owns the reaction, and it is not double-counted.
+        var mine = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/reactions", Ct));
+        Assert.Equal(1, mine.GetProperty("counts").GetProperty("heart").GetInt32());
+        Assert.Equal("Heart", mine.GetProperty("mine")[0].GetString());
+    }
+
+    [Fact]
+    public async Task LinkVisitor_AttributesAnonymousViewsToTheAccount()
+    {
+        var slug = NewSlug();
+        var visitorId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        SetVisitor(visitorId);
+
+        SignOut();
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        Authenticate(userId: userId, email: "view-claimant@test.com");
+        await client.PostAsync("/api/blog/visitor/link", content: null, Ct);
+
+        var stats = FindPostStats((await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}", Ct))).GetProperty("posts"), slug);
+        Assert.Equal(1, stats.GetProperty("totalViews").GetInt32());
+        Assert.Equal(1, stats.GetProperty("viewerViews").GetInt32());
+    }
+
+    // ───── Stats ─────
+
+    [Fact]
+    public async Task Stats_AggregatesViewsAndReactionsPerPost()
+    {
+        var slugA = NewSlug();
+        var slugB = NewSlug();
+        var viewerId = Guid.NewGuid();
+
+        Authenticate(userId: viewerId, email: "stats-viewer@test.com");
+        SetVisitor(Guid.NewGuid());
+        await client.PostAsync($"/api/blog/{slugA}/views", content: null, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Heart" }, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Rocket" }, Ct);
+
+        // A different reader on a different browser adds a second view of the same post.
+        Authenticate(userId: Guid.NewGuid(), email: "stats-other@test.com");
+        SetVisitor(Guid.NewGuid());
+        await client.PostAsync($"/api/blog/{slugA}/views", content: null, Ct);
+
+        Authenticate(userId: viewerId, email: "stats-viewer@test.com");
+        var response = await client.GetAsync($"/api/blog/stats?slug={slugA}&slug={slugB}", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var posts = (await ParseJsonAsync(response)).GetProperty("posts");
+        Assert.Equal(2, posts.GetArrayLength());
+
+        var statsA = FindPostStats(posts, slugA);
+        Assert.Equal(2, statsA.GetProperty("totalViews").GetInt32());
+        Assert.Equal(2, statsA.GetProperty("uniqueVisitors").GetInt32());
+        Assert.Equal(2, statsA.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(1, statsA.GetProperty("viewerViews").GetInt32());
+
+        var statsB = FindPostStats(posts, slugB);
+        Assert.Equal(0, statsB.GetProperty("totalViews").GetInt32());
+        Assert.Equal(0, statsB.GetProperty("uniqueVisitors").GetInt32());
+        Assert.Equal(0, statsB.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(0, statsB.GetProperty("viewerViews").GetInt32());
+    }
+
+    [Fact]
+    public async Task Stats_Anonymous_SeesTotalsButNoViewerViews()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "stats-anon-seed@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        SignOut();
+        var response = await client.GetAsync($"/api/blog/stats?slug={slug}", Ct);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var stats = FindPostStats((await ParseJsonAsync(response)).GetProperty("posts"), slug);
+        Assert.Equal(1, stats.GetProperty("totalViews").GetInt32());
+        Assert.Equal(JsonValueKind.Null, stats.GetProperty("viewerViews").ValueKind);
+    }
+
+    [Fact]
+    public async Task Stats_RepeatedSlug_ReturnsOneEntry()
+    {
+        SignOut();
+        var slug = NewSlug();
+
+        var response = await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}&slug={slug}", Ct));
+
+        Assert.Equal(1, response.GetProperty("posts").GetArrayLength());
     }
 
     // ───── Comments ─────
@@ -493,6 +730,16 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
     /// <summary>Unique per test — the factory shares one database across the class.</summary>
     private static string NewSlug() => $"post-{Guid.NewGuid():N}";
+
+    private static JsonElement FindPostStats(JsonElement posts, string slug)
+    {
+        foreach (var post in posts.EnumerateArray())
+        {
+            if (post.GetProperty("slug").GetString() == slug)
+                return post;
+        }
+        throw new InvalidOperationException($"Stats response has no entry for slug '{slug}'");
+    }
 
     private void Authenticate(Guid? userId = null, string email = "test@example.com", bool isAdmin = false)
     {

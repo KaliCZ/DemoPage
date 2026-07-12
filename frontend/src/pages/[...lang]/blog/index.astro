@@ -1,15 +1,17 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
 import BlogRssLink from "../../../components/BlogRssLink.astro";
+import BlogList from "../../../components/blog/BlogList.vue";
 import { locales, defaultLocale, localePath, type Locale } from "../../../i18n/utils";
 import type { PageMeta } from "../../../lib/page-meta";
+import type { BlogListPost } from "../../../lib/blog/types";
 import { publishedPosts, resolveVariant } from "../../../blog/posts";
 import enStrings from "../../../i18n/en/blog.json";
 import csStrings from "../../../i18n/cs/blog.json";
 
 const translations = { en: enStrings, cs: csStrings };
 
-export const pageMeta: PageMeta = { updatedDate: "2026-07-04" };
+export const pageMeta: PageMeta = { updatedDate: "2026-07-08" };
 
 export function getStaticPaths() {
   return locales.map((lang) => ({
@@ -23,6 +25,29 @@ const t = translations[lang];
 const posts = publishedPosts();
 const dateLocale = lang === "cs" ? "cs-CZ" : "en-US";
 const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
+
+// The island renders the cards (build-time SSR keeps the list crawlable), so all
+// display strings are resolved here. A post without a variant in this language is
+// listed anyway — under its own language's title and URL, with a chip.
+const listPosts: BlogListPost[] = posts.map((post) => {
+  const { locale, variant } = resolveVariant(post, lang);
+  const crossLocale = locale !== lang ? locale : undefined;
+  return {
+    slug: post.slug,
+    url: localePath(locale, `blog/${post.slug}`),
+    title: variant.title,
+    summary: variant.summary,
+    tags: post.metadata.tags,
+    pubDateIso: post.metadata.pubDate,
+    pubDateLabel: formatDate(post.pubDate),
+    updatedDateIso: post.metadata.updatedDate,
+    updatedDateLabel: post.updatedDate && post.metadata.updatedDate ? formatDate(post.updatedDate) : undefined,
+    crossLocale,
+    crossLocaleLabel: crossLocale ? t.index.language[crossLocale] : undefined,
+  };
+});
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || "";
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="blog" lang={lang}>
@@ -39,54 +64,30 @@ const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "
 
     {posts.length === 0 && <p class="font-body text-on-surface-variant">{t.index.empty}</p>}
 
-    <ul class="space-y-8" role="list">
-      {
-        posts.map((post) => {
-          // A post without a variant in this language is listed anyway — under its
-          // own language's title, linking to its own language's URL, with a chip.
-          const { locale, variant } = resolveVariant(post, lang);
-          const crossLocale = locale !== lang ? locale : undefined;
-          return (
-            <li>
-              <a
-                href={localePath(locale, `blog/${post.slug}`)}
-                hreflang={crossLocale}
-                class="block rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-6 md:p-8 hover:border-primary/40 transition-colors"
-              >
-                <p class="font-label text-xs uppercase tracking-widest text-tertiary mb-3">
-                  <time datetime={post.metadata.pubDate}>{formatDate(post.pubDate)}</time>
-                  {post.updatedDate && post.metadata.updatedDate && (
-                    <span>
-                      {" · "}
-                      {t.index.updatedOn} <time datetime={post.metadata.updatedDate}>{formatDate(post.updatedDate)}</time>
-                    </span>
-                  )}
-                  {crossLocale && (
-                    <span class="inline-block align-middle ml-2 px-2 py-0.5 rounded-full bg-surface-container-low border border-outline-variant/30 normal-case tracking-normal text-on-surface-variant">
-                      {t.index.language[crossLocale]}
-                    </span>
-                  )}
-                </p>
-                <h2 lang={crossLocale} class="font-headline text-2xl md:text-3xl font-bold tracking-tight mb-3 text-on-surface">
-                  {variant.title}
-                </h2>
-                <p lang={crossLocale} class="font-body text-on-surface-variant leading-relaxed mb-4">
-                  {variant.summary}
-                </p>
-                {post.metadata.tags.length > 0 && (
-                  <ul class="flex flex-wrap gap-2" role="list">
-                    {post.metadata.tags.map((tag) => (
-                      <li class="px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/30 text-xs font-label text-on-surface-variant">
-                        {tag}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </a>
-            </li>
-          );
-        })
-      }
-    </ul>
+    {
+      posts.length > 0 && (
+        <BlogList
+          client:idle
+          apiUrl={apiUrl}
+          posts={listPosts}
+          t={{
+            updatedOn: t.index.updatedOn,
+            sortLabel: t.index.sortLabel,
+            sortRecent: t.index.sortRecent,
+            sortReactions: t.index.sortReactions,
+            sortViews: t.index.sortViews,
+            unreadOnly: t.index.unreadOnly,
+            unreadEmpty: t.index.unreadEmpty,
+            statViews: t.index.statViews,
+            statPeople: t.index.statPeople,
+            statReactions: t.index.statReactions,
+            paginationPrev: t.index.paginationPrev,
+            paginationNext: t.index.paginationNext,
+            paginationPage: t.index.paginationPage,
+            readState: t.readState,
+          }}
+        />
+      )
+    }
   </section>
 </Layout>

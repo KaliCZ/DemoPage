@@ -1,42 +1,36 @@
 using Kalandra.Blog.Entities;
-using Kalandra.Blog.Events;
 using Kalandra.Infrastructure.Auth;
 using Marten;
 
 namespace Kalandra.Blog.Commands;
 
-public record ToggleBlogReactionCommand(
-    Guid ReactionsStreamId,
-    CurrentUser User,
-    BlogReactionKind Kind,
-    DateTimeOffset Timestamp);
+public record ToggleBlogReactionCommand(string Slug, Guid VisitorId, CurrentUser? User, BlogReactionKind Kind);
 
 public class ToggleBlogReactionHandler(IDocumentSession session)
 {
     /// <summary>
-    /// Toggling has no failure mode — any signed-in user may react — so this
-    /// returns the updated state directly instead of a Result.
+    /// Toggling has no failure mode — anyone may react, signed in or not. The reactor's row is
+    /// keyed by their identity, so different reactors never touch the same row and concurrent
+    /// reactions can't conflict.
     /// </summary>
-    public async Task<BlogPostReactions> ToggleAndSave(ToggleBlogReactionCommand command, CancellationToken ct)
+    public async Task ToggleAndSave(ToggleBlogReactionCommand command, CancellationToken ct)
     {
-        var streamId = command.ReactionsStreamId;
-        var reactions = await session.Events.AggregateStreamAsync<BlogPostReactions>(streamId, token: ct)
-            ?? new BlogPostReactions();
+        var reactorId = command.User?.Id ?? command.VisitorId;
+        var id = BlogReaction.IdFor(command.Slug, reactorId, command.Kind);
 
-        var reactionEvent = reactions.Toggle(command.User.Id, command.Kind, command.Timestamp);
-        session.Events.Append(streamId, reactionEvent);
+        var existing = await session.LoadAsync<BlogReaction>(id, ct);
+        if (existing is not null)
+            session.Delete(existing);
+        else
+            session.Store(new BlogReaction
+            {
+                Id = id,
+                Slug = command.Slug,
+                VisitorId = command.VisitorId,
+                UserId = command.User?.Id,
+                Kind = command.Kind,
+            });
+
         await session.SaveChangesAsync(ct);
-
-        switch (reactionEvent)
-        {
-            case BlogReactionAdded added:
-                reactions.Apply(added);
-                break;
-            case BlogReactionRemoved removed:
-                reactions.Apply(removed);
-                break;
-        }
-
-        return reactions;
     }
 }
