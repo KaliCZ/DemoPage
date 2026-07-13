@@ -58,6 +58,8 @@ public class RecordBlogPostViewHandler(IDocumentSession session)
             : view.ViewCount;
         var postTotal = await session.Query<BlogPostVisitorView>().Where(v => v.Slug == command.Slug).SumAsync(v => v.ViewCount, ct);
         var uniqueVisitors = await session.CountDistinctViewersAsync(command.Slug, ct);
-        return new RecordBlogPostViewResult(readerTotal - 1, postTotal, uniqueVisitors);
+        // A shared browser's view row can already belong to another account, leaving this
+        // reader's total at 0 — clamp so the label never reads "read -1 times".
+        return new RecordBlogPostViewResult(Math.Max(0, readerTotal - 1), postTotal, uniqueVisitors);
     }
 }
