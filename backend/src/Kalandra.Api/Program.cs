@@ -67,7 +67,7 @@ builder.Services.AddResponseCompression(options =>
 });
 
 builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, timeout: TimeSpan.FromSeconds(5))
     .AddCheck<CommitHashHealthCheck>("version")
     .AddCheck<SupabaseAuthHealthCheck>("supabase-auth")
     .AddCheck<SupabaseStorageHealthCheck>("supabase-storage")
