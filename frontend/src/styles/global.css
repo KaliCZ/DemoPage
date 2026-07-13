@@ -111,6 +111,17 @@ body {
   color: var(--color-on-primary-container);
 }
 
+/* Keyboard focus ring, application-wide. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Form fields already show their own focus ring. */
+:is(input, textarea, select):focus-visible {
+  outline: none;
+}
+
 /* Gradient text with accessible fallback.
    Uses a visible color as fallback so text remains readable
    when browser extensions (e.g. Dark Reader) strip the gradient. */
