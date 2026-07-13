@@ -142,7 +142,8 @@
           "Dekompozice modulárního monolitu",
           "Messaging a workflows (Azure Service Bus, RabbitMQ, Kafka, Temporal)",
           "Optimalizace výkonu",
-          "REST / GraphQL / gRPC"
+          "REST / GraphQL / gRPC",
+          "Servery Model Context Protocol (MCP) pro AI asistenty"
         ]
       },
       {

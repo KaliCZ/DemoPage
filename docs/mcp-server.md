@@ -11,11 +11,9 @@ The MCP tools live in `Kalandra.Api/Features/Mcp/` and are thin adapters over th
 controllers call**:
 
 ```
-                 ┌── REST controllers ──┐
-MCP client ──►  /mcp tools ──────────────┼──►  domain handlers ──►  Marten (events)
-                                          └──  (CreateJobOffer, PostBlogComment, …)   │
-                                                                                       ▼
-                                                              notification subscriptions (email)
+REST controllers ─┐
+                  ├─►  domain handlers  ─►  Marten (events)  ─►  notification subscriptions (email)
+/mcp tools ───────┘    (CreateJobOffer, PostBlogComment, …)
 ```
 
 - **Same logic as the UI.** A tool builds the same command/query record a controller builds and calls the
