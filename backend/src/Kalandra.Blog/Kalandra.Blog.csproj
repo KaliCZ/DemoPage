@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Kalicz.StrongTypes" Version="1.1.1" />
     <PackageReference Include="Marten" Version="9.12.0" />
-    <!-- Direct dependency for the stats snapshot's raw per-column SQL; pinned to the app's resolved Npgsql. -->
+    <!-- Direct dependency for the stats handler's aggregate SQL; pinned to the app's resolved Npgsql. -->
     <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
 

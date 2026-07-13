@@ -1,7 +1,6 @@
 using JasperFx;
 using JasperFx.Events.Daemon;
 using JasperFx.OpenTelemetry;
-using Kalandra.Api.Features.Blog;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
 using Kalandra.Blog.Events;
@@ -81,20 +80,19 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddBlogStatsSnapshot(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddBlogStats(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
-        // A small, dedicated pool so the stats read-model's by-id reads and per-column upserts stay
-        // isolated from Marten's pool and add little connection pressure on a small database.
+        // The stats handler runs its aggregate queries through raw SQL (Marten LINQ can't batch GROUP BY),
+        // so it needs its own data source. A small, dedicated pool keeps it isolated from Marten's and
+        // bounds its connection pressure on a small database.
         services.AddSingleton(_ =>
         {
             var builder = new NpgsqlDataSourceBuilder(connectionString);
-            builder.ConnectionStringBuilder.MaxPoolSize = 5;
+            builder.ConnectionStringBuilder.MaxPoolSize = 10;
             return builder.Build();
         });
-
-        services.AddHostedService<BlogStatsSnapshotService>();
 
         return services;
     }
