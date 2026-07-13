@@ -1,7 +1,7 @@
 using System.Net.Mail;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
-using Kalandra.Blog.Workflows;
+using Kalandra.Blog.Notifications;
 
 namespace Kalandra.Blog.Tests;
 

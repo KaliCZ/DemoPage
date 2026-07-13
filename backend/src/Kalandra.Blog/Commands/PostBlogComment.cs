@@ -1,42 +1,33 @@
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
-using Kalandra.Blog.Workflows;
-using Temporalio.Api.Enums.V1;
-using Temporalio.Client;
+using Marten;
 
 namespace Kalandra.Blog.Commands;
 
 public record PostBlogCommentCommand(BlogPost Post, BlogCommentPosted Comment);
 
-public class PostBlogCommentHandler(ITemporalClient temporalClient)
+public class PostBlogCommentHandler(IDocumentSession session)
 {
     /// <summary>
-    /// Drives the durable comment flow: store + notify share one workflow, and the
-    /// update returns once the comment is stored — notifications continue async.
+    /// Stores the comment; the notification emails are delivered separately by the
+    /// blog-comment subscription reacting to the appended event.
     /// </summary>
-    public async Task<Result<BlogCommentPosted, PostBlogCommentError>> Post(
+    public async Task<Result<BlogCommentPosted, PostBlogCommentError>> PostAndSave(
         PostBlogCommentCommand command, CancellationToken ct)
     {
-        var input = new BlogCommentWorkflowInput(
-            command.Post.Slug, command.Post.CommentsStreamId, command.Comment);
+        var streamId = command.Post.CommentsStreamId;
+        var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(streamId, token: ct)
+            ?? new BlogPostComments();
 
-        var startOperation = WithStartWorkflowOperation.Create(
-            (BlogCommentWorkflow workflow) => workflow.RunAsync(input),
-            new(id: BlogCommentWorkflow.IdFor(command.Comment.CommentId), taskQueue: BlogTaskQueue.Name)
-            {
-                // A client retry of the same request reattaches instead of failing.
-                IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
-            });
+        // A client resend of the same comment id is reported as stored, never appended twice.
+        if (comments.Comments.Any(c => c.CommentId == command.Comment.CommentId))
+            return command.Comment;
 
-        // Cancellation frees the request if the client disconnects; the workflow keeps
-        // running — durability is the point.
-        var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
-            (BlogCommentWorkflow workflow) => workflow.StoreCommentAsync(input),
-            new(startOperation) { Rpc = new() { CancellationToken = ct } });
-
-        if (outcome.Error is { } error)
+        if (comments.Post(command.Comment).Error is { } error)
             return error;
 
-        return outcome.Posted!;
+        session.Events.Append(streamId, command.Comment);
+        await session.SaveChangesAsync(ct);
+        return command.Comment;
     }
 }

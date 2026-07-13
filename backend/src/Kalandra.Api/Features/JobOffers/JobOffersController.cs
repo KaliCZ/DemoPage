@@ -78,7 +78,7 @@ public class JobOffersController(
         if (!ModelState.IsValid)
             return ValidationProblem();
 
-        // Client-supplied so an accidental resend reuses it and the workflow dedupes to one
+        // Client-supplied so an accidental resend reuses it and the handler dedupes to one
         // offer; we mint one only when a caller omits it.
         var offerId = request.Id is { } requestedId && requestedId != Guid.Empty ? requestedId : Guid.NewGuid();
 
@@ -97,7 +97,7 @@ public class JobOffersController(
             Files: files,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await createHandler.Create(command, ct);
+        var result = await createHandler.CreateAndSave(command, ct);
 
         if (result.Error is { } error)
         {
@@ -255,7 +255,7 @@ public class JobOffersController(
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
-        // Client-supplied so an accidental resend reuses it and the workflow dedupes to one
+        // Client-supplied so an accidental resend reuses it and the handler dedupes to one
         // comment; we mint one only when a caller omits it.
         var commentId = request.CommentId is { } requestedId && requestedId != Guid.Empty ? requestedId : Guid.NewGuid();
 
@@ -266,7 +266,7 @@ public class JobOffersController(
             Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await addCommentHandler.Add(command, ct);
+        var result = await addCommentHandler.AddAndSave(command, ct);
 
         if (result.Error is { } error)
         {

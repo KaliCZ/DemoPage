@@ -1,7 +1,6 @@
 using System.Net.Mail;
-using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Events;
-using Kalandra.JobOffers.Workflows;
+using Kalandra.JobOffers.Notifications;
 
 namespace Kalandra.JobOffers.Tests;
 
@@ -32,6 +31,7 @@ public class JobOfferNotificationsTests
         string offerAuthorEmail = "offer-author@test.com") => new(
         JobOfferId: Guid.NewGuid(),
         Comment: new JobOfferCommentAdded(
+            JobOfferId: Guid.NewGuid(),
             CommentId: Guid.NewGuid(),
             UserId: commenterUserId ?? Guid.NewGuid(),
             UserEmail: Email.Create(commenterEmail),

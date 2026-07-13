@@ -2,7 +2,7 @@ using System.Net.Mail;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 
-namespace Kalandra.Blog.Workflows;
+namespace Kalandra.Blog.Notifications;
 
 public enum BlogCommentNotificationKind
 {
@@ -11,9 +11,6 @@ public enum BlogCommentNotificationKind
 }
 
 public record BlogCommentNotification(MailAddress Recipient, BlogCommentNotificationKind Kind);
-
-/// <summary>Serializable form for crossing the activity boundary — MailAddress doesn't round-trip through the Temporal payload converter.</summary>
-public record PlannedBlogCommentNotification(string RecipientEmail, BlogCommentNotificationKind Kind);
 
 public static class BlogCommentNotifications
 {

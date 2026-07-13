@@ -1,10 +1,8 @@
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
-using Kalandra.JobOffers.Workflows;
+using Marten;
 using StrongTypes;
-using Temporalio.Api.Enums.V1;
-using Temporalio.Client;
 
 namespace Kalandra.JobOffers.Commands;
 
@@ -15,16 +13,25 @@ public record AddCommentCommand(
     NonEmptyString Content,
     DateTimeOffset Timestamp);
 
-public class AddCommentHandler(ITemporalClient temporalClient)
+public class AddCommentHandler(IDocumentSession session)
 {
     /// <summary>
-    /// Drives the durable comment flow: store + notify share one workflow, and the
-    /// update returns once the comment is stored — notifications continue async.
+    /// Stores the comment; the notification emails are delivered separately by the
+    /// job-offer subscription reacting to the appended event. Re-checks authorization here
+    /// (not just at the HTTP boundary) because the write is the domain's last line of defence.
     /// </summary>
-    public async Task<Result<JobOfferCommentAdded, AddCommentError>> Add(
+    public async Task<Result<JobOfferCommentAdded, AddCommentError>> AddAndSave(
         AddCommentCommand command, CancellationToken ct)
     {
+        var offer = await session.LoadAsync<JobOffer>(command.JobOfferId, ct);
+        if (offer == null)
+            return AddCommentError.NotFound;
+
+        if (!command.User.IsAdmin && offer.UserId != command.User.Id)
+            return AddCommentError.NotAuthorized;
+
         var comment = new JobOfferCommentAdded(
+            JobOfferId: command.JobOfferId,
             CommentId: command.CommentId,
             UserId: command.User.Id,
             UserEmail: command.User.Email,
@@ -32,25 +39,14 @@ public class AddCommentHandler(ITemporalClient temporalClient)
             Content: command.Content,
             Timestamp: command.Timestamp);
 
-        var input = new JobOfferCommentWorkflowInput(command.JobOfferId, comment, command.User.IsAdmin);
+        // A client resend of the same comment id is reported as stored, never appended twice.
+        var streamId = CommentStreamId.For(command.JobOfferId);
+        var events = await session.Events.FetchStreamAsync(streamId, token: ct);
+        if (events.Any(e => e.Data is JobOfferCommentAdded existing && existing.CommentId == command.CommentId))
+            return comment;
 
-        var startOperation = WithStartWorkflowOperation.Create(
-            (JobOfferCommentWorkflow workflow) => workflow.RunAsync(input),
-            new(id: JobOfferCommentWorkflow.IdFor(comment.CommentId), taskQueue: JobOffersTaskQueue.Name)
-            {
-                // A client retry of the same request reattaches instead of failing.
-                IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
-            });
-
-        // Cancellation frees the request if the client disconnects; the workflow keeps
-        // running — durability is the point.
-        var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
-            (JobOfferCommentWorkflow workflow) => workflow.StoreCommentAsync(input),
-            new(startOperation) { Rpc = new() { CancellationToken = ct } });
-
-        if (outcome.Error is { } error)
-            return error;
-
-        return outcome.Stored!.Comment;
+        session.Events.Append(streamId, comment);
+        await session.SaveChangesAsync(ct);
+        return comment;
     }
 }

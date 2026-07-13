@@ -184,7 +184,7 @@ public class BlogController(
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
 
-        // Client-supplied so an accidental resend reuses it and the workflow dedupes to one
+        // Client-supplied so an accidental resend reuses it and the handler dedupes to one
         // comment; we mint one only when a caller omits it.
         var commentId = request.CommentId is { } id && id != Guid.Empty ? id : Guid.NewGuid();
 
@@ -198,7 +198,7 @@ public class BlogController(
             Content: request.Content,
             Timestamp: timeProvider.GetUtcNow());
 
-        var result = await postCommentHandler.Post(new PostBlogCommentCommand(post, comment), ct);
+        var result = await postCommentHandler.PostAndSave(new PostBlogCommentCommand(post, comment), ct);
 
         if (result.Error is { } error)
         {

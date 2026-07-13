@@ -114,6 +114,7 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
             commentSession.Events.Append(
                 commentStreamId,
                 new JobOfferCommentAdded(
+                    JobOfferId: jobOfferId,
                     CommentId: Guid.NewGuid(),
                     UserId: new Guid("11111111-1111-1111-1111-111111111111"),
                     UserEmail: Email.Create("owner@test.com"),

@@ -1,5 +1,3 @@
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Kalandra.Blog;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Email;
@@ -23,14 +21,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
-    // Real Temporal dev server — the comment workflow runs for real in tests, not against a mock.
-    private readonly IContainer _temporal = new ContainerBuilder("temporalio/temporal:1.7.2")
-        .WithCommand("server", "start-dev", "--ip", "0.0.0.0", "--headless")
-        .WithPortBinding(7233, assignRandomHostPort: true)
-        .WithWaitStrategy(Wait.ForUnixContainer()
-            .UntilCommandIsCompleted("temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"))
-        .Build();
-
     public FakeSupabaseAdminService FakeAdminService { get; } = new();
     public TestEmailSender EmailSender { get; } = new();
     public FakeUserInfoService UserInfoService { get; } = new();
@@ -42,7 +32,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
         builder.UseSetting("Supabase:ProjectUrl", "https://test-project.supabase.co");
         builder.UseSetting("Supabase:ServiceKey", "test-service-key");
-        builder.UseSetting("Temporal:TargetHost", $"127.0.0.1:{_temporal.GetMappedPublicPort(7233)}");
         builder.UseSetting("Blog:AuthorNotificationEmail", "author@kalandra.local");
         builder.UseSetting("JobOffers:OwnerNotificationEmail", "owner@kalandra.local");
         builder.ConfigureServices(services =>
@@ -95,13 +84,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     public async ValueTask InitializeAsync()
     {
-        await Task.WhenAll(_postgres.StartAsync(), _temporal.StartAsync());
+        await _postgres.StartAsync();
     }
 
     public new async ValueTask DisposeAsync()
     {
         await _postgres.DisposeAsync();
-        await _temporal.DisposeAsync();
         await base.DisposeAsync();
     }
 }

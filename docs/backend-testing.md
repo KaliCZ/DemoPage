@@ -12,7 +12,7 @@ xUnit v3 with Microsoft.Testing.Platform.
 ## Test project naming
 
 - **`{Project}.Tests`** — unit tests for that project. No external dependencies (no Testcontainers, no `WebApplicationFactory`). Examples: `Kalandra.JobOffers.Tests` and `Kalandra.Blog.Tests` for aggregate decide/apply and notification-planning tests.
-- **`{Project}.IntegrationTests`** — integration tests that need real infrastructure. Example: `Kalandra.Api.IntegrationTests` uses Testcontainers (PostgreSQL + Temporal dev server) + `TestWebApplicationFactory` for full HTTP round-trip tests.
+- **`{Project}.IntegrationTests`** — integration tests that need real infrastructure. Example: `Kalandra.Api.IntegrationTests` uses Testcontainers (PostgreSQL) + `TestWebApplicationFactory` for full HTTP round-trip tests.
 
 Each test project lives in `backend/tests/` and references only the project it's testing (plus `Kalandra.Infrastructure` if needed for shared types like `CurrentUser`).
 
@@ -20,7 +20,7 @@ Each test project lives in `backend/tests/` and references only the project it's
 
 `TestWebApplicationFactory` is the single test host. It:
 
-- Spins up disposable PostgreSQL and Temporal dev-server containers via Testcontainers — the database is real and the durable notification workflows execute for real.
+- Spins up a disposable PostgreSQL container via Testcontainers — the database is real and the notification subscriptions run for real under the async daemon.
 - Replaces external HTTP dependencies with in-memory fakes: `InMemoryStorageService`, `AlwaysPassTurnstileValidator`, `FakeSupabaseAdminService`, `FakeUserInfoService`, `TestBlogPostCatalog`, and `TestEmailSender` — outbound notification emails are captured there, so tests assert actual deliveries (`factory.EmailSender.Sent`).
 - Configures JWT validation against `FakeJwksHandler` so tests can mint their own tokens via `JwtTestHelper.GenerateToken(userId, email, isAdmin)`.
 - Bypasses the rate limiter via the `X-Interactive-Captcha` header.
@@ -107,7 +107,7 @@ The rule is about the **HTTP boundary** — what goes over the wire as JSON must
 - Happy paths with full response shape assertion.
 - Validation failures (400 with expected error codes).
 - Authorization boundaries (owner vs. other user vs. admin).
-- Side effects (history entries, comments visible to both parties, notification emails delivered through the real Temporal workflow — poll `factory.EmailSender.Sent` since delivery is asynchronous).
+- Side effects (history entries, comments visible to both parties, notification emails delivered by the real subscription — poll `factory.EmailSender.Sent` since delivery is asynchronous).
 
 **Domain aggregate tests** — pure unit tests that exercise decide/apply directly. No HTTP, no database. Use domain types directly (no wire-contract risk). Test every state-machine transition: which succeed, which fail, and which error variant is returned.
 

@@ -13,6 +13,9 @@ public sealed record BlogPost(string Slug, Guid CommentsStreamId);
 public interface IBlogPostCatalog
 {
     BlogPost? Find(string slug);
+
+    /// <summary>Reverse of <see cref="Find"/>: recovers the post from a comment event's stream id, which is all the notification subscription has.</summary>
+    BlogPost? FindByCommentsStreamId(Guid commentsStreamId);
 }
 
 public sealed class BlogPostCatalog : IBlogPostCatalog
@@ -31,4 +34,7 @@ public sealed class BlogPostCatalog : IBlogPostCatalog
         }.ToDictionary(post => post.Slug, StringComparer.Ordinal);
 
     public BlogPost? Find(string slug) => Posts.GetValueOrDefault(slug);
+
+    public BlogPost? FindByCommentsStreamId(Guid commentsStreamId) =>
+        Posts.Values.FirstOrDefault(post => post.CommentsStreamId == commentsStreamId);
 }
