@@ -13,9 +13,9 @@ public record BlogPostStats(string Slug, int TotalViews, int UniqueVisitors, int
 /// Aggregates the blog-index stats for the whole requested batch. Views, reactions and comments each run
 /// on their own Marten session, so the three groups overlap on separate connections instead of summing.
 /// Within a group the queries share one session (a Marten session runs one query at a time). Comment
-/// counts stay a live per-post stream fold — cheap for now, optimizing them is tracked in #221.
+/// counts fold each post's event stream, cached per stream so the fold stays off the hot path.
 /// </summary>
-public class GetBlogPostStatsHandler(IDocumentStore store)
+public class GetBlogPostStatsHandler(IDocumentStore store, BlogCommentCountCache commentCountCache)
 {
     public async Task<IReadOnlyList<BlogPostStats>> List(GetBlogPostStatsQuery query, CancellationToken ct)
     {
@@ -73,12 +73,20 @@ public class GetBlogPostStatsHandler(IDocumentStore store)
         await using var session = store.QuerySession();
         var result = new Dictionary<Guid, int>();
         foreach (var post in posts)
-        {
-            // Omits tombstones, matching the "live discussion" count the endpoint has always reported.
-            var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(post.CommentsStreamId, token: ct);
-            result[post.CommentsStreamId] = comments?.Comments.Count(comment => !comment.IsDeleted) ?? 0;
-        }
+            result[post.CommentsStreamId] = await CommentCountAsync(session, post, ct);
         return result;
+    }
+
+    private async Task<int> CommentCountAsync(IQuerySession session, BlogPost post, CancellationToken ct)
+    {
+        if (commentCountCache.TryGet(post.CommentsStreamId, out var cached))
+            return cached;
+
+        // Omits tombstones, matching the "live discussion" count the endpoint has always reported.
+        var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(post.CommentsStreamId, token: ct);
+        var count = comments?.Comments.Count(comment => !comment.IsDeleted) ?? 0;
+        commentCountCache.Set(post.CommentsStreamId, count);
+        return count;
     }
 
     private static async Task<Dictionary<string, int>> SumViewCountBySlugAsync(

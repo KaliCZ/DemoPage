@@ -11,7 +11,7 @@ public record DeleteBlogCommentCommand(
     CurrentUser User,
     DateTimeOffset Timestamp);
 
-public class DeleteBlogCommentHandler(IDocumentSession session)
+public class DeleteBlogCommentHandler(IDocumentSession session, BlogCommentCountCache commentCountCache)
 {
     public async Task<Result<BlogCommentDeleted, DeleteBlogCommentError>> DeleteAndSave(
         DeleteBlogCommentCommand command, CancellationToken ct)
@@ -27,6 +27,8 @@ public class DeleteBlogCommentHandler(IDocumentSession session)
         var deleted = result.Success!;
         session.Events.Append(streamId, deleted);
         await session.SaveChangesAsync(ct);
+        // A tombstone drops the live count, so the cached value is stale until wiped.
+        commentCountCache.Invalidate(streamId);
         return deleted;
     }
 }

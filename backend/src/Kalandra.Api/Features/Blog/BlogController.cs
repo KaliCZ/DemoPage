@@ -9,6 +9,7 @@ using Kalandra.Blog.Queries;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Kalandra.Api.Features.Blog;
@@ -126,6 +127,8 @@ public class BlogController(
     /// <summary>Batch stats for the blog index; the absolute route sidesteps the class-level {slug} template.</summary>
     [HttpGet("/api/blog/stats")]
     [AllowAnonymous]
+    // The default policy skips bearer-auth requests, so only viewerViews-null anonymous responses are cached.
+    [OutputCache(Duration = 10)]
     [ProducesResponseType<GetBlogStatsResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<GetBlogStatsResponse>> GetStats(
         [FromQuery(Name = "slug")] string[] slugs,

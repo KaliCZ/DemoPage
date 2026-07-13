@@ -10,6 +10,7 @@ public static class ServiceRegistration
     {
         // Which slugs are real posts (drives the reactions/comments slug gate).
         services.AddSingleton<IBlogPostCatalog, BlogPostCatalog>();
+        services.AddSingleton<BlogCommentCountCache>();
 
         // Command handlers
         services.AddScoped<ToggleBlogReactionHandler>();
