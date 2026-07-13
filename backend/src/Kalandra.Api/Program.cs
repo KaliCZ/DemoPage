@@ -46,6 +46,7 @@ builder.Services.AddAppDataProtection();
 Auth.Add(builder.Services, supabaseConfig);
 builder.Services.AddAppCors(builder.Environment);
 builder.Services.AddMemoryCache();
+builder.Services.AddOutputCache();
 builder.Services.AddUserInfoCache(builder.Configuration);
 builder.Services.AddStorageServices();
 builder.Services.AddTurnstile(builder.Environment);
@@ -89,6 +90,7 @@ app.UseStatusCodePages();
 RobotsTag.Use(app);
 
 app.UseCors("DefaultPolicy");
+app.UseOutputCache();
 Auth.Use(app);
 RateLimits.Use(app);
 app.MapControllers();

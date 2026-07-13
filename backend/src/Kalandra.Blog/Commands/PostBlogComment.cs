@@ -6,7 +6,7 @@ namespace Kalandra.Blog.Commands;
 
 public record PostBlogCommentCommand(BlogPost Post, BlogCommentPosted Comment);
 
-public class PostBlogCommentHandler(IDocumentSession session)
+public class PostBlogCommentHandler(IDocumentSession session, BlogCommentCountCache commentCountCache)
 {
     /// <summary>
     /// Stores the comment; the notification emails are delivered separately by the
@@ -28,6 +28,7 @@ public class PostBlogCommentHandler(IDocumentSession session)
 
         session.Events.Append(streamId, command.Comment);
         await session.SaveChangesAsync(ct);
+        commentCountCache.Invalidate(streamId);
         return command.Comment;
     }
 }

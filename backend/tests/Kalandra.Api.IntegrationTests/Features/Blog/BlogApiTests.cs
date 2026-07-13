@@ -464,6 +464,77 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(1, response.GetProperty("posts").GetArrayLength());
     }
 
+    // ───── Stats caching ─────
+
+    [Fact]
+    public async Task Stats_CommentCount_ReflectsANewCommentAfterTheCountWasCached()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "count-cache-post@test.com");
+        await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "One" }, Ct);
+
+        // Authenticated reads skip the response cache but still prime the per-post comment-count cache;
+        // the second comment must invalidate it so the follow-up read isn't stuck on the cached 1.
+        var first = await GetPostStats(slug);
+        Assert.Equal(1, first.GetProperty("totalComments").GetInt32());
+
+        await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Two" }, Ct);
+        var second = await GetPostStats(slug);
+        Assert.Equal(2, second.GetProperty("totalComments").GetInt32());
+    }
+
+    [Fact]
+    public async Task Stats_CommentCount_ReflectsADeletionAfterTheCountWasCached()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "count-cache-delete@test.com");
+        await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Keep" }, Ct);
+        var doomed = await ParseJsonAsync(await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Doomed" }, Ct));
+
+        var before = await GetPostStats(slug);
+        Assert.Equal(2, before.GetProperty("totalComments").GetInt32());
+
+        await client.DeleteAsync($"/api/blog/{slug}/comments/{doomed.GetProperty("id").GetString()}", Ct);
+        var after = await GetPostStats(slug);
+        Assert.Equal(1, after.GetProperty("totalComments").GetInt32());
+    }
+
+    [Fact]
+    public async Task Stats_AnonymousResponse_IsServedFromTheOutputCache()
+    {
+        var slug = NewSlug();
+
+        // Prime the response cache anonymously with the empty state.
+        SignOut();
+        Assert.Equal(0, (await GetPostStats(slug)).GetProperty("totalReactions").GetInt32());
+
+        // A reaction lands out of band; within the cache window the anonymous read still serves the primed response.
+        Authenticate(email: "output-cache-warm@test.com");
+        await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = "Heart" }, Ct);
+
+        SignOut();
+        Assert.Equal(0, (await GetPostStats(slug)).GetProperty("totalReactions").GetInt32());
+    }
+
+    [Fact]
+    public async Task Stats_AuthenticatedRead_BypassesTheAnonymousOutputCache()
+    {
+        var slug = NewSlug();
+        var viewerId = Guid.NewGuid();
+
+        Authenticate(userId: viewerId, email: "output-cache-bypass@test.com");
+        SetVisitor(Guid.NewGuid());
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // Prime the anonymous cache: viewerViews is null for anonymous callers.
+        SignOut();
+        Assert.Equal(JsonValueKind.Null, (await GetPostStats(slug)).GetProperty("viewerViews").ValueKind);
+
+        // The signed-in viewer must compute their own count, never be served the cached anonymous null.
+        Authenticate(userId: viewerId, email: "output-cache-bypass@test.com");
+        Assert.Equal(1, (await GetPostStats(slug)).GetProperty("viewerViews").GetInt32());
+    }
+
     // ───── Comments ─────
 
     [Fact]
@@ -810,6 +881,9 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         }
         throw new InvalidOperationException($"Stats response has no entry for slug '{slug}'");
     }
+
+    private async Task<JsonElement> GetPostStats(string slug) =>
+        FindPostStats((await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}", Ct))).GetProperty("posts"), slug);
 
     private void Authenticate(Guid? userId = null, string email = "test@example.com", bool isAdmin = false)
     {
