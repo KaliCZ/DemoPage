@@ -5,6 +5,7 @@ using Kalandra.Blog.Events;
 using Kalandra.Infrastructure.Email;
 using Marten;
 using Marten.Subscriptions;
+using Microsoft.Extensions.DependencyInjection;
 using StrongTypes;
 
 namespace Kalandra.Blog.Notifications;
@@ -14,8 +15,10 @@ namespace Kalandra.Blog.Notifications;
 /// comment, and a reply also notifies the parent comment's author. The async daemon delivers each
 /// event here at least once, so a comment is never stored without its notifications following.
 /// </summary>
+// IServiceProvider, not IDocumentStore: Marten resolves the subscription while it is still building the
+// store, so a direct IDocumentStore dependency deadlocks the container. Resolve the store lazily at run time.
 public class BlogCommentNotificationSubscription(
-    IDocumentStore store,
+    IServiceProvider services,
     IEmailSender emailSender,
     IBlogPostCatalog postCatalog,
     BlogNotificationsConfig notificationsConfig,
@@ -56,7 +59,7 @@ public class BlogCommentNotificationSubscription(
     // Its own transaction, committed the moment a send lands, so a page retry re-sends only what didn't.
     private async Task DeliverAsync(string dedupeKey, EmailMessage email, CancellationToken ct)
     {
-        await using var session = store.LightweightSession();
+        await using var session = services.GetRequiredService<IDocumentStore>().LightweightSession();
         if (await session.LoadAsync<BlogNotificationSent>(dedupeKey, ct) is not null)
             return;
 

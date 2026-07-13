@@ -6,6 +6,7 @@ using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
 using Marten;
 using Marten.Subscriptions;
+using Microsoft.Extensions.DependencyInjection;
 using StrongTypes;
 
 namespace Kalandra.JobOffers.Notifications;
@@ -15,8 +16,10 @@ namespace Kalandra.JobOffers.Notifications;
 /// offers and comments, the offer's author about comments on their offer. The async daemon delivers
 /// each event here at least once, so an offer is never stored without its notifications following.
 /// </summary>
+// IServiceProvider, not IDocumentStore: Marten resolves the subscription while it is still building the
+// store, so a direct IDocumentStore dependency deadlocks the container. Resolve the store lazily at run time.
 public class JobOfferNotificationSubscription(
-    IDocumentStore store,
+    IServiceProvider services,
     IEmailSender emailSender,
     JobOffersNotificationsConfig notificationsConfig,
     TimeProvider timeProvider) : SubscriptionBase
@@ -69,7 +72,7 @@ public class JobOfferNotificationSubscription(
     // Its own transaction, committed the moment a send lands, so a page retry re-sends only what didn't.
     private async Task DeliverAsync(string dedupeKey, EmailMessage email, CancellationToken ct)
     {
-        await using var session = store.LightweightSession();
+        await using var session = services.GetRequiredService<IDocumentStore>().LightweightSession();
         if (await session.LoadAsync<JobOfferNotificationSent>(dedupeKey, ct) is not null)
             return;
 
