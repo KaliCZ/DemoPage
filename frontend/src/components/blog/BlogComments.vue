@@ -23,8 +23,11 @@ const props = defineProps<{
     placeholder: string;
     submit: string;
     submitting: string;
+    posted: string;
     reply: string;
     replyingTo: string;
+    hideReplies: string;
+    showReplies: string;
     cancel: string;
     delete: string;
     deleteConfirm: string;
@@ -55,6 +58,7 @@ const replyTo = ref<CommentDto | null>(null);
 const submitting = ref(false);
 const confirmingDeleteId = ref<string | null>(null);
 const composer = ref<HTMLTextAreaElement | null>(null);
+const collapsed = ref<Set<string>>(new Set());
 
 /** Depth-first flattening of the reply tree — keeps the template a single v-for. */
 const thread = computed(() => {
@@ -65,11 +69,21 @@ const thread = computed(() => {
     byParent.get(key)!.push(comment);
   }
 
-  const flat: { comment: CommentDto; depth: number }[] = [];
+  const replyCounts = new Map<string, number>();
+  const countDescendants = (id: string): number => {
+    let total = 0;
+    for (const child of byParent.get(id) ?? []) total += 1 + countDescendants(child.id);
+    replyCounts.set(id, total);
+    return total;
+  };
+  for (const root of byParent.get(null) ?? []) countDescendants(root.id);
+
+  const flat: { comment: CommentDto; depth: number; replies: number; isCollapsed: boolean }[] = [];
   const walk = (parentId: string | null, depth: number) => {
     for (const comment of byParent.get(parentId) ?? []) {
-      flat.push({ comment, depth });
-      walk(comment.id, depth + 1);
+      const isCollapsed = collapsed.value.has(comment.id);
+      flat.push({ comment, depth, replies: replyCounts.get(comment.id) ?? 0, isCollapsed });
+      if (!isCollapsed) walk(comment.id, depth + 1);
     }
   };
   walk(null, 0);
@@ -129,6 +143,11 @@ function startReply(comment: CommentDto) {
   composer.value?.focus();
 }
 
+function toggleCollapse(id: string) {
+  if (collapsed.value.has(id)) collapsed.value.delete(id);
+  else collapsed.value.add(id);
+}
+
 // Reused across retries of the current draft so a resend dedupes into one comment server-side.
 let pendingCommentId: string | null = null;
 
@@ -170,9 +189,12 @@ async function submit() {
     }
     const created: CommentDto = await res.json();
     comments.value = [...comments.value, created];
+    // Expand the parent so a reply posted into a collapsed thread stays visible.
+    if (created.parentCommentId) collapsed.value.delete(created.parentCommentId);
     draft.value = "";
     replyTo.value = null;
     pendingCommentId = null;
+    (window as any).__showSnackbar?.(props.t.posted, "success");
   } catch {
     (window as any).__showSnackbar?.(props.t.postError, "error", 8000);
   } finally {
@@ -282,7 +304,7 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
     </p>
     <ul v-else class="space-y-5" role="list">
       <li
-        v-for="{ comment, depth } in thread"
+        v-for="{ comment, depth, replies, isCollapsed } in thread"
         :key="comment.id"
         :style="{ marginLeft: `${Math.min(depth, 4) * 1.25}rem` }"
         :class="depth > 0 ? 'border-l-2 border-outline-variant/30 pl-4' : ''"
@@ -325,33 +347,53 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
             </p>
             <p v-else class="font-body text-sm italic text-on-surface-variant/60 mt-1">{{ props.t.deleted }}</p>
 
-            <div v-if="!comment.isDeleted" class="flex items-center gap-4 mt-2">
+            <div v-if="!comment.isDeleted || replies > 0" class="flex items-center gap-4 mt-2">
               <button
-                v-if="viewerId"
+                v-if="replies > 0"
                 type="button"
-                class="text-xs font-label text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-                @click="startReply(comment)"
+                class="flex items-center gap-1 text-xs font-label text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                :aria-expanded="!isCollapsed"
+                @click="toggleCollapse(comment.id)"
               >
-                {{ props.t.reply }}
-              </button>
-              <template v-if="canDelete(comment)">
-                <button
-                  v-if="confirmingDeleteId !== comment.id"
-                  type="button"
-                  class="text-xs font-label text-on-surface-variant hover:text-error transition-colors cursor-pointer"
-                  @click="confirmingDeleteId = comment.id"
+                <svg
+                  viewBox="0 0 24 24"
+                  class="size-3.5 transition-transform"
+                  :class="{ '-rotate-90': isCollapsed }"
+                  fill="currentColor"
+                  aria-hidden="true"
                 >
-                  {{ props.t.delete }}
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+                <span>{{ isCollapsed ? `${props.t.showReplies} (${replies})` : props.t.hideReplies }}</span>
+              </button>
+              <template v-if="!comment.isDeleted">
+                <button
+                  v-if="viewerId"
+                  type="button"
+                  class="text-xs font-label text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                  @click="startReply(comment)"
+                >
+                  {{ props.t.reply }}
                 </button>
-                <span v-else class="flex items-center gap-2 text-xs font-label">
-                  <span class="text-on-surface-variant">{{ props.t.deleteConfirm }}</span>
-                  <button type="button" class="text-error hover:underline cursor-pointer" @click="removeComment(comment)">
-                    {{ props.t.deleteYes }}
+                <template v-if="canDelete(comment)">
+                  <button
+                    v-if="confirmingDeleteId !== comment.id"
+                    type="button"
+                    class="text-xs font-label text-on-surface-variant hover:text-error transition-colors cursor-pointer"
+                    @click="confirmingDeleteId = comment.id"
+                  >
+                    {{ props.t.delete }}
                   </button>
-                  <button type="button" class="text-on-surface-variant hover:underline cursor-pointer" @click="confirmingDeleteId = null">
-                    {{ props.t.deleteNo }}
-                  </button>
-                </span>
+                  <span v-else class="flex items-center gap-2 text-xs font-label">
+                    <span class="text-on-surface-variant">{{ props.t.deleteConfirm }}</span>
+                    <button type="button" class="text-error hover:underline cursor-pointer" @click="removeComment(comment)">
+                      {{ props.t.deleteYes }}
+                    </button>
+                    <button type="button" class="text-on-surface-variant hover:underline cursor-pointer" @click="confirmingDeleteId = null">
+                      {{ props.t.deleteNo }}
+                    </button>
+                  </span>
+                </template>
               </template>
             </div>
           </div>
