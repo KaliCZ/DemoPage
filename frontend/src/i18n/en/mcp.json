@@ -65,7 +65,7 @@
           {
             "name": "list_blog_posts",
             "auth": false,
-            "description": "Published posts with summaries and tags, straight from the RSS feed."
+            "description": "Published posts with summaries and tags. Signed in, each one shows whether you've already read it."
           },
           {
             "name": "get_blog_post_comments",

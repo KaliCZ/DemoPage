@@ -53,7 +53,7 @@ claude mcp add --transport http kalandra https://api.kalandra.tech/mcp --header 
 | `list_my_job_offers` | ✅ | `ListJobOffersHandler.List` |
 | `get_job_offer_comments` | ✅ | `ListCommentsHandler.List` |
 | `add_job_offer_comment` | ✅ | `AddCommentHandler.AddAndSave` |
-| `list_blog_posts` | — | `BlogFeedClient` (site RSS feed) |
+| `list_blog_posts` | — | `BlogFeedClient` (site RSS feed) + `GetViewerBlogViewsHandler` |
 | `get_blog_post_comments` | — | `GetBlogCommentsHandler.GetForDisplay` |
 | `post_blog_comment` | ✅ | `PostBlogCommentHandler.PostAndSave` |
 | `get_my_comments` | ✅ | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
@@ -65,6 +65,11 @@ Tools return the same response contracts the controllers serialize (`GetJobOffer
 
 `get_my_comments` aggregates the caller's comments across blog posts and job offers together with the replies
 they received (`MeController` exposes the same over REST at `/api/me/comments`).
+
+`list_blog_posts` is public, but when the caller is signed in it enriches each post with `viewerViews` (their
+own view count) and `watched` (whether they've read it) — one lean query over the view documents
+(`GetViewerBlogViewsHandler`), not the heavier per-post totals `GetBlogPostStatsHandler` computes for the blog
+index. Anonymous callers get both fields as `null`.
 
 ## Rate limiting
 
@@ -97,6 +102,8 @@ in the API's environment.
 ## Testing
 
 - `Features/Mcp/BlogFeedParseTests` — pure unit tests for RSS parsing.
-- `Features/Mcp/McpToolsTests` — drives `/mcp` with a real MCP client over streamable HTTP against
-  `TestWebApplicationFactory` (real Postgres): tool discovery, the shared auth pipeline, and write tools
-  landing in the same store the REST API uses. The factory serves the blog-feed tool a canned RSS document.
+- `Features/Mcp/McpToolsTests` — drives the tools directly against the real domain handlers and database
+  (`TestWebApplicationFactory`, real Postgres) with a chosen caller: the auth guard, command building, error
+  translation, ownership boundaries, and the signed-in read-status enrichment. The factory serves the
+  blog-feed tool a canned RSS document. (The streamable-HTTP transport itself is standard SDK wiring and can't
+  run over the in-memory test server, so it's left to an end-to-end smoke test.)

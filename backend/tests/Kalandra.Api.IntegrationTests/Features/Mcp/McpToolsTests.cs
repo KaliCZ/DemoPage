@@ -1,6 +1,7 @@
 using Kalandra.Api.Features.Mcp;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Api.IntegrationTests.Helpers;
+using Kalandra.Blog.Commands;
 using Kalandra.Infrastructure.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol;
@@ -22,14 +23,40 @@ public class McpToolsTests(TestWebApplicationFactory factory) : IClassFixture<Te
         Guid.NewGuid(), new System.Net.Mail.MailAddress("mcp-owner@test.com"), "MCP Owner".ToNonEmpty(), []);
 
     [Fact]
-    public async Task ListBlogPosts_ReturnsTheFeed_WithoutAuth()
+    public async Task ListBlogPosts_WithoutAuth_ReturnsTheFeed_WithNoReadStatus()
     {
         await using var scope = NewScope();
         var tools = Blog(scope);
 
-        var posts = await tools.ListBlogPosts(Ct);
+        var post = (await tools.ListBlogPosts(Ct))[0];
 
-        Assert.Equal(TestWebApplicationFactory.BlogFeedSlug, posts[0].Slug);
+        Assert.Equal(TestWebApplicationFactory.BlogFeedSlug, post.Slug);
+        // Anonymous callers have no reading history to report.
+        Assert.Null(post.Watched);
+        Assert.Null(post.ViewerViews);
+    }
+
+    [Fact]
+    public async Task ListBlogPosts_SignedIn_FlagsPostsTheUserHasViewed()
+    {
+        var reader = new CurrentUser(
+            Guid.NewGuid(), new System.Net.Mail.MailAddress("mcp-reader@test.com"), "Reader".ToNonEmpty(), []);
+
+        await using (var seed = NewScope())
+        {
+            var recordView = seed.ServiceProvider.GetRequiredService<RecordBlogPostViewHandler>();
+            await recordView.RecordAndSave(
+                new RecordBlogPostViewCommand(
+                    TestWebApplicationFactory.BlogFeedSlug, Guid.NewGuid(), reader.Id, DateTimeOffset.UtcNow),
+                Ct);
+        }
+
+        var post = Assert.Single(
+            await WithTools(reader, tools => tools.Blog.ListBlogPosts(Ct)),
+            p => p.Slug == TestWebApplicationFactory.BlogFeedSlug);
+
+        Assert.True(post.Watched);
+        Assert.Equal(1, post.ViewerViews);
     }
 
     [Fact]

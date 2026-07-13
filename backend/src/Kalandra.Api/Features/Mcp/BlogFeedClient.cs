@@ -9,7 +9,12 @@ public record BlogPostSummary(
     string Summary,
     string Link,
     DateTimeOffset? PublishedAt,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags)
+{
+    // Null for anonymous callers, who have no reading history; the tool fills these in when signed in.
+    public int? ViewerViews { get; init; }
+    public bool? Watched { get; init; }
+}
 
 /// <summary>
 /// Reads the published posts from the site's own RSS feed. The backend's post catalog holds

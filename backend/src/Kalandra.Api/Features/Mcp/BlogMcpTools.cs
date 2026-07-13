@@ -23,6 +23,7 @@ public sealed class BlogMcpTools(
     TimeProvider timeProvider,
     IBlogPostCatalog postCatalog,
     BlogFeedClient blogFeedClient,
+    GetViewerBlogViewsHandler viewerViewsHandler,
     GetBlogCommentsHandler getCommentsHandler,
     PostBlogCommentHandler postCommentHandler,
     ListMyBlogCommentsHandler myBlogCommentsHandler,
@@ -30,9 +31,23 @@ public sealed class BlogMcpTools(
 {
     [McpServerTool(Name = "list_blog_posts")]
     [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags). " +
-                 "No account needed. Use the slug with the blog comment tools.")]
-    public Task<IReadOnlyList<BlogPostSummary>> ListBlogPosts(CancellationToken ct = default) =>
-        blogFeedClient.ListPosts(ct);
+                 "No account needed. When you connect as a user, each post also reports viewerViews and " +
+                 "watched so you can tell which posts they've already read. Use the slug with the blog comment tools.")]
+    public async Task<IReadOnlyList<BlogPostSummary>> ListBlogPosts(CancellationToken ct = default)
+    {
+        var posts = await blogFeedClient.ListPosts(ct);
+        if (currentUser.User is not { } user)
+            return posts;
+
+        var viewsBySlug = await viewerViewsHandler.List(
+            new ViewerBlogViewsQuery([.. posts.Select(post => post.Slug)], user.Id), ct);
+
+        return [.. posts.Select(post =>
+        {
+            var views = viewsBySlug.GetValueOrDefault(post.Slug);
+            return post with { ViewerViews = views, Watched = views > 0 };
+        })];
+    }
 
     [McpServerTool(Name = "get_blog_post_comments")]
     [Description("Read the public comment thread of a blog post. No account needed. Replies reference their parent via parentCommentId.")]
