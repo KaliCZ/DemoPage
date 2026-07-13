@@ -264,6 +264,14 @@ const t = translations[lang];
     </div>
   </dialog>
 
+  <style is:global>
+    /* Outline, not a ring: the focus indicator must stay visible against the primary-filled "Submit anyway" button. */
+    #confirm-incomplete-dialog button:focus {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  </style>
+
   <script
     define:vars={{
       apiUrl: import.meta.env.PUBLIC_API_URL || "",
@@ -346,6 +354,14 @@ const t = translations[lang];
       if (window.turnstile) {
         cb();
         return;
+      }
+      // No longer loaded globally — this form needs the widget, so pull the script in on demand.
+      if (turnstileSiteKey && !document.querySelector('script[src^="https://challenges.cloudflare.com/turnstile"]')) {
+        var s = document.createElement("script");
+        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        s.async = true;
+        s.defer = true;
+        document.head.appendChild(s);
       }
       var iv = setInterval(function () {
         if (window.turnstile) {
@@ -488,6 +504,14 @@ const t = translations[lang];
           if (field.parentElement.querySelector(".field-error")) validateField(field);
         });
       });
+
+      // Ctrl/Cmd+Enter submits from any field, including the textareas where a bare Enter inserts a newline.
+      formEl.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          if (!document.getElementById("submit-btn")?.disabled) formEl.requestSubmit();
+        }
+      });
     }
 
     // Ask the user to confirm when optional fields or attachments are empty.
@@ -522,6 +546,7 @@ const t = translations[lang];
         function cleanup(result) {
           confirmBtn.removeEventListener("click", onConfirm);
           cancelBtn.removeEventListener("click", onCancel);
+          dialog.removeEventListener("keydown", onDialogArrowNav);
           dialog.removeEventListener("close", onClose);
           if (dialog.open) dialog.close();
           resolve(result);
@@ -536,9 +561,22 @@ const t = translations[lang];
           cleanup(false);
         }
 
+        // Roving focus so arrow keys move between the two actions, not only Tab.
+        var actionButtons = [cancelBtn, confirmBtn];
+        function onDialogArrowNav(e) {
+          if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].indexOf(e.key) === -1) return;
+          e.preventDefault();
+          var current = actionButtons.indexOf(document.activeElement);
+          if (current === -1) current = 0;
+          var forward = e.key === "ArrowRight" || e.key === "ArrowDown";
+          actionButtons[(current + (forward ? 1 : -1) + actionButtons.length) % actionButtons.length].focus();
+        }
+
         confirmBtn.addEventListener("click", onConfirm);
         cancelBtn.addEventListener("click", onCancel);
+        dialog.addEventListener("keydown", onDialogArrowNav);
         dialog.addEventListener("close", onClose);
+        // Leave the native focus on "Go back" — the safe default, so Enter can't submit by accident.
         dialog.showModal();
       });
     }

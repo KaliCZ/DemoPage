@@ -9,12 +9,8 @@ internal static class DevInfrastructure
     {
         var repoRoot = FindRepoRoot();
 
-        // Skip when launched under `npm run` — the parent npm already ran install.
-        if (Environment.GetEnvironmentVariable("npm_lifecycle_event") is null)
-        {
-            Console.WriteLine("Installing npm dependencies (root + frontend)...");
-            RunNpm(repoRoot, "install");
-        }
+        Console.WriteLine("Installing npm dependencies (root + frontend)...");
+        RunNpm(repoRoot, "install");
 
         Console.WriteLine("Starting Supabase...");
         RunSupabase(repoRoot, "start");
@@ -40,7 +36,7 @@ internal static class DevInfrastructure
             WorkingDirectory = repoRoot,
             UseShellExecute = false,
         };
-        // Inherited npm_* vars from a parent `npm run` can misdirect the nested CLI; strip them.
+        // Strip any inherited npm_* vars so a parent npm process can't misdirect this nested CLI.
         foreach (var key in psi.Environment.Keys.Where(k => k.StartsWith("npm_", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             psi.Environment.Remove(key);

@@ -371,6 +371,8 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
           rows="2"
           :placeholder="props.t.userActions.cancelReason"
           class="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y mb-4"
+          @keydown.enter.ctrl.prevent="confirmCancel"
+          @keydown.enter.meta.prevent="confirmCancel"
         ></textarea>
         <button
           id="confirm-cancel"
@@ -406,6 +408,8 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
             rows="2"
             :placeholder="props.t.admin.notesPlaceholder"
             class="flex-1 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+            @keydown.enter.ctrl.prevent="saveStatus"
+            @keydown.enter.meta.prevent="saveStatus"
           ></textarea>
           <button
             id="save-status"
