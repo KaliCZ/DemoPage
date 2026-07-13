@@ -1,5 +1,5 @@
 using System.Threading.RateLimiting;
-using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Kalandra.Api.Infrastructure;
