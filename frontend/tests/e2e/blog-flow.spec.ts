@@ -266,6 +266,11 @@ test.describe("Blog Flow", () => {
     await expect(commentItem).toBeVisible();
     await expect(commentItem).toContainText(testUser.fullName);
 
+    // A success snackbar confirms the post landed.
+    const snackbar = page.locator("#snackbar");
+    await expect(snackbar).toContainText("Comment posted.");
+    await expect(snackbar.locator("> div")).toHaveClass(/bg-tertiary-container/);
+
     // The same Temporal workflow that stored the comment notifies the blog author —
     // the email must land in the local mail catcher.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: commentText });

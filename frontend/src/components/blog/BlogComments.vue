@@ -23,6 +23,7 @@ const props = defineProps<{
     placeholder: string;
     submit: string;
     submitting: string;
+    posted: string;
     reply: string;
     replyingTo: string;
     hideReplies: string;
@@ -193,6 +194,7 @@ async function submit() {
     draft.value = "";
     replyTo.value = null;
     pendingCommentId = null;
+    (window as any).__showSnackbar?.(props.t.posted, "success");
   } catch {
     (window as any).__showSnackbar?.(props.t.postError, "error", 8000);
   } finally {
