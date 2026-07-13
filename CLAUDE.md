@@ -20,14 +20,14 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). See
 ## Commands (from repo root)
 
 ```bash
-npm install                          # Root + frontend deps (via postinstall)
-npm run aspire                       # PostgreSQL (Aspire-owned, per-worktree) + local Supabase + backend + frontend, all orchestrated by the Aspire AppHost (dashboard, traces, metrics). Supports parallel worktrees via KALANDRA_PORT_OFFSET.
+npm install                          # Optional — populate node_modules for editors; `aspire run` installs deps itself
+aspire run                           # PostgreSQL (Aspire-owned, per-worktree) + local Supabase + backend + frontend, all orchestrated by the Aspire AppHost (dashboard, traces, metrics). Runs `npm install` itself. Supports parallel worktrees via KALANDRA_PORT_OFFSET.
 npm test                             # All tests: backend + frontend + E2E
 dotnet build                         # Backend only
 npm --prefix frontend run build      # Frontend only
 ```
 
-**When asked to run the app for manual testing, always start the full stack with `npm run aspire`** — never the frontend dev server alone. Without the backend, every API-backed feature (comments, reactions, job offers) fails with a 502 from the Vite proxy.
+**When asked to run the app for manual testing, always start the full stack with `aspire run`** — never the frontend dev server alone. Without the backend, every API-backed feature (comments, reactions, job offers) fails with a 502 from the Vite proxy.
 
 **Run `npm test` when a change touches logic or structure.** Content-only changes (blog copy, translations, page text) don't need the suite locally. When you do run tests, run the full suite — no subsets (`dotnet test`, `npm --prefix frontend test`, etc.) as a substitute. Pushing and letting CI run the tests is a viable strategy; what's non-negotiable is a PR left sitting with a failing build — after pushing, check the CI result and fix any failure.
 
