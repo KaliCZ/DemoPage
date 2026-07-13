@@ -12,19 +12,18 @@ namespace Kalandra.Api.IntegrationTests.Helpers;
 /// </summary>
 public sealed class TestBlogPostCatalog : IBlogPostCatalog
 {
-    // The slug→id derivation is one-way, so remember each slug handed out to answer the
-    // notification subscription's reverse lookup.
-    private readonly ConcurrentDictionary<Guid, string> slugsByStreamId = new();
+    // Tests hand out slugs on demand; remember each resolved post so both the notification
+    // subscription's reverse lookup and cross-post "my comments" queries can see it.
+    private readonly ConcurrentDictionary<string, BlogPost> resolved = new(StringComparer.Ordinal);
 
-    public BlogPost? Find(string slug)
-    {
-        var streamId = DeriveId(slug, "comments");
-        slugsByStreamId[streamId] = slug;
-        return new BlogPost(slug, streamId);
-    }
+    public BlogPost? Find(string slug) => resolved.GetOrAdd(slug, s => new BlogPost(
+        s,
+        CommentsStreamId: DeriveId(s, "comments")));
 
     public BlogPost? FindByCommentsStreamId(Guid commentsStreamId) =>
-        slugsByStreamId.TryGetValue(commentsStreamId, out var slug) ? new BlogPost(slug, commentsStreamId) : null;
+        resolved.Values.FirstOrDefault(post => post.CommentsStreamId == commentsStreamId);
+
+    public IReadOnlyCollection<BlogPost> All => [.. resolved.Values];
 
     private static Guid DeriveId(string slug, string kind)
     {

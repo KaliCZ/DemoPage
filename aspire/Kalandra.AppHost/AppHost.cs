@@ -66,7 +66,7 @@ try
     var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
     // No WaitFor(api): the UI comes up immediately rather than blocking on the API's own DB wait;
     // a fetch before the API is ready just errors and recovers on the next call.
-    builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
+    var web = builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
         .WithHttpEndpoint(env: "PORT")
         .WithReference(api)
         .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
@@ -74,6 +74,9 @@ try
         .WithEnvironment("PUBLIC_API_URL", "")
         .WithExternalHttpEndpoints()
         .WithIconName("Globe");
+
+    // The API's /mcp tools list blog posts from the site's RSS feed — point them at the dev web server.
+    api.WithEnvironment("BlogFeed__RssUrl", ReferenceExpression.Create($"{web.GetEndpoint("http")}/rss.xml"));
 
     // Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
     builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");

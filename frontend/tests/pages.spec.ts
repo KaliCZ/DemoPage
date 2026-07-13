@@ -71,6 +71,12 @@ test.describe("Page rendering", () => {
     await page.goto("/strong-types");
     await expect(page).toHaveTitle(/StrongTypes/);
   });
+
+  test("mcp page loads and lists the tools", async ({ page }) => {
+    await page.goto("/mcp");
+    await expect(page).toHaveTitle(/MCP/);
+    await expect(page.getByText("submit_job_offer").first()).toBeVisible();
+  });
 });
 
 test.describe("Navigation", () => {

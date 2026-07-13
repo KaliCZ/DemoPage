@@ -20,6 +20,7 @@ public static class ServiceRegistration
         services.AddScoped<ListJobOffersHandler>();
         services.AddScoped<GetJobOfferHistoryHandler>();
         services.AddScoped<ListCommentsHandler>();
+        services.AddScoped<ListMyJobOfferCommentsHandler>();
         services.AddScoped<GetAttachmentInfoHandler>();
 
         return services;

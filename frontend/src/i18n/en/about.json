@@ -142,7 +142,8 @@
           "Modular monolith decomposition",
           "Messaging & workflows (Azure Service Bus, RabbitMQ, Kafka, Temporal)",
           "Performance optimization",
-          "REST / GraphQL / gRPC"
+          "REST / GraphQL / gRPC",
+          "Model Context Protocol (MCP) servers for AI assistants"
         ]
       },
       {

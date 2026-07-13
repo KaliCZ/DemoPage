@@ -16,6 +16,13 @@ Kalandra.Api  ───────────►  Kalandra.JobOffers  ──�
 
 The compiler enforces this via `<ProjectReference>` entries — cycles are rejected at build time.
 
+## The MCP server (a second front door on the API)
+
+The API host exposes a Model Context Protocol endpoint at `/mcp` in addition to the REST controllers. The MCP
+tools live in `Kalandra.Api/Features/Mcp/` and are thin adapters over the **same domain handlers the
+controllers call**, acting as the authenticated user — one domain, two front doors (REST + MCP), no second
+write path and no separate deployable. See `docs/mcp-server.md`.
+
 ## Key principles
 
 - **No mediator, no MediatR.** Controllers inject concrete handler types. The constructor signature is the explicit list of capabilities — searchable, refactorable, no magic dispatch.
@@ -59,4 +66,5 @@ Notification emails are a side effect of committed events, delivered by Marten e
 | A new business domain                               | New `Kalandra.{Domain}/` project + `Add{Domain}Domain()` extension     |
 | A new external HTTP integration                     | `Kalandra.Infrastructure/{Concern}/` + typed `HttpClient` registration |
 | A new background notification                       | `Kalandra.{Domain}/Notifications/` + a subscription registered in `AddAppMarten` |
+| A new MCP tool                                      | `Kalandra.Api/Features/Mcp/` + call the domain handler directly (see `docs/mcp-server.md`) |
 | A new role                                          | Add to `UserRole` enum + `RequireRole` policy                          |

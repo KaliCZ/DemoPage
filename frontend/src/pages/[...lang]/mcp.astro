@@ -1,0 +1,264 @@
+---
+import { Icon } from "astro-icon/components";
+import Layout from "../../layouts/Layout.astro";
+import Card from "../../components/Card.astro";
+import { locales, defaultLocale, localePath, type Locale } from "../../i18n/utils";
+import type { PageMeta } from "../../lib/page-meta";
+import enStrings from "../../i18n/en/mcp.json";
+import csStrings from "../../i18n/cs/mcp.json";
+
+const translations = { en: enStrings, cs: csStrings };
+
+export const pageMeta: PageMeta = { updatedDate: "2026-07-13" };
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({
+    params: { lang: lang === defaultLocale ? undefined : lang },
+  }));
+}
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+const t = translations[lang];
+
+const mcpEndpoint = "https://api.kalandra.tech/mcp";
+// <token> is a display placeholder; the copy button swaps in the signed-in user's real token.
+const tokenPlaceholder = "<token>";
+const claudeCommandPrefix = `claude mcp add --transport http kalandra ${mcpEndpoint} --header "Authorization: Bearer `;
+const claudeCommandSuffix = '"';
+---
+
+<Layout title={t.meta.title} description={t.meta.description} activePage="mcp" lang={lang}>
+  <div class="max-w-5xl mx-auto px-4 md:px-8">
+    <!-- Hero -->
+    <section class="mb-16 md:mb-20">
+      <div class="flex items-center gap-2 mb-6">
+        <span
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label text-xs font-bold uppercase tracking-widest"
+        >
+          <span class="size-1.5 rounded-full bg-tertiary animate-pulse" aria-hidden="true"></span>
+          {t.hero.liveBadge}
+        </span>
+        <code class="font-mono text-sm text-on-surface-variant">api.kalandra.tech/mcp</code>
+      </div>
+      <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
+        {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleHighlight}</span>{
+          t.hero.titleSuffix
+        }
+      </h1>
+      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed max-w-3xl">
+        {t.hero.description}
+      </p>
+    </section>
+
+    <!-- Connect -->
+    <section class="mb-16 md:mb-20">
+      <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.connect.title}</h2>
+      <Card>
+        <div class="flex flex-col gap-6">
+          <!-- Endpoint -->
+          <div>
+            <div class="flex items-center gap-2 mb-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+              <Icon name="material-symbols:link" class="size-3.5" aria-hidden="true" />
+              {t.connect.endpointLabel}
+            </div>
+            <div class="flex items-center justify-between gap-3 bg-surface-container-high rounded-lg px-4 py-3">
+              <code class="font-mono text-sm md:text-base text-on-surface truncate" data-mcp-endpoint>{mcpEndpoint}</code>
+              <button
+                type="button"
+                data-copy-endpoint
+                class="shrink-0 p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors cursor-pointer"
+                aria-label={t.connect.copyEndpointAriaLabel}
+                title={t.connect.copyEndpointAriaLabel}
+              >
+                <Icon name="material-symbols:content-copy" class="size-4" aria-hidden="true" />
+              </button>
+            </div>
+            <p class="font-body text-sm text-on-surface-variant mt-2">{t.connect.transportNote}</p>
+          </div>
+
+          <!-- Claude Code command -->
+          <div>
+            <div class="flex items-center gap-2 mb-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+              <Icon name="material-symbols:terminal" class="size-3.5" aria-hidden="true" />
+              {t.connect.claudeCodeLabel}
+            </div>
+            <div class="bg-surface-container-high rounded-lg px-4 py-3 overflow-x-auto">
+              <code class="font-mono text-sm text-on-surface whitespace-nowrap"
+                >{claudeCommandPrefix}<span class="text-tertiary" data-mcp-token-slot>{tokenPlaceholder}</span>{claudeCommandSuffix}</code
+              >
+            </div>
+            <div class="mt-3">
+              <button
+                type="button"
+                data-copy-command
+                data-label-anonymous={t.connect.copyCommand}
+                data-label-signed-in={t.connect.copyCommandWithToken}
+                data-copied-msg={t.connect.copied}
+                data-copy-failed-msg={t.connect.copyFailed}
+                class="px-4 py-2 rounded-lg text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+              >
+                {t.connect.copyCommand}
+              </button>
+            </div>
+          </div>
+
+          <!-- Access token -->
+          <div class="border-t border-outline-variant/40 pt-6">
+            <div class="flex items-center gap-2 mb-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+              <Icon name="material-symbols:key" class="size-3.5" aria-hidden="true" />
+              {t.connect.tokenTitle}
+            </div>
+            <div data-mcp-anonymous>
+              <p class="font-body text-sm text-on-surface-variant mb-3">{t.connect.tokenSignedOut}</p>
+              <button
+                type="button"
+                data-mcp-sign-in
+                class="px-4 py-2 rounded-lg text-sm font-semibold font-label bg-on-surface text-surface hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                {t.connect.signIn}
+              </button>
+            </div>
+            <div data-mcp-signed-in class="hidden">
+              <p class="font-body text-sm text-on-surface-variant mb-3">{t.connect.tokenSignedIn}</p>
+              <button
+                type="button"
+                data-copy-token
+                data-copied-msg={t.connect.copied}
+                data-copy-failed-msg={t.connect.copyFailed}
+                class="px-4 py-2 rounded-lg text-sm font-semibold font-label border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+              >
+                {t.connect.tokenCopy}
+              </button>
+              <p class="font-body text-xs text-on-surface-variant mt-3">{t.connect.tokenNote}</p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </section>
+
+    <!-- Tools -->
+    <section class="mb-16 md:mb-20">
+      <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.tools.title}</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {
+          t.tools.groups.map((group) => (
+            <Card padding="compact">
+              <div class="flex items-center gap-2 mb-4">
+                <Icon name={`material-symbols:${group.icon}`} class="size-5 text-primary" aria-hidden="true" />
+                <h3 class="font-headline text-lg font-bold text-on-surface">{group.title}</h3>
+              </div>
+              <ul class="flex flex-col gap-4">
+                {group.tools.map((tool) => (
+                  <li>
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                      <code class="font-mono text-[13px] font-semibold text-on-surface">{tool.name}</code>
+                      <span
+                        class:list={[
+                          "px-1.5 py-0.5 rounded font-label text-[9px] font-bold uppercase tracking-wider",
+                          tool.auth ? "bg-tertiary/10 text-tertiary" : "bg-primary/10 text-primary",
+                        ]}
+                      >
+                        {tool.auth ? t.tools.accountBadge : t.tools.publicBadge}
+                      </span>
+                    </div>
+                    <p class="font-body text-sm text-on-surface-variant leading-snug">{tool.description}</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Try asking -->
+    <section class="mb-16 md:mb-20">
+      <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.examples.title}</h2>
+      <ul class="flex flex-col gap-3">
+        {
+          t.examples.prompts.map((prompt) => (
+            <li class="flex items-start gap-3 bg-surface-container-low rounded-xl px-5 py-4 border border-outline-variant/40">
+              <Icon name="material-symbols:chat-bubble-outline" class="size-4 mt-1 shrink-0 text-primary" aria-hidden="true" />
+              <span class="font-body text-on-surface italic">“{prompt}”</span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- How it works -->
+    <section class="mb-24">
+      <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.how.title}</h2>
+      <ul class="flex flex-col gap-3 mb-6">
+        {
+          t.how.items.map((item) => (
+            <li class="flex items-start gap-3">
+              <Icon name="material-symbols:check-circle" class="size-5 mt-0.5 shrink-0 text-tertiary" aria-hidden="true" />
+              <span class="font-body text-on-surface-variant leading-relaxed">{item}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="font-body text-on-surface-variant">
+        {t.how.projectLinkPrefix}<a href={localePath(lang, "project")} class="text-primary font-semibold hover:underline"
+          >{t.how.projectLinkText}</a
+        >{t.how.projectLinkSuffix}
+      </p>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  const tokenSlot = document.querySelector<HTMLElement>("[data-mcp-token-slot]");
+  const anonymousBlock = document.querySelector<HTMLElement>("[data-mcp-anonymous]");
+  const signedInBlock = document.querySelector<HTMLElement>("[data-mcp-signed-in]");
+  const copyCommandButton = document.querySelector<HTMLButtonElement>("[data-copy-command]");
+  const copyTokenButton = document.querySelector<HTMLButtonElement>("[data-copy-token]");
+  const copyEndpointButton = document.querySelector<HTMLButtonElement>("[data-copy-endpoint]");
+  const signInButton = document.querySelector<HTMLButtonElement>("[data-mcp-sign-in]");
+  const endpoint = document.querySelector<HTMLElement>("[data-mcp-endpoint]")?.textContent?.trim() ?? "";
+
+  async function refreshAuthState() {
+    const user = await (window as any).__getUser?.();
+    anonymousBlock?.classList.toggle("hidden", !!user);
+    signedInBlock?.classList.toggle("hidden", !user);
+    if (copyCommandButton) {
+      copyCommandButton.textContent = user
+        ? (copyCommandButton.dataset.labelSignedIn ?? "")
+        : (copyCommandButton.dataset.labelAnonymous ?? "");
+    }
+  }
+  window.addEventListener("auth-change", refreshAuthState);
+  refreshAuthState();
+
+  async function copyWithFeedback(button: HTMLButtonElement, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      (window as any).__showSnackbar?.(button.dataset.copiedMsg ?? "Copied", "success");
+    } catch {
+      (window as any).__showSnackbar?.(button.dataset.copyFailedMsg ?? "Copy failed", "error");
+    }
+  }
+
+  copyEndpointButton?.addEventListener("click", () => {
+    void copyWithFeedback(copyEndpointButton, endpoint);
+  });
+
+  // The visible command keeps the <token> placeholder; the clipboard gets the real
+  // token when signed in, so nothing secret is ever rendered on the page.
+  copyCommandButton?.addEventListener("click", async () => {
+    const token = (await (window as any).__getAccessToken?.()) ?? null;
+    const placeholder = tokenSlot?.textContent ?? "<token>";
+    const command = `claude mcp add --transport http kalandra ${endpoint} --header "Authorization: Bearer ${token ?? placeholder}"`;
+    void copyWithFeedback(copyCommandButton, command);
+  });
+
+  copyTokenButton?.addEventListener("click", async () => {
+    const token = await (window as any).__getAccessToken?.();
+    if (token) void copyWithFeedback(copyTokenButton, token);
+  });
+
+  signInButton?.addEventListener("click", () => {
+    (window as any).__openAuthDialog?.();
+  });
+</script>

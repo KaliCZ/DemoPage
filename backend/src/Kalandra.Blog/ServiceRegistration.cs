@@ -23,6 +23,8 @@ public static class ServiceRegistration
         services.AddScoped<GetBlogReactionsHandler>();
         services.AddScoped<GetBlogCommentsHandler>();
         services.AddScoped<GetBlogPostStatsHandler>();
+        services.AddScoped<GetViewerBlogViewsHandler>();
+        services.AddScoped<ListMyBlogCommentsHandler>();
 
         return services;
     }

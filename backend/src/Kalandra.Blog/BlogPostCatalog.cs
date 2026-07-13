@@ -16,6 +16,9 @@ public interface IBlogPostCatalog
 
     /// <summary>Reverse of <see cref="Find"/>: recovers the post from a comment event's stream id, which is all the notification subscription has.</summary>
     BlogPost? FindByCommentsStreamId(Guid commentsStreamId);
+
+    /// <summary>Every published post, for queries that span the whole blog (e.g. "my comments").</summary>
+    IReadOnlyCollection<BlogPost> All { get; }
 }
 
 public sealed class BlogPostCatalog : IBlogPostCatalog
@@ -37,4 +40,6 @@ public sealed class BlogPostCatalog : IBlogPostCatalog
 
     public BlogPost? FindByCommentsStreamId(Guid commentsStreamId) =>
         Posts.Values.FirstOrDefault(post => post.CommentsStreamId == commentsStreamId);
+
+    public IReadOnlyCollection<BlogPost> All { get; } = [.. Posts.Values];
 }

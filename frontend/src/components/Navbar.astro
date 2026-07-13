@@ -12,6 +12,7 @@ type ActivePage =
   | "project"
   | "strong-types"
   | "blog"
+  | "mcp"
   | "hire-me"
   | "job-offers"
   | "admin/job-offers"
@@ -33,6 +34,7 @@ interface Props {
       projectThisSite: string;
       projectStrongTypes: string;
       blog: string;
+      mcp: string;
       hireMe: string;
       mySubmissions: string;
       admin: string;
@@ -86,6 +88,7 @@ const navItems: NavItem[] = [
     ],
   },
   { label: t.nav.blog, page: "blog", active: activePage === "blog" },
+  { label: t.nav.mcp, page: "mcp", active: activePage === "mcp" },
   { label: t.nav.hireMe, page: "hire-me", active: activePage === "hire-me" },
 ];
 ---

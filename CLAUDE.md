@@ -10,6 +10,7 @@
 | Controllers, DTOs, endpoints | `docs/backend-api.md`                                           |
 | Entities, events, handlers   | `docs/backend-domain.md`                                        |
 | Marten config, DB queries    | `docs/backend-db.md`                                            |
+| MCP server (tools, clients)  | `docs/mcp-server.md`                                            |
 | Tests (writing or changing)  | `docs/backend-testing.md`                                       |
 | Frontend pages or components | `docs/frontend.md`                                      |
 

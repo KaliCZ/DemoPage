@@ -1,4 +1,5 @@
 using HealthChecks.UI.Client;
+using Kalandra.Api.Features.Mcp;
 using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Api.Infrastructure.DataProtection;
@@ -57,6 +58,7 @@ JobOffersNotificationsConfig.AddSingleton(builder.Services, builder.Configuratio
 builder.Services.AddBlogDomain();
 BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
+builder.Services.AddMcp(builder.Configuration, builder.Environment);
 RateLimits.Add(builder.Services, builder.Environment);
 
 builder.Services.AddResponseCompression(options =>
@@ -94,6 +96,9 @@ app.UseOutputCache();
 Auth.Use(app);
 RateLimits.Use(app);
 app.MapControllers();
+
+// MCP tools over streamable HTTP, sharing this host's DI, auth, and domain handlers.
+app.MapMcp("/mcp").RequireRateLimiting(RateLimitPolicies.Mcp);
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {

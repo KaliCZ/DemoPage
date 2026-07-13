@@ -14,7 +14,7 @@
     "statusLabel": "Status",
     "statusValue": "Usable MVP",
     "versionLabel": "Current Version",
-    "versionValue": "v4.0",
+    "versionValue": "v5.0",
     "timeLabel": "Rollout Time",
     "timeValue": "32 hours",
     "timeNote": "See roadmap for breakdown.",
@@ -459,10 +459,29 @@
       {
         "number": 5,
         "title": "MCP Server",
-        "done": false,
-        "faded": true,
-        "description": "Expose job offer management via a Model Context Protocol server. Users can submit, track, and manage their job offers through any MCP-compatible client.",
-        "side": "left"
+        "done": true,
+        "dates": "Jul 8, 2026",
+        "description": "AI assistants talk to the site through a Model Context Protocol endpoint at api.kalandra.tech/mcp — submitting and following up on job offers, browsing blog posts, and reading or writing comments, all as the signed-in user through the very same domain handlers the website uses.",
+        "side": "left",
+        "detailsLabel": "What was done",
+        "details": [
+          {
+            "author": "claude",
+            "text": "8 MCP tools exposed as a /mcp route on the API over stateless streamable HTTP — one host, two front doors (REST + MCP)"
+          },
+          {
+            "author": "claude",
+            "text": "Tools call the same domain handlers the controllers call, as the signed-in user — no second write path, no HTTP hop, no captcha"
+          },
+          {
+            "author": "claude",
+            "text": "get_my_comments tool: your comments across blog posts and job offers, with the replies they received"
+          },
+          {
+            "author": "claude",
+            "text": "Integration tests driving the tools against a real database — the shared auth guard, ownership boundaries, and writes landing in the same store as REST"
+          }
+        ]
       },
       {
         "number": 6,
