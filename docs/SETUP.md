@@ -52,12 +52,17 @@ For architecture, tech stack, and decision log, see the [Project page](https://w
 ### 1.1 Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- The [Aspire CLI](https://aspire.dev/) — launches the AppHost that orchestrates the whole local stack. Install once as a .NET global tool:
+  ```bash
+  dotnet tool install --global aspire.cli
+  ```
 - [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL + local Supabase)
 - [Node.js 22+](https://nodejs.org/)
 
 ### 1.2 Install Dependencies
 
-Run once after cloning (or when dependencies change):
+No manual step is required — `aspire run` (below) runs `npm install` for you on every start.
+To populate `node_modules` up front for editor tooling, you can still run it by hand:
 
 ```bash
 npm install            # Installs root + frontend dependencies (via postinstall)
@@ -66,10 +71,10 @@ npm install            # Installs root + frontend dependencies (via postinstall)
 ### 1.3 Start Everything
 
 ```bash
-npm run aspire   # Installs deps, starts PostgreSQL + local Supabase, then launches the Aspire AppHost
+aspire run   # Runs npm install, starts PostgreSQL + local Supabase, then launches the AppHost
 ```
 
-The Aspire AppHost orchestrates the API and frontend and exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard and frontend URLs are printed (clickably, in supporting terminals) on startup. Production telemetry is routed to **Sentry** via the OTEL bridge (see [Observability](#observability)); nothing about that changes when running locally under Aspire.
+The Aspire CLI builds and launches the AppHost, which owns the entire local stack: it runs `npm install`, brings up the CLI-managed Supabase stack, and orchestrates the API and frontend. It exposes the Aspire dashboard with per-resource logs, distributed traces (OpenTelemetry), metrics, and structured logs in one UI. The dashboard and frontend URLs are printed (clickably, in supporting terminals) on startup. Production telemetry is routed to **Sentry** via the OTEL bridge (see [Observability](#observability)); nothing about that changes when running locally under Aspire.
 
 Supabase containers stay owned by the Supabase CLI — `Ctrl+C`-ing the AppHost would otherwise leak them. The AppHost surfaces the API / Studio / Mailpit endpoints on the dashboard as external services (display-only, no lifecycle), so you get one-click access without the cleanup risk. Use `supabase stop` to halt the stack, or `supabase stop --no-backup` to discard data.
 
@@ -100,7 +105,7 @@ PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 PUBLIC_TURNSTILE_SITE_KEY=your-real-site-key
 ```
 
-> `PUBLIC_API_URL` is intentionally empty in dev — the Aspire AppHost forces it to `""` so all API calls flow through Vite's `/api` proxy (see [`astro.config.mjs`](../frontend/astro.config.mjs)). Setting it in `.env.local` has no effect under `npm run aspire`. It's only meaningful at production build time (e.g. `https://api.kalandra.tech`).
+> `PUBLIC_API_URL` is intentionally empty in dev — the Aspire AppHost forces it to `""` so all API calls flow through Vite's `/api` proxy (see [`astro.config.mjs`](../frontend/astro.config.mjs)). Setting it in `.env.local` has no effect under `aspire run`. It's only meaningful at production build time (e.g. `https://api.kalandra.tech`).
 
 #### Cloudflare Turnstile (CAPTCHA)
 
@@ -128,7 +133,7 @@ supabase stop --no-backup     # Stop and wipe Supabase state
 
 ### 1.7 Parallel Worktrees
 
-Just run `npm run aspire` in each. The AppHost walks the dashboard / OTLP ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. The startup output prints clickable URLs for the dashboard and frontend.
+Just run `aspire run` in each. The AppHost walks the dashboard / OTLP ports up from their defaults until it finds free ones, so the first instance is at `15036`, the second at `15037`, etc. dcp handles API and frontend ports the same way internally. The startup output prints clickable URLs for the dashboard and frontend.
 
 The application Postgres is per-worktree (Aspire scopes the data volume to the repo-folder name), so each worktree has its own DB state. Supabase is shared (one machine-level instance), so auth users and storage objects are visible across worktrees — that's fine for fixtures.
 
@@ -692,7 +697,7 @@ without needing an `!environment:ci` filter.
 ### 5.3 Local Development
 
 You don't need a Sentry DSN to run the stack locally — but the frontend DSN
-is committed, so by default any `npm run aspire` session will emit
+is committed, so by default any `aspire run` session will emit
 `environment: development` events to Sentry. That's intentional (lets you
 verify changes against real Sentry). To opt out locally, set
 `PUBLIC_SENTRY_DSN=` in `frontend/.env.local`.
@@ -720,5 +725,5 @@ Inputs (see §4.1):
 - `SENTRY_PROJECT` (and optionally `SENTRY_ORG`) repo vars — point the upload at the right Sentry project.
 
 `astro.config.mjs` sets `build.sourcemap: 'hidden'` only when the auth
-token is present, so dev (`npm run aspire`) and CI builds don't generate
+token is present, so dev (`aspire run`) and CI builds don't generate
 `.map` files at all.
