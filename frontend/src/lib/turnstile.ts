@@ -45,9 +45,25 @@ export function turnstileEnabled(): boolean {
   return !!SITE_KEY;
 }
 
+const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+
+// Load Cloudflare's Turnstile API on first need rather than on every page. Idempotent: bails if the
+// API is already present or a matching tag is already in the document (a page that needs the widget
+// at load, like hire-me, injects its own).
+function loadTurnstileScript(): void {
+  if (!SITE_KEY || window.turnstile) return;
+  if (document.querySelector(`script[src^="${TURNSTILE_SCRIPT_SRC}"]`)) return;
+  const script = document.createElement("script");
+  script.src = TURNSTILE_SCRIPT_SRC;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+}
+
 export function whenTurnstileReady(): Promise<void> {
   return new Promise((resolve) => {
     if (window.turnstile) return resolve();
+    loadTurnstileScript();
     const iv = setInterval(() => {
       if (window.turnstile) {
         clearInterval(iv);
