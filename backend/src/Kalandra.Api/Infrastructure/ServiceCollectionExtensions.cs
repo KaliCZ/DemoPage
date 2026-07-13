@@ -18,7 +18,6 @@ using Marten;
 using Marten.Services;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -76,23 +75,6 @@ public static class ServiceCollectionExtensions
             o.Options.SubscribeFromPresent();
         })
         .AddAsyncDaemon(DaemonMode.HotCold);
-
-        return services;
-    }
-
-    public static IServiceCollection AddBlogStats(this IServiceCollection services, IConfiguration configuration)
-    {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")!;
-
-        // The stats handler runs its aggregate queries through raw SQL (Marten LINQ can't batch GROUP BY),
-        // so it needs its own data source. A small, dedicated pool keeps it isolated from Marten's and
-        // bounds its connection pressure on a small database.
-        services.AddSingleton(_ =>
-        {
-            var builder = new NpgsqlDataSourceBuilder(connectionString);
-            builder.ConnectionStringBuilder.MaxPoolSize = 10;
-            return builder.Build();
-        });
 
         return services;
     }
