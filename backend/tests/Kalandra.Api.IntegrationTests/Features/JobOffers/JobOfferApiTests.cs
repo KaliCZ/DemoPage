@@ -684,7 +684,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(AdminUserId.ToString(), commentArray[0].GetProperty("userId").GetString());
     }
 
-    // ───── Notification emails (via the Temporal workflows) ─────
+    // ───── Notification emails (via the job-offer subscription) ─────
 
     [Fact]
     public async Task Create_NotifiesTheOwner()
@@ -804,16 +804,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     {
         var response = await client.GetAsync("/health", Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Health_ReportsTemporalHealthy()
-    {
-        var response = await client.GetAsync("/health", Ct);
-
-        var json = await ParseJsonAsync(response);
-        var temporal = json.GetProperty("entries").GetProperty("temporal");
-        Assert.Equal("Healthy", temporal.GetProperty("status").GetString());
     }
 
     // ───── Helpers ─────

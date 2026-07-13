@@ -1,8 +1,10 @@
 using JasperFx;
+using JasperFx.Events.Daemon;
 using JasperFx.OpenTelemetry;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
-using Kalandra.Blog.Workflows;
+using Kalandra.Blog.Events;
+using Kalandra.Blog.Notifications;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Auth;
@@ -10,12 +12,12 @@ using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
 using Kalandra.JobOffers;
-using Kalandra.JobOffers.Workflows;
+using Kalandra.JobOffers.Events;
+using Kalandra.JobOffers.Notifications;
 using Marten;
 using Marten.Services;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
-using Temporalio.Extensions.Hosting;
 
 namespace Kalandra.Api.Infrastructure;
 
@@ -57,7 +59,22 @@ public static class ServiceCollectionExtensions
             options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
             options.OpenTelemetry.TrackEventCounters();
         })
-        .UseLightweightSessions();
+        .UseLightweightSessions()
+        // Notification emails are delivered by subscriptions reacting to committed events, run by the
+        // async daemon. SubscribeFromPresent so a first deploy doesn't replay history and re-send every
+        // past notification; HotCold so only one instance delivers during a blue/green overlap.
+        .AddSubscriptionWithServices<BlogCommentNotificationSubscription>(ServiceLifetime.Scoped, o =>
+        {
+            o.IncludeType<BlogCommentPosted>();
+            o.Options.SubscribeFromPresent();
+        })
+        .AddSubscriptionWithServices<JobOfferNotificationSubscription>(ServiceLifetime.Scoped, o =>
+        {
+            o.IncludeType<JobOfferSubmitted>();
+            o.IncludeType<JobOfferCommentAdded>();
+            o.Options.SubscribeFromPresent();
+        })
+        .AddAsyncDaemon(DaemonMode.HotCold);
 
         return services;
     }
@@ -177,29 +194,6 @@ public static class ServiceCollectionExtensions
         // appsettings.json defaults to the local mail catcher; production overrides Host/Port/Username/Password via env.
         EmailConfig.AddSingleton(services, configuration, environment);
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
-        return services;
-    }
-
-    public static IServiceCollection AddTemporal(this IServiceCollection services, IConfiguration configuration)
-    {
-        var config = TemporalConfig.AddSingleton(services, configuration);
-
-        services.AddTemporalClient(options =>
-        {
-            options.TargetHost = config.TargetHost.Value;
-            options.Namespace = config.Namespace.Value;
-        });
-
-        // The API process hosts the workers — no separate deployable.
-        services.AddHostedTemporalWorker(BlogTaskQueue.Name)
-            .AddScopedActivities<BlogCommentActivities>()
-            .AddWorkflow<BlogCommentWorkflow>();
-
-        services.AddHostedTemporalWorker(JobOffersTaskQueue.Name)
-            .AddScopedActivities<JobOfferActivities>()
-            .AddWorkflow<JobOfferSubmittedWorkflow>()
-            .AddWorkflow<JobOfferCommentWorkflow>();
-
         return services;
     }
 

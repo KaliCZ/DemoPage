@@ -702,7 +702,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         AssertValidationError(await ParseJsonAsync(response), "commentId", "AlreadyDeleted");
     }
 
-    // ───── Notification emails (via the Temporal workflow) ─────
+    // ───── Notification emails (via the blog-comment subscription) ─────
 
     [Fact]
     public async Task PostComment_NotifiesTheBlogAuthor()

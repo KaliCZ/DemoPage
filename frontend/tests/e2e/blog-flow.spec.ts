@@ -271,8 +271,8 @@ test.describe("Blog Flow", () => {
     await expect(snackbar).toContainText("Comment posted.");
     await expect(snackbar.locator("> div")).toHaveClass(/bg-tertiary-container/);
 
-    // The same Temporal workflow that stored the comment notifies the blog author —
-    // the email must land in the local mail catcher.
+    // Storing the comment triggers the notification subscription, which emails the
+    // blog author — the email must land in the local mail catcher.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: commentText });
 
     // Reply to it.

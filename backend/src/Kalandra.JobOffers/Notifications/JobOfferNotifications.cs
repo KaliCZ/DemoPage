@@ -1,8 +1,8 @@
 using System.Net.Mail;
-using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Events;
+using StrongTypes;
 
-namespace Kalandra.JobOffers.Workflows;
+namespace Kalandra.JobOffers.Notifications;
 
 public enum JobOfferCommentNotificationKind
 {
@@ -12,8 +12,14 @@ public enum JobOfferCommentNotificationKind
 
 public record JobOfferCommentNotification(MailAddress Recipient, JobOfferCommentNotificationKind Kind);
 
-/// <summary>Serializable form for crossing the activity boundary — MailAddress doesn't round-trip through the Temporal payload converter.</summary>
-public record PlannedJobOfferCommentNotification(string RecipientEmail, JobOfferCommentNotificationKind Kind);
+/// <summary>The stored comment plus the offer fields that notification planning and email bodies need.</summary>
+public record StoredJobOfferComment(
+    Guid JobOfferId,
+    JobOfferCommentAdded Comment,
+    Guid OfferAuthorUserId,
+    Email OfferAuthorEmail,
+    NonEmptyString CompanyName,
+    NonEmptyString JobTitle);
 
 public static class JobOfferNotifications
 {

@@ -6,7 +6,7 @@
     "postinstall": "cd frontend && npm install",
     "prepare": "git config core.hooksPath frontend/.githooks",
     "test": "dotnet test --verbosity normal && npm --prefix frontend run test:install && npm --prefix frontend test && npm run test:e2e",
-    "test:e2e": "docker rm -f kalandra-temporal-e2e && docker run -d --name kalandra-temporal-e2e -p 7233:7233 temporalio/temporal:1.7.2 server start-dev --ip 0.0.0.0 --headless && supabase start && cross-env PUBLIC_API_URL=http://localhost:5000 npm --prefix frontend run build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"wait-on http://localhost:5000/health && serve frontend/dist -l 4321\" \"wait-on http://localhost:5000/health && wait-on http://localhost:4321 && npm --prefix frontend run test:e2e\""
+    "test:e2e": "supabase start && cross-env PUBLIC_API_URL=http://localhost:5000 npm --prefix frontend run build && concurrently --kill-others --success first --names backend,serve,test --prefix-colors blue,yellow,green \"cd backend/src/Kalandra.Api && dotnet run\" \"wait-on http://localhost:5000/health && serve frontend/dist -l 4321\" \"wait-on http://localhost:5000/health && wait-on http://localhost:4321 && npm --prefix frontend run test:e2e\""
   },
   "devDependencies": {
     "concurrently": "^10.0.3",

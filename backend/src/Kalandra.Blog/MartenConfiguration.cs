@@ -1,5 +1,6 @@
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
+using Kalandra.Blog.Notifications;
 using Marten;
 
 namespace Kalandra.Blog;
@@ -17,6 +18,7 @@ public static class MartenConfiguration
     {
         options.Events.AddEventType<BlogCommentPosted>();
         options.Events.AddEventType<BlogCommentDeleted>();
+        options.Schema.For<BlogNotificationSent>();
         options.Schema.For<BlogPostVisitorView>()
             .Duplicate(v => v.Slug)
             .Duplicate(v => v.UserId)

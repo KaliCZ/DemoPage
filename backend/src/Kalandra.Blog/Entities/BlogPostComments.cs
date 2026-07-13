@@ -28,7 +28,7 @@ public class BlogPostComments
     public Guid Id { get; set; }
     public List<BlogPostComment> Comments { get; set; } = [];
 
-    /// <summary>Takes the fully-built event because the caller (a Temporal workflow) owns the comment identity and timestamp.</summary>
+    /// <summary>Takes the fully-built event because the caller owns the comment identity and timestamp.</summary>
     public Result<BlogCommentPosted, PostBlogCommentError> Post(BlogCommentPosted comment)
     {
         if (comment.ParentCommentId is { } parentId)

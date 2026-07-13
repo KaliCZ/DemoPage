@@ -10,12 +10,10 @@ public static class ServiceRegistration
     {
         // Command handlers
         services.AddScoped<CreateJobOfferHandler>();
-        services.AddScoped<StoreJobOfferHandler>();
         services.AddScoped<EditJobOfferHandler>();
         services.AddScoped<CancelJobOfferHandler>();
         services.AddScoped<UpdateJobOfferStatusHandler>();
         services.AddScoped<AddCommentHandler>();
-        services.AddScoped<StoreJobOfferCommentHandler>();
 
         // Query handlers
         services.AddScoped<GetJobOfferDetailHandler>();

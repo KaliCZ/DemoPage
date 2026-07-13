@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Kalandra.Blog;
@@ -11,7 +12,19 @@ namespace Kalandra.Api.IntegrationTests.Helpers;
 /// </summary>
 public sealed class TestBlogPostCatalog : IBlogPostCatalog
 {
-    public BlogPost? Find(string slug) => new(slug, CommentsStreamId: DeriveId(slug, "comments"));
+    // The slug→id derivation is one-way, so remember each slug handed out to answer the
+    // notification subscription's reverse lookup.
+    private readonly ConcurrentDictionary<Guid, string> slugsByStreamId = new();
+
+    public BlogPost? Find(string slug)
+    {
+        var streamId = DeriveId(slug, "comments");
+        slugsByStreamId[streamId] = slug;
+        return new BlogPost(slug, streamId);
+    }
+
+    public BlogPost? FindByCommentsStreamId(Guid commentsStreamId) =>
+        slugsByStreamId.TryGetValue(commentsStreamId, out var slug) ? new BlogPost(slug, commentsStreamId) : null;
 
     private static Guid DeriveId(string slug, string kind)
     {

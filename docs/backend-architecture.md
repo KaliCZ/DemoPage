@@ -35,12 +35,14 @@ Domain rule violation  →  Handler error enum  →  API error enum  →  RFC 78
 
 The two-enum split (handler enum ↔ API error enum) ensures domain refactoring cannot silently break the frontend. See `docs/backend-api.md` for the full rule.
 
-## Background workflows (Temporal)
+## Background notifications (Marten subscriptions)
 
-Blog comments are the first Temporal-backed flow: `BlogCommentWorkflow` (`Kalandra.Blog/Workflows/`) stores the comment and sends the notification emails as two activities of one durable workflow, so neither can happen without the other. The API process hosts the workers (`AddTemporal` in `ServiceCollectionExtensions`); the controller drives the workflow with update-with-start — the HTTP response returns as soon as the store activity lands, notifications continue asynchronously with retries. Activities must be idempotent (retried on failure); the store dedupes by comment id. Job offers follow the same pattern (`Kalandra.JobOffers/Workflows/`): `JobOfferSubmittedWorkflow` notifies the site owner of new offers, `JobOfferCommentWorkflow` notifies the owner and the offer's author of comments.
+Notification emails are a side effect of committed events, delivered by Marten event subscriptions running under the async daemon — no separate workflow engine or datastore. The command handler stores the event inline like any other write (the HTTP response returns as soon as it lands); a subscription then reacts to the stored event and sends the emails. The daemon delivers each event at least once and tracks its own progress, so a comment or offer is never stored without its notifications following.
 
-- **Dev server**: Aspire runs `temporalio/temporal server start-dev` (also started by `npm run test:e2e` and the CI e2e job); integration tests spin one per test class via Testcontainers.
-- **Production**: `temporalio/auto-setup` on the VM, persistence in the same Supabase Postgres (`temporal` + `temporal_visibility` databases), deployed by the one-off `deploy-temporal` workflow. The Web UI is published at temporal.kalandra.tech behind Cloudflare Access; Caddy additionally requires Cloudflare's Authenticated Origin Pulls client certificate, so the edge sign-in cannot be bypassed by connecting to the VM directly — the UI itself has no authentication.
+- `BlogCommentNotificationSubscription` (`Kalandra.Blog/Notifications/`) emails the blog author about every comment and the parent comment's author about replies.
+- `JobOfferNotificationSubscription` (`Kalandra.JobOffers/Notifications/`) emails the site owner about new offers, and the owner and the offer's author about comments.
+- **Idempotency**: sending an email isn't transactional, so each delivery records a `*NotificationSent` marker in its own transaction right after the send. The daemon replays a whole page on any failure, and the marker keeps an already-delivered email from going out twice — a failed send retries on its own.
+- **Deploy safety**: both subscriptions are registered `SubscribeFromPresent` so a first deploy processes only new events (never replaying — and re-emailing — history); the daemon runs in `HotCold` mode so only one instance delivers during a blue/green overlap.
 - **Email**: `IEmailSender` (`Kalandra.Infrastructure/Email/`). The real SMTP sender is registered whenever the `Email` config section exists; a logging no-op is allowed only in Development without config — production refuses to start unconfigured.
 
 ## Where to put new code
@@ -56,5 +58,5 @@ Blog comments are the first Temporal-backed flow: `BlogCommentWorkflow` (`Kaland
 | A new aggregate field that needs filtering          | Property on the entity + `Duplicate(j => j.Field)` in `MartenConfiguration` |
 | A new business domain                               | New `Kalandra.{Domain}/` project + `Add{Domain}Domain()` extension     |
 | A new external HTTP integration                     | `Kalandra.Infrastructure/{Concern}/` + typed `HttpClient` registration |
-| A new background workflow                           | `Kalandra.{Domain}/Workflows/` + register it on the worker in `AddTemporal` |
+| A new background notification                       | `Kalandra.{Domain}/Notifications/` + a subscription registered in `AddAppMarten` |
 | A new role                                          | Add to `UserRole` enum + `RequireRole` policy                          |

@@ -3,10 +3,8 @@ using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Events;
-using Kalandra.JobOffers.Workflows;
+using Marten;
 using StrongTypes;
-using Temporalio.Api.Enums.V1;
-using Temporalio.Client;
 
 namespace Kalandra.JobOffers.Commands;
 
@@ -33,7 +31,7 @@ public record CreateJobOfferCommand(
     IReadOnlyList<CreateJobOfferFile> Files,
     DateTimeOffset Timestamp);
 
-public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageService storageService)
+public class CreateJobOfferHandler(IDocumentSession session, IStorageService storageService)
 {
     private const int MaxAttachments = 5;
     private const long MaxTotalBytes = 15 * 1024 * 1024; // 15 MB
@@ -52,10 +50,10 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
     };
 
     /// <summary>
-    /// Drives the durable submission flow: store + notify share one workflow, and the
-    /// update returns once the offer is stored — notifications continue async.
+    /// Stores the submitted offer; the owner notification is delivered separately by the
+    /// job-offer subscription reacting to the appended event.
     /// </summary>
-    public async Task<Result<Guid, CreateJobOfferError>> Create(
+    public async Task<Result<Guid, CreateJobOfferError>> CreateAndSave(
         CreateJobOfferCommand command, CancellationToken ct)
     {
         // Validate attachments
@@ -68,13 +66,16 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
         if (command.Files.Any(f => !AllowedContentTypes.Contains(f.ContentType)))
             return CreateJobOfferError.DisallowedContentType;
 
+        // A resend of the same id is silent retry protection — the same user re-submitting the form.
+        if (await session.LoadAsync<JobOffer>(command.Id, ct) is { } existing)
+            return existing.UserId == command.User.Id ? command.Id : CreateJobOfferError.IdAlreadyUsed;
+
         // Upload attachments
-        var streamId = command.Id;
         var uploadedAttachments = new List<AttachmentInfo>();
 
         if (command.Files.Count > 0)
         {
-            var folderPrefix = $"{command.User.Id}/{streamId}/";
+            var folderPrefix = $"{command.User.Id}/{command.Id}/";
             var items = command.Files
                 .Select(f => new FileUploadItem(f.FileName, f.FileSize, f.ContentType, f.Content))
                 .ToList();
@@ -89,7 +90,6 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
                 .ToList();
         }
 
-        // Create event
         var submitted = new JobOfferSubmitted(
             UserId: command.User.Id,
             UserEmail: command.User.Email,
@@ -105,25 +105,8 @@ public class CreateJobOfferHandler(ITemporalClient temporalClient, IStorageServi
             Attachments: uploadedAttachments,
             Timestamp: command.Timestamp);
 
-        var input = new JobOfferSubmittedWorkflowInput(streamId, submitted);
-
-        var startOperation = WithStartWorkflowOperation.Create(
-            (JobOfferSubmittedWorkflow workflow) => workflow.RunAsync(input),
-            new(id: JobOfferSubmittedWorkflow.IdFor(streamId), taskQueue: JobOffersTaskQueue.Name)
-            {
-                // A client retry of the same request reattaches instead of failing.
-                IdConflictPolicy = WorkflowIdConflictPolicy.UseExisting,
-            });
-
-        // Cancellation frees the request if the client disconnects; the workflow keeps
-        // running — durability is the point.
-        var outcome = await temporalClient.ExecuteUpdateWithStartWorkflowAsync(
-            (JobOfferSubmittedWorkflow workflow) => workflow.StoreJobOfferAsync(input),
-            new(startOperation) { Rpc = new() { CancellationToken = ct } });
-
-        if (outcome.Error is { } error)
-            return error;
-
-        return streamId;
+        session.Events.StartStream<JobOffer>(command.Id, submitted);
+        await session.SaveChangesAsync(ct);
+        return command.Id;
     }
 }

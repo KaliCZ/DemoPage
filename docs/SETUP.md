@@ -332,14 +332,12 @@ demopage's deploys write there:
 | Path | Written by | Purpose |
 |------|-----------|---------|
 | `~/demoPage/kalandra-api.env` | app deploy (§4), every run | API secrets — the slots' `EnvironmentFile` |
-| `~/demoPage/kalandra-temporal.env` | deploy-temporal, on change | Temporal server config |
 | `~/demoPage/kalandra.caddy` | app deploy, every run | Routing template (`__PORT__` filled in at deploy time) |
 | `~/demoPage/quadlet-staging/` | app deploy | Scratch: API `.container` units before install |
-| `~/demoPage/temporal-staging/` | deploy-temporal | Scratch: Temporal units + `temporal.caddy` (wiped each run) |
 
 The installed Quadlet units (`~/.config/containers/systemd/`), the Caddy site
 fragments and certs (`/srv/caddy/`) live in their shared locations — namespaced
-by filename (`kalandra-*`, `kalandra.caddy`, `temporal.caddy`), so they never
+by filename (`kalandra-*`, `kalandra.caddy`), so they never
 collide with another app's.
 
 #### Port Allocation (shared host)
@@ -354,7 +352,6 @@ rule is **don't collide**. Give each app a contiguous block and record it here.
 |-------------|-----------------------------|----------------------------------------------------|
 | 80, 443     | Caddy (shared)              | The only public ports; routes to apps by hostname. |
 | 8080 / 8081 | kalandra (demopage) API     | blue / green slots. **API only** — the website is SSG, built and hosted off-box, so it has no port here. |
-| 7233 / 8233 | kalandra (demopage) Temporal | Server / Web UI, both loopback-only. UI published at `temporal.kalandra.tech` through Caddy; see [`deploy-temporal.yml`](../.github/workflows/deploy-temporal.yml). |
 | 3001, 6379, 13000–13001, 18080–18090 | hampap (neighbor app) | Not demopage's — listed so demopage's blocks stay clear of it: Zitadel-login, Redis, web, API, worker, MCP, Zitadel. Source of truth is the hampap repo's `docs/infrastructure.md` port map, which reciprocally records demopage's ports. |
 
 When adding an app, take the next free block (e.g. `81xx`) — cross-check the
@@ -419,9 +416,9 @@ sudo loginctl enable-linger "$USER"
 
 #### 3.3.2 Per-site TLS certificate
 
-Demopage serves two hostnames (`api.kalandra.tech` and `temporal.kalandra.tech`) with the one `kalandra.pem`/`kalandra.key` pair, so the certificate must cover both:
+Demopage serves `api.kalandra.tech` with the `kalandra.pem`/`kalandra.key` pair:
 
-1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostnames `*.kalandra.tech` + `kalandra.tech` (the dashboard's default), 15-year validity, PEM format. A pair issued for `api.kalandra.tech` alone fails Cloudflare's Full (strict) check on `temporal.kalandra.tech` — re-issue with the wildcard and overwrite the pair if you started single-hostname.
+1. Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**, hostnames `*.kalandra.tech` + `kalandra.tech` (the dashboard's default), 15-year validity, PEM format.
 2. Save the pair to `/srv/caddy/certs` (owned by `opc`, so no `sudo`), named **per site** so multiple apps don't collide. demopage's CI fragment expects `kalandra.pem` / `kalandra.key`:
 
 ```bash
@@ -614,8 +611,6 @@ Add these secrets in **Settings → Secrets and Variables → Actions**:
 | `SENTRY_CI_TOKEN` | Sentry **organization auth token** (scope `org:ci`) used by `@sentry/vite-plugin` to upload frontend source maps during `frontend-deploy`. Create at **Settings → Auth Tokens** (org level). Mapped to `SENTRY_AUTH_TOKEN` at build time. Omitting it silently skips the upload — the deploy still succeeds, just without resolved stack traces. |
 | `SMTP_USERNAME` | Login for the SMTP relay that sends notification emails (blog comments, job offers) |
 | `SMTP_PASSWORD` | Password for the SMTP relay |
-| `TEMPORAL_DB_USER` | Postgres role for Temporal's persistence — must be able to create databases on the first `deploy-temporal` run (`postgres` works) |
-| `TEMPORAL_DB_PASSWORD` | Password for that role |
 
 Plus these repository **variables** (Settings → Variables → Actions):
 
@@ -628,8 +623,6 @@ Plus these repository **variables** (Settings → Variables → Actions):
 | `SMTP_FROM_EMAIL` | From address on notification mail (e.g. `blog@kalandra.tech`) |
 | `BLOG_AUTHOR_NOTIFICATION_EMAIL` | Mailbox that receives blog new-comment notifications — a real address, not `.local` |
 | `JOB_OFFERS_OWNER_NOTIFICATION_EMAIL` | Mailbox that receives job-offer notifications (new offers and comments) — a real address, not `.local` |
-| `TEMPORAL_DB_HOST` | The `Host=` from `DB_CONNECTION_STRING` (`db.<project-ref>.supabase.co`) — the direct/session host, **not** the transaction pooler |
-| `TEMPORAL_DB_PORT` | `5432` |
 
 The org lives in Sentry's EU region (the DSN host is `ingest.de.sentry.io`), but no `SENTRY_URL` is
 set — the org auth token embeds its own region endpoint and the upload routes there automatically.

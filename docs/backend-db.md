@@ -8,12 +8,12 @@ Marten lives in domain projects (e.g. `Kalandra.JobOffers`), Supabase clients li
 |-----------------------|------------------|----------------------------------------------------------|
 | Event store           | Marten           | PostgreSQL — Supabase in prod, Docker compose locally    |
 | Read models           | Marten snapshots | Same PostgreSQL instance, inline-projected               |
-| Workflow persistence  | Temporal         | Same PostgreSQL instance — `temporal` + `temporal_visibility` databases |
+| Notification delivery | Marten subscriptions | Same PostgreSQL instance — async-daemon progress + `*_notification_sent` marker docs |
 | Identity              | Supabase Auth    | JWT validated by API via JWKS                            |
 | User admin operations | Supabase Auth    | `SupabaseAdminService` (HTTP, service-key)               |
 | File attachments      | Supabase Storage | `SupabaseStorageService` (SDK, service-key)              |
 
-PostgreSQL is the only database — even Temporal persists into it. Supabase is used as managed Postgres + auth + object storage.
+PostgreSQL is the only database. Supabase is used as managed Postgres + auth + object storage.
 
 ## Marten conventions
 

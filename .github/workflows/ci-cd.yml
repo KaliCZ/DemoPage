@@ -50,11 +50,6 @@ jobs:
       - name: Start local Supabase in background
         run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
 
-      # The API hosts a Temporal worker and needs the server at startup; the dev
-      # server boots in seconds while the .NET/Node setup below overlaps.
-      - name: Start Temporal dev server
-        run: docker run -d --name temporal-dev -p 7233:7233 temporalio/temporal:1.7.2 server start-dev --ip 0.0.0.0 --headless
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -109,7 +104,9 @@ jobs:
 
       - name: Start backend
         run: |
-          dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 &
+          # Line-buffered + captured so a startup failure/hang is visible in the logs below,
+          # not swallowed by the backgrounded process.
+          stdbuf -oL -eL dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 > "$RUNNER_TEMP/api.log" 2>&1 &
         env:
           # ConnectionStrings__DefaultConnection comes from appsettings.json
           # (points at Supabase's bundled Postgres on :54322 — same as local dev).
@@ -123,6 +120,12 @@ jobs:
           health-url: http://localhost:5000/health
           max-attempts: 30
           retry-interval: 2
+
+      - name: Backend startup logs
+        if: always()
+        run: |
+          echo "===== backend api.log ====="
+          cat "$RUNNER_TEMP/api.log" 2>/dev/null || echo "(no api.log captured)"
 
       - name: Get Playwright version
         id: playwright-version
@@ -395,7 +398,6 @@ jobs:
             Supabase__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
             Turnstile__SecretKey=${TURNSTILE_SECRET_KEY}
             Sentry__Dsn=${SENTRY_DSN}
-            Temporal__TargetHost=localhost:7233
             Email__Host=${SMTP_HOST}
             Email__Port=${SMTP_PORT}
             Email__Username=${SMTP_USERNAME}
@@ -441,7 +443,7 @@ jobs:
 
             # ----- 5. Liveness-gate the new slot directly (bypassing Caddy) -----
             # Gate on /health/live (process up + expected commit), not /health: a shared
-            # DB/Temporal outage breaks both slots equally and must not strand a good build.
+            # DB/Supabase outage breaks both slots equally and must not strand a good build.
             # The commit match still blocks a stale container from an earlier deploy.
             echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
             ATTEMPTS=0
@@ -462,10 +464,10 @@ jobs:
             echo "New slot is live on port $NEW_PORT (running $EXPECTED_SHA)."
 
             # The gate is liveness-only, so a slot promotes even while readiness is degraded or
-            # unhealthy (DB/Temporal/Supabase down). Surface the full /health status as a warning.
+            # unhealthy (DB/Supabase down). Surface the full /health status as a warning.
             SLOT_STATUS=$(curl -s "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
             if [ "$SLOT_STATUS" != "Healthy" ]; then
-              echo "::warning::New slot is live but /health reports '${SLOT_STATUS:-unknown}' — check its dependencies (DB, Temporal, Supabase)."
+              echo "::warning::New slot is live but /health reports '${SLOT_STATUS:-unknown}' — check its dependencies (DB, Supabase)."
             fi
 
             # ----- 6. Point our site at the new port (promotion) and reload -----

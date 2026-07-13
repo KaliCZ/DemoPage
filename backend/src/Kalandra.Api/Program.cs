@@ -56,7 +56,6 @@ JobOffersNotificationsConfig.AddSingleton(builder.Services, builder.Configuratio
 builder.Services.AddBlogDomain();
 BlogNotificationsConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddEmailServices(builder.Configuration, builder.Environment);
-builder.Services.AddTemporal(builder.Configuration);
 RateLimits.Add(builder.Services, builder.Environment);
 
 builder.Services.AddResponseCompression(options =>
@@ -66,7 +65,7 @@ builder.Services.AddResponseCompression(options =>
     options.EnableForHttps = true;
 });
 
-// A background worker faulting (e.g. Temporal unreachable) must not stop the whole API host.
+// A background worker faulting (e.g. the notification daemon) must not stop the whole API host.
 builder.Services.Configure<HostOptions>(
     o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
@@ -75,8 +74,7 @@ builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, timeout: TimeSpan.FromSeconds(5), tags: ["ready"])
     .AddCheck<CommitHashHealthCheck>("version", tags: ["live", "ready"])
     .AddCheck<SupabaseAuthHealthCheck>("supabase-auth", tags: ["ready"])
-    .AddCheck<SupabaseStorageHealthCheck>("supabase-storage", tags: ["ready"])
-    .AddCheck<TemporalHealthCheck>("temporal", tags: ["ready"]);
+    .AddCheck<SupabaseStorageHealthCheck>("supabase-storage", tags: ["ready"]);
 
 var app = builder.Build();
 
@@ -101,7 +99,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 });
 
 // Liveness for the blue/green deploy gate: process up + expected commit, no external deps — a
-// shared DB/Temporal outage breaks both slots equally and must not roll back a good build.
+// shared DB/Supabase outage breaks both slots equally and must not roll back a good build.
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),
