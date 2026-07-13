@@ -6,10 +6,8 @@ namespace Kalandra.Api.Infrastructure;
 /// <summary>
 /// Verifies the Temporal server is reachable over gRPC. Blog-comment and
 /// job-offer submissions run through Temporal workflows, so an unreachable
-/// server breaks those writes while every read path keeps working — which is
-/// why failures report Degraded, not Unhealthy: the blue/green deploy gate
-/// fails on a 503 from /health, and a Temporal outage must not roll back an
-/// unrelated API deploy.
+/// server breaks those writes while every read path keeps working — hence
+/// Degraded, not Unhealthy: readiness is partial, not down.
 /// </summary>
 internal sealed class TemporalHealthCheck(ITemporalClient temporalClient) : IHealthCheck
 {
