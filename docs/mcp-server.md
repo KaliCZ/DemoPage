@@ -99,7 +99,7 @@ in the API's environment.
 
 ## Testing
 
-- `Features/Mcp/BlogFeedParseTests` — pure unit tests for RSS parsing.
+- `Kalandra.Blog.Tests/BlogFeedParseTests` — pure unit tests for RSS parsing (the feed reader lives in `Kalandra.Blog/Feed/`).
 - `Features/Mcp/McpToolsTests` — drives the tools directly against the real domain handlers and database
   (`TestWebApplicationFactory`, real Postgres) with a chosen caller: the auth guard, command building, error
   translation, ownership boundaries, and the signed-in read-status enrichment. The factory serves the

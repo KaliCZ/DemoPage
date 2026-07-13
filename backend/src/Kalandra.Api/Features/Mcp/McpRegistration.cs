@@ -1,4 +1,5 @@
 using Kalandra.Api.Infrastructure;
+using Kalandra.Blog.Feed;
 
 namespace Kalandra.Api.Features.Mcp;
 
@@ -13,8 +14,7 @@ public static class McpRegistration
     public static IServiceCollection AddMcp(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        BlogFeedConfig.AddSingleton(services, configuration, environment);
-        services.AddHttpClient<BlogFeedClient>();
+        services.AddBlogFeed(configuration, environment);
 
         services.AddMcpServer(options =>
             {

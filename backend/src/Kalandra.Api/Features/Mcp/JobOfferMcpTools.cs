@@ -1,6 +1,6 @@
 using System.ComponentModel;
-using Kalandra.Api.Features.JobOffers.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;

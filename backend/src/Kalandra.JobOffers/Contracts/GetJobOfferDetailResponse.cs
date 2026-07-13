@@ -1,7 +1,7 @@
 using Kalandra.JobOffers.Entities;
 using StrongTypes;
 
-namespace Kalandra.Api.Features.JobOffers.Contracts;
+namespace Kalandra.JobOffers.Contracts;
 
 public record GetJobOfferDetailResponse(
     Guid Id,

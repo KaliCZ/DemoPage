@@ -2,8 +2,8 @@
 
 ## The three projects
 
-- **`Kalandra.Api`** — the HTTP boundary. Controllers, request/response DTOs, API error enums, auth pipeline, rate limiting. Handles request validation and mapping. Keeps API contracts stable for the frontend.
-- **Domain projects** (e.g. `Kalandra.JobOffers`) — one project per business domain. Entities, events, command/query handlers, Marten config. Each domain gets its own project with vertical slices. A new domain = a new `Kalandra.{Domain}` project + `Add{Domain}Domain()` extension.
+- **`Kalandra.Api`** — the HTTP boundary. Controllers, request DTOs, API error enums, REST-only response envelopes (pagination, history, stats), auth pipeline, rate limiting. Handles request validation and mapping. Keeps API contracts stable for the frontend.
+- **Domain projects** (e.g. `Kalandra.JobOffers`) — one project per business domain. Entities, events, command/query handlers, Marten config, and the response contracts every front door serves (`Contracts/*Response.cs`). Each domain gets its own project with vertical slices. A new domain = a new `Kalandra.{Domain}` project + `Add{Domain}Domain()` extension.
 - **`Kalandra.Infrastructure`** — cross-cutting concerns. Supabase clients (auth, storage), `CurrentUser`, Turnstile validation, configuration records. Leaf project — depends on nothing else in the repo.
 
 ## Dependency direction
@@ -57,7 +57,8 @@ Notification emails are a side effect of committed events, delivered by Marten e
 | You want to add...                                  | Goes in                                                                |
 |-----------------------------------------------------|------------------------------------------------------------------------|
 | A new HTTP endpoint on an existing domain           | `Kalandra.Api/Features/{Domain}/{Domain}Controller.cs`                 |
-| A new request or response shape                     | `Kalandra.Api/Features/{Domain}/Contracts/`                            |
+| A new request DTO or REST-only response envelope    | `Kalandra.Api/Features/{Domain}/Contracts/`                            |
+| A response contract shared by REST + MCP            | `Kalandra.{Domain}/Contracts/*Response.cs`                            |
 | A new domain error variant exposed on the wire      | Add to the API enum + map it in the controller `switch`               |
 | A new business operation (write)                    | `Kalandra.{Domain}/Commands/{Operation}.cs` (record + enum + handler)  |
 | A new read query                                    | `Kalandra.{Domain}/Queries/{Query}.cs`                                 |

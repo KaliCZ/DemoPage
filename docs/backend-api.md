@@ -33,15 +33,16 @@ Features are vertical slices, not horizontal layers within the API project. A fe
 
 - `{Name}Controller.cs` — the HTTP surface for the feature
 - `Contracts/*Request.cs` — inbound DTOs
-- `Contracts/*Response.cs` — outbound DTOs with a static `Serialize(...)` method
+- `Contracts/*Response.cs` — REST-only outbound DTOs with a static `Serialize(...)` method (see below)
 - `Contracts/*Error.cs` — the API-layer error enum
 
-There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature reuse happens through `Kalandra.Infrastructure` (auth, storage, config) or `Kalandra.JobOffers` (domain handlers), never through a shared API-layer "common" folder.
+There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature reuse happens through `Kalandra.Infrastructure` (auth, storage, config) or `Kalandra.JobOffers` (domain handlers and shared response contracts), never through a shared API-layer "common" folder.
 
 ## Request & response DTOs
 
 - Requests are `record`s with `NonEmptyString` / `Email` properties — invariants live in the type, not in attributes.
-- Responses are `record`s with a static `Serialize(entity, viewer)` method. `viewer` lets the response gate admin-only fields (see `GetJobOfferDetailResponse.Serialize`).
+- Responses are `record`s with a static `Serialize(...)` method.
+- **Response contracts served by more than one front door live in the domain slice.** The shapes both the REST controllers and the MCP tools return (`GetJobOfferDetailResponse`, `CommentResponse`, `BlogCommentResponse`) live in `Kalandra.{Domain}/Contracts/` so every front door serves an identical shape; the domain projects don't reference ASP.NET, so these stay pure `Serialize(entity)` records. REST-only responses — pagination envelopes, edit history, dashboard stats — stay here in the API feature slice.
 - Declare shape with `[ProducesResponseType<T>(...)]` so Swagger documents the contract.
 
 ## Error contracts: the two-enum rule

@@ -3,6 +3,7 @@ using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
 using Kalandra.Blog.Commands;
+using Kalandra.Blog.Contracts;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 using Kalandra.Blog.Queries;

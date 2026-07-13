@@ -1,6 +1,6 @@
-using Kalandra.Api.Features.Mcp;
+using Kalandra.Blog.Feed;
 
-namespace Kalandra.Api.IntegrationTests.Features.Mcp;
+namespace Kalandra.Blog.Tests;
 
 public class BlogFeedParseTests
 {
