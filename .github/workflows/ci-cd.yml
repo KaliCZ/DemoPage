@@ -439,12 +439,13 @@ jobs:
             systemctl --user stop "kalandra-api-${NEW}.service" || true
             systemctl --user start "kalandra-api-${NEW}.service"
 
-            # ----- 5. Health check the new slot directly (bypassing Caddy) -----
-            # Match the deployed commit, not just any healthy response, so a
-            # stale container from an earlier deploy can't pass this gate.
+            # ----- 5. Liveness-gate the new slot directly (bypassing Caddy) -----
+            # Gate on /health/live (process up + expected commit), not /health: a shared
+            # DB/Temporal outage breaks both slots equally and must not strand a good build.
+            # The commit match still blocks a stale container from an earlier deploy.
             echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
             ATTEMPTS=0
-            until curl -sf "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -qF "$EXPECTED_SHA"; do
+            until curl -sf "http://localhost:${NEW_PORT}/health/live" 2>/dev/null | grep -qF "$EXPECTED_SHA"; do
               ATTEMPTS=$((ATTEMPTS + 1))
               if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
                 echo "New slot failed to start. Container logs:"
@@ -458,13 +459,13 @@ jobs:
               echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
               sleep 3
             done
-            echo "New slot is healthy on port $NEW_PORT."
+            echo "New slot is live on port $NEW_PORT (running $EXPECTED_SHA)."
 
-            # Degraded still returns 200 and passes the gate by design (a Temporal outage must
-            # not roll back an API deploy) — but surface it as a pipeline warning, not silence.
-            SLOT_STATUS=$(curl -sf "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+            # The gate is liveness-only, so a slot promotes even while readiness is degraded or
+            # unhealthy (DB/Temporal/Supabase down). Surface the full /health status as a warning.
+            SLOT_STATUS=$(curl -s "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
             if [ "$SLOT_STATUS" != "Healthy" ]; then
-              echo "::warning::New slot passed the gate but reports '${SLOT_STATUS:-unknown}' — check the /health entries (e.g. Temporal)."
+              echo "::warning::New slot is live but /health reports '${SLOT_STATUS:-unknown}' — check its dependencies (DB, Temporal, Supabase)."
             fi
 
             # ----- 6. Point our site at the new port (promotion) and reload -----
@@ -510,7 +511,9 @@ jobs:
       - name: Verify public endpoint
         uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
         with:
-          health-url: https://api.kalandra.tech/health
+          # Liveness, matching the deploy gate — confirms Caddy serves the new commit publicly
+          # without failing on a dependency outage that would break either slot.
+          health-url: https://api.kalandra.tech/health/live
           max-attempts: 20
           retry-interval: 5
           expected-content: ${{ github.sha }}

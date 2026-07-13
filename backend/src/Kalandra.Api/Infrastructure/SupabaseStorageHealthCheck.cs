@@ -8,9 +8,8 @@ namespace Kalandra.Api.Infrastructure;
 /// Verifies that the Supabase Storage bucket used for job-offer attachments is
 /// reachable with the configured service key. Catches misconfigured project
 /// URLs, revoked service keys, and missing buckets at /health rather than on
-/// the first upload attempt. Failures report Degraded, not Unhealthy: the
-/// blue/green deploy gate fails on a 503 from /health, and a Supabase Storage
-/// outage must not roll back an otherwise healthy API deploy.
+/// the first upload attempt. Failures report Degraded, not Unhealthy: uploads
+/// break while the rest of the API keeps serving, so readiness is partial, not down.
 ///
 /// Exercises the same <see cref="IStorageService"/> the production upload path
 /// uses, so the health check is guaranteed to cover the exact client wiring.
