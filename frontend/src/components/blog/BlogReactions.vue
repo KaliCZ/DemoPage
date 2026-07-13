@@ -47,10 +47,15 @@ function applyState(data: { counts: Record<string, number>; mine: ReactionKind[]
 // Bumped when a toggle lands so a slower in-flight load can't overwrite fresher state.
 let loadSequence = 0;
 
+// Whether the reactions currently shown were loaded for a signed-in user. Seeded on mount from the
+// persisted-session hint so the confirmatory auth-change after the initial load doesn't refetch.
+let loadedSignedIn: boolean | null = null;
+
 async function loadReactions() {
   const sequence = ++loadSequence;
   try {
     const token = await getAccessToken();
+    loadedSignedIn = !!token;
     const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/reactions`, {
       headers: visitorHeaders(token),
     });
@@ -101,12 +106,20 @@ async function toggle(kind: ReactionKind) {
 }
 
 const onAuthChange = async (event: Event) => {
+  const user = (event as CustomEvent).detail?.user;
+  // A signed-out reader gets ~two confirmatory auth-changes per load (getSession + onAuthStateChange);
+  // once the signed-out state is loaded there's nothing to re-link or reload. Signed-in transitions —
+  // including the post-sign-in visitor link + reload below — always fall through.
+  if (!user && loadedSignedIn === false) return;
   // Fold anonymous reactions into the account before reloading, so "mine" reflects them.
-  if ((event as CustomEvent).detail?.user) await ensureVisitorLinked(props.apiUrl);
+  if (user) await ensureVisitorLinked(props.apiUrl);
   await loadReactions();
 };
 
 onMounted(() => {
+  // Persisted-session hint from Layout's pre-paint script — a synchronous best guess of the signed-in
+  // state so the first auth-change doesn't refetch before loadReactions() resolves the real token.
+  loadedSignedIn = !!(window as any).__authPrefill;
   void loadReactions();
   window.addEventListener("auth-change", onAuthChange);
 });

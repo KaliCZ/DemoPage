@@ -355,6 +355,14 @@ const t = translations[lang];
         cb();
         return;
       }
+      // No longer loaded globally — this form needs the widget, so pull the script in on demand.
+      if (turnstileSiteKey && !document.querySelector('script[src^="https://challenges.cloudflare.com/turnstile"]')) {
+        var s = document.createElement("script");
+        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        s.async = true;
+        s.defer = true;
+        document.head.appendChild(s);
+      }
       var iv = setInterval(function () {
         if (window.turnstile) {
           clearInterval(iv);
