@@ -281,6 +281,12 @@ test.describe("Blog Flow", () => {
     // Self-reply: the blog author is notified, the parent author (same user) is not.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: replyText });
 
+    // Collapsing the parent hides its replies; expanding brings them back.
+    await commentItem.getByRole("button", { name: "Hide replies" }).click();
+    await expect(replyItem).toBeHidden();
+    await commentItem.getByRole("button", { name: /^Show replies/ }).click();
+    await expect(replyItem).toBeVisible();
+
     // Delete the reply — inline confirm, then the tombstone placeholder takes its place.
     await replyItem.getByRole("button", { name: "Delete" }).click();
     await replyItem.getByRole("button", { name: "Delete" }).click();
