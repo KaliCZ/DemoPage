@@ -383,7 +383,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     // ───── Stats ─────
 
     [Fact]
-    public async Task Stats_AggregatesViewsAndReactionsPerPost()
+    public async Task Stats_AggregatesViewsReactionsAndCommentsPerPost()
     {
         var slugA = NewSlug();
         var slugB = NewSlug();
@@ -394,11 +394,13 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         await client.PostAsync($"/api/blog/{slugA}/views", content: null, Ct);
         await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Heart" }, Ct);
         await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Rocket" }, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/comments", new { content = "First!" }, Ct);
 
-        // A different reader on a different browser adds a second view of the same post.
+        // A different reader on a different browser adds a second view and comment on the same post.
         Authenticate(userId: Guid.NewGuid(), email: "stats-other@test.com");
         SetVisitor(Guid.NewGuid());
         await client.PostAsync($"/api/blog/{slugA}/views", content: null, Ct);
+        await client.PostAsJsonAsync($"/api/blog/{slugA}/comments", new { content = "Nice one" }, Ct);
 
         Authenticate(userId: viewerId, email: "stats-viewer@test.com");
         var response = await client.GetAsync($"/api/blog/stats?slug={slugA}&slug={slugB}", Ct);
@@ -410,13 +412,29 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(2, statsA.GetProperty("totalViews").GetInt32());
         Assert.Equal(2, statsA.GetProperty("uniqueVisitors").GetInt32());
         Assert.Equal(2, statsA.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(2, statsA.GetProperty("totalComments").GetInt32());
         Assert.Equal(1, statsA.GetProperty("viewerViews").GetInt32());
 
         var statsB = FindPostStats(posts, slugB);
         Assert.Equal(0, statsB.GetProperty("totalViews").GetInt32());
         Assert.Equal(0, statsB.GetProperty("uniqueVisitors").GetInt32());
         Assert.Equal(0, statsB.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(0, statsB.GetProperty("totalComments").GetInt32());
         Assert.Equal(0, statsB.GetProperty("viewerViews").GetInt32());
+    }
+
+    [Fact]
+    public async Task Stats_CommentCount_ExcludesDeletedComments()
+    {
+        var slug = NewSlug();
+        Authenticate(email: "stats-commenter@test.com");
+
+        await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Kept" }, Ct);
+        var doomed = await ParseJsonAsync(await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Doomed" }, Ct));
+        await client.DeleteAsync($"/api/blog/{slug}/comments/{doomed.GetProperty("id").GetString()}", Ct);
+
+        var stats = FindPostStats((await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}", Ct))).GetProperty("posts"), slug);
+        Assert.Equal(1, stats.GetProperty("totalComments").GetInt32());
     }
 
     [Fact]

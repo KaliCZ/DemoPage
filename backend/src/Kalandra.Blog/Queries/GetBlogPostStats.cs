@@ -6,7 +6,7 @@ namespace Kalandra.Blog.Queries;
 public record GetBlogPostStatsQuery(IReadOnlyList<BlogPost> Posts, Guid? ViewerId);
 
 /// <summary>ViewerViews is null for anonymous callers — they have no signed-in reading history to report.</summary>
-public record BlogPostStats(string Slug, int TotalViews, int UniqueVisitors, int TotalReactions, int? ViewerViews);
+public record BlogPostStats(string Slug, int TotalViews, int UniqueVisitors, int TotalReactions, int TotalComments, int? ViewerViews);
 
 public class GetBlogPostStatsHandler(IQuerySession session)
 {
@@ -24,6 +24,10 @@ public class GetBlogPostStatsHandler(IQuerySession session)
             var totalReactions = await session.Query<BlogReaction>()
                 .Where(reaction => reaction.Slug == post.Slug).CountAsync(ct);
 
+            // Unlike the on-page thread, this omits tombstones — it's a measure of live discussion.
+            var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(post.CommentsStreamId, token: ct);
+            var totalComments = comments?.Comments.Count(c => !c.IsDeleted) ?? 0;
+
             int? viewerViews = query.ViewerId is { } viewerId
                 ? await session.Query<BlogPostVisitorView>()
                     .Where(v => v.Slug == post.Slug && v.UserId == viewerId).SumAsync(v => v.ViewCount, ct)
@@ -34,6 +38,7 @@ public class GetBlogPostStatsHandler(IQuerySession session)
                 TotalViews: totalViews,
                 UniqueVisitors: uniqueVisitors,
                 TotalReactions: totalReactions,
+                TotalComments: totalComments,
                 ViewerViews: viewerViews));
         }
 
