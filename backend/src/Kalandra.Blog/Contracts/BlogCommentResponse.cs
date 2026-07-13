@@ -1,7 +1,7 @@
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
 
-namespace Kalandra.Api.Features.Blog.Contracts;
+namespace Kalandra.Blog.Contracts;
 
 public record BlogCommentResponse(
     Guid Id,

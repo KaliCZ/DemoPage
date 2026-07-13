@@ -1,7 +1,7 @@
 using Kalandra.JobOffers.Events;
 using StrongTypes;
 
-namespace Kalandra.Api.Features.JobOffers.Contracts;
+namespace Kalandra.JobOffers.Contracts;
 
 public record CommentResponse(
     Guid Id,

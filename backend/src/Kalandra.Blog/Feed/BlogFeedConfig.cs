@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using StrongTypes;
 
-namespace Kalandra.Api.Features.Mcp;
+namespace Kalandra.Blog.Feed;
 
 /// <summary>The published blog's RSS feed — the MCP <c>list_blog_posts</c> tool's source, since the backend holds only slugs, not post titles/summaries.</summary>
 public record BlogFeedConfig(Uri RssUrl)

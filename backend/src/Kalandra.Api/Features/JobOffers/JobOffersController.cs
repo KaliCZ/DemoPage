@@ -7,6 +7,7 @@ using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.JobOffers.Commands;
+using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;
 using Microsoft.AspNetCore.Authorization;

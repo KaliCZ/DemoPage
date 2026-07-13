@@ -1,6 +1,6 @@
-using Kalandra.Api.Features.Blog.Contracts;
-using Kalandra.Api.Features.JobOffers.Contracts;
+using Kalandra.Blog.Contracts;
 using Kalandra.Blog.Queries;
+using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Queries;
 using StrongTypes;
 

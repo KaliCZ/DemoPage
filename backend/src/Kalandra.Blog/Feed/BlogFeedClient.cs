@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace Kalandra.Api.Features.Mcp;
+namespace Kalandra.Blog.Feed;
 
 public record BlogPostSummary(
     string Slug,

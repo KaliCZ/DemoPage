@@ -1,5 +1,5 @@
-using Kalandra.Api.Features.Mcp;
 using Kalandra.Blog;
+using Kalandra.Blog.Feed;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Storage;

@@ -1,11 +1,12 @@
 using System.ComponentModel;
-using Kalandra.Api.Features.Blog.Contracts;
 using Kalandra.Api.Features.Mcp.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
 using Kalandra.Blog.Commands;
+using Kalandra.Blog.Contracts;
 using Kalandra.Blog.Entities;
 using Kalandra.Blog.Events;
+using Kalandra.Blog.Feed;
 using Kalandra.Blog.Queries;
 using Kalandra.JobOffers.Queries;
 using ModelContextProtocol;
