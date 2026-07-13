@@ -119,14 +119,20 @@ export function track(event: string, data?: EventData): void {
   });
 }
 
+/** Capture an unexpected error as a Sentry issue, with optional context shown on its `extra` panel. */
+export function captureException(error: unknown, context?: EventData): void {
+  sentryReady?.then((Sentry) => Sentry.captureException(error, context ? { extra: context } : undefined));
+}
+
 // Exposed for `define:vars` inline scripts in Astro pages, which can't import ES modules.
-(window as any).observability = { identifyUser, track };
+(window as any).observability = { identifyUser, track, captureException };
 
 declare global {
   interface Window {
     observability?: {
       identifyUser: typeof identifyUser;
       track: typeof track;
+      captureException: typeof captureException;
     };
   }
 }

@@ -48,6 +48,12 @@ async function recordView(user: any) {
         method: "POST",
         headers: visitorHeaders(token),
       });
+      // A brand-new visitor id can't already be claimed, so a second failure is a real anomaly.
+      if (!res.ok) {
+        window.observability?.captureException(new Error(`Blog view retry after 409 failed with ${res.status}`), {
+          slug: props.slug,
+        });
+      }
     }
     if (!res.ok) return;
     const data: { previousViewCount: number; totalViews: number; uniqueVisitors: number } = await res.json();
