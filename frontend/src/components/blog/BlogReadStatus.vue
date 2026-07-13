@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import { getAccessToken, getCurrentUser } from "../../lib/auth";
-import { ensureVisitorLinked, visitorHeaders } from "../../lib/visitor";
+import { ensureVisitorLinked, resetVisitorId, visitorHeaders } from "../../lib/visitor";
 import MaterialIcon from "../icons/MaterialIcon.vue";
 import { materialSymbolPaths as paths } from "../icons/material-symbol-paths";
 
@@ -36,10 +36,19 @@ async function recordView(user: any) {
 
   try {
     const token = user ? await getAccessToken() : null;
-    const res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/views`, {
+    let res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/views`, {
       method: "POST",
       headers: visitorHeaders(token),
     });
+    // 409: this visitor id is already bound to another account — mint a fresh one and retry so the
+    // view lands on this reader's own row.
+    if (res.status === 409) {
+      resetVisitorId();
+      res = await fetch(`${props.apiUrl}/api/blog/${props.slug}/views`, {
+        method: "POST",
+        headers: visitorHeaders(token),
+      });
+    }
     if (!res.ok) return;
     const data: { previousViewCount: number; totalViews: number; uniqueVisitors: number } = await res.json();
     totalViews.value = data.totalViews;

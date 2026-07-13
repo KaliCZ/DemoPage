@@ -261,28 +261,46 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     [Fact]
-    public async Task RecordView_OnBrowserRowOwnedByAnotherAccount_ReportsZeroPriorReads_NotNegative()
+    public async Task RecordView_SignedInOnBrowserOwnedByAnotherAccount_Returns409()
     {
         var slug = NewSlug();
 
-        // The visitor id is the browser's identity; sign-in layers on top and never rotates it (only
-        // sign-out does), so two accounts share one id only via a session swap with no sign-out between.
+        // The visitor id is the browser's identity; sign-in layers on top and only rotates on
+        // sign-out, so two accounts share one id only via a session swap with no sign-out between.
         SetVisitor(Guid.NewGuid());
 
         // A signs in first and reads, stamping this browser's row to A.
         Authenticate(userId: Guid.NewGuid(), email: "shared-owner@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // B swaps in on the same browser and reads: the view lands on A's row, so B owns no row
-        // for this post. Prior reads read as 0 ("not read yet"), never -1.
+        // B swaps in on the same browser: the backend refuses rather than count B's view against A's
+        // row, signalling the client to mint a fresh visitor id.
         Authenticate(userId: Guid.NewGuid(), email: "shared-guest@test.com");
-        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+        var response = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        Assert.Equal(0, response.GetProperty("previousViewCount").GetInt32());
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]
-    public async Task RecordView_OnBrowserOwnedByAnother_StillCountsTheReadersOwnPriorReads()
+    public async Task RecordView_AnonymousOnBrowserOwnedByAnAccount_Returns409()
+    {
+        var slug = NewSlug();
+        SetVisitor(Guid.NewGuid());
+
+        // The row belongs to a signed-in account.
+        Authenticate(userId: Guid.NewGuid(), email: "row-owner@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // An anonymous view on the same id is refused too — otherwise it would count against the
+        // account's row and echo back its private read count.
+        SignOut();
+        var response = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordView_WithAFreshVisitorAfterConflict_CountsTheReadersOwnPriorReads()
     {
         var slug = NewSlug();
         var readerB = Guid.NewGuid();
@@ -292,16 +310,21 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(userId: readerB, email: "own-device-reader@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // On a second, shared browser, A reads first (stamping that browser's row to A), then B
-        // swaps in on the same browser without a sign-out and reads.
+        // A owns a second, shared browser's row for the same post.
         SetVisitor(Guid.NewGuid());
         Authenticate(userId: Guid.NewGuid(), email: "other-owner@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // B reads on that shared browser and is refused (409).
         Authenticate(userId: readerB, email: "own-device-reader@test.com");
+        var conflict = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+
+        // The client mints a fresh id and retries, landing on B's own new row — their one prior read
+        // still counts, so it reads "read once".
+        SetVisitor(Guid.NewGuid());
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
-        // B's genuine prior read still counts — "read once", not the "not read yet" that a plain
-        // readerTotal-1 (or the old clamp-to-zero) would undercount it to.
         Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
     }
 

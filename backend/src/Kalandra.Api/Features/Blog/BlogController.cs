@@ -93,6 +93,7 @@ public class BlogController(
     [ProducesResponseType<RecordBlogPostViewResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RecordBlogPostViewResponse>> RecordView(string slug, CancellationToken ct)
     {
         if (postCatalog.Find(slug) is not { } post)
@@ -107,7 +108,17 @@ public class BlogController(
             NowUtc: timeProvider.GetUtcNow());
 
         var result = await recordViewHandler.RecordAndSave(command, ct);
-        return new RecordBlogPostViewResponse(result.PreviousViewCount, result.TotalViews, result.UniqueVisitors);
+        if (result.Error is { } error)
+        {
+            return error switch
+            {
+                // The visitor id is bound to another account; the client mints a fresh one and retries.
+                RecordBlogPostViewError.VisitorClaimedByAnotherUser => Conflict(),
+            };
+        }
+
+        var view = result.Success!;
+        return new RecordBlogPostViewResponse(view.PreviousViewCount, view.TotalViews, view.UniqueVisitors);
     }
 
     // ───── Stats ─────

@@ -11,20 +11,34 @@ public record RecordBlogPostViewCommand(string Slug, Guid VisitorId, Guid? UserI
 /// </summary>
 public record RecordBlogPostViewResult(int PreviousViewCount, int TotalViews, int UniqueVisitors);
 
+/// <summary>The visitor id's view row already belongs to a different account, so it can't be reused.</summary>
+public enum RecordBlogPostViewError
+{
+    VisitorClaimedByAnotherUser,
+}
+
 public class RecordBlogPostViewHandler(IDocumentSession session)
 {
     // A refresh inside this window is the same visit; a return after it is a new view.
     public static readonly TimeSpan ViewWindow = TimeSpan.FromMinutes(15);
 
     /// <summary>
-    /// Recording a view has no failure mode, so this returns counts directly instead of a
-    /// Result: the reader's own count before this visit (signed-in readers get their
-    /// cross-device total, anonymous readers just this browser's) plus the post's total.
+    /// Records the visit and returns the reader's own count before it (signed-in readers get their
+    /// cross-device total, anonymous readers just this browser's) plus the post's totals. Fails with
+    /// VisitorClaimedByAnotherUser when the visitor id already belongs to a different account, so the
+    /// caller mints a fresh id instead of landing this view on someone else's row.
     /// </summary>
-    public async Task<RecordBlogPostViewResult> RecordAndSave(RecordBlogPostViewCommand command, CancellationToken ct)
+    public async Task<Result<RecordBlogPostViewResult, RecordBlogPostViewError>> RecordAndSave(
+        RecordBlogPostViewCommand command, CancellationToken ct)
     {
         var id = BlogPostVisitorView.IdFor(command.Slug, command.VisitorId);
         var view = await session.LoadAsync<BlogPostVisitorView>(id, ct);
+
+        // A row owned by another account means this visitor id is shared; refuse rather than count
+        // the visit against someone else's row or echo back their private total.
+        if (view is not null && view.UserId is not null && view.UserId != command.UserId)
+            return RecordBlogPostViewError.VisitorClaimedByAnotherUser;
+
         if (view is null)
         {
             view = new BlogPostVisitorView
@@ -58,10 +72,7 @@ public class RecordBlogPostViewHandler(IDocumentSession session)
             : view.ViewCount;
         var postTotal = await session.Query<BlogPostVisitorView>().Where(v => v.Slug == command.Slug).SumAsync(v => v.ViewCount, ct);
         var uniqueVisitors = await session.CountDistinctViewersAsync(command.Slug, ct);
-        // The current view is in readerTotal only when its row is the reader's own (a shared
-        // browser's row can belong to another account), so subtract it only then.
-        var currentViewCounted = command.UserId is null || view.UserId == command.UserId;
-        var previousViewCount = currentViewCounted ? readerTotal - 1 : readerTotal;
-        return new RecordBlogPostViewResult(previousViewCount, postTotal, uniqueVisitors);
+        // The conflict guard above ensures this row is the reader's own, so it's in readerTotal.
+        return new RecordBlogPostViewResult(readerTotal - 1, postTotal, uniqueVisitors);
     }
 }
