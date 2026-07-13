@@ -1,6 +1,6 @@
 using Npgsql;
 using OpenTelemetry;
-using Sentry.OpenTelemetry;
+using Sentry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -34,9 +34,9 @@ public static class Observability
             options.Dsn = config.Dsn.Value;
             options.Release = AppVersion.InformationalVersion;
 
-            // Bridge with the OTEL pipeline so Sentry receives spans through Sentry.OpenTelemetry.
-            options.UseOpenTelemetry();
-            options.DisableDiagnosticSourceIntegration();
+            // UseOtlp sends traces to Sentry as raw OTel spans (via AddSentryOtlpExporter below) and turns off
+            // the SDK's own request tracing, so the OTel pipeline isn't duplicated on Sentry's side.
+            options.UseOtlp();
             options.DisableSentryHttpMessageHandler = true;
 
             // EnableLogs wires Sentry.AspNetCore's structured logger provider so ILogger calls flow into
@@ -46,7 +46,6 @@ public static class Observability
             options.MinimumEventLevel = LogLevel.Warning;
             options.MinimumBreadcrumbLevel = LogLevel.Information;
 
-            options.TracesSampleRate = 1.0;
             options.SampleRate = 1.0f;
             options.SendDefaultPii = true;
             options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Medium;
@@ -94,7 +93,7 @@ public static class Observability
                     .AddNpgsql();
 
                 if (sentryConfig is not null)
-                    tracing.AddSentry();
+                    tracing.AddSentryOtlpExporter(sentryConfig.Dsn.Value);
 
                 if (betterStackConfig is not null)
                     tracing.AddOtlpExporter(otlp =>
