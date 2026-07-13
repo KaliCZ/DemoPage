@@ -28,9 +28,12 @@ export function getVisitorId(): string {
   }
 }
 
-// A fresh anonymous session on sign-out: later activity on a shared computer can't be
-// attributed to the account that just signed out.
-function rotateVisitorId(): void {
+/**
+ * Mints and stores a fresh visitor id, returning it. Used on sign-out (so a shared computer's later
+ * activity isn't attributed to the account that left) and when a write is refused because the id is
+ * already claimed by another account.
+ */
+export function resetVisitorId(): string {
   const id = crypto.randomUUID();
   try {
     localStorage.setItem(VISITOR_ID_KEY, id);
@@ -38,6 +41,7 @@ function rotateVisitorId(): void {
     // No storage — the in-memory fallback still hands the tab a fresh id.
   }
   cachedVisitorId = id;
+  return id;
 }
 
 /** Adds the visitor header (and, when signed in, the bearer token) to a blog API request. */
@@ -86,7 +90,7 @@ if (typeof window !== "undefined" && !(window as any).__blogVisitorRotationWired
   let wasSignedIn = false;
   window.addEventListener("auth-change", (event) => {
     const signedIn = !!(event as CustomEvent).detail?.user;
-    if (wasSignedIn && !signedIn) rotateVisitorId();
+    if (wasSignedIn && !signedIn) resetVisitorId();
     wasSignedIn = signedIn;
   });
 }

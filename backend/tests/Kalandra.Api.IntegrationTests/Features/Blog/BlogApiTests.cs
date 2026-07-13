@@ -260,6 +260,74 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(0, response.GetProperty("previousViewCount").GetInt32());
     }
 
+    [Fact]
+    public async Task RecordView_SignedInOnBrowserOwnedByAnotherAccount_Returns409()
+    {
+        var slug = NewSlug();
+
+        // The visitor id is the browser's identity; sign-in layers on top and only rotates on
+        // sign-out, so two accounts share one id only via a session swap with no sign-out between.
+        SetVisitor(Guid.NewGuid());
+
+        // A signs in first and reads, stamping this browser's row to A.
+        Authenticate(userId: Guid.NewGuid(), email: "shared-owner@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // B swaps in on the same browser: the backend refuses rather than count B's view against A's
+        // row, signalling the client to mint a fresh visitor id.
+        Authenticate(userId: Guid.NewGuid(), email: "shared-guest@test.com");
+        var response = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordView_AnonymousOnBrowserOwnedByAnAccount_Returns409()
+    {
+        var slug = NewSlug();
+        SetVisitor(Guid.NewGuid());
+
+        // The row belongs to a signed-in account.
+        Authenticate(userId: Guid.NewGuid(), email: "row-owner@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // An anonymous view on the same id is refused too — otherwise it would count against the
+        // account's row and echo back its private read count.
+        SignOut();
+        var response = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordView_WithAFreshVisitorAfterConflict_CountsTheReadersOwnPriorReads()
+    {
+        var slug = NewSlug();
+        var readerB = Guid.NewGuid();
+
+        // B reads once on their own browser.
+        SetVisitor(Guid.NewGuid());
+        Authenticate(userId: readerB, email: "own-device-reader@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // A owns a second, shared browser's row for the same post.
+        SetVisitor(Guid.NewGuid());
+        Authenticate(userId: Guid.NewGuid(), email: "other-owner@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // B reads on that shared browser and is refused (409).
+        Authenticate(userId: readerB, email: "own-device-reader@test.com");
+        var conflict = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+
+        // The client mints a fresh id and retries, landing on B's own new row — their one prior read
+        // still counts, so it reads "read once".
+        SetVisitor(Guid.NewGuid());
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+
+        Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
+    }
+
     // ───── Visitor link (anonymous → account attribution) ─────
 
     [Fact]
