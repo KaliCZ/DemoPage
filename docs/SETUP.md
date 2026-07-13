@@ -648,8 +648,9 @@ automatic for the build/push step. The OCI VM also pulls from GHCR — see
 ## 5. Observability
 
 Errors, structured logs, traces, and session replays are sent to
-[Sentry](https://sentry.io). The backend uses `Sentry.AspNetCore` +
-`Sentry.OpenTelemetry` to bridge its existing OTEL pipeline; the frontend uses
+[Sentry](https://sentry.io). The backend uses `Sentry.AspNetCore` for errors
+and logs, and exports its OpenTelemetry traces to Sentry over OTLP via
+`Sentry.OpenTelemetry.Exporter`; the frontend uses
 `@sentry/browser` (npm SDK), dynamic-imported from
 [`src/lib/observability.ts`](../frontend/src/lib/observability.ts) so the
 chunk tree-shakes out when no DSN is configured.

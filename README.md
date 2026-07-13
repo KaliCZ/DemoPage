@@ -18,7 +18,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - **Auth**: Supabase Auth (email/password + Google OAuth)
 - **Database**: PostgreSQL (Supabase in production, Docker locally)
 - **Background notifications**: durable store-and-notify emails for blog comments and job offers, delivered by Marten event subscriptions on the async daemon (no separate infrastructure)
-- **Observability**: [Sentry](https://sentry.io) for errors, traces, and logs (backend via the OpenTelemetry bridge; frontend via the CDN loader script behind a provider-agnostic abstraction)
+- **Observability**: [Sentry](https://sentry.io) for errors, traces, and logs (backend exports its OpenTelemetry traces over OTLP; frontend via the CDN loader script behind a provider-agnostic abstraction)
 - **CI/CD**: GitHub Actions
 
 Architecture decisions, technical roadmap, and the full decision log are documented on the [Project page](https://www.kalandra.tech/project). The page includes goals, an architecture overview diagram, collapsible Architecture Decision Records (ADRs), and a version-by-version roadmap with progress tracking.
