@@ -505,13 +505,13 @@ const t = translations[lang];
     });
 
     // --- Save display name ---
-    document.getElementById("save-name-btn")?.addEventListener("click", async function () {
+    async function saveName() {
       var btn = document.getElementById("save-name-btn");
       var feedback = document.getElementById("name-feedback");
       var nameInput = document.getElementById("display-name");
       var newName = nameInput?.value.trim();
 
-      if (!newName) return;
+      if (!newName || btn.disabled) return;
 
       btn.textContent = strings.displayName.saving;
       btn.disabled = true;
@@ -535,6 +535,10 @@ const t = translations[lang];
         btn.textContent = strings.displayName.save;
         btn.disabled = false;
       }
+    }
+    document.getElementById("save-name-btn")?.addEventListener("click", saveName);
+    document.getElementById("display-name")?.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") saveName();
     });
 
     // --- Save email ---

@@ -496,6 +496,14 @@ const t = translations[lang];
           if (field.parentElement.querySelector(".field-error")) validateField(field);
         });
       });
+
+      // Ctrl/Cmd+Enter submits from any field, including the textareas where a bare Enter inserts a newline.
+      formEl.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          if (!document.getElementById("submit-btn")?.disabled) formEl.requestSubmit();
+        }
+      });
     }
 
     // Ask the user to confirm when optional fields or attachments are empty.

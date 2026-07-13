@@ -389,10 +389,12 @@ const t = lang === "cs" ? csCommon : enCommon;
   authDialogElement?.addEventListener("click", (event) => {
     if (authDialogPressStartedOutside && outsideAuthDialog(event)) authDialogElement.close();
   });
-  // Allow Enter key to submit
-  document.getElementById("auth-password")?.addEventListener("keydown", (e) => {
+  // Allow Enter key to submit from either field
+  const submitOnEnter = (e: KeyboardEvent) => {
     if (e.key === "Enter") authDialogSubmit();
-  });
+  };
+  document.getElementById("auth-email")?.addEventListener("keydown", submitOnEnter);
+  document.getElementById("auth-password")?.addEventListener("keydown", submitOnEnter);
 
   // Expose opener so Layout's header sign-in buttons can trigger the dialog
   // without duplicating the dialog markup.

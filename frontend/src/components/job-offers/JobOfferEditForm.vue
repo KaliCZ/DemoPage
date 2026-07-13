@@ -120,6 +120,8 @@ function borderClass(name: TextFieldName): string {
       novalidate
       class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 space-y-6"
       @submit.prevent="submit"
+      @keydown.enter.ctrl.prevent="submit"
+      @keydown.enter.meta.prevent="submit"
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
