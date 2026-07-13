@@ -260,6 +260,52 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(0, response.GetProperty("previousViewCount").GetInt32());
     }
 
+    [Fact]
+    public async Task RecordView_OnBrowserRowOwnedByAnotherAccount_ReportsZeroPriorReads_NotNegative()
+    {
+        var slug = NewSlug();
+        var sharedVisitor = Guid.NewGuid();
+
+        // Account A reads on this browser, stamping the (slug, visitor) row to A.
+        Authenticate(userId: Guid.NewGuid(), email: "shared-owner@test.com");
+        SetVisitor(sharedVisitor);
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // Account B reads on the SAME visitor id — only reachable via a session swap with no
+        // sign-out, since the UI rotates the id on sign-out. B's view lands on A's row, so B
+        // owns no row for this post: prior reads read as 0 ("not read yet"), never -1.
+        Authenticate(userId: Guid.NewGuid(), email: "shared-guest@test.com");
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+
+        Assert.Equal(0, response.GetProperty("previousViewCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task RecordView_OnBrowserOwnedByAnother_StillCountsTheReadersOwnPriorReads()
+    {
+        var slug = NewSlug();
+        var readerB = Guid.NewGuid();
+
+        // B has read the post once before, on their own browser.
+        Authenticate(userId: readerB, email: "own-device-reader@test.com");
+        SetVisitor(Guid.NewGuid());
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // A owns a different browser's row for the same post.
+        var sharedVisitor = Guid.NewGuid();
+        Authenticate(userId: Guid.NewGuid(), email: "other-owner@test.com");
+        SetVisitor(sharedVisitor);
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // B reads again on A's browser: their genuine prior read still counts, so it reads
+        // "read once" — a plain readerTotal-1 (or a clamp-to-zero) would undercount it to 0.
+        Authenticate(userId: readerB, email: "own-device-reader@test.com");
+        SetVisitor(sharedVisitor);
+        var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
+
+        Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
+    }
+
     // ───── Visitor link (anonymous → account attribution) ─────
 
     [Fact]
