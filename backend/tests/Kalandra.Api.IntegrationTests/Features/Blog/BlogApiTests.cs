@@ -264,16 +264,17 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     public async Task RecordView_OnBrowserRowOwnedByAnotherAccount_ReportsZeroPriorReads_NotNegative()
     {
         var slug = NewSlug();
-        var sharedVisitor = Guid.NewGuid();
 
-        // Account A reads on this browser, stamping the (slug, visitor) row to A.
+        // The visitor id is the browser's identity; sign-in layers on top and never rotates it (only
+        // sign-out does), so two accounts share one id only via a session swap with no sign-out between.
+        SetVisitor(Guid.NewGuid());
+
+        // A signs in first and reads, stamping this browser's row to A.
         Authenticate(userId: Guid.NewGuid(), email: "shared-owner@test.com");
-        SetVisitor(sharedVisitor);
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // Account B reads on the SAME visitor id — only reachable via a session swap with no
-        // sign-out, since the UI rotates the id on sign-out. B's view lands on A's row, so B
-        // owns no row for this post: prior reads read as 0 ("not read yet"), never -1.
+        // B swaps in on the same browser and reads: the view lands on A's row, so B owns no row
+        // for this post. Prior reads read as 0 ("not read yet"), never -1.
         Authenticate(userId: Guid.NewGuid(), email: "shared-guest@test.com");
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
@@ -286,23 +287,21 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         var readerB = Guid.NewGuid();
 
-        // B has read the post once before, on their own browser.
-        Authenticate(userId: readerB, email: "own-device-reader@test.com");
+        // B reads once on their own browser.
         SetVisitor(Guid.NewGuid());
-        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
-
-        // A owns a different browser's row for the same post.
-        var sharedVisitor = Guid.NewGuid();
-        Authenticate(userId: Guid.NewGuid(), email: "other-owner@test.com");
-        SetVisitor(sharedVisitor);
-        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
-
-        // B reads again on A's browser: their genuine prior read still counts, so it reads
-        // "read once" — a plain readerTotal-1 (or a clamp-to-zero) would undercount it to 0.
         Authenticate(userId: readerB, email: "own-device-reader@test.com");
-        SetVisitor(sharedVisitor);
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+
+        // On a second, shared browser, A reads first (stamping that browser's row to A), then B
+        // swaps in on the same browser without a sign-out and reads.
+        SetVisitor(Guid.NewGuid());
+        Authenticate(userId: Guid.NewGuid(), email: "other-owner@test.com");
+        await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+        Authenticate(userId: readerB, email: "own-device-reader@test.com");
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
+        // B's genuine prior read still counts — "read once", not the "not read yet" that a plain
+        // readerTotal-1 (or the old clamp-to-zero) would undercount it to.
         Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
     }
 
