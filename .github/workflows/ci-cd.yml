@@ -104,7 +104,9 @@ jobs:
 
       - name: Start backend
         run: |
-          dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 &
+          # Line-buffered + captured so a startup failure/hang is visible in the logs below,
+          # not swallowed by the backgrounded process.
+          stdbuf -oL -eL dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 > "$RUNNER_TEMP/api.log" 2>&1 &
         env:
           # ConnectionStrings__DefaultConnection comes from appsettings.json
           # (points at Supabase's bundled Postgres on :54322 — same as local dev).
@@ -118,6 +120,12 @@ jobs:
           health-url: http://localhost:5000/health
           max-attempts: 30
           retry-interval: 2
+
+      - name: Backend startup logs
+        if: always()
+        run: |
+          echo "===== backend api.log ====="
+          cat "$RUNNER_TEMP/api.log" 2>/dev/null || echo "(no api.log captured)"
 
       - name: Get Playwright version
         id: playwright-version
