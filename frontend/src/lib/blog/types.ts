@@ -20,6 +20,7 @@ export interface BlogPostStats {
   totalViews: number;
   uniqueVisitors: number;
   totalReactions: number;
+  totalComments: number;
   /** null when the caller is anonymous. */
   viewerViews: number | null;
 }

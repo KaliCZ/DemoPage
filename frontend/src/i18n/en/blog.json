@@ -22,6 +22,7 @@
     "statViews": "Views",
     "statPeople": "Readers",
     "statReactions": "Reactions",
+    "statComments": "Comments",
     "paginationPrev": "Previous",
     "paginationNext": "Next",
     "paginationPage": "Page {current} of {total}"

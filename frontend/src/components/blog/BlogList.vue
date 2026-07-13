@@ -21,6 +21,7 @@ const props = defineProps<{
     statViews: string;
     statPeople: string;
     statReactions: string;
+    statComments: string;
     paginationPrev: string;
     paginationNext: string;
     /** Contains `{current}` and `{total}` placeholders. */
@@ -184,10 +185,15 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
               {{ stats[post.slug]?.totalReactions ?? 0 }}
               <span class="sr-only">{{ props.t.statReactions }}</span>
             </span>
+            <span class="inline-flex items-center gap-1.5" :title="props.t.statComments">
+              <MaterialIcon :d="paths.chat" class="size-4" />
+              {{ stats[post.slug]?.totalComments ?? 0 }}
+              <span class="sr-only">{{ props.t.statComments }}</span>
+            </span>
             <span v-if="readStateLabel(post)">{{ readStateLabel(post) }}</span>
           </p>
           <p v-else class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4" aria-hidden="true">
-            <span v-for="n in 3" :key="n" class="inline-block h-4 w-12 rounded bg-on-surface/10 animate-pulse" />
+            <span v-for="n in 4" :key="n" class="inline-block h-4 w-12 rounded bg-on-surface/10 animate-pulse" />
           </p>
         </a>
       </li>
