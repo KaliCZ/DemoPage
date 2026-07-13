@@ -1,10 +1,9 @@
 using System.Net.Mail;
-using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Infrastructure.Auth;
 using ModelContextProtocol;
 using StrongTypes;
 
-namespace Kalandra.Api.Features.Mcp;
+namespace Kalandra.McpServer.Tools;
 
 /// <summary>
 /// Shared boundary conversions for MCP tools. Tools receive primitive arguments from the model,
@@ -13,10 +12,11 @@ namespace Kalandra.Api.Features.Mcp;
 /// </summary>
 internal static class McpToolHelpers
 {
+    // The endpoint already requires a signed-in caller, so this is a defensive fallback rather than the
+    // normal auth gate: the OAuth challenge happens before a tool runs.
     public static CurrentUser RequireUser(ICurrentUserAccessor currentUser) =>
         currentUser.User ?? throw new McpException(
-            "This tool needs the user's kalandra.tech account. Connect the MCP server with an " +
-            "'Authorization: Bearer <Supabase access token>' header — see https://www.kalandra.tech/mcp.");
+            "This tool needs the user's kalandra.tech account. Reconnect and complete the sign-in prompt — see https://www.kalandra.tech/mcp.");
 
     public static NonEmptyString Required(string value, string name) =>
         value.AsNonEmpty() ?? throw new McpException($"'{name}' must not be empty.");

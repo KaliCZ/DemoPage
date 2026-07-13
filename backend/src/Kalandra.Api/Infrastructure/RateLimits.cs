@@ -8,7 +8,6 @@ public static class RateLimitPolicies
 {
     public const string HireMeCreateUser = "hire-me-create-user";
     public const string BlogWrite = "blog-write";
-    public const string Mcp = "mcp";
 }
 
 public static class RateLimits
@@ -32,16 +31,6 @@ public static class RateLimits
         var blogWriteLimiterOptions = new SlidingWindowRateLimiterOptions
         {
             PermitLimit = environment.IsDevelopment() ? 1000 : 30,
-            Window = TimeSpan.FromMinutes(1),
-            SegmentsPerWindow = 6,
-            QueueLimit = 0,
-        };
-
-        // One bucket for the whole MCP endpoint (all tool calls plus protocol chatter) — generous
-        // because a single assistant session lists tools and makes several calls in quick succession.
-        var mcpLimiterOptions = new SlidingWindowRateLimiterOptions
-        {
-            PermitLimit = environment.IsDevelopment() ? 1000 : 60,
             Window = TimeSpan.FromMinutes(1),
             SegmentsPerWindow = 6,
             QueueLimit = 0,
@@ -74,19 +63,6 @@ public static class RateLimits
                 return RateLimitPartition.GetSlidingWindowLimiter(
                     partitionKey: partitionKey,
                     factory: _ => blogWriteLimiterOptions);
-            });
-
-            options.AddPolicy(RateLimitPolicies.Mcp, httpContext =>
-            {
-                // Signed-in tool calls key on the user; anonymous ones (blog reads) key on IP.
-                var user = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().User;
-                var partitionKey = user is { } signedIn
-                    ? "user:" + signedIn.Id
-                    : "ip:" + (httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-
-                return RateLimitPartition.GetSlidingWindowLimiter(
-                    partitionKey: partitionKey,
-                    factory: _ => mcpLimiterOptions);
             });
 
             options.OnRejected = async (context, ct) =>
