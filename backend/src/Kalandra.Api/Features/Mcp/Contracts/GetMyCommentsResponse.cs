@@ -4,7 +4,7 @@ using Kalandra.Blog.Queries;
 using Kalandra.JobOffers.Queries;
 using StrongTypes;
 
-namespace Kalandra.Api.Features.Me.Contracts;
+namespace Kalandra.Api.Features.Mcp.Contracts;
 
 // Reuses the Blog and JobOffers comment responses so a comment looks the same here
 // as on the per-post and per-offer endpoints.

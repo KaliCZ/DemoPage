@@ -475,11 +475,11 @@
           },
           {
             "author": "claude",
-            "text": "Nový endpoint /api/me/comments: vaše komentáře napříč blogem a pracovními nabídkami včetně odpovědí, které dostaly"
+            "text": "Nástroj get_my_comments: vaše komentáře napříč blogem a pracovními nabídkami včetně odpovědí, které dostaly"
           },
           {
             "author": "claude",
-            "text": "Integrační testy na úrovni protokolu řízené skutečným MCP klientem proti reálné databázi"
+            "text": "Integrační testy řídící nástroje proti reálné databázi — sdílená kontrola přihlášení, hranice vlastnictví a zápisy končící ve stejném úložišti jako REST"
           }
         ]
       },

@@ -64,7 +64,7 @@ Tools return the same response contracts the controllers serialize (`GetJobOffer
 7807 responses.
 
 `get_my_comments` aggregates the caller's comments across blog posts and job offers together with the replies
-they received (`MeController` exposes the same over REST at `/api/me/comments`).
+they received.
 
 `list_blog_posts` is public, but when the caller is signed in it enriches each post with `viewerViews` (their
 own view count) and `watched` (whether they've read it) — one lean query over the view documents

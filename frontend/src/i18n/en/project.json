@@ -475,11 +475,11 @@
           },
           {
             "author": "claude",
-            "text": "New /api/me/comments endpoint: your comments across blog posts and job offers, with the replies they received"
+            "text": "get_my_comments tool: your comments across blog posts and job offers, with the replies they received"
           },
           {
             "author": "claude",
-            "text": "Protocol-level integration tests driving the endpoint with a real MCP client against a real database"
+            "text": "Integration tests driving the tools against a real database — the shared auth guard, ownership boundaries, and writes landing in the same store as REST"
           }
         ]
       },

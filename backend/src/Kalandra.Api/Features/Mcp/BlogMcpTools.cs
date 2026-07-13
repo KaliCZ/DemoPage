@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using Kalandra.Api.Features.Blog.Contracts;
-using Kalandra.Api.Features.Me.Contracts;
+using Kalandra.Api.Features.Mcp.Contracts;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Blog;
 using Kalandra.Blog.Commands;

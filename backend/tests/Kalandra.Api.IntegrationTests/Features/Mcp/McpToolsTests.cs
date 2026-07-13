@@ -118,6 +118,18 @@ public class McpToolsTests(TestWebApplicationFactory factory) : IClassFixture<Te
     }
 
     [Fact]
+    public async Task GetMyComments_IncludesTheUsersBlogComment()
+    {
+        var slug = $"post-{Guid.NewGuid():N}";
+        await WithTools(Owner, tools => tools.Blog.PostBlogComment(slug, "My take on this", ct: Ct));
+
+        var mine = await WithTools(Owner, tools => tools.Blog.GetMyComments(Ct));
+
+        var entry = Assert.Single(mine.BlogComments, e => e.Slug == slug);
+        Assert.Equal("My take on this", entry.Comment.Content!.Value);
+    }
+
+    [Fact]
     public async Task PostBlogComment_WithoutUser_ThrowsWithAuthGuidance()
     {
         await using var scope = NewScope();
