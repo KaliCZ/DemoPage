@@ -63,6 +63,8 @@
     "posted": "Comment posted.",
     "reply": "Reply",
     "replyingTo": "Replying to",
+    "hideReplies": "Hide replies",
+    "showReplies": "Show replies",
     "cancel": "Cancel",
     "delete": "Delete",
     "deleteConfirm": "Delete this comment?",
