@@ -53,9 +53,15 @@ public class GetBlogPostStatsHandler(NpgsqlDataSource dataSource)
         var slugs = query.Posts.Select(post => post.Slug).ToArray();
         var streamIds = query.Posts.Select(post => post.CommentsStreamId).ToArray();
 
-        var views = await ReadViewStatsAsync(slugs, query.ViewerId, ct);
-        var reactions = await ReadReactionCountsAsync(slugs, ct);
-        var comments = await ReadCommentCountsAsync(streamIds, ct);
+        // The three aggregates hit independent tables on their own connections, so run them at once
+        // and pay the slowest rather than the sum.
+        var viewsTask = ReadViewStatsAsync(slugs, query.ViewerId, ct);
+        var reactionsTask = ReadReactionCountsAsync(slugs, ct);
+        var commentsTask = ReadCommentCountsAsync(streamIds, ct);
+        await Task.WhenAll(viewsTask, reactionsTask, commentsTask);
+        var views = await viewsTask;
+        var reactions = await reactionsTask;
+        var comments = await commentsTask;
 
         return
         [

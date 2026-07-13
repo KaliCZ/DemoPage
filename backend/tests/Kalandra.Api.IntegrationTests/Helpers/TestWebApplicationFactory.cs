@@ -89,7 +89,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     public new async ValueTask DisposeAsync()
     {
-        await _postgres.DisposeAsync();
+        // Stop the host — and its async daemon — before the database it talks to, so daemon shutdown
+        // doesn't log connection failures into an already-disposed logger and fault the fixture teardown.
         await base.DisposeAsync();
+        await _postgres.DisposeAsync();
     }
 }
