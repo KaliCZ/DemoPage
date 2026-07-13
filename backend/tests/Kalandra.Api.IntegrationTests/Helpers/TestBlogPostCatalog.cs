@@ -26,6 +26,10 @@ public sealed class TestBlogPostCatalog : IBlogPostCatalog
     public BlogPost? FindByCommentsStreamId(Guid commentsStreamId) =>
         slugsByStreamId.TryGetValue(commentsStreamId, out var slug) ? new BlogPost(slug, commentsStreamId) : null;
 
+    // Slugs are minted per test, so there is no fixed catalog for the background refresher to sweep;
+    // tests drive the snapshot for their own slugs directly.
+    public IReadOnlyCollection<BlogPost> All => [];
+
     private static Guid DeriveId(string slug, string kind)
     {
         var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"{kind}:{slug}"));

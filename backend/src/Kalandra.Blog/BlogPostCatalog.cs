@@ -16,6 +16,9 @@ public interface IBlogPostCatalog
 
     /// <summary>Reverse of <see cref="Find"/>: recovers the post from a comment event's stream id, which is all the notification subscription has.</summary>
     BlogPost? FindByCommentsStreamId(Guid commentsStreamId);
+
+    /// <summary>Every published post — the set the stats snapshot refreshes.</summary>
+    IReadOnlyCollection<BlogPost> All { get; }
 }
 
 public sealed class BlogPostCatalog : IBlogPostCatalog
@@ -32,6 +35,10 @@ public sealed class BlogPostCatalog : IBlogPostCatalog
                 Slug: "hello-world",
                 CommentsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000c0")),
         }.ToDictionary(post => post.Slug, StringComparer.Ordinal);
+
+    private static readonly IReadOnlyCollection<BlogPost> AllPosts = [.. Posts.Values];
+
+    public IReadOnlyCollection<BlogPost> All => AllPosts;
 
     public BlogPost? Find(string slug) => Posts.GetValueOrDefault(slug);
 

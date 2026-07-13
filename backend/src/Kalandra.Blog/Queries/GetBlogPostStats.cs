@@ -1,4 +1,5 @@
 using Kalandra.Blog.Entities;
+using Kalandra.Blog.Stats;
 using Marten;
 
 namespace Kalandra.Blog.Queries;
@@ -8,40 +9,39 @@ public record GetBlogPostStatsQuery(IReadOnlyList<BlogPost> Posts, Guid? ViewerI
 /// <summary>ViewerViews is null for anonymous callers — they have no signed-in reading history to report.</summary>
 public record BlogPostStats(string Slug, int TotalViews, int UniqueVisitors, int TotalReactions, int TotalComments, int? ViewerViews);
 
-public class GetBlogPostStatsHandler(IQuerySession session)
+public class GetBlogPostStatsHandler(IQuerySession session, BlogStatsSnapshotStore snapshots)
 {
     public async Task<IReadOnlyList<BlogPostStats>> List(GetBlogPostStatsQuery query, CancellationToken ct)
     {
-        var stats = new List<BlogPostStats>(query.Posts.Count);
-        foreach (var post in query.Posts)
-        {
-            // The slug column is duplicated + indexed, so this is an aggregate query, not a row load.
-            var totalViews = await session.Query<BlogPostVisitorView>()
-                .Where(v => v.Slug == post.Slug).SumAsync(v => v.ViewCount, ct);
-            var uniqueVisitors = await session.CountDistinctViewersAsync(post.Slug, ct);
+        var slugs = query.Posts.Select(post => post.Slug).ToArray();
 
-            // Each reaction is one row keyed by its reactor, so the row count is already deduped per person.
-            var totalReactions = await session.Query<BlogReaction>()
-                .Where(reaction => reaction.Slug == post.Slug).CountAsync(ct);
+        // The public totals are a by-id read of the async snapshot; the heavy aggregation runs in the background.
+        var snapshotsBySlug = await snapshots.LoadAsync(slugs, ct);
 
-            // Unlike the on-page thread, this omits tombstones — it's a measure of live discussion.
-            var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(post.CommentsStreamId, token: ct);
-            var totalComments = comments?.Comments.Count(c => !c.IsDeleted) ?? 0;
+        // The viewer's own read count is per-person, so it can't live in the shared snapshot — one
+        // indexed query resolves it across every requested post, and only when the caller is signed in.
+        IReadOnlyDictionary<string, int>? viewerViewsBySlug = query.ViewerId is { } viewerId
+            ? (await session.Query<BlogPostVisitorView>()
+                    .Where(view => view.UserId == viewerId && slugs.Contains(view.Slug))
+                    .ToListAsync(ct))
+                .GroupBy(view => view.Slug, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.Sum(view => view.ViewCount), StringComparer.Ordinal)
+            : null;
 
-            int? viewerViews = query.ViewerId is { } viewerId
-                ? await session.Query<BlogPostVisitorView>()
-                    .Where(v => v.Slug == post.Slug && v.UserId == viewerId).SumAsync(v => v.ViewCount, ct)
-                : null;
-
-            stats.Add(new BlogPostStats(
-                Slug: post.Slug,
-                TotalViews: totalViews,
-                UniqueVisitors: uniqueVisitors,
-                TotalReactions: totalReactions,
-                TotalComments: totalComments,
-                ViewerViews: viewerViews));
-        }
-
-        return stats;
+        return
+        [
+            .. query.Posts.Select(post =>
+            {
+                var snapshot = snapshotsBySlug.GetValueOrDefault(post.Slug);
+                return new BlogPostStats(
+                    Slug: post.Slug,
+                    TotalViews: snapshot?.TotalViews ?? 0,
+                    UniqueVisitors: snapshot?.UniqueVisitors ?? 0,
+                    TotalReactions: snapshot?.TotalReactions ?? 0,
+                    TotalComments: snapshot?.TotalComments ?? 0,
+                    // Signed-in but unseen posts read 0; anonymous callers get null.
+                    ViewerViews: viewerViewsBySlug is null ? null : viewerViewsBySlug.GetValueOrDefault(post.Slug));
+            }),
+        ];
     }
 }

@@ -3,8 +3,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kalandra.Api.IntegrationTests.Helpers;
+using Kalandra.Blog;
 using Kalandra.Blog.Entities;
+using Kalandra.Blog.Stats;
 using Kalandra.Infrastructure.Users;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kalandra.Api.IntegrationTests.Features.Blog;
 
@@ -375,6 +378,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(userId: userId, email: "view-claimant@test.com");
         await client.PostAsync("/api/blog/visitor/link", content: null, Ct);
 
+        await RefreshStatsAsync(slug);
         var stats = FindPostStats((await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}", Ct))).GetProperty("posts"), slug);
         Assert.Equal(1, stats.GetProperty("totalViews").GetInt32());
         Assert.Equal(1, stats.GetProperty("viewerViews").GetInt32());
@@ -403,6 +407,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         await client.PostAsJsonAsync($"/api/blog/{slugA}/comments", new { content = "Nice one" }, Ct);
 
         Authenticate(userId: viewerId, email: "stats-viewer@test.com");
+        await RefreshStatsAsync(slugA, slugB);
         var response = await client.GetAsync($"/api/blog/stats?slug={slugA}&slug={slugB}", Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var posts = (await ParseJsonAsync(response)).GetProperty("posts");
@@ -433,6 +438,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var doomed = await ParseJsonAsync(await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Doomed" }, Ct));
         await client.DeleteAsync($"/api/blog/{slug}/comments/{doomed.GetProperty("id").GetString()}", Ct);
 
+        await RefreshStatsAsync(slug);
         var stats = FindPostStats((await ParseJsonAsync(await client.GetAsync($"/api/blog/stats?slug={slug}", Ct))).GetProperty("posts"), slug);
         Assert.Equal(1, stats.GetProperty("totalComments").GetInt32());
     }
@@ -443,6 +449,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         Authenticate(email: "stats-anon-seed@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
+        await RefreshStatsAsync(slug);
 
         SignOut();
         var response = await client.GetAsync($"/api/blog/stats?slug={slug}", Ct);
@@ -800,6 +807,17 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
     /// <summary>Unique per test — the factory shares one database across the class.</summary>
     private static string NewSlug() => $"post-{Guid.NewGuid():N}";
+
+    // The stats snapshot is refreshed asynchronously in production; tests drive one refresh directly so
+    // a read-after-write assertion is deterministic instead of racing the background timer.
+    private async Task RefreshStatsAsync(params string[] slugs)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var catalog = scope.ServiceProvider.GetRequiredService<IBlogPostCatalog>();
+        var refresher = scope.ServiceProvider.GetRequiredService<BlogStatsSnapshotRefresher>();
+        foreach (var slug in slugs)
+            await refresher.RefreshAsync(catalog.Find(slug)!, Ct);
+    }
 
     private static JsonElement FindPostStats(JsonElement posts, string slug)
     {
