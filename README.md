@@ -10,6 +10,7 @@ Personal showcase website at [www.kalandra.tech](https://www.kalandra.tech). Ser
 - [**Hire Me**](https://www.kalandra.tech/hire-me) — job offer submission form (requires sign-in)
 - [**Job Offers**](https://www.kalandra.tech/job-offers) — submitted offers with status tracking and admin review
 - [**Blog**](https://www.kalandra.tech/blog) — technical articles with RSS, reactions, and threaded comments
+- **MCP endpoint** (`api.kalandra.tech/mcp`) — lets AI assistants submit job offers, browse blog posts, and read/write comments over the [Model Context Protocol](https://modelcontextprotocol.io), served as a route on the API; see [docs/mcp-server.md](docs/mcp-server.md)
 
 ## Tech stack
 

@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "MCP | kalandra.tech — Mluvte s tímto webem přes svého AI asistenta",
+    "description": "Připojte Claude nebo jakéhokoliv MCP-kompatibilního AI asistenta ke kalandra.tech: podávejte pracovní nabídky, procházejte blog a čtěte či pište komentáře přes Model Context Protocol."
+  },
+  "hero": {
+    "titlePrefix": "Mluvte s tímto webem přes ",
+    "titleHighlight": "svého AI asistenta",
+    "titleSuffix": ".",
+    "description": "Tento web provozuje vlastní Model Context Protocol server. Připojte ho ke Claude nebo jinému MCP-kompatibilnímu asistentovi a ten tu může jednat za vás — podat pracovní nabídku, sledovat konverzaci k ní, procházet blog a zapojit se do komentářů. Každá akce jde přes stejné veřejné API, které používá samotný web.",
+    "liveBadge": "Živě"
+  },
+  "connect": {
+    "title": "Připojení",
+    "endpointLabel": "Endpoint",
+    "transportNote": "Streamable HTTP, stateless. Čtení blogu nevyžaduje účet; nástroje jednající za vás očekávají váš přístupový token v hlavičce Authorization.",
+    "claudeCodeLabel": "Claude Code",
+    "copyCommand": "Zkopírovat příkaz",
+    "copyCommandWithToken": "Zkopírovat příkaz s mým tokenem",
+    "copied": "Zkopírováno!",
+    "copyFailed": "Kopírování selhalo",
+    "copyEndpointAriaLabel": "Zkopírovat URL MCP endpointu",
+    "tokenTitle": "Váš přístupový token",
+    "tokenSignedOut": "Po přihlášení se váš přístupový token doplní do příkazu výše — právě ten umožňuje asistentovi jednat za váš účet.",
+    "tokenSignedIn": "Jste přihlášeni. Tlačítko kopírování výše vloží váš aktuální přístupový token.",
+    "tokenCopy": "Zkopírovat jen token",
+    "tokenNote": "Přístupové tokeny mají krátkou platnost (zhruba hodinu) — až asistent začne dostávat 401, vezměte si tu čerstvý.",
+    "signIn": "Přihlásit se"
+  },
+  "tools": {
+    "title": "Co umí",
+    "accountBadge": "Účet",
+    "publicBadge": "Veřejné",
+    "groups": [
+      {
+        "icon": "work",
+        "title": "Pracovní nabídky",
+        "tools": [
+          {
+            "name": "submit_job_offer",
+            "auth": true,
+            "description": "Pošlete mi pracovní nabídku — stejný proces jako formulář Najměte mě."
+          },
+          {
+            "name": "list_my_job_offers",
+            "auth": true,
+            "description": "Vaše podané nabídky s aktuálním stavem."
+          },
+          {
+            "name": "get_job_offer_comments",
+            "auth": true,
+            "description": "Konverzace k jedné z vašich nabídek."
+          },
+          {
+            "name": "add_job_offer_comment",
+            "auth": true,
+            "description": "Odpovězte ve vlákně — dostanu upozornění emailem."
+          }
+        ]
+      },
+      {
+        "icon": "article",
+        "title": "Blog",
+        "tools": [
+          {
+            "name": "list_blog_posts",
+            "auth": false,
+            "description": "Publikované články se shrnutími a štítky, přímo z RSS feedu."
+          },
+          {
+            "name": "get_blog_post_comments",
+            "auth": false,
+            "description": "Veřejné komentáře u libovolného článku."
+          },
+          {
+            "name": "post_blog_comment",
+            "auth": true,
+            "description": "Komentujte článek nebo odpovězte někomu — pod svým jménem."
+          }
+        ]
+      },
+      {
+        "icon": "forum",
+        "title": "Vaše aktivita",
+        "tools": [
+          {
+            "name": "get_my_comments",
+            "auth": true,
+            "description": "Vše, co jste tu napsali — komentáře na blogu i k nabídkám — včetně odpovědí, které dostaly."
+          }
+        ]
+      }
+    ]
+  },
+  "examples": {
+    "title": "Zkuste se zeptat",
+    "prompts": [
+      "Pošli Pavlovi pracovní nabídku: senior .NET inženýr v Acme, remote, plat 120–150k.",
+      "Co Pavel poslední dobou napsal na blog?",
+      "Odpověděl někdo na mé komentáře na kalandra.tech?"
+    ]
+  },
+  "how": {
+    "title": "Jak to funguje",
+    "items": [
+      "Nástroje jsou druhý vstup do API: každé volání spouští stejný kód jako požadavky samotného webu, pod vaším účtem, se stejnou validací, rate limity a emailovými notifikacemi.",
+      "Články blogu se čtou z RSS feedu webu, takže asistent vidí přesně to, co je publikované.",
+      "Postaveno v .NET s oficiálním MCP C# SDK, vystaveno jako /mcp route přímo na API — žádná samostatná služba."
+    ],
+    "projectLinkPrefix": "Celý příběh vzniku najdete na stránce ",
+    "projectLinkText": "Projekt",
+    "projectLinkSuffix": "."
+  }
+}

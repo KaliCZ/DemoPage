@@ -1,3 +1,4 @@
+using Kalandra.Api.Features.Mcp;
 using Kalandra.Blog;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Email;
@@ -18,6 +19,22 @@ namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    // The MCP list_blog_posts tool reads this instead of a live frontend; StubBlogFeedHandler serves it.
+    public const string BlogFeedSlug = "zero-code-validations-in-your-dotnet-api";
+    private const string BlogFeedRss =
+        $"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0"><channel><title>Blog</title>
+        <item>
+          <title>[EN] Zero-code validations</title>
+          <link>https://www.kalandra.tech/blog/{BlogFeedSlug}</link>
+          <description>A summary.</description>
+          <pubDate>Tue, 01 Jul 2025 00:00:00 GMT</pubDate>
+          <category>dotnet</category>
+        </item>
+        </channel></rss>
+        """;
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
@@ -58,6 +75,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<Supabase.Storage.Client>();
             services.RemoveAll<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>();
 
+            // No live frontend in tests — serve the MCP list_blog_posts tool a canned RSS feed.
+            services.AddHttpClient<BlogFeedClient>()
+                .ConfigurePrimaryHttpMessageHandler(() => new StubBlogFeedHandler(BlogFeedRss));
+
             services.PostConfigure<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme,
                 options =>
@@ -93,5 +114,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         // doesn't log connection failures into an already-disposed logger and fault the fixture teardown.
         await base.DisposeAsync();
         await _postgres.DisposeAsync();
+    }
+
+    private sealed class StubBlogFeedHandler(string rss) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(rss, System.Text.Encoding.UTF8, "application/rss+xml"),
+            });
     }
 }

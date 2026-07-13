@@ -14,7 +14,7 @@
     "statusLabel": "Stav",
     "statusValue": "Použitelné MVP",
     "versionLabel": "Aktuální verze",
-    "versionValue": "v4.0",
+    "versionValue": "v5.0",
     "timeLabel": "Čas nasazení",
     "timeValue": "32 hodin",
     "timeNote": "Viz roadmap pro rozpis.",
@@ -459,10 +459,29 @@
       {
         "number": 5,
         "title": "MCP Server",
-        "done": false,
-        "faded": true,
-        "description": "Zpřístupnění správy pracovních nabídek přes Model Context Protocol server. Uživatelé mohou podávat, sledovat a spravovat své nabídky přes jakéhokoliv MCP-kompatibilního klienta.",
-        "side": "left"
+        "done": true,
+        "dates": "8. 7. 2026",
+        "description": "AI asistenti komunikují se stránkou přes Model Context Protocol endpoint na api.kalandra.tech/mcp — podávají a sledují pracovní nabídky, procházejí blog a čtou či píší komentáře, vše jako přihlášený uživatel přes stejné doménové handlery, které používá web.",
+        "side": "left",
+        "detailsLabel": "Co se udělalo",
+        "details": [
+          {
+            "author": "claude",
+            "text": "8 MCP nástrojů vystavených jako /mcp route na API přes stateless streamable HTTP — jeden host, dva vstupy (REST + MCP)"
+          },
+          {
+            "author": "claude",
+            "text": "Nástroje volají stejné doménové handlery jako kontrolery, jako přihlášený uživatel — žádná druhá zapisovací cesta, žádný HTTP skok, žádná CAPTCHA"
+          },
+          {
+            "author": "claude",
+            "text": "Nový endpoint /api/me/comments: vaše komentáře napříč blogem a pracovními nabídkami včetně odpovědí, které dostaly"
+          },
+          {
+            "author": "claude",
+            "text": "Integrační testy na úrovni protokolu řízené skutečným MCP klientem proti reálné databázi"
+          }
+        ]
       },
       {
         "number": 6,

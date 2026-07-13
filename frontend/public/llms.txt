@@ -11,8 +11,18 @@ This is a personal portfolio and technology showcase website for Pavel Kalandra,
 - [Project](https://www.kalandra.tech/project): Technical deep-dive into how this site is built — architecture, tech stack, and engineering decisions
 - [Hire Me](https://www.kalandra.tech/hire-me): Contact form for job offers and collaboration inquiries
 - [Job Offers](https://www.kalandra.tech/job-offers): Public listing of received job offers (with consent)
+- [MCP](https://www.kalandra.tech/mcp): Connect an AI assistant to this site over the Model Context Protocol — submit job offers, browse blog posts, read and write comments
 - [Privacy Policy](https://www.kalandra.tech/privacy): Data handling and privacy information
 - [Terms of Service](https://www.kalandra.tech/terms): Usage terms
+
+## MCP Server
+
+AI assistants can interact with this site directly over the Model Context Protocol:
+
+- Endpoint: https://api.kalandra.tech/mcp (streamable HTTP, stateless)
+- Public tools (no account): list blog posts, read blog comments
+- Account tools (Supabase access token in the Authorization header): submit and track job offers, comment on job offers and blog posts, list your own comments and their replies
+- Details: https://www.kalandra.tech/mcp
 
 ## Tech Stack
 
