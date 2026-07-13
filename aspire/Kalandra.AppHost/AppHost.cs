@@ -75,8 +75,18 @@ try
         .WithExternalHttpEndpoints()
         .WithIconName("Globe");
 
-    // The API's /mcp tools list blog posts from the site's RSS feed — point them at the dev web server.
-    api.WithEnvironment("BlogFeed__RssUrl", ReferenceExpression.Create($"{web.GetEndpoint("http")}/rss.xml"));
+    // The MCP server is its own OAuth-protected host, sharing the API's database and domain handlers.
+    var mcp = builder.AddProject<Projects.Kalandra_McpServer>("mcp", launchProfileName: null)
+        .WithReference(kalandraDb, connectionName: "DefaultConnection")
+        .WaitFor(kalandraDb)
+        .WithHttpEndpoint()
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+        .WithIconName("PlugConnected");
+
+    // Its list_blog_posts tool reads the site's RSS feed — point it at the dev web server.
+    mcp.WithEnvironment("BlogFeed__RssUrl", ReferenceExpression.Create($"{web.GetEndpoint("http")}/rss.xml"));
+    // The protected-resource-metadata "resource" id is the host's own public URL.
+    mcp.WithEnvironment("Mcp__ResourceUri", mcp.GetEndpoint("http"));
 
     // Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
     builder.AddExternalService("supabase-api", "http://127.0.0.1:54321");
