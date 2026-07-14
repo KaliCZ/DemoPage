@@ -19,6 +19,9 @@ public static class McpServices
         services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
         services.AddSingleton(TimeProvider.System);
 
+        // AddBlogDomain's BlogCommentCountCache is backed by IMemoryCache.
+        services.AddMemoryCache();
+
         // In-process cache is enough here; the API may share a Redis cache, but user info is re-fetchable.
         services.AddDistributedMemoryCache();
 
