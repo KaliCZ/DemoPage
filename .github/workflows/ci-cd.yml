@@ -359,6 +359,7 @@ jobs:
           SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
           BLOG_AUTHOR_NOTIFICATION_EMAIL: ${{ vars.BLOG_AUTHOR_NOTIFICATION_EMAIL }}
           JOB_OFFERS_OWNER_NOTIFICATION_EMAIL: ${{ vars.JOB_OFFERS_OWNER_NOTIFICATION_EMAIL }}
+          BLOG_FEED_RSS_URL: https://www.kalandra.tech/rss.xml
           # Digest-pinned, not :latest — the exact build verified by this run
           # is what runs and what comes back after a reboot.
           IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -367,7 +368,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM_EMAIL,BLOG_AUTHOR_NOTIFICATION_EMAIL,JOB_OFFERS_OWNER_NOTIFICATION_EMAIL,IMAGE_REF,EXPECTED_SHA
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM_EMAIL,BLOG_AUTHOR_NOTIFICATION_EMAIL,JOB_OFFERS_OWNER_NOTIFICATION_EMAIL,BLOG_FEED_RSS_URL,IMAGE_REF,EXPECTED_SHA
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -406,6 +407,7 @@ jobs:
             Email__FromName=kalandra.tech
             Blog__AuthorNotificationEmail=${BLOG_AUTHOR_NOTIFICATION_EMAIL}
             JobOffers__OwnerNotificationEmail=${JOB_OFFERS_OWNER_NOTIFICATION_EMAIL}
+            BlogFeed__RssUrl=${BLOG_FEED_RSS_URL}
             EOF
 
             # ----- 1. Determine which slot is currently active -----
