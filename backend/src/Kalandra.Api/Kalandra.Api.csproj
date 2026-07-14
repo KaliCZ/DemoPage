@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kalandra.Blog\Kalandra.Blog.csproj" />
+    <ProjectReference Include="..\Kalandra.Hosting\Kalandra.Hosting.csproj" />
     <ProjectReference Include="..\Kalandra.Infrastructure\Kalandra.Infrastructure.csproj" />
     <ProjectReference Include="..\Kalandra.JobOffers\Kalandra.JobOffers.csproj" />
   </ItemGroup>
@@ -22,14 +23,6 @@
     <PackageReference Include="Marten" Version="9.15.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.9" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.16.0" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="10.0.3" />
-    <PackageReference Include="Sentry.AspNetCore" Version="6.6.0" />
-    <PackageReference Include="Sentry.OpenTelemetry.Exporter" Version="6.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 

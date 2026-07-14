@@ -1,6 +1,7 @@
 using Kalandra.Infrastructure.Auth;
+using Microsoft.AspNetCore.Http;
 
-namespace Kalandra.Api.Infrastructure.Auth;
+namespace Kalandra.Hosting.Auth;
 
 public class HttpContextCurrentUserAccessor(IHttpContextAccessor httpContextAccessor) : ICurrentUserAccessor
 {

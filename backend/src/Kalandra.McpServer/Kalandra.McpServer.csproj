@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kalandra.Blog\Kalandra.Blog.csproj" />
+    <ProjectReference Include="..\Kalandra.Hosting\Kalandra.Hosting.csproj" />
     <ProjectReference Include="..\Kalandra.Infrastructure\Kalandra.Infrastructure.csproj" />
     <ProjectReference Include="..\Kalandra.JobOffers\Kalandra.JobOffers.csproj" />
   </ItemGroup>
@@ -18,18 +19,9 @@
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="Kalicz.StrongTypes" Version="1.2.0" />
-    <PackageReference Include="Marten" Version="9.15.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <PackageReference Include="ModelContextProtocol" Version="2.0.0-preview.2" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.0.0-preview.2" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.16.0" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="10.0.3" />
-    <PackageReference Include="Sentry.AspNetCore" Version="6.6.0" />
-    <PackageReference Include="Sentry.OpenTelemetry.Exporter" Version="6.6.0" />
   </ItemGroup>
 
 </Project>

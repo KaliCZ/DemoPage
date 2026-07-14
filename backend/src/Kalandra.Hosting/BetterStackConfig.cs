@@ -1,4 +1,7 @@
-namespace Kalandra.Api.Infrastructure;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Kalandra.Hosting;
 
 /// <summary>
 /// Configuration for the BetterStack OTLP exporter.

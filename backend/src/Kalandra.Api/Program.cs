@@ -3,6 +3,7 @@ using Kalandra.Api.Infrastructure;
 using Kalandra.Api.Infrastructure.Auth;
 using Kalandra.Api.Infrastructure.DataProtection;
 using Kalandra.Blog;
+using Kalandra.Hosting;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -11,7 +12,7 @@ using StrongTypes.OpenApi.Swashbuckle;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Observability.Add(builder);
+Observability.Add(builder, serviceName: "api");
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()

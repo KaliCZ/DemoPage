@@ -1,4 +1,4 @@
-using Kalandra.McpServer.Infrastructure;
+using Kalandra.Hosting;
 using Kalandra.McpServer.Tools;
 
 namespace Kalandra.McpServer;

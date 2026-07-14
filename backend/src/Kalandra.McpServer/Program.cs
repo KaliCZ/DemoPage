@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using Kalandra.Blog;
 using Kalandra.Blog.Feed;
+using Kalandra.Hosting;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.JobOffers;
 using Kalandra.McpServer;
@@ -8,14 +9,16 @@ using Kalandra.McpServer.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Observability.Add(builder);
+Observability.Add(builder, serviceName: "mcp");
 
 builder.Services.AddProblemDetails();
 
 var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 var mcpConfig = McpServerConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 
-builder.Services.AddMcpMarten(builder.Configuration, builder.Environment);
+// Store only — no daemon, no notification subscriptions: Kalandra.Api owns those (and the schema), so
+// an event written by a tool here is emailed exactly once, by that host.
+builder.Services.AddAppMartenStore(builder.Configuration, builder.Environment, ownsSchema: false);
 McpAuth.Add(builder.Services, supabaseConfig, mcpConfig);
 builder.Services.AddMcpServices();
 builder.Services.AddJobOffersDomain();

@@ -1,3 +1,4 @@
+using Kalandra.Hosting.Auth;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Storage;

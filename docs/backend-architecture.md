@@ -4,6 +4,7 @@
 
 - **`Kalandra.Api`** — the REST boundary. Controllers, request DTOs, API error enums, REST-only response envelopes (pagination, history, stats), the Supabase bearer pipeline, rate limiting. Handles request validation and mapping. Keeps API contracts stable for the frontend.
 - **`Kalandra.McpServer`** — the MCP boundary. The same domain, a different front door and a different way in: an OAuth 2.0 resource server for AI assistants. See below.
+- **`Kalandra.Hosting`** — the web composition the two hosts share: Sentry + OpenTelemetry setup (parameterized by service name), the Marten store registration, `AppVersion` and the commit health check, and the `HttpContextCurrentUserAccessor`. Referenced **only** by the hosts, never by a domain project — which is exactly why this ASP.NET-coupled code lives here and not in `Kalandra.Infrastructure`, whose consumers must stay framework-light.
 - **Domain projects** (e.g. `Kalandra.JobOffers`) — one project per business domain. Entities, events, command/query handlers, Marten config, and the response contracts every front door serves (`Contracts/*Response.cs`). Each domain gets its own project with vertical slices. A new domain = a new `Kalandra.{Domain}` project + `Add{Domain}Domain()` extension.
 - **`Kalandra.Infrastructure`** — cross-cutting concerns. Supabase clients (auth, storage), `CurrentUser` and the claims parsing behind `ICurrentUserAccessor`, Turnstile validation, configuration records. Leaf project — depends on nothing else in the repo.
 
@@ -11,13 +12,14 @@
 
 ```
 Kalandra.Api        ─┐
-                     ├─►  Kalandra.JobOffers / Kalandra.Blog  ─►  Kalandra.Infrastructure
-Kalandra.McpServer  ─┘                                                    ▲
-        └─────────────────────────────────────────────────────────────────┘
+                     ├─►  Kalandra.Hosting  ─►  Kalandra.JobOffers / Kalandra.Blog  ─►  Kalandra.Infrastructure
+Kalandra.McpServer  ─┘
 ```
 
 The compiler enforces this via `<ProjectReference>` entries — cycles are rejected at build time. The two hosts
-never reference each other; everything they share lives in a domain project or in Infrastructure.
+never reference each other: anything they share is either domain code, `Kalandra.Hosting` (web composition), or
+`Kalandra.Infrastructure`. What stays in a host is what genuinely differs — its auth pipeline, its rate-limit
+policies, its endpoints.
 
 ## Two hosts, one domain
 

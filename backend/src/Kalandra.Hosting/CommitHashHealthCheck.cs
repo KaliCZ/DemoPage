@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Kalandra.Api.Infrastructure;
+namespace Kalandra.Hosting;
 
-internal sealed class CommitHashHealthCheck : IHealthCheck
+public sealed class CommitHashHealthCheck : IHealthCheck
 {
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
     {
