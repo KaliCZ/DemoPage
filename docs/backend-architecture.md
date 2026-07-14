@@ -52,6 +52,18 @@ Notification emails are a side effect of committed events, delivered by Marten e
 - **Deploy safety**: both subscriptions are registered `SubscribeFromPresent` so a first deploy processes only new events (never replaying — and re-emailing — history); the daemon runs in `HotCold` mode so only one instance delivers during a blue/green overlap.
 - **Email**: `IEmailSender` (`Kalandra.Infrastructure/Email/`). The real SMTP sender is registered whenever the `Email` config section exists; a logging no-op is allowed only in Development without config — production refuses to start unconfigured.
 
+## Production config guards
+
+`appsettings.json` carries dev defaults — a localhost database, the local mail catcher, Cloudflare's shared Turnstile test key, `.local` notification addresses. Production overrides each one through `kalandra-api.env`, the file the deploy writes and both slots read. So the config records end with a guard that throws at startup when a dev default survives outside Development: a misconfigured deploy dies loudly rather than quietly mailing into a catcher nobody reads or rubber-stamping every captcha. `SupabaseConfig`, `TurnstileConfig`, `EmailConfig`, `BlogFeedConfig`, `BlogNotificationsConfig`, `JobOffersNotificationsConfig`, `Observability` (Sentry) and `AddAppMarten` (the database) each have one.
+
+**A new guard is only half the change — the deploy has to supply the key it demands.** Otherwise the new container throws on startup, crash-loops, fails the `/health/live` gate and rolls back, and every later push to `main` does the same, so the site quietly stops publishing until someone notices (that was #189). A new guard means touching:
+
+- the `kalandra-api.env` heredoc in `.github/workflows/ci-cd.yml` — what production actually gets;
+- `.github/production-boot.env` — the same key with a fake value;
+- `docs/SETUP.md` §4.1, when the value comes from a GitHub secret or variable.
+
+The `backend-production-boot` CI job keeps the first two honest. It boots the built API with `ASPNETCORE_ENVIRONMENT=Production` against exactly the keys the deploy supplies and fails unless `/health/live` answers, so a guard that outruns its deploy entry fails on the PR instead of on main.
+
 ## Where to put new code
 
 | You want to add...                                  | Goes in                                                                |
@@ -66,6 +78,7 @@ Notification emails are a side effect of committed events, delivered by Marten e
 | A new aggregate field that needs filtering          | Property on the entity + `Duplicate(j => j.Field)` in `MartenConfiguration` |
 | A new business domain                               | New `Kalandra.{Domain}/` project + `Add{Domain}Domain()` extension     |
 | A new external HTTP integration                     | `Kalandra.Infrastructure/{Concern}/` + typed `HttpClient` registration |
+| A new config key production must supply             | Config record + guard, the `kalandra-api.env` heredoc in `ci-cd.yml`, and `.github/production-boot.env` |
 | A new background notification                       | `Kalandra.{Domain}/Notifications/` + a subscription registered in `AddAppMarten` |
 | A new MCP tool                                      | `Kalandra.Api/Features/Mcp/` + call the domain handler directly (see `docs/mcp-server.md`) |
 | A new role                                          | Add to `UserRole` enum + `RequireRole` policy                          |

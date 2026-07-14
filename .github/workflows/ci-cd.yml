@@ -188,6 +188,79 @@ jobs:
       - name: Test
         run: dotnet test --no-build -c Release
 
+  # Boots the API the way production does — ASPNETCORE_ENVIRONMENT=Production, and only the
+  # config the deploy supplies — so a startup guard demanding a key the deploy never sets fails
+  # here instead of crash-looping the new slot and rolling the release back (#189).
+  backend-production-boot:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build backend
+        run: dotnet build backend/src/Kalandra.Api -c Release
+
+      # The boot below only proves anything if it runs on the same keys production gets, so the
+      # two lists are compared rather than trusted to be kept in step by hand.
+      - name: Check the fake config still mirrors the deploy's env file
+        run: |
+          deploy_keys=$(
+            awk '/^[[:space:]]*cat > .*kalandra-api\.env/ { inside = 1; next }
+                 inside && /^[[:space:]]*EOF[[:space:]]*$/ { exit }
+                 inside' .github/workflows/ci-cd.yml \
+              | sed -E 's/^[[:space:]]*//' | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | cut -d= -f1 | sort
+          )
+          fake_keys=$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .github/production-boot.env | cut -d= -f1 | sort)
+
+          if [ -z "$deploy_keys" ]; then
+            echo "::error::Read no keys out of the deploy's kalandra-api.env heredoc. It has changed shape, and this job silently stops guarding the deploy — fix the parse above."
+            exit 1
+          fi
+
+          if ! diff <(echo "$deploy_keys") <(echo "$fake_keys"); then
+            echo "::error::'<' is supplied by the deploy but missing from .github/production-boot.env; '>' is the reverse (this job would boot the API on config production never gets). Both must list the same keys."
+            exit 1
+          fi
+          echo "In step — the deploy and .github/production-boot.env supply the same $(echo "$deploy_keys" | wc -l) keys."
+
+      - name: Load the fake production config
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .github/production-boot.env >> "$GITHUB_ENV"
+
+      - name: Start backend as Production
+        run: |
+          # --no-launch-profile: launchSettings.json pins ASPNETCORE_ENVIRONMENT=Development, which
+          # would override the Production below and skip every guard this job exists to run.
+          stdbuf -oL -eL dotnet run --project backend/src/Kalandra.Api -c Release --no-build --no-launch-profile --urls http://localhost:5000 > "$RUNNER_TEMP/api.log" 2>&1 &
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+
+      # Dependency-free by design (only the live-tagged commit check), so this answers on the fake
+      # config above without any real database, Supabase, or SMTP behind it.
+      - name: Assert /health/live answers
+        uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
+        with:
+          health-url: http://localhost:5000/health/live
+          max-attempts: 30
+          retry-interval: 2
+
+      - name: Backend startup logs
+        if: always()
+        run: |
+          echo "===== backend api.log ====="
+          cat "$RUNNER_TEMP/api.log" 2>/dev/null || echo "(no api.log captured)"
+
   frontend-format:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -259,7 +332,7 @@ jobs:
         working-directory: frontend
 
   backend-deploy:
-    needs: [e2e, backend-test, frontend-format, frontend-test]
+    needs: [e2e, backend-test, backend-production-boot, frontend-format, frontend-test]
     if: |
       always() &&
       (
@@ -267,6 +340,7 @@ jobs:
           github.event_name == 'push' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
+          needs.backend-production-boot.result == 'success' &&
           needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success'
         ) ||
@@ -393,6 +467,8 @@ jobs:
 
             # App secrets, read by both slots via EnvironmentFile. Rewritten
             # every deploy so rotated secrets propagate when a slot (re)starts.
+            # backend-production-boot parses these keys and boots the API against
+            # them — a key added here also belongs in .github/production-boot.env.
             cat > "$APP_DIR/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
@@ -523,7 +599,7 @@ jobs:
           expected-content: ${{ github.sha }}
 
   frontend-deploy:
-    needs: [e2e, backend-test, frontend-format, frontend-test, backend-deploy]
+    needs: [e2e, backend-test, backend-production-boot, frontend-format, frontend-test, backend-deploy]
     if: |
       always() &&
       (
@@ -532,6 +608,7 @@ jobs:
           github.event_name == 'push' &&
           needs.e2e.result == 'success' &&
           needs.backend-test.result == 'success' &&
+          needs.backend-production-boot.result == 'success' &&
           needs.frontend-format.result == 'success' &&
           needs.frontend-test.result == 'success' &&
           needs.backend-deploy.result == 'success'
