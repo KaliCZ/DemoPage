@@ -27,7 +27,8 @@ interface Props {
     | "admin/test-errors"
     | "profile"
     | "privacy"
-    | "terms";
+    | "terms"
+    | "oauth-consent";
   lang?: Locale;
   /** Canonical path override for pages nested under an activePage section (e.g. "blog/<slug>"). */
   pagePath?: string;
@@ -36,6 +37,8 @@ interface Props {
   /** Per-locale language-picker targets for pages whose counterpart is not simply pagePath (e.g. an untranslated post falls back to the blog index). */
   langUrls?: Partial<Record<Locale, string>>;
   ogType?: "website" | "article";
+  /** Keeps a page out of search results — for flows reached from elsewhere, like the OAuth consent screen. */
+  noindex?: boolean;
 }
 
 const {
@@ -47,6 +50,7 @@ const {
   alternateLocales = locales,
   langUrls,
   ogType = "website",
+  noindex = false,
 } = Astro.props;
 
 const t = lang === "cs" ? csCommon : enCommon;
@@ -65,7 +69,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="author" content="Pavel Kalandra" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
     <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
 
