@@ -98,9 +98,9 @@
   "how": {
     "title": "Jak to funguje",
     "items": [
-      "Nástroje jsou druhý vstup do API: každé volání spouští stejný kód jako požadavky samotného webu, pod vaším účtem, se stejnou validací, rate limity a emailovými notifikacemi.",
+      "Nástroje jsou druhý vstup do stejné domény: každé volání spouští stejný kód jako požadavky samotného webu, pod vaším účtem, se stejnou validací, rate limity a emailovými notifikacemi.",
       "Články blogu se čtou z RSS feedu webu, takže asistent vidí přesně to, co je publikované.",
-      "Postaveno v .NET s oficiálním MCP C# SDK, vystaveno jako /mcp route přímo na API — žádná samostatná služba."
+      "Postaveno v .NET s oficiálním MCP C# SDK, běží jako vlastní host — odděleně od REST API, protože vás přihlašuje přes OAuth, ne tokenem, který vydává web."
     ],
     "projectLinkPrefix": "Celý příběh vzniku najdete na stránce ",
     "projectLinkText": "Projekt",

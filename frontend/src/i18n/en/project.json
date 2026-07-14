@@ -461,13 +461,17 @@
         "title": "MCP Server",
         "done": true,
         "dates": "Jul 8, 2026",
-        "description": "AI assistants talk to the site through a Model Context Protocol endpoint at api.kalandra.tech/mcp — submitting and following up on job offers, browsing blog posts, and reading or writing comments, all as the signed-in user through the very same domain handlers the website uses.",
+        "description": "AI assistants talk to the site through a Model Context Protocol endpoint at mcp.kalandra.tech — submitting and following up on job offers, browsing blog posts, and reading or writing comments, all as the signed-in user through the very same domain handlers the website uses.",
         "side": "left",
         "detailsLabel": "What was done",
         "details": [
           {
             "author": "claude",
-            "text": "8 MCP tools exposed as a /mcp route on the API over stateless streamable HTTP — one host, two front doors (REST + MCP)"
+            "text": "8 MCP tools on their own OAuth-protected host over stateless streamable HTTP — two front doors (REST + MCP) onto one domain"
+          },
+          {
+            "author": "claude",
+            "text": "OAuth 2.0 resource server: Supabase issues the tokens, the host advertises it via protected-resource metadata, and the assistant signs you in itself — nothing to paste"
           },
           {
             "author": "claude",

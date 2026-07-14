@@ -1,6 +1,8 @@
 # API Layer
 
-The API layer is the HTTP boundary of the backend. It lives in `backend/src/Kalandra.Api/` and is the only project that references ASP.NET Core. Its job is to translate HTTP into handler calls, translate handler results back into HTTP responses, and enforce cross-cutting HTTP concerns (auth, rate limiting, content negotiation, problem details). **It must not contain business logic.**
+The API layer is the REST boundary of the backend. It lives in `backend/src/Kalandra.Api/`. Its job is to translate HTTP into handler calls, translate handler results back into HTTP responses, and enforce cross-cutting HTTP concerns (auth, rate limiting, content negotiation, problem details). **It must not contain business logic.**
+
+It is one of two hosts: `Kalandra.McpServer` serves the same domain to AI assistants over MCP (see `docs/mcp-server.md`). Everything the two share lives in a domain project or in `Kalandra.Infrastructure` — never in this one.
 
 ## Table of contents
 

@@ -1,107 +1,126 @@
 # MCP Server
 
-The API exposes a [Model Context Protocol](https://modelcontextprotocol.io) endpoint at **`/mcp`** so AI
-assistants (Claude, IDE agents, …) can interact with kalandra.tech: submit and follow up on job offers,
-browse blog posts, and read or write comments. It is served by the same `Kalandra.Api` host as the REST API
-(streamable HTTP, stateless), reachable in production at `https://api.kalandra.tech/mcp`.
+`Kalandra.McpServer` is a standalone host that serves a [Model Context Protocol](https://modelcontextprotocol.io)
+endpoint at **`https://mcp.kalandra.tech/mcp`** (streamable HTTP, stateless), so AI assistants can act on
+kalandra.tech as the signed-in user: submit and follow up on job offers, browse blog posts, and read or write
+comments.
 
-## Architecture: a second front door, not a second service
+It is its own deployable, separate from `Kalandra.Api`, because the two authenticate differently: **the REST
+API takes a Supabase bearer token from the site's own frontend; the MCP server is an OAuth resource server**
+that third-party assistants connect to without ever seeing a credential.
 
-The MCP tools live in `Kalandra.Api/Features/Mcp/` and are thin adapters over the **same domain handlers the
-controllers call**:
+## Architecture: two hosts, one domain
 
-```
-REST controllers ─┐
-                  ├─►  domain handlers  ─►  Marten (events)  ─►  notification subscriptions (email)
-/mcp tools ───────┘    (CreateJobOffer, PostBlogComment, …)
-```
-
-- **Same logic as the UI.** A tool builds the same command/query record a controller builds and calls the
-  same handler, as the authenticated user. Validation, the event store, and the Marten notification
-  subscriptions all behave identically — there is no second write path.
-- **In-process.** Because the tools run in the API host, they share its DI container, auth pipeline, database
-  session, and the notification subscriptions. Appending an event from a tool triggers the same email
-  notification a controller write would.
-- **Blog posts come from the RSS feed** (`BlogFeedClient`), because the backend's post catalog holds only
-  slugs and stream ids — the frontend owns post titles and summaries.
-
-## Authentication
-
-The MCP endpoint shares the API's JWT bearer pipeline. A tool that acts as a user requires the connection to
-send the user's **Supabase access token**:
+Both hosts are thin front doors over the **same domain handlers and the same Marten store**:
 
 ```
-Authorization: Bearer <supabase access token>
+Kalandra.Api      (REST, bearer)  ─┐
+                                   ├─►  domain handlers  ─►  Marten (events)  ─►  notification subscriptions (email)
+Kalandra.McpServer (MCP, OAuth)   ─┘    (CreateJobOffer, PostBlogComment, …)      (Kalandra.Api only)
 ```
 
-`UseAuthentication()` validates the token and populates `HttpContext.User` for `/mcp` requests just like any
-controller request, so `ICurrentUserAccessor` gives the tools the same `CurrentUser` the controllers get. The
-server never owns credentials. Reading blog posts and their comments needs no token; the write/account tools
-throw a clear "connect with an Authorization header" error when none is present. Example client config:
+- **Same logic as the UI.** A tool builds the same command/query record a controller builds and calls the same
+  handler. Validation and the event store behave identically — there is no second write path.
+- **Only the API runs the async daemon.** `Kalandra.McpServer` registers the Marten *store* so tools can read
+  and append events, but deliberately not `AddAsyncDaemon` or the notification subscriptions. A comment posted
+  through a tool is therefore emailed exactly once — by the API host's daemon reacting to the shared event
+  store. It also runs `AutoCreate.None` in production: the API owns the schema.
+- **Shared code, not a shared host.** The response contracts (`GetJobOfferDetailResponse`, `CommentResponse`,
+  `BlogCommentResponse`) and the blog feed live in the domain slices; `ICurrentUserAccessor` and the
+  claims→`CurrentUser` parsing live in `Kalandra.Infrastructure`. Each host owns its own pipeline.
+- **Blog posts come from the RSS feed** (`Kalandra.Blog/Feed/BlogFeedClient`), because the backend's post
+  catalog holds only slugs and stream ids — the frontend owns post titles and summaries.
+
+## Authentication: Supabase is the authorization server
+
+The MCP server is an **OAuth 2.0 resource server**. It issues no tokens and owns no credentials; Supabase's
+OAuth 2.1 server runs the whole flow.
+
+```
+Assistant ──1── POST /mcp (no token)
+          ◄─2── 401 + WWW-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource"
+          ──3── GET that metadata  →  { resource, authorization_servers: [<supabase>/auth/v1], scopes_supported }
+          ──4── OAuth 2.1 + PKCE against Supabase (discovery, client registration, consent)
+          ──5── POST /mcp with the access token  →  tools run as that user
+```
+
+- `McpAuth` wires JWT bearer validation (Supabase issuer + JWKS) as the *authenticate* scheme and the MCP SDK's
+  scheme as the *challenge* scheme, so an unauthenticated call produces the 401 above. The SDK's `AddMcp`
+  handler serves `/.well-known/oauth-protected-resource` from the configured `ProtectedResourceMetadata`.
+- **The whole `/mcp` endpoint requires authorization.** Every tool acts as the signed-in user — there is no
+  anonymous read tier, which is what makes an assistant discover Supabase and sign the user in on connect.
+- **The consent screen is ours.** Supabase delegates it: it redirects to `/oauth/consent` on the frontend,
+  which reads the request with `supabase.auth.oauth.getAuthorizationDetails` and approves or denies it as the
+  signed-in user. See `frontend/src/pages/oauth/consent.astro`.
+- **Audience binding is not enforced yet.** `ValidateAudience = false` (documented in `McpAuth.cs`): the `aud`
+  Supabase mints for third-party tokens can't be confirmed until the OAuth server is enabled, so the host
+  validates issuer + signature + lifetime for now and should tighten to the RFC 8707 resource audience after.
+
+Connecting is just the URL — the assistant does the rest:
 
 ```bash
-claude mcp add --transport http kalandra https://api.kalandra.tech/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http kalandra https://mcp.kalandra.tech/mcp
 ```
 
 ## Tools
 
-| Tool | Auth | Handler / source |
-|------|------|------------------|
-| `submit_job_offer` | ✅ | `CreateJobOfferHandler.CreateAndSave` |
-| `list_my_job_offers` | ✅ | `ListJobOffersHandler.List` |
-| `get_job_offer_comments` | ✅ | `ListCommentsHandler.List` |
-| `add_job_offer_comment` | ✅ | `AddCommentHandler.AddAndSave` |
-| `list_blog_posts` | — | `BlogFeedClient` (site RSS feed) + `GetViewerBlogViewsHandler` |
-| `get_blog_post_comments` | — | `GetBlogCommentsHandler.GetForDisplay` |
-| `post_blog_comment` | ✅ | `PostBlogCommentHandler.PostAndSave` |
-| `get_my_comments` | ✅ | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
+| Tool | Handler / source |
+|------|------------------|
+| `submit_job_offer` | `CreateJobOfferHandler.CreateAndSave` |
+| `list_my_job_offers` | `ListJobOffersHandler.List` |
+| `get_job_offer_comments` | `ListCommentsHandler.List` |
+| `add_job_offer_comment` | `AddCommentHandler.AddAndSave` |
+| `list_blog_posts` | `BlogFeedClient` (site RSS feed) + `GetViewerBlogViewsHandler` |
+| `get_blog_post_comments` | `GetBlogCommentsHandler.GetForDisplay` |
+| `post_blog_comment` | `PostBlogCommentHandler.PostAndSave` |
+| `get_my_comments` | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
 
-Tools return the same response contracts the controllers serialize (`GetJobOfferDetailResponse`,
-`CommentResponse`, `BlogCommentResponse`, …) — no separate DTO layer. Domain errors are translated into
-`McpException` messages phrased for a language model to act on, the MCP equivalent of the controllers' RFC
-7807 responses.
+All of them act as the authenticated caller. Tools return the same response contracts the controllers
+serialize — no separate DTO layer. Domain errors become `McpException` messages phrased for a language model
+to act on, the MCP equivalent of the controllers' RFC 7807 responses.
 
-`get_my_comments` aggregates the caller's comments across blog posts and job offers together with the replies
-they received.
-
-`list_blog_posts` is public, but when the caller is signed in it enriches each post with `viewerViews` (their
-own view count) and `watched` (whether they've read it) — one lean query over the view documents
-(`GetViewerBlogViewsHandler`), not the heavier per-post totals `GetBlogPostStatsHandler` computes for the blog
-index. Anonymous callers get both fields as `null`.
+`list_blog_posts` enriches each post with `viewerViews` and `watched` from one lean query over the view
+documents (`GetViewerBlogViewsHandler`), not the heavier per-post totals the blog index computes.
 
 ## Rate limiting
 
-The whole `/mcp` endpoint carries one `RateLimitPolicies.Mcp` sliding-window bucket (per signed-in user, or
-per IP for anonymous reads) — generous, since one assistant session lists tools and makes several calls in
-quick succession. There is no captcha: Turnstile is a browser concern, and the domain handlers a tool calls
-don't involve it.
+One `McpRateLimitPolicies.Mcp` sliding-window bucket for the whole endpoint (per signed-in user) — generous,
+since one assistant session lists tools and makes several calls in quick succession. No captcha: Turnstile is a
+browser concern.
 
 ## Configuration
 
 | Key | Meaning | Local default |
 |-----|---------|---------------|
+| `Mcp:ResourceUri` | The host's own public URL — the OAuth resource id in the metadata | `http://localhost:5100` |
 | `BlogFeed:RssUrl` | The blog's RSS feed, for `list_blog_posts` | `http://localhost:4321/rss.xml` |
+| `Supabase:ProjectUrl` | Also the JWT issuer (`{url}/auth/v1`) and the advertised authorization server | `http://localhost:54321` |
+| `Supabase:ServiceKey` | For `IUserInfoService` (comment authors) and `IStorageService` | local demo key |
+| `ConnectionStrings:DefaultConnection` | The same database the API uses | local Postgres |
 
-Production refuses to start with a localhost feed URL, mirroring the other config guards. Everything else the
-MCP tools need (database, auth, handlers) is the API's existing configuration.
+Production refuses to start with a localhost resource URI, feed URL, database, or project URL.
 
 ## Local development
 
-`npm run aspire` runs the API with the `/mcp` endpoint; the AppHost points `BlogFeed:RssUrl` at the Astro dev
-server. The MCP endpoint is at `http://localhost:<api-port>/mcp`. Standalone: `dotnet run` in
-`backend/src/Kalandra.Api` serves `/mcp` on the same port as the REST API.
+`aspire run` starts the MCP host next to the API on the per-worktree Postgres, points `BlogFeed:RssUrl` at the
+Astro dev server, and sets `Mcp:ResourceUri` to its own endpoint. Standalone: `dotnet run` in
+`backend/src/Kalandra.McpServer` serves `/mcp` on `:5100`.
 
 ## Deployment
 
-Nothing MCP-specific: the endpoint ships inside the API image and the blue/green API deploy. It is reached
-through the existing `api.kalandra.tech` Caddy route at `/mcp`; the only added config is `BlogFeed__RssUrl`
-in the API's environment.
+Its own image and blue/green Quadlet slots on ports **8082/8083** (the API's are 8080/8081), fronted by the
+shared Caddy through its own `kalandra-mcp.caddy` fragment — a separate file from the API's, so each deploy
+rewrites only its own port while the base config glob-imports both. The `mcp-deploy` job runs after
+`backend-deploy` (the API applies the schema first) and gates promotion on `/health/live` reporting the
+deployed commit, exactly like the API.
+
+Requires the `MCP_IMAGE_NAME` repo variable and a `mcp.kalandra.tech` DNS record.
 
 ## Testing
 
-- `Kalandra.Blog.Tests/BlogFeedParseTests` — pure unit tests for RSS parsing (the feed reader lives in `Kalandra.Blog/Feed/`).
-- `Features/Mcp/McpToolsTests` — drives the tools directly against the real domain handlers and database
-  (`TestWebApplicationFactory`, real Postgres) with a chosen caller: the auth guard, command building, error
-  translation, ownership boundaries, and the signed-in read-status enrichment. The factory serves the
-  blog-feed tool a canned RSS document. (The streamable-HTTP transport itself is standard SDK wiring and can't
-  run over the in-memory test server, so it's left to an end-to-end smoke test.)
+- `Kalandra.Blog.Tests/BlogFeedParseTests` — pure unit tests for RSS parsing (the feed reader lives in
+  `Kalandra.Blog/Feed/`).
+- The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
+- The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
+  noindex).
+- The streamable-HTTP transport itself is standard SDK wiring and is left to an end-to-end smoke test.

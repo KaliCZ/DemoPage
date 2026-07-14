@@ -98,9 +98,9 @@
   "how": {
     "title": "How it works",
     "items": [
-      "The tools are a second front door on the API: each call runs the same code the website's own requests do, as your account, with the same validation, rate limits, and email notifications.",
+      "The tools are a second front door onto the same domain: each call runs the same code the website's own requests do, as your account, with the same validation, rate limits, and email notifications.",
       "Blog posts are read from the site's RSS feed, so the assistant sees exactly what is published.",
-      "Built in .NET with the official MCP C# SDK, served as a /mcp route on the API itself — no separate service."
+      "Built in .NET with the official MCP C# SDK, running as its own host — separate from the REST API because it authenticates you with OAuth rather than a token the site hands out."
     ],
     "projectLinkPrefix": "The full build story is on the ",
     "projectLinkText": "Project page",
