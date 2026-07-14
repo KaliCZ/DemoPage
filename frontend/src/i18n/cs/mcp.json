@@ -13,19 +13,14 @@
   "connect": {
     "title": "Připojení",
     "endpointLabel": "Endpoint",
-    "transportNote": "Streamable HTTP, stateless. Čtení blogu nevyžaduje účet; nástroje jednající za vás očekávají váš přístupový token v hlavičce Authorization.",
+    "transportNote": "Streamable HTTP, stateless. Přihlášení řeší OAuth — žádný token není potřeba kopírovat ani obnovovat.",
     "claudeCodeLabel": "Claude Code",
     "copyCommand": "Zkopírovat příkaz",
-    "copyCommandWithToken": "Zkopírovat příkaz s mým tokenem",
     "copied": "Zkopírováno!",
     "copyFailed": "Kopírování selhalo",
     "copyEndpointAriaLabel": "Zkopírovat URL MCP endpointu",
-    "tokenTitle": "Váš přístupový token",
-    "tokenSignedOut": "Po přihlášení se váš přístupový token doplní do příkazu výše — právě ten umožňuje asistentovi jednat za váš účet.",
-    "tokenSignedIn": "Jste přihlášeni. Tlačítko kopírování výše vloží váš aktuální přístupový token.",
-    "tokenCopy": "Zkopírovat jen token",
-    "tokenNote": "Přístupové tokeny mají krátkou platnost (zhruba hodinu) — až asistent začne dostávat 401, vezměte si tu čerstvý.",
-    "signIn": "Přihlásit se"
+    "authTitle": "Přihlášení",
+    "authDescription": "Při prvním připojení si asistent přihlášení najde sám, otevře kalandra.tech ve vašem prohlížeči a zeptá se, co všechno smí. Jednou to schválíte a zůstane připojený — jedná za váš účet, nic nevkládáte a vaše heslo nikdy nevidí."
   },
   "tools": {
     "title": "Co umí",
@@ -64,12 +59,12 @@
         "tools": [
           {
             "name": "list_blog_posts",
-            "auth": false,
-            "description": "Publikované články se shrnutími a štítky. Po přihlášení u každého vidíte, zda jste ho už četli."
+            "auth": true,
+            "description": "Publikované články se shrnutími a štítky — u každého vidíte, zda jste ho už četli."
           },
           {
             "name": "get_blog_post_comments",
-            "auth": false,
+            "auth": true,
             "description": "Veřejné komentáře u libovolného článku."
           },
           {
