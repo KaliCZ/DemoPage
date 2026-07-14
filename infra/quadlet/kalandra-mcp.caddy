@@ -1,0 +1,12 @@
+# Routing for the MCP server on the shared Caddy proxy.
+#
+# A separate fragment from kalandra.caddy (rather than a second block inside it) so the API
+# and MCP deploys each rewrite only their own __PORT__ — the base Caddyfile glob-imports
+# every file in sites/, so both are picked up.
+#
+# The deploy substitutes __PORT__ with the active blue/green port and installs this as
+# /srv/caddy/sites/kalandra-mcp.caddy, then reloads the shared Caddy.
+mcp.kalandra.tech {
+    reverse_proxy localhost:__PORT__
+    tls /etc/caddy/certs/kalandra.pem /etc/caddy/certs/kalandra.key
+}
