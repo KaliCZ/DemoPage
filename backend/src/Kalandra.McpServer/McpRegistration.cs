@@ -15,12 +15,18 @@ public static class McpRegistration
             {
                 options.ServerInfo = new() { Name = "kalandra-tech", Version = AppVersion.InformationalVersion };
                 options.ServerInstructions =
-                    "Tools for interacting with Pavel Kalandra's showcase site kalandra.tech: submit and follow up on " +
-                    "job offers, browse blog posts, and read or write comments — all acting as the signed-in user.";
+                    "Tools for interacting with Pavel Kalandra's showcase site kalandra.tech. Browsing blog posts " +
+                    "and reading their comments works without signing in. Submitting and following up on job offers " +
+                    "and writing comments act as the signed-in user — those tools appear once the user authenticates " +
+                    "this server with their kalandra.tech account (OAuth). If the user asks for one of them, tell " +
+                    "them to sign this server in from their assistant's connector settings.";
             })
             // Stateless: every tool call is a self-contained POST carrying the caller's bearer token,
             // so no session affinity is needed behind the blue/green proxy.
             .WithHttpTransport(transport => transport.Stateless = true)
+            // Enforces the tools' [Authorize]/[AllowAnonymous] attributes and filters tools/list by them,
+            // so anonymous callers only see the public tools.
+            .AddAuthorizationFilters()
             .WithTools<JobOfferMcpTools>()
             .WithTools<BlogMcpTools>();
 

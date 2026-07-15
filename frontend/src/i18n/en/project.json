@@ -461,7 +461,7 @@
         "title": "MCP Server",
         "done": true,
         "dates": "Jul 8, 2026",
-        "description": "AI assistants talk to the site through a Model Context Protocol endpoint at mcp.kalandra.tech — submitting and following up on job offers, browsing blog posts, and reading or writing comments, all as the signed-in user through the very same domain handlers the website uses.",
+        "description": "AI assistants talk to the site through a Model Context Protocol endpoint at mcp.kalandra.tech — browsing blog posts and reading comments without an account, and submitting and following up on job offers or writing comments as the signed-in user — through the very same domain handlers the website uses.",
         "side": "left",
         "detailsLabel": "What was done",
         "details": [

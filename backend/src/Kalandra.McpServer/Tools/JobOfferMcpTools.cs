@@ -4,6 +4,7 @@ using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;
+using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -14,6 +15,7 @@ namespace Kalandra.McpServer.Tools;
 /// call, acting as the signed-in user — one domain, two front doors, no second write path.
 /// </summary>
 [McpServerToolType]
+[Authorize]
 public sealed class JobOfferMcpTools(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,

@@ -461,7 +461,7 @@
         "title": "MCP Server",
         "done": true,
         "dates": "8. 7. 2026",
-        "description": "AI asistenti komunikují se stránkou přes Model Context Protocol endpoint na mcp.kalandra.tech — podávají a sledují pracovní nabídky, procházejí blog a čtou či píší komentáře, vše jako přihlášený uživatel přes stejné doménové handlery, které používá web.",
+        "description": "AI asistenti komunikují se stránkou přes Model Context Protocol endpoint na mcp.kalandra.tech — procházejí blog a čtou komentáře bez účtu, a podávají a sledují pracovní nabídky či píší komentáře jako přihlášený uživatel — přes stejné doménové handlery, které používá web.",
         "side": "left",
         "detailsLabel": "Co se udělalo",
         "details": [

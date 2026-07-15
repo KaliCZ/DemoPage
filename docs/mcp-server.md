@@ -1,9 +1,9 @@
 # MCP Server
 
 `Kalandra.McpServer` is a standalone host that serves a [Model Context Protocol](https://modelcontextprotocol.io)
-endpoint at **`https://mcp.kalandra.tech/mcp`** (streamable HTTP, stateless), so AI assistants can act on
-kalandra.tech as the signed-in user: submit and follow up on job offers, browse blog posts, and read or write
-comments.
+endpoint at **`https://mcp.kalandra.tech/mcp`** (streamable HTTP, stateless). Anonymous callers can browse blog
+posts and read their comments; signed-in callers can also act on kalandra.tech as their account — submit and
+follow up on job offers, and write comments.
 
 It is its own deployable, separate from `Kalandra.Api`, because the two authenticate differently: **the REST
 API takes a Supabase bearer token from the site's own frontend; the MCP server is an OAuth resource server**
@@ -37,18 +37,24 @@ The MCP server is an **OAuth 2.0 resource server**. It issues no tokens and owns
 OAuth 2.1 server runs the whole flow.
 
 ```
-Assistant ──1── POST /mcp (no token)
-          ◄─2── 401 + WWW-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource"
-          ──3── GET that metadata  →  { resource, authorization_servers: [<supabase>/auth/v1], scopes_supported }
+Assistant ──1── POST /mcp (no token)  →  anonymous tier: public blog tools only
+          ──2── user signs the server in from the assistant's connector settings
+          ──3── GET /.well-known/oauth-protected-resource  →  { resource, authorization_servers: [<supabase>/auth/v1], scopes_supported }
           ──4── OAuth 2.1 + PKCE against Supabase (discovery, client registration, consent)
-          ──5── POST /mcp with the access token  →  tools run as that user
+          ──5── POST /mcp with the access token  →  the full toolset, acting as that user
 ```
 
+- **Anonymous access is a tier, not a hole.** The endpoint's `AnonymousOrValidToken` policy lets callers
+  without credentials through, but a *presented* token must validate — an expired or bad token gets the
+  401 + `WWW-Authenticate: resource_metadata=…` challenge (so clients know to re-authenticate), never a
+  silent downgrade to the anonymous tier.
+- **Authorization is per tool.** The SDK's `AddAuthorizationFilters()` honors `[Authorize]`/`[AllowAnonymous]`
+  on the tool classes and methods: `tools/list` shows an anonymous caller only the public tools, and a direct
+  `tools/call` on an account tool is refused. Signing in is client-initiated (there is no 401 on connect to
+  force it); the server instructions tell the model to ask the user when an account tool is wanted.
 - `McpAuth` wires JWT bearer validation (Supabase issuer + JWKS) as the *authenticate* scheme and the MCP SDK's
-  scheme as the *challenge* scheme, so an unauthenticated call produces the 401 above. The SDK's `AddMcp`
-  handler serves `/.well-known/oauth-protected-resource` from the configured `ProtectedResourceMetadata`.
-- **The whole `/mcp` endpoint requires authorization.** Every tool acts as the signed-in user — there is no
-  anonymous read tier, which is what makes an assistant discover Supabase and sign the user in on connect.
+  scheme as the *challenge* scheme. The SDK's `AddMcp` handler serves `/.well-known/oauth-protected-resource`
+  from the configured `ProtectedResourceMetadata`.
 - **The consent screen is ours.** Supabase delegates it: it redirects to `/oauth/consent` on the frontend,
   which reads the request with `supabase.auth.oauth.getAuthorizationDetails` and approves or denies it as the
   signed-in user. See `frontend/src/pages/oauth/consent.astro`.
@@ -64,29 +70,32 @@ claude mcp add --transport http kalandra https://mcp.kalandra.tech/mcp
 
 ## Tools
 
-| Tool | Handler / source |
-|------|------------------|
-| `submit_job_offer` | `CreateJobOfferHandler.CreateAndSave` |
-| `list_my_job_offers` | `ListJobOffersHandler.List` |
-| `get_job_offer_comments` | `ListCommentsHandler.List` |
-| `add_job_offer_comment` | `AddCommentHandler.AddAndSave` |
-| `list_blog_posts` | `BlogFeedClient` (site RSS feed) + `GetViewerBlogViewsHandler` |
-| `get_blog_post_comments` | `GetBlogCommentsHandler.GetForDisplay` |
-| `post_blog_comment` | `PostBlogCommentHandler.PostAndSave` |
-| `get_my_comments` | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
+| Tool | Access | Handler / source |
+|------|--------|------------------|
+| `submit_job_offer` | Account | `CreateJobOfferHandler.CreateAndSave` |
+| `list_my_job_offers` | Account | `ListJobOffersHandler.List` |
+| `get_job_offer_comments` | Account | `ListCommentsHandler.List` |
+| `add_job_offer_comment` | Account | `AddCommentHandler.AddAndSave` |
+| `list_blog_posts` | Public | `BlogFeedClient` (site RSS feed) + `GetViewerBlogViewsHandler` |
+| `get_blog_post_comments` | Public | `GetBlogCommentsHandler.GetForDisplay` |
+| `post_blog_comment` | Account | `PostBlogCommentHandler.PostAndSave` |
+| `get_my_comments` | Account | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
 
-All of them act as the authenticated caller. Tools return the same response contracts the controllers
-serialize — no separate DTO layer. Domain errors become `McpException` messages phrased for a language model
-to act on, the MCP equivalent of the controllers' RFC 7807 responses.
+Account tools act as the authenticated caller; the tool classes are `[Authorize]` with `[AllowAnonymous]` on
+the two public blog reads, so anything new is account-only unless it opts out. Tools return the same response
+contracts the controllers serialize — no separate DTO layer. Domain errors become `McpException` messages
+phrased for a language model to act on, the MCP equivalent of the controllers' RFC 7807 responses.
 
-`list_blog_posts` enriches each post with `viewerViews` and `watched` from one lean query over the view
-documents (`GetViewerBlogViewsHandler`), not the heavier per-post totals the blog index computes.
+`list_blog_posts` links to the public post pages (there is no separate content tool — assistants fetch the
+link). For a signed-in caller it enriches each post with `viewerViews` and `watched` from one lean query over
+the view documents (`GetViewerBlogViewsHandler`), not the heavier per-post totals the blog index computes;
+for an anonymous caller those fields stay null.
 
 ## Rate limiting
 
-One `McpRateLimitPolicies.Mcp` sliding-window bucket for the whole endpoint (per signed-in user) — generous,
-since one assistant session lists tools and makes several calls in quick succession. No captcha: Turnstile is a
-browser concern.
+One `McpRateLimitPolicies.Mcp` sliding-window bucket for the whole endpoint (per signed-in user, per client IP
+for anonymous callers) — generous, since one assistant session lists tools and makes several calls in quick
+succession. No captcha: Turnstile is a browser concern.
 
 ## Configuration
 
@@ -120,6 +129,10 @@ Requires the `MCP_IMAGE_NAME` repo variable and a `mcp.kalandra.tech` DNS record
 
 - `Kalandra.Blog.Tests/BlogFeedParseTests` — pure unit tests for RSS parsing (the feed reader lives in
   `Kalandra.Blog/Feed/`).
+- `Kalandra.McpServer.Tests` — HTTP-level tests against the real host with a stubbed RSS feed:
+  `OAuthResourceServerTests` pins the resource metadata and the invalid-token challenge,
+  `AnonymousAccessTests` pins the anonymous tier (public tools listed and callable, account tools hidden
+  and refused).
 - The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
 - The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
   noindex).

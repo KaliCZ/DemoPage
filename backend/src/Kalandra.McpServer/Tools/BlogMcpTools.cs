@@ -9,6 +9,7 @@ using Kalandra.Blog.Queries;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Queries;
 using Kalandra.McpServer.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -17,8 +18,10 @@ namespace Kalandra.McpServer.Tools;
 /// <summary>
 /// MCP tools for the blog and the user's own activity. Reads and writes go through the same
 /// domain handlers the REST controllers use; the post list comes from the site's RSS feed.
+/// Reading the blog is public; the class-level gate keeps everything else account-only by default.
 /// </summary>
 [McpServerToolType]
+[Authorize]
 public sealed class BlogMcpTools(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
@@ -31,13 +34,16 @@ public sealed class BlogMcpTools(
     ListMyJobOfferCommentsHandler myJobOfferCommentsHandler)
 {
     [McpServerTool(Name = "list_blog_posts")]
+    [AllowAnonymous]
     [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags). " +
-                 "Each post also reports viewerViews and watched so you can tell which ones the user has already " +
-                 "read. Use the slug with the blog comment tools.")]
+                 "Each link is a public web page with the full post — fetch it to read the content. " +
+                 "For a signed-in user each post also reports viewerViews and watched so you can tell which " +
+                 "ones they have already read. Use the slug with the blog comment tools.")]
     public async Task<IReadOnlyList<BlogPostSummary>> ListBlogPosts(CancellationToken ct = default)
     {
-        var user = McpToolHelpers.RequireUser(currentUser);
         var posts = await blogFeedClient.ListPosts(ct);
+        if (currentUser.User is not { } user)
+            return posts;
 
         var viewsBySlug = await viewerViewsHandler.List(
             new ViewerBlogViewsQuery([.. posts.Select(post => post.Slug)], user.Id), ct);
@@ -50,6 +56,7 @@ public sealed class BlogMcpTools(
     }
 
     [McpServerTool(Name = "get_blog_post_comments")]
+    [AllowAnonymous]
     [Description("Read the public comment thread of a blog post. Replies reference their parent via parentCommentId.")]
     public async Task<ListBlogCommentsResponse> GetBlogPostComments(
         [Description("The post's slug, from list_blog_posts.")] string slug,

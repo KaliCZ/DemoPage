@@ -1,13 +1,13 @@
 {
   "meta": {
     "title": "MCP | kalandra.tech — Talk to This Site from Your AI Assistant",
-    "description": "Connect Claude or any MCP-compatible AI assistant to kalandra.tech: submit job offers, browse blog posts, and read or write comments over the Model Context Protocol."
+    "description": "Connect Claude or any MCP-compatible AI assistant to kalandra.tech: browse the blog without an account, and with sign-in submit job offers and write comments — over the Model Context Protocol."
   },
   "hero": {
     "titlePrefix": "Talk to this site from ",
     "titleHighlight": "your AI assistant",
     "titleSuffix": ".",
-    "description": "This site runs its own Model Context Protocol server. Connect it to Claude or any MCP-compatible assistant, and the assistant can act here on your behalf — submit a job offer, follow the conversation about it, browse the blog, and join the comments. Every action goes through the same public API the website itself uses.",
+    "description": "This site runs its own Model Context Protocol server. Connect it to Claude or any MCP-compatible assistant and it can browse the blog and read the comments right away — no account needed. Sign in, and it can also act here on your behalf: submit a job offer, follow the conversation about it, and join the comments. Every action goes through the same public API the website itself uses.",
     "liveBadge": "Live"
   },
   "connect": {
@@ -20,7 +20,7 @@
     "copyFailed": "Copy failed",
     "copyEndpointAriaLabel": "Copy the MCP endpoint URL",
     "authTitle": "Signing in",
-    "authDescription": "The first time your assistant connects it finds the sign-in by itself, opens kalandra.tech in your browser, and asks you to approve what it may do. Approve once and it stays connected, acting as your account — nothing to paste, and it never sees your password."
+    "authDescription": "Connecting needs no account — the blog tools work right away. The account tools appear once you sign the server in from your assistant's connector settings (in Claude Code: /mcp → kalandra → Authenticate). The sign-in is OAuth: your browser opens kalandra.tech, you approve once what the assistant may do, and it stays connected as your account — nothing to paste, and it never sees your password."
   },
   "tools": {
     "title": "What it can do",
@@ -59,12 +59,12 @@
         "tools": [
           {
             "name": "list_blog_posts",
-            "auth": true,
-            "description": "Published posts with summaries and tags — each one shows whether you've already read it."
+            "auth": false,
+            "description": "Published posts with summaries, tags, and links to the full text. Signed in, each post also shows whether you've already read it."
           },
           {
             "name": "get_blog_post_comments",
-            "auth": true,
+            "auth": false,
             "description": "The public comment thread of any post."
           },
           {
@@ -98,7 +98,7 @@
   "how": {
     "title": "How it works",
     "items": [
-      "The tools are a second front door onto the same domain: each call runs the same code the website's own requests do, as your account, with the same validation, rate limits, and email notifications.",
+      "The tools are a second front door onto the same domain: each call runs the same code the website's own requests do — the public ones anonymously, the account ones as you — with the same validation, rate limits, and email notifications.",
       "Blog posts are read from the site's RSS feed, so the assistant sees exactly what is published.",
       "Built in .NET with the official MCP C# SDK, running as its own host — separate from the REST API because it authenticates you with OAuth rather than a token the site hands out."
     ],
