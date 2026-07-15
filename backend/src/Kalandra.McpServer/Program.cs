@@ -44,9 +44,9 @@ app.UseStatusCodePages();
 McpAuth.Use(app);
 McpRateLimits.Use(app);
 
-// MCP tools over streamable HTTP. Anonymous callers get the public blog tools; an invalid token still
-// draws the OAuth challenge (401 + WWW-Authenticate: resource_metadata=…) that points clients at Supabase.
-app.MapMcp("/mcp").RequireAuthorization(McpAuth.AnonymousOrValidTokenPolicy).RequireRateLimiting(McpRateLimitPolicies.Mcp);
+// MCP tools over streamable HTTP. The endpoint itself needs no authorization — the tools' [Authorize]
+// attributes gate the account tier, and an invalid or expired token is simply served as anonymous.
+app.MapMcp("/mcp").RequireRateLimiting(McpRateLimitPolicies.Mcp);
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {

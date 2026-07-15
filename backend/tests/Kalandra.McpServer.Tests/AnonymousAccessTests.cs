@@ -6,8 +6,9 @@ using System.Text.Json;
 namespace Kalandra.McpServer.Tests;
 
 /// <summary>
-/// Pins the anonymous tier: without a token the endpoint connects and serves the public blog tools,
-/// while the account tools stay hidden from tools/list and refuse direct calls.
+/// Pins the anonymous tier: without a token — or with one that doesn't validate — the endpoint connects
+/// and serves the public blog tools, while the account tools stay hidden from tools/list and refuse
+/// direct calls.
 /// </summary>
 public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
@@ -73,7 +74,22 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
         Assert.Contains("requires authorization", message);
     }
 
-    private async Task<HttpResponseMessage> PostMcp(string jsonRpc)
+    [Fact]
+    public async Task ToolsList_WithAnInvalidToken_IsServedAsAnonymous()
+    {
+        // The accepted trade-off of the anonymous tier: a bad or expired token authenticates as nobody
+        // and gets the public tools rather than a 401 — keeping the token fresh is the client's job.
+        var response = await PostMcp(
+            """{"jsonrpc":"2.0","id":5,"method":"tools/list","params":{}}""", bearerToken: "not-a-valid-token");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await ReadJsonRpcResponse(response);
+        var toolNames = document.RootElement.GetProperty("result").GetProperty("tools")
+            .EnumerateArray().Select(tool => tool.GetProperty("name").GetString()).Order().ToList();
+        Assert.Equal(["get_blog_post_comments", "list_blog_posts"], toolNames);
+    }
+
+    private async Task<HttpResponseMessage> PostMcp(string jsonRpc, string? bearerToken = null)
     {
         var client = factory.CreateClient();
         var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
@@ -82,6 +98,8 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
         };
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        if (bearerToken is not null)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
         return await client.SendAsync(request, Ct);
     }
 

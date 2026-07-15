@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Net.Http.Headers;
 using ModelContextProtocol.AspNetCore.Authentication;
 using ModelContextProtocol.Authentication;
 
@@ -18,12 +17,6 @@ namespace Kalandra.McpServer.Infrastructure;
 /// </summary>
 public static class McpAuth
 {
-    /// <summary>
-    /// Anonymous callers pass (the public tools serve them), but a presented token must validate —
-    /// an expired or bad token gets the OAuth challenge, not a silent downgrade to anonymous.
-    /// </summary>
-    public const string AnonymousOrValidTokenPolicy = "AnonymousOrValidToken";
-
     public static void Add(IServiceCollection services, SupabaseConfig supabaseConfig, McpServerConfig mcpConfig)
     {
         var projectUrl = supabaseConfig.ProjectUrl.Value.TrimEnd('/');
@@ -82,11 +75,7 @@ public static class McpAuth
                 };
             });
 
-        services.AddAuthorization(options =>
-            options.AddPolicy(AnonymousOrValidTokenPolicy, policy => policy.RequireAssertion(context =>
-                context.User.Identity?.IsAuthenticated == true
-                || (context.Resource is HttpContext httpContext
-                    && !httpContext.Request.Headers.ContainsKey(HeaderNames.Authorization)))));
+        services.AddAuthorization();
     }
 
     public static void Use(WebApplication app)

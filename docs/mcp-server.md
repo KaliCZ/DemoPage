@@ -44,14 +44,15 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: public blog t
           ──5── POST /mcp with the access token  →  the full toolset, acting as that user
 ```
 
-- **Anonymous access is a tier, not a hole.** The endpoint's `AnonymousOrValidToken` policy lets callers
-  without credentials through, but a *presented* token must validate — an expired or bad token gets the
-  401 + `WWW-Authenticate: resource_metadata=…` challenge (so clients know to re-authenticate), never a
-  silent downgrade to the anonymous tier.
-- **Authorization is per tool.** The SDK's `AddAuthorizationFilters()` honors `[Authorize]`/`[AllowAnonymous]`
-  on the tool classes and methods: `tools/list` shows an anonymous caller only the public tools, and a direct
-  `tools/call` on an account tool is refused. Signing in is client-initiated (there is no 401 on connect to
-  force it); the server instructions tell the model to ask the user when an account tool is wanted.
+- **Authorization is per tool, not per endpoint.** The SDK's `AddAuthorizationFilters()` honors
+  `[Authorize]`/`[AllowAnonymous]` on the tool classes and methods: `tools/list` shows an anonymous caller
+  only the public tools, and a direct `tools/call` on an account tool is refused. Signing in is
+  client-initiated (there is no 401 on connect to force it); the server instructions tell the model to ask
+  the user when an account tool is wanted.
+- **An invalid or expired token is served as anonymous** — stock ASP.NET behaviour (authentication fails
+  open; an endpoint without an authorization requirement never challenges), accepted deliberately over a
+  custom presented-token-must-validate policy. Keeping the token fresh is the client's job via OAuth refresh;
+  the visible symptom of a stale one is the account tools disappearing.
 - `McpAuth` wires JWT bearer validation (Supabase issuer + JWKS) as the *authenticate* scheme and the MCP SDK's
   scheme as the *challenge* scheme. The SDK's `AddMcp` handler serves `/.well-known/oauth-protected-resource`
   from the configured `ProtectedResourceMetadata`.
@@ -130,9 +131,9 @@ Requires the `MCP_IMAGE_NAME` repo variable and a `mcp.kalandra.tech` DNS record
 - `Kalandra.Blog.Tests/BlogFeedParseTests` — pure unit tests for RSS parsing (the feed reader lives in
   `Kalandra.Blog/Feed/`).
 - `Kalandra.McpServer.Tests` — HTTP-level tests against the real host with a stubbed RSS feed:
-  `OAuthResourceServerTests` pins the resource metadata and the invalid-token challenge,
-  `AnonymousAccessTests` pins the anonymous tier (public tools listed and callable, account tools hidden
-  and refused).
+  `OAuthResourceServerTests` pins the protected-resource metadata document, `AnonymousAccessTests` pins the
+  anonymous tier (public tools listed and callable, account tools hidden and refused, an invalid token
+  served as anonymous).
 - The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
 - The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
   noindex).

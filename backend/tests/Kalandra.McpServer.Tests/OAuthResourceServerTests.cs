@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Kalandra.Blog.Feed;
@@ -81,23 +80,4 @@ public class OAuthResourceServerTests(McpServerFactory factory) : IClassFixture<
         Assert.Contains($"{McpServerFactory.SupabaseUrl}/auth/v1", authorizationServers);
     }
 
-    [Fact]
-    public async Task Mcp_WithAnInvalidToken_ChallengesWithTheResourceMetadataUrl()
-    {
-        var client = factory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
-        {
-            Content = new StringContent("{}", Encoding.UTF8, "application/json"),
-        };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "not-a-valid-token");
-
-        var response = await client.SendAsync(request, Ct);
-
-        // A presented-but-invalid token must get the OAuth challenge, not a silent downgrade to the
-        // anonymous tier — the 401 is how a client with an expired token learns to re-authenticate.
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var challenge = string.Join(", ", response.Headers.WwwAuthenticate);
-        Assert.Contains("resource_metadata", challenge);
-        Assert.Contains("oauth-protected-resource", challenge);
-    }
 }
