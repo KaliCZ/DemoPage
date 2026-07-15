@@ -273,5 +273,27 @@ test.describe("Blog", () => {
     expect(body).not.toContain("/profile");
     expect(body).not.toContain("/admin");
     expect(body).not.toContain("/auth/callback");
+    expect(body).not.toContain("/oauth/consent");
+  });
+});
+
+test.describe("OAuth consent", () => {
+  test("reports a link with no authorization request", async ({ page }) => {
+    await page.goto("/oauth/consent");
+    await expect(page.locator("#consent-error")).toBeVisible();
+    await expect(page.locator("#consent-error-message")).toContainText("no authorization request");
+    await expect(page.locator("#consent-request")).toBeHidden();
+  });
+
+  test("asks an anonymous visitor to sign in first", async ({ page }) => {
+    await page.goto("/oauth/consent?authorization_id=00000000-0000-0000-0000-000000000001");
+    await expect(page.locator("#consent-signed-out")).toBeVisible();
+    await expect(page.locator("#consent-request")).toBeHidden();
+    await expect(page.locator("#consent-error")).toBeHidden();
+  });
+
+  test("is not indexable", async ({ page }) => {
+    await page.goto("/oauth/consent");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
   });
 });

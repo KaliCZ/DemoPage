@@ -1,3 +1,12 @@
+using Microsoft.AspNetCore.Builder;
+// Microsoft.AspNetCore.Hosting carries Sentry's UseSentry(IWebHostBuilder, Action<SentryAspNetCoreOptions>);
+// don't add `using Sentry.AspNetCore` — its ISentryBuilder overload wins resolution and breaks this.
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using OpenTelemetry;
 using Sentry;
@@ -6,13 +15,12 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace Kalandra.Api.Infrastructure;
+namespace Kalandra.Hosting;
 
 public static class Observability
 {
-    private const string ServiceName = "api";
-
-    public static void Add(WebApplicationBuilder builder)
+    /// <param name="serviceName">Distinguishes the hosts on traces and in Sentry ("api", "mcp").</param>
+    public static void Add(WebApplicationBuilder builder, string serviceName)
     {
         var sentryConfig = SentryConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
         var betterStackConfig = BetterStackConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
@@ -21,7 +29,7 @@ public static class Observability
             throw new InvalidOperationException("Sentry:Dsn must be configured in production.");
 
         AddSentry(builder, sentryConfig);
-        AddOpenTelemetry(builder, sentryConfig, betterStackConfig);
+        AddOpenTelemetry(builder, serviceName, sentryConfig, betterStackConfig);
     }
 
     private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config)
@@ -64,7 +72,8 @@ public static class Observability
         });
     }
 
-    private static void AddOpenTelemetry(WebApplicationBuilder builder, SentryConfig? sentryConfig, BetterStackConfig? betterStackConfig)
+    private static void AddOpenTelemetry(
+        WebApplicationBuilder builder, string serviceName, SentryConfig? sentryConfig, BetterStackConfig? betterStackConfig)
     {
         // Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT; the default AddOtlpExporter() picks it up.
         var aspireEnabled = !string.IsNullOrEmpty(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
@@ -75,7 +84,7 @@ public static class Observability
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(
-                    serviceName: ServiceName,
+                    serviceName: serviceName,
                     serviceVersion: AppVersion.InformationalVersion))
             .WithTracing(tracing =>
             {

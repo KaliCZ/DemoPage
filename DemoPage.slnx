@@ -2,11 +2,14 @@
   <Project Path="aspire/Kalandra.AppHost/Kalandra.AppHost.csproj" />
   <Project Path="backend/src/Kalandra.Api/Kalandra.Api.csproj" />
   <Project Path="backend/src/Kalandra.Blog/Kalandra.Blog.csproj" />
+  <Project Path="backend/src/Kalandra.Hosting/Kalandra.Hosting.csproj" />
   <Project Path="backend/src/Kalandra.Infrastructure/Kalandra.Infrastructure.csproj" />
   <Project Path="backend/src/Kalandra.JobOffers/Kalandra.JobOffers.csproj" />
+  <Project Path="backend/src/Kalandra.McpServer/Kalandra.McpServer.csproj" />
   <Project Path="backend/tests/Kalandra.Api.IntegrationTests/Kalandra.Api.IntegrationTests.csproj" />
   <Project Path="backend/tests/Kalandra.Blog.Tests/Kalandra.Blog.Tests.csproj" />
   <Project Path="backend/tests/Kalandra.JobOffers.Tests/Kalandra.JobOffers.Tests.csproj" />
+  <Project Path="backend/tests/Kalandra.McpServer.Tests/Kalandra.McpServer.Tests.csproj" />
   <Project Path="backend/tests/Kalandra.Infrastructure.Tests/Kalandra.Infrastructure.Tests.csproj" />
   <Folder Name="/docs/">
     <File Path="docs/SETUP.md" />

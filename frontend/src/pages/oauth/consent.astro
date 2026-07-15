@@ -1,0 +1,185 @@
+---
+/**
+ * OAuth consent screen.
+ *
+ * Supabase's OAuth 2.1 server runs the authorization flow but delegates the consent UI to us: it
+ * redirects here with an `authorization_id`, and this page approves or denies it as the signed-in
+ * user. Everything runs with the user's own session — the service key is never involved.
+ *
+ * English-only: Supabase is configured with a single authorization path, so there's no locale
+ * segment to route on, and the visitor arrives from a third-party app rather than the site's nav.
+ */
+import Layout from "../../layouts/Layout.astro";
+import t from "../../i18n/en/oauth.json";
+---
+
+<Layout
+  title={t.meta.title}
+  description={t.meta.description}
+  activePage="oauth-consent"
+  pagePath="oauth/consent"
+  alternateLocales={["en"]}
+  noindex
+>
+  <section class="max-w-xl mx-auto px-8 py-16">
+    <div id="consent-loading" class="text-on-surface-variant font-body">{t.loading}</div>
+
+    <div id="consent-signed-out" class="hidden">
+      <h1 class="font-headline text-3xl font-extrabold tracking-tight mb-4">{t.signedOut.title}</h1>
+      <p class="text-on-surface-variant font-body mb-6">{t.signedOut.description}</p>
+      <button
+        id="consent-sign-in"
+        class="bg-primary text-on-primary font-body font-semibold rounded-full px-6 py-3 hover:opacity-90 transition-opacity"
+      >
+        {t.signedOut.action}
+      </button>
+    </div>
+
+    <div id="consent-request" class="hidden">
+      <h1 class="font-headline text-3xl font-extrabold tracking-tight mb-6">{t.consent.title}</h1>
+
+      <div class="flex items-center gap-4 mb-6">
+        <img id="consent-client-logo" alt="" class="hidden w-12 h-12 rounded-lg object-contain" />
+        <p class="font-body text-lg">
+          <strong id="consent-client-name"></strong>
+          <span class="text-on-surface-variant">{t.consent.wantsAccess}</span>
+        </p>
+      </div>
+
+      <p class="text-sm text-on-surface-variant font-body mb-6">
+        {t.consent.signedInAs}
+        <strong id="consent-user-email"></strong>
+      </p>
+
+      <p class="font-body font-semibold mb-2">{t.consent.permissions}</p>
+      <ul id="consent-scopes" class="list-disc list-inside text-on-surface-variant font-body mb-6 space-y-1"></ul>
+
+      <p class="text-sm text-on-surface-variant font-body mb-8 break-all">
+        {t.consent.redirect}
+        <code id="consent-redirect-uri"></code>
+      </p>
+
+      <div class="flex gap-3">
+        <button
+          id="consent-approve"
+          class="bg-primary text-on-primary font-body font-semibold rounded-full px-6 py-3 hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {t.consent.approve}
+        </button>
+        <button
+          id="consent-deny"
+          class="border border-outline font-body font-semibold rounded-full px-6 py-3 hover:bg-surface-variant transition-colors disabled:opacity-50"
+        >
+          {t.consent.deny}
+        </button>
+      </div>
+    </div>
+
+    <div id="consent-error" class="hidden">
+      <h1 class="font-headline text-3xl font-extrabold tracking-tight mb-4">{t.consent.title}</h1>
+      <p id="consent-error-message" class="text-error font-body"></p>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { getSupabaseClient } from "../../lib/supabase";
+  import { openAuthDialog } from "../../lib/auth";
+  import t from "../../i18n/en/oauth.json";
+
+  const SECTIONS = ["consent-loading", "consent-signed-out", "consent-request", "consent-error"];
+  const show = (id: string) => SECTIONS.forEach((section) => document.getElementById(section)?.classList.toggle("hidden", section !== id));
+
+  const fail = (message: string) => {
+    const target = document.getElementById("consent-error-message");
+    if (target) target.textContent = message;
+    show("consent-error");
+  };
+
+  const authorizationId = new URLSearchParams(window.location.search).get("authorization_id");
+
+  const scopeLabels: Record<string, string> = t.scopes;
+  const describeScope = (scope: string) => scopeLabels[scope] ?? scope;
+
+  function renderRequest(details: any, email: string) {
+    (document.getElementById("consent-client-name") as HTMLElement).textContent = details.client?.name ?? details.client?.uri ?? "";
+    (document.getElementById("consent-user-email") as HTMLElement).textContent = email;
+    (document.getElementById("consent-redirect-uri") as HTMLElement).textContent = details.redirect_uri ?? "";
+
+    const logo = document.getElementById("consent-client-logo") as HTMLImageElement;
+    if (details.client?.logo_uri) {
+      logo.src = details.client.logo_uri;
+      logo.classList.remove("hidden");
+    }
+
+    const scopes = document.getElementById("consent-scopes") as HTMLElement;
+    scopes.replaceChildren(
+      ...String(details.scope ?? "")
+        .split(" ")
+        .filter(Boolean)
+        .map((scope) => {
+          const item = document.createElement("li");
+          item.textContent = describeScope(scope);
+          return item;
+        }),
+    );
+  }
+
+  async function decide(approve: boolean) {
+    const buttons = ["consent-approve", "consent-deny"].map((id) => document.getElementById(id) as HTMLButtonElement);
+    buttons.forEach((button) => (button.disabled = true));
+
+    const supabase = await getSupabaseClient();
+    if (!supabase) return fail(t.errors.unavailable);
+
+    const { data, error } = approve
+      ? await supabase.auth.oauth.approveAuthorization(authorizationId!)
+      : await supabase.auth.oauth.denyAuthorization(authorizationId!);
+
+    if (error || !data?.redirect_url) {
+      buttons.forEach((button) => (button.disabled = false));
+      return fail(t.errors.failed);
+    }
+
+    // Hands control back to the OAuth client with the code (approve) or an error (deny).
+    window.location.replace(data.redirect_url);
+  }
+
+  async function loadRequest(email: string) {
+    show("consent-loading");
+
+    const supabase = await getSupabaseClient();
+    if (!supabase) return fail(t.errors.unavailable);
+
+    const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId!);
+    if (error || !data) return fail(t.errors.failed);
+
+    // Already consented to these scopes — Supabase hands back a ready redirect instead of details.
+    if (!("authorization_id" in data)) {
+      window.location.replace(data.redirect_url);
+      return;
+    }
+
+    renderRequest(data, email);
+    show("consent-request");
+  }
+
+  document.getElementById("consent-sign-in")?.addEventListener("click", () => openAuthDialog());
+  document.getElementById("consent-approve")?.addEventListener("click", () => decide(true));
+  document.getElementById("consent-deny")?.addEventListener("click", () => decide(false));
+
+  if (!authorizationId) {
+    fail(t.errors.missingRequest);
+  } else {
+    // Layout fires auth-change on load and on every sign-in/out, so this covers the
+    // "signed in after landing here" case too.
+    window.addEventListener("auth-change", (event) => {
+      const user = (event as CustomEvent).detail?.user;
+      if (!user) {
+        show("consent-signed-out");
+        return;
+      }
+      loadRequest(user.email ?? "");
+    });
+  }
+</script>

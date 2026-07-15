@@ -461,13 +461,17 @@
         "title": "MCP Server",
         "done": true,
         "dates": "8. 7. 2026",
-        "description": "AI asistenti komunikují se stránkou přes Model Context Protocol endpoint na api.kalandra.tech/mcp — podávají a sledují pracovní nabídky, procházejí blog a čtou či píší komentáře, vše jako přihlášený uživatel přes stejné doménové handlery, které používá web.",
+        "description": "AI asistenti komunikují se stránkou přes Model Context Protocol endpoint na mcp.kalandra.tech — podávají a sledují pracovní nabídky, procházejí blog a čtou či píší komentáře, vše jako přihlášený uživatel přes stejné doménové handlery, které používá web.",
         "side": "left",
         "detailsLabel": "Co se udělalo",
         "details": [
           {
             "author": "claude",
-            "text": "8 MCP nástrojů vystavených jako /mcp route na API přes stateless streamable HTTP — jeden host, dva vstupy (REST + MCP)"
+            "text": "8 MCP nástrojů na vlastním hostu chráněném OAuthem přes stateless streamable HTTP — dva vstupy (REST + MCP) do jedné domény"
+          },
+          {
+            "author": "claude",
+            "text": "OAuth 2.0 resource server: tokeny vydává Supabase, host ho inzeruje přes protected-resource metadata a asistent vás přihlásí sám — nic se nevkládá"
           },
           {
             "author": "claude",

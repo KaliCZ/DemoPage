@@ -1,27 +1,37 @@
 # Backend Architecture
 
-## The three projects
+## The projects
 
-- **`Kalandra.Api`** — the HTTP boundary. Controllers, request DTOs, API error enums, REST-only response envelopes (pagination, history, stats), auth pipeline, rate limiting. Handles request validation and mapping. Keeps API contracts stable for the frontend.
+- **`Kalandra.Api`** — the REST boundary. Controllers, request DTOs, API error enums, REST-only response envelopes (pagination, history, stats), the Supabase bearer pipeline, rate limiting. Handles request validation and mapping. Keeps API contracts stable for the frontend.
+- **`Kalandra.McpServer`** — the MCP boundary. The same domain, a different front door and a different way in: an OAuth 2.0 resource server for AI assistants. See below.
+- **`Kalandra.Hosting`** — the web composition the two hosts share: Sentry + OpenTelemetry setup (parameterized by service name), the Marten store registration, `AppVersion` and the commit health check, and the `HttpContextCurrentUserAccessor`. Referenced **only** by the hosts, never by a domain project — which is exactly why this ASP.NET-coupled code lives here and not in `Kalandra.Infrastructure`, whose consumers must stay framework-light.
 - **Domain projects** (e.g. `Kalandra.JobOffers`) — one project per business domain. Entities, events, command/query handlers, Marten config, and the response contracts every front door serves (`Contracts/*Response.cs`). Each domain gets its own project with vertical slices. A new domain = a new `Kalandra.{Domain}` project + `Add{Domain}Domain()` extension.
-- **`Kalandra.Infrastructure`** — cross-cutting concerns. Supabase clients (auth, storage), `CurrentUser`, Turnstile validation, configuration records. Leaf project — depends on nothing else in the repo.
+- **`Kalandra.Infrastructure`** — cross-cutting concerns. Supabase clients (auth, storage), `CurrentUser` and the claims parsing behind `ICurrentUserAccessor`, Turnstile validation, configuration records. Leaf project — depends on nothing else in the repo.
 
 ## Dependency direction
 
 ```
-Kalandra.Api  ───────────►  Kalandra.JobOffers  ───────────►  Kalandra.Infrastructure
-      │                                                                ▲
-      └────────────────────────────────────────────────────────────────┘
+Kalandra.Api        ─┐
+                     ├─►  Kalandra.Hosting  ─►  Kalandra.JobOffers / Kalandra.Blog  ─►  Kalandra.Infrastructure
+Kalandra.McpServer  ─┘
 ```
 
-The compiler enforces this via `<ProjectReference>` entries — cycles are rejected at build time.
+The compiler enforces this via `<ProjectReference>` entries — cycles are rejected at build time. The two hosts
+never reference each other: anything they share is either domain code, `Kalandra.Hosting` (web composition), or
+`Kalandra.Infrastructure`. What stays in a host is what genuinely differs — its auth pipeline, its rate-limit
+policies, its endpoints.
 
-## The MCP server (a second front door on the API)
+## Two hosts, one domain
 
-The API host exposes a Model Context Protocol endpoint at `/mcp` in addition to the REST controllers. The MCP
-tools live in `Kalandra.Api/Features/Mcp/` and are thin adapters over the **same domain handlers the
-controllers call**, acting as the authenticated user — one domain, two front doors (REST + MCP), no second
-write path and no separate deployable. See `docs/mcp-server.md`.
+The MCP server is a second front door, not a second system: its tools are thin adapters over the **same domain
+handlers the controllers call**, so there is no second write path. It's a separate deployable only because it
+authenticates differently — the API takes a bearer token from our own frontend, while the MCP host is an OAuth
+resource server that third-party assistants connect to.
+
+The split has one rule worth knowing: **only `Kalandra.Api` runs the Marten async daemon and the notification
+subscriptions.** The MCP host registers the store so tools can read and append events, but a comment posted
+through a tool is emailed exactly once, by the API's daemon reacting to the shared event store. See
+`docs/mcp-server.md`.
 
 ## Key principles
 
@@ -67,5 +77,5 @@ Notification emails are a side effect of committed events, delivered by Marten e
 | A new business domain                               | New `Kalandra.{Domain}/` project + `Add{Domain}Domain()` extension     |
 | A new external HTTP integration                     | `Kalandra.Infrastructure/{Concern}/` + typed `HttpClient` registration |
 | A new background notification                       | `Kalandra.{Domain}/Notifications/` + a subscription registered in `AddAppMarten` |
-| A new MCP tool                                      | `Kalandra.Api/Features/Mcp/` + call the domain handler directly (see `docs/mcp-server.md`) |
+| A new MCP tool                                      | `Kalandra.McpServer/Tools/` + call the domain handler directly (see `docs/mcp-server.md`) |
 | A new role                                          | Add to `UserRole` enum + `RequireRole` policy                          |

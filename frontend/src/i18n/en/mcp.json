@@ -13,19 +13,14 @@
   "connect": {
     "title": "Connect",
     "endpointLabel": "Endpoint",
-    "transportNote": "Streamable HTTP, stateless. Reading the blog needs no account; tools that act as you expect your access token in the Authorization header.",
+    "transportNote": "Streamable HTTP, stateless. Sign-in is OAuth — there's no token to copy, and none to refresh when it expires.",
     "claudeCodeLabel": "Claude Code",
     "copyCommand": "Copy command",
-    "copyCommandWithToken": "Copy command with my token",
     "copied": "Copied!",
     "copyFailed": "Copy failed",
     "copyEndpointAriaLabel": "Copy the MCP endpoint URL",
-    "tokenTitle": "Your access token",
-    "tokenSignedOut": "Sign in and your access token gets filled into the command above — that's what lets the assistant act as your account.",
-    "tokenSignedIn": "You're signed in. The copy button above includes your current access token.",
-    "tokenCopy": "Copy access token only",
-    "tokenNote": "Access tokens are short-lived (about an hour) — when the assistant starts getting 401s, grab a fresh one here.",
-    "signIn": "Sign In"
+    "authTitle": "Signing in",
+    "authDescription": "The first time your assistant connects it finds the sign-in by itself, opens kalandra.tech in your browser, and asks you to approve what it may do. Approve once and it stays connected, acting as your account — nothing to paste, and it never sees your password."
   },
   "tools": {
     "title": "What it can do",
@@ -64,12 +59,12 @@
         "tools": [
           {
             "name": "list_blog_posts",
-            "auth": false,
-            "description": "Published posts with summaries and tags. Signed in, each one shows whether you've already read it."
+            "auth": true,
+            "description": "Published posts with summaries and tags — each one shows whether you've already read it."
           },
           {
             "name": "get_blog_post_comments",
-            "auth": false,
+            "auth": true,
             "description": "The public comment thread of any post."
           },
           {
@@ -103,9 +98,9 @@
   "how": {
     "title": "How it works",
     "items": [
-      "The tools are a second front door on the API: each call runs the same code the website's own requests do, as your account, with the same validation, rate limits, and email notifications.",
+      "The tools are a second front door onto the same domain: each call runs the same code the website's own requests do, as your account, with the same validation, rate limits, and email notifications.",
       "Blog posts are read from the site's RSS feed, so the assistant sees exactly what is published.",
-      "Built in .NET with the official MCP C# SDK, served as a /mcp route on the API itself — no separate service."
+      "Built in .NET with the official MCP C# SDK, running as its own host — separate from the REST API because it authenticates you with OAuth rather than a token the site hands out."
     ],
     "projectLinkPrefix": "The full build story is on the ",
     "projectLinkText": "Project page",

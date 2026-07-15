@@ -1,0 +1,28 @@
+# Quadlet unit for the blue slot of the demopage MCP server (rootless, under the opc user).
+#
+# Same blue/green contract as the API slots (see kalandra-api-blue.container): at most one
+# slot is the active upstream, the deploy rewrites Image= to the digest it just verified,
+# and Pull=missing means systemd starts whatever the deploy pulled.
+#
+# Ports are 8082/8083 so the two services never contend with the API's 8080/8081.
+
+[Unit]
+Description=Kalandra MCP server (blue slot)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/kalicz/demopage/mcp:latest
+ContainerName=kalandra-mcp-blue
+Network=host
+EnvironmentFile=%h/demoPage/kalandra-mcp.env
+Environment=ASPNETCORE_HTTP_PORTS=8082
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Pull=missing
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

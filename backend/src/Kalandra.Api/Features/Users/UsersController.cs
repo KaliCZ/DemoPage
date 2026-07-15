@@ -1,4 +1,4 @@
-using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

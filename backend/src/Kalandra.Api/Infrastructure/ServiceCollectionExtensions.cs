@@ -1,21 +1,17 @@
-using JasperFx;
 using JasperFx.Events.Daemon;
-using JasperFx.OpenTelemetry;
-using Kalandra.Api.Infrastructure.Auth;
-using Kalandra.Blog;
 using Kalandra.Blog.Events;
 using Kalandra.Blog.Notifications;
+using Kalandra.Hosting;
+using Kalandra.Hosting.Auth;
 using Kalandra.Infrastructure.Configuration;
 using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
-using Kalandra.JobOffers;
 using Kalandra.JobOffers.Events;
 using Kalandra.JobOffers.Notifications;
 using Marten;
-using Marten.Services;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
@@ -28,53 +24,24 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")!;
-
-        if (!environment.IsDevelopment()
-            && (connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) || connectionString.Contains("127.0.0.1")))
-            throw new InvalidOperationException(
-                "ConnectionStrings:DefaultConnection still points at localhost — a production deploy must set the real database.");
-
-        services.AddMarten(options =>
-        {
-            options.Connection(connectionString);
-
-            // Domain-specific Marten configuration
-            options.ConfigureJobOffers();
-            options.ConfigureBlog();
-
-            // Use snake_case for database identifiers
-            options.UseSystemTextJsonForSerialization();
-
-            if (environment.IsDevelopment())
+        // The store itself is shared with the MCP host; this host owns the schema and, below, is the only
+        // one that runs the daemon — so an event written by an MCP tool is still emailed exactly once.
+        services.AddAppMartenStore(configuration, environment, ownsSchema: true)
+            // Notification emails are delivered by subscriptions reacting to committed events, run by the
+            // async daemon. SubscribeFromPresent so a first deploy doesn't replay history and re-send every
+            // past notification; HotCold so only one instance delivers during a blue/green overlap.
+            .AddSubscriptionWithServices<BlogCommentNotificationSubscription>(ServiceLifetime.Scoped, o =>
             {
-                options.AutoCreateSchemaObjects = AutoCreate.All;
-            }
-            else
+                o.IncludeType<BlogCommentPosted>();
+                o.Options.SubscribeFromPresent();
+            })
+            .AddSubscriptionWithServices<JobOfferNotificationSubscription>(ServiceLifetime.Scoped, o =>
             {
-                options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-            }
-
-            // Emit Marten session/batch spans so connection + batch wait time isn't a blind gap on the trace.
-            options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
-            options.OpenTelemetry.TrackEventCounters();
-        })
-        .UseLightweightSessions()
-        // Notification emails are delivered by subscriptions reacting to committed events, run by the
-        // async daemon. SubscribeFromPresent so a first deploy doesn't replay history and re-send every
-        // past notification; HotCold so only one instance delivers during a blue/green overlap.
-        .AddSubscriptionWithServices<BlogCommentNotificationSubscription>(ServiceLifetime.Scoped, o =>
-        {
-            o.IncludeType<BlogCommentPosted>();
-            o.Options.SubscribeFromPresent();
-        })
-        .AddSubscriptionWithServices<JobOfferNotificationSubscription>(ServiceLifetime.Scoped, o =>
-        {
-            o.IncludeType<JobOfferSubmitted>();
-            o.IncludeType<JobOfferCommentAdded>();
-            o.Options.SubscribeFromPresent();
-        })
-        .AddAsyncDaemon(DaemonMode.HotCold);
+                o.IncludeType<JobOfferSubmitted>();
+                o.IncludeType<JobOfferCommentAdded>();
+                o.Options.SubscribeFromPresent();
+            })
+            .AddAsyncDaemon(DaemonMode.HotCold);
 
         return services;
     }

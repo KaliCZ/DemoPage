@@ -1,6 +1,4 @@
-using Kalandra.Infrastructure.Auth;
-
-namespace Kalandra.Api.Infrastructure.Auth;
+namespace Kalandra.Infrastructure.Auth;
 
 public interface ICurrentUserAccessor
 {
@@ -12,7 +10,7 @@ public interface ICurrentUserAccessor
 
     /// <summary>
     /// The authenticated user for the current request. Throws if the
-    /// request is anonymous — use from endpoints that are [Authorize]d.
+    /// request is anonymous — use from endpoints that require auth.
     /// </summary>
     CurrentUser RequiredUser { get; }
 }

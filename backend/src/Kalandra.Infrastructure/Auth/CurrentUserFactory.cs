@@ -1,47 +1,42 @@
 using System.Collections.Immutable;
-using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
-using Kalandra.Infrastructure.Auth;
+using StrongTypes;
 
-namespace Kalandra.Api.Infrastructure.Auth;
+namespace Kalandra.Infrastructure.Auth;
 
-public class HttpContextCurrentUserAccessor(
-    IHttpContextAccessor httpContextAccessor) : ICurrentUserAccessor
+/// <summary>
+/// Builds a <see cref="CurrentUser"/> from the validated JWT claims Supabase issues. Shared by every
+/// host's request-scoped accessor so the API and the MCP server read the same identity from a token.
+/// </summary>
+public static class CurrentUserFactory
 {
-    private static readonly AsyncLocal<CurrentUser?> CachedUser = new();
-    public CurrentUser? User => CachedUser.Value ??= BuildCurrentUser();
-    public CurrentUser RequiredUser => User ?? throw new InvalidOperationException("No authenticated user on the current request.");
-
-    private CurrentUser? BuildCurrentUser()
+    public static CurrentUser? FromClaimsPrincipal(ClaimsPrincipal? principal)
     {
-        var principal = httpContextAccessor.HttpContext?.User;
         if (principal?.Identity?.IsAuthenticated != true)
             return null;
 
-        var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        var emailStr = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
+        // "sub"/"email" are the raw JWT names; ClaimTypes.* are the mapped forms — accept either.
+        var userIdStr = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? principal.FindFirst("sub")?.Value;
+        var emailStr = principal.FindFirst(ClaimTypes.Email)?.Value ?? principal.FindFirst("email")?.Value;
 
         if (!Guid.TryParse(userIdStr, out var userId) || !MailAddress.TryCreate(emailStr, out var email))
             return null;
 
-        var userMetadata = principal.FindFirstValue("user_metadata");
-        var (fullName, avatarUrl) = ExtractUserMetadata(userMetadata, email);
+        var (fullName, avatarUrl) = ExtractUserMetadata(principal.FindFirst("user_metadata")?.Value, email);
 
         return new CurrentUser(
             Id: userId,
             Email: email,
             FullName: fullName,
             Roles: ExtractRoles(principal),
-            AvatarUrl: avatarUrl
-        );
+            AvatarUrl: avatarUrl);
     }
 
     /// <summary>
-    /// Translates ASP.NET role claims into the Role enum. Claim values are
-    /// canonicalized to enum names by Auth.ExtractRolesFromAppMetadata, so a
-    /// strict (case-sensitive) parse is enough here.
+    /// Role claim values are canonicalized to enum names when the token is validated,
+    /// so a strict (case-sensitive) parse is enough here.
     /// </summary>
     private static ImmutableArray<UserRole> ExtractRoles(ClaimsPrincipal principal)
     {

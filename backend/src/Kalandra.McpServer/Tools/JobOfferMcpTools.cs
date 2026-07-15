@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using Kalandra.Api.Infrastructure.Auth;
+using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
@@ -7,11 +7,11 @@ using Kalandra.JobOffers.Queries;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
-namespace Kalandra.Api.Features.Mcp;
+namespace Kalandra.McpServer.Tools;
 
 /// <summary>
-/// MCP tools for job offers. Each is a thin adapter over the same domain handlers the
-/// controllers call, acting as the authenticated user — no separate write path.
+/// MCP tools for job offers. Each is a thin adapter over the same domain handlers the REST controllers
+/// call, acting as the signed-in user — one domain, two front doors, no second write path.
 /// </summary>
 [McpServerToolType]
 public sealed class JobOfferMcpTools(
@@ -25,7 +25,7 @@ public sealed class JobOfferMcpTools(
 {
     [McpServerTool(Name = "submit_job_offer")]
     [Description("Submit a job offer to Pavel Kalandra — the same flow as the site's 'Hire me' form. " +
-                 "Requires the user's kalandra.tech account. Returns the created offer, whose id can be used to follow up with comments.")]
+                 "Returns the created offer, whose id can be used to follow up with comments.")]
     public async Task<GetJobOfferDetailResponse> SubmitJobOffer(
         [Description("Name of the hiring company.")] string companyName,
         [Description("Full name of the contact person.")] string contactName,

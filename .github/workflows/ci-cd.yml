@@ -359,7 +359,6 @@ jobs:
           SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
           BLOG_AUTHOR_NOTIFICATION_EMAIL: ${{ vars.BLOG_AUTHOR_NOTIFICATION_EMAIL }}
           JOB_OFFERS_OWNER_NOTIFICATION_EMAIL: ${{ vars.JOB_OFFERS_OWNER_NOTIFICATION_EMAIL }}
-          BLOG_FEED_RSS_URL: https://www.kalandra.tech/rss.xml
           # Digest-pinned, not :latest — the exact build verified by this run
           # is what runs and what comes back after a reboot.
           IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -368,7 +367,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM_EMAIL,BLOG_AUTHOR_NOTIFICATION_EMAIL,JOB_OFFERS_OWNER_NOTIFICATION_EMAIL,BLOG_FEED_RSS_URL,IMAGE_REF,EXPECTED_SHA
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,TURNSTILE_SECRET_KEY,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM_EMAIL,BLOG_AUTHOR_NOTIFICATION_EMAIL,JOB_OFFERS_OWNER_NOTIFICATION_EMAIL,IMAGE_REF,EXPECTED_SHA
           script: |
             set -euo pipefail
             MAX_ATTEMPTS=40
@@ -407,7 +406,6 @@ jobs:
             Email__FromName=kalandra.tech
             Blog__AuthorNotificationEmail=${BLOG_AUTHOR_NOTIFICATION_EMAIL}
             JobOffers__OwnerNotificationEmail=${JOB_OFFERS_OWNER_NOTIFICATION_EMAIL}
-            BlogFeed__RssUrl=${BLOG_FEED_RSS_URL}
             EOF
 
             # ----- 1. Determine which slot is currently active -----
@@ -518,6 +516,185 @@ jobs:
           # Liveness, matching the deploy gate — confirms Caddy serves the new commit publicly
           # without failing on a dependency outage that would break either slot.
           health-url: https://api.kalandra.tech/health/live
+          max-attempts: 20
+          retry-interval: 5
+          expected-content: ${{ github.sha }}
+
+  mcp-deploy:
+    # Gated on backend-deploy: the API owns the Marten schema (this host runs with
+    # AutoCreate.None in production), and backend-deploy already carries the test gates.
+    needs: [backend-deploy]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ vars.MCP_IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          file: backend/src/Kalandra.McpServer/Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Sync Quadlet unit files to VM
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          source: "infra/quadlet/*.container"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/quadlet-staging/"
+          strip_components: 2
+
+      - name: Sync Caddy routing fragment to VM
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1.0.0
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          # Our own fragment, separate from the API's, so each deploy rewrites only its port.
+          source: "infra/quadlet/kalandra-mcp.caddy"
+          target: "/home/${{ vars.OCI_USERNAME }}/demoPage/"
+          strip_components: 2
+
+      - name: Deploy to Oracle Cloud (blue-green)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SENTRY_DSN: ${{ secrets.BACKEND_SENTRY_DSN }}
+          BLOG_FEED_RSS_URL: https://www.kalandra.tech/rss.xml
+          MCP_RESOURCE_URI: https://mcp.kalandra.tech
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.MCP_IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          EXPECTED_SHA: ${{ github.sha }}
+        with:
+          host: ${{ vars.OCI_HOST }}
+          username: ${{ vars.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          envs: DB_CONNECTION_STRING,SUPABASE_PROJECT_URL,SUPABASE_SERVICE_ROLE_KEY,SENTRY_DSN,BLOG_FEED_RSS_URL,MCP_RESOURCE_URI,IMAGE_REF,EXPECTED_SHA
+          script: |
+            set -euo pipefail
+            MAX_ATTEMPTS=40
+            UNIT_DIR="$HOME/.config/containers/systemd"
+            APP_DIR="$HOME/demoPage"
+            STAGING="$APP_DIR/quadlet-staging"
+            SITE_CONF=/srv/caddy/sites/kalandra-mcp.caddy
+
+            # ----- 0. Preconditions: shared infra must already exist -----
+            command -v podman >/dev/null 2>&1 \
+              || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+            podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
+              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+            [ -d /srv/caddy/sites ] \
+              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+
+            umask 077
+            mkdir -p "$APP_DIR"
+
+            # No SMTP or notification config here: this host only writes events; the API's async
+            # daemon reacts to them and sends the emails.
+            cat > "$APP_DIR/kalandra-mcp.env" << EOF
+            ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+            Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
+            Supabase__ServiceKey=${SUPABASE_SERVICE_ROLE_KEY}
+            Sentry__Dsn=${SENTRY_DSN}
+            BlogFeed__RssUrl=${BLOG_FEED_RSS_URL}
+            Mcp__ResourceUri=${MCP_RESOURCE_URI}
+            EOF
+
+            # ----- 1. Determine which slot is currently active (cold start → blue) -----
+            if systemctl --user is-active --quiet kalandra-mcp-blue.service; then
+              OLD=blue; NEW=green; NEW_PORT=8083
+            elif systemctl --user is-active --quiet kalandra-mcp-green.service; then
+              OLD=green; NEW=blue; NEW_PORT=8082
+            else
+              OLD=""; NEW=blue; NEW_PORT=8082
+            fi
+            echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
+
+            # ----- 2. Install + digest-pin ONLY the slot we're deploying to -----
+            mkdir -p "$UNIT_DIR"
+            cp "$STAGING/kalandra-mcp-${NEW}.container" "$UNIT_DIR/kalandra-mcp-${NEW}.container"
+            sed -i "s|^Image=.*|Image=${IMAGE_REF}|" "$UNIT_DIR/kalandra-mcp-${NEW}.container"
+            systemctl --user daemon-reload
+
+            # ----- 3. Pull the digest-pinned image -----
+            podman pull "$IMAGE_REF"
+
+            # ----- 4. Start the new slot (stop first so a stale container can't linger) -----
+            systemctl --user stop "kalandra-mcp-${NEW}.service" || true
+            systemctl --user start "kalandra-mcp-${NEW}.service"
+
+            # ----- 5. Liveness-gate the new slot directly (bypassing Caddy) -----
+            echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
+            ATTEMPTS=0
+            until curl -sf "http://localhost:${NEW_PORT}/health/live" 2>/dev/null | grep -qF "$EXPECTED_SHA"; do
+              ATTEMPTS=$((ATTEMPTS + 1))
+              if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+                echo "New slot failed to start. Container logs:"
+                podman logs "kalandra-mcp-${NEW}" 2>&1 | tail -50 || true
+                echo "systemd status:"
+                systemctl --user status "kalandra-mcp-${NEW}.service" --no-pager || true
+                echo "Rolling back..."
+                systemctl --user stop "kalandra-mcp-${NEW}.service" || true
+                exit 1
+              fi
+              echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS — waiting 3s..."
+              sleep 3
+            done
+            echo "New slot is live on port $NEW_PORT (running $EXPECTED_SHA)."
+
+            # ----- 6. Point mcp.kalandra.tech at the new port (promotion) and reload -----
+            sed "s/__PORT__/${NEW_PORT}/" "$APP_DIR/kalandra-mcp.caddy" > "$SITE_CONF"
+            command -v chcon >/dev/null 2>&1 && chcon -t container_file_t "$SITE_CONF" || true
+            podman exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+            # ----- 7. Retire the old slot -----
+            if [ -n "$OLD" ]; then
+              systemctl --user stop "kalandra-mcp-${OLD}.service" || true
+              rm -f "$UNIT_DIR/kalandra-mcp-${OLD}.container"
+              systemctl --user daemon-reload
+            fi
+
+            # No image prune here: backend-deploy already prunes by the shared
+            # tech.kalandra.app=demopage label, which covers this host's old images too.
+            echo "Deployment complete — kalandra-mcp-${NEW} serving on port ${NEW_PORT}."
+
+      - name: Verify public endpoint
+        uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
+        with:
+          health-url: https://mcp.kalandra.tech/health/live
           max-attempts: 20
           retry-interval: 5
           expected-content: ${{ github.sha }}

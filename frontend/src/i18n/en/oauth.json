@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "Authorize application | Pavel Kalandra — kalandra.tech",
+    "description": "Review and approve an application's request to access your kalandra.tech account."
+  },
+  "loading": "Loading the request…",
+  "signedOut": {
+    "title": "Sign in to continue",
+    "description": "An application is asking to access your kalandra.tech account. Sign in so we can show you what it's requesting.",
+    "action": "Sign in"
+  },
+  "consent": {
+    "title": "Authorize application",
+    "wantsAccess": "wants to access your kalandra.tech account.",
+    "signedInAs": "Signed in as",
+    "permissions": "It will be allowed to:",
+    "redirect": "After you decide, you'll be sent back to:",
+    "approve": "Allow access",
+    "deny": "Deny",
+    "working": "Working…"
+  },
+  "scopes": {
+    "openid": "Confirm your identity",
+    "email": "See your email address",
+    "profile": "See your name and avatar"
+  },
+  "errors": {
+    "missingRequest": "This link has no authorization request in it. Start again from the application you're connecting.",
+    "failed": "We couldn't load that authorization request. It may have expired — start again from the application you're connecting.",
+    "unavailable": "Sign-in is unavailable right now. Please try again in a moment."
+  }
+}
