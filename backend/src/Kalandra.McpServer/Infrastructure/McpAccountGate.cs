@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
+using ModelContextProtocol.AspNetCore.Authentication;
 
 namespace Kalandra.McpServer.Infrastructure;
 
@@ -35,12 +37,34 @@ public static class McpAccountGate
             {
                 if (context.User.Identity?.IsAuthenticated != true && await NeedsAToken(context))
                 {
-                    await context.ChallengeAsync();
+                    await Challenge(context);
                     return;
                 }
 
                 await next(context);
             }));
+
+    private static async Task Challenge(HttpContext context)
+    {
+        await context.ChallengeAsync();
+
+        // The SDK's handler emits only resource_metadata; the spec also wants the scopes named, and RFC 6750
+        // wants a rejected token called out — error="invalid_token" is what says refresh, not re-sign-in.
+        var details = new List<string>();
+        if (context.Request.Headers.ContainsKey(HeaderNames.Authorization))
+            details.Add("error=\"invalid_token\"");
+        if (SupportedScopes(context) is { Count: > 0 } scopes)
+            details.Add($"scope=\"{string.Join(' ', scopes)}\"");
+
+        if (details.Count > 0)
+            context.Response.Headers.WWWAuthenticate =
+                $"{context.Response.Headers.WWWAuthenticate}, {string.Join(", ", details)}";
+    }
+
+    private static IList<string> SupportedScopes(HttpContext context) =>
+        context.RequestServices.GetRequiredService<IOptionsMonitor<McpAuthenticationOptions>>()
+            .Get(McpAuthenticationDefaults.AuthenticationScheme)
+            .ResourceMetadata?.ScopesSupported ?? [];
 
     private static async Task<bool> NeedsAToken(HttpContext context) =>
         // "Invalid or expired tokens MUST receive a HTTP 401 response" — a presented token that didn't

@@ -20,8 +20,9 @@ public static class McpRegistration
                     "and reading their comments works without signing in. Tools marked [Authorized] act as the " +
                     "signed-in user — submitting and following up on job offers, and writing comments. They are " +
                     "listed even when nobody is signed in, so you can tell the user what this site offers; calling " +
-                    "one without an account returns a message saying so. If the user wants one, tell them to sign " +
-                    "this server in with their kalandra.tech account from their assistant's connector settings.";
+                    "one without an account fails with an OAuth challenge that lets the client start the sign-in. " +
+                    "If the user wants one of those tools, tell them to complete that sign-in with their " +
+                    "kalandra.tech account, or to connect this server from their assistant's connector settings.";
             })
             // Stateless: every tool call is a self-contained POST carrying the caller's bearer token,
             // so no session affinity is needed behind the blue/green proxy.

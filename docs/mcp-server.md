@@ -38,7 +38,7 @@ OAuth 2.1 server runs the whole flow.
 
 ```
 Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset listed, public blog tools callable
-          ──2── tools/call on an [Authorized] tool  →  401 + WWW-Authenticate: resource_metadata=…
+          ──2── tools/call on an [Authorized] tool  →  401 + WWW-Authenticate: Bearer resource_metadata=…, scope=…
           ──3── GET /.well-known/oauth-protected-resource  →  { resource, authorization_servers: [<supabase>/auth/v1], scopes_supported }
           ──4── OAuth 2.1 + PKCE against Supabase (discovery, client registration, consent)
           ──5── POST /mcp with the access token  →  the full toolset, acting as that user
@@ -49,7 +49,8 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset
   authorization at the transport level and requires HTTP status codes for it — 401 for "authorization required
   or token invalid". That is the only refusal a client's OAuth code acts on: it reads `WWW-Authenticate`, finds
   the resource metadata, and signs in or refreshes on its own. A JSON-RPC error or a tool error saying "please
-  sign in" reaches only the model, which can do nothing but relay it to the user.
+  sign in" reaches only the model, which can do nothing but relay it to the user. The challenge also names the
+  `scope` to request (the spec's SHOULD), sparing the client a round trip to guess from `scopes_supported`.
 - **`McpAccountGate` issues that challenge**, as middleware ahead of the endpoint. It has to sit there: the SDK
   cannot challenge from inside a tool, because by then the response is already a JSON-RPC envelope, and stock
   `RequireAuthorization` would shut the anonymous tier out of the whole endpoint while never seeing the body
@@ -70,7 +71,9 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset
   spec says an invalid or expired token MUST be answered with a 401. Stock ASP.NET would fail open here
   (authentication that fails leaves an anonymous principal, and an endpoint with no authorization requirement
   never challenges), which silently demoted a stale token to anonymous instead of letting the client refresh
-  it. A caller that presents no token at all is still served the public tier.
+  it. That challenge carries `error="invalid_token"` (RFC 6750) — the signal that says *refresh and retry*
+  rather than *start a sign-in* — while a caller that presented no token gets a plain challenge, and one that
+  presents none on the public tools is still served the public tier.
 - `McpAuth` wires JWT bearer validation (Supabase issuer + JWKS) as the *authenticate* scheme and the MCP SDK's
   scheme as the *challenge* scheme. The SDK's `AddMcp` handler serves `/.well-known/oauth-protected-resource`
   from the configured `ProtectedResourceMetadata`.
@@ -152,7 +155,8 @@ Deploying needs only the `mcp.kalandra.tech` DNS record and the shared Caddy cer
   `Kalandra.Blog/Feed/`).
 - `Kalandra.McpServer.Tests` — HTTP-level tests against the real host with a stubbed RSS feed:
   `OAuthResourceServerTests` pins the protected-resource metadata document, `AnonymousAccessTests` pins the
-  anonymous tier (whole toolset listed, public tools callable, an invalid token served as anonymous), and
+  anonymous tier (whole toolset listed, public tools callable, an invalid token challenged rather than
+  downgraded), and
   `ToolAuthorizationTests` sweeps every listed tool without a token, checking each one challenges or answers
   the way its description advertises — the gate owns a hand-kept list, so this is what stops a new tool from
   leaking. `McpToolErrorsTests` pins that a deliberate tool error is logged nowhere, since the response looks

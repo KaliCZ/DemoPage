@@ -69,14 +69,36 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     {
         // The 401 is the whole contract: a client's OAuth code reads WWW-Authenticate, finds the resource
         // metadata, and signs in or refreshes on its own. A tool error saying "please sign in" cannot do that.
-        var response = await factory.PostMcp(
-            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_my_comments","arguments":{}}}""",
-            bearerToken);
+        var response = await CallAccountTool(bearerToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         var challenge = Assert.Single(response.Headers.WwwAuthenticate);
         Assert.Equal("Bearer", challenge.Scheme);
         Assert.Contains("resource_metadata=", challenge.Parameter);
+        // The spec's SHOULD: the challenge itself names the scopes to request, sparing the client a guess.
+        Assert.Contains("scope=\"openid email profile\"", challenge.Parameter);
+    }
+
+    [Fact]
+    public async Task ARejectedToken_IsNamedTheProblem_SoTheClientRefreshesIt()
+    {
+        // RFC 6750's error="invalid_token" is the standard signal separating "refresh your token and retry"
+        // from "start a sign-in" — without it a client cannot tell which of the two the 401 means.
+        var response = await CallAccountTool("stale-or-forged-token");
+
+        var challenge = Assert.Single(response.Headers.WwwAuthenticate);
+        Assert.Contains("error=\"invalid_token\"", challenge.Parameter);
+    }
+
+    [Fact]
+    public async Task AFirstVisitWithNoToken_GetsAPlainChallenge_NotAnErrorCode()
+    {
+        // RFC 6750: when no credentials were presented, the challenge SHOULD NOT carry an error code —
+        // there is no token to blame, only a sign-in to start.
+        var response = await CallAccountTool(bearerToken: null);
+
+        var challenge = Assert.Single(response.Headers.WwwAuthenticate);
+        Assert.DoesNotContain("error=", challenge.Parameter);
     }
 
     [Fact]
@@ -101,6 +123,11 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
         return [.. document.RootElement.GetProperty("result").GetProperty("tools").EnumerateArray()
             .Select(tool => (tool.GetProperty("name").GetString()!, tool.GetProperty("description").GetString() ?? ""))];
     }
+
+    private Task<HttpResponseMessage> CallAccountTool(string? bearerToken) =>
+        factory.PostMcp(
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_my_comments","arguments":{}}}""",
+            bearerToken);
 
     private Task<HttpResponseMessage> CallAnonymously(string toolName) =>
         factory.PostMcp(
