@@ -38,18 +38,24 @@ OAuth 2.1 server runs the whole flow.
 
 ```
 Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset listed, public blog tools callable
-          ──2── user signs the server in from the assistant's connector settings
+          ──2── tools/call on an [Authorized] tool  →  401 + WWW-Authenticate: resource_metadata=…
           ──3── GET /.well-known/oauth-protected-resource  →  { resource, authorization_servers: [<supabase>/auth/v1], scopes_supported }
           ──4── OAuth 2.1 + PKCE against Supabase (discovery, client registration, consent)
           ──5── POST /mcp with the access token  →  the full toolset, acting as that user
 ```
 
-- **Authorization is per tool, and the tool itself does it.** Every account tool opens with
-  `McpToolHelpers.RequireUser`, which refuses with a message telling the model to get the user to sign in.
-  There is no framework gate: ASP.NET's authorization middleware runs before the JSON-RPC body is parsed, so
-  it only ever sees `POST /mcp` and cannot know which tool is being called — which is also why a refusal is a
-  tool error rather than an HTTP 401. `ToolAuthorizationTests` is what keeps this honest: it calls every
-  listed tool without a token and fails if one answers that shouldn't.
+- **A tool call that needs an account is challenged, not refused.** The
+  [authorization spec](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) puts
+  authorization at the transport level and requires HTTP status codes for it — 401 for "authorization required
+  or token invalid". That is the only refusal a client's OAuth code acts on: it reads `WWW-Authenticate`, finds
+  the resource metadata, and signs in or refreshes on its own. A JSON-RPC error or a tool error saying "please
+  sign in" reaches only the model, which can do nothing but relay it to the user.
+- **`McpAccountGate` issues that challenge**, as middleware ahead of the endpoint. It has to sit there: the SDK
+  cannot challenge from inside a tool, because by then the response is already a JSON-RPC envelope, and stock
+  `RequireAuthorization` would shut the anonymous tier out of the whole endpoint while never seeing the body
+  that says which tool is wanted. It owns the list of public tools, so a new tool is account-only until named
+  there; `ToolAuthorizationTests` calls every listed tool without a token and fails if one answers that
+  shouldn't. `McpToolHelpers.RequireUser` stays as the backstop inside each tool.
 - **The whole toolset is listed to everyone**, each account tool's description prefixed `[Authorized]`. A tool
   the model cannot see is a tool it cannot offer, so hiding them left it unable to tell the user what the site
   can do. The SDK's `AddAuthorizationFilters()` would honor `[Authorize]`/`[AllowAnonymous]` attributes, but
@@ -60,10 +66,11 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset
   The SDK does the same thing on its own — but only after logging it at Error as an unhandled exception, which
   alerts on every refused call. Catching it first, inside the SDK's outer handler, means nothing is logged at
   all, so no observability filtering is needed anywhere. Anything that isn't an `McpException` still reports.
-- **An invalid or expired token is served as anonymous** — stock ASP.NET behaviour (authentication fails
-  open; an endpoint without an authorization requirement never challenges), accepted deliberately over a
-  custom presented-token-must-validate policy. Keeping the token fresh is the client's job via OAuth refresh;
-  the visible symptom of a stale one is the account tools refusing.
+- **An invalid or expired token is challenged, not downgraded** — including on the public tools, because the
+  spec says an invalid or expired token MUST be answered with a 401. Stock ASP.NET would fail open here
+  (authentication that fails leaves an anonymous principal, and an endpoint with no authorization requirement
+  never challenges), which silently demoted a stale token to anonymous instead of letting the client refresh
+  it. A caller that presents no token at all is still served the public tier.
 - `McpAuth` wires JWT bearer validation (Supabase issuer + JWKS) as the *authenticate* scheme and the MCP SDK's
   scheme as the *challenge* scheme. The SDK's `AddMcp` handler serves `/.well-known/oauth-protected-resource`
   from the configured `ProtectedResourceMetadata`.
@@ -146,9 +153,10 @@ Deploying needs only the `mcp.kalandra.tech` DNS record and the shared Caddy cer
 - `Kalandra.McpServer.Tests` — HTTP-level tests against the real host with a stubbed RSS feed:
   `OAuthResourceServerTests` pins the protected-resource metadata document, `AnonymousAccessTests` pins the
   anonymous tier (whole toolset listed, public tools callable, an invalid token served as anonymous), and
-  `ToolAuthorizationTests` sweeps every listed tool without a token — the account gate lives in the tools, so
-  this is what stops a new one from leaking. `McpToolErrorsTests` pins that a deliberate tool error is logged
-  nowhere, since the response looks identical either way and the only symptom is Sentry filling up.
+  `ToolAuthorizationTests` sweeps every listed tool without a token, checking each one challenges or answers
+  the way its description advertises — the gate owns a hand-kept list, so this is what stops a new tool from
+  leaking. `McpToolErrorsTests` pins that a deliberate tool error is logged nowhere, since the response looks
+  identical either way and the only symptom is Sentry filling up.
 - The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
 - The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
   noindex).

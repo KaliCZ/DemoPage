@@ -1,6 +1,9 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Kalandra.McpServer.Infrastructure;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 
 namespace Kalandra.McpServer.Tests;
 
@@ -12,9 +15,10 @@ namespace Kalandra.McpServer.Tests;
 public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
     [Theory]
-    // A refused account tool and a bad argument: both are deliberate, both would otherwise alert.
-    [InlineData("get_my_comments", "{}", "kalandra.tech account")]
+    // Arguments the model got wrong: deliberate answers it can self-correct from, and every one of them would
+    // otherwise alert. (Signing in isn't here — McpAccountGate challenges that before a tool ever runs.)
     [InlineData("get_blog_post_comments", """{"slug":"no-such-post"}""", "No blog post with slug")]
+    [InlineData("get_blog_post_comments", """{"slug":""}""", "No blog post with slug")]
     public async Task AToolErrorMeantForTheModel_IsAnswered_AndLoggedNowhere(
         string toolName, string arguments, string expectedText)
     {
@@ -36,15 +40,27 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
     [Fact]
     public async Task AProtocolFault_IsLeftToTheSdkToReport()
     {
-        // McpProtocolException derives from McpException, so without care the filter would swallow the SDK's
-        // own failures too — including InternalError, the one thing that must alert.
-        var response = await factory.PostMcp(
-            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"no_such_tool","arguments":{}}}""");
+        // McpProtocolException derives from McpException, so without the guard the filter would swallow the
+        // SDK's own failures too — including InternalError, the one thing that must alert. Driven straight at
+        // the filter: over HTTP every protocol fault worth reaching is either gated or turned into a result.
+        var handler = McpToolErrors.ToToolResult(
+            (_, _) => throw new McpProtocolException("Boom.", McpErrorCode.InternalError));
 
-        using var document = await McpServerFactory.ReadJsonRpcResponse(response);
-        Assert.True(document.RootElement.TryGetProperty("error", out _), "An unknown tool must stay a JSON-RPC error.");
-        Assert.False(document.RootElement.TryGetProperty("result", out _));
+        await Assert.ThrowsAsync<McpProtocolException>(async () => await handler(null!, Ct));
     }
+
+    [Fact]
+    public async Task AToolsOwnError_IsAnsweredByTheFilter()
+    {
+        var handler = McpToolErrors.ToToolResult((_, _) => throw new McpException("No blog post with that slug."));
+
+        var result = await handler(null!, Ct);
+
+        Assert.True(result.IsError);
+        Assert.Contains("No blog post with that slug.", Assert.IsType<TextContentBlock>(result.Content[0]).Text);
+    }
+
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
     /// Collects what the MCP pipeline reports at the level Sentry turns into issues. Scoped to the SDK's own

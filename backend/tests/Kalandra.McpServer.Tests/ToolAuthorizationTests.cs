@@ -1,18 +1,21 @@
+using System.Net;
+using System.Net.Http.Headers;
+
 namespace Kalandra.McpServer.Tests;
 
 /// <summary>
-/// The account gate lives in each tool's RequireUser call, not in a framework filter, so this is what keeps it
-/// honest: every tool the server lists is really called without a token and must behave the way its description
-/// advertises. A new account tool that forgets RequireUser fails here instead of leaking.
+/// Sweeps the account tier the way a client meets it: every tool the server lists is really called without a
+/// token, and must either answer or challenge, matching what its description advertises. A new account tool
+/// that slips into the public set fails here instead of leaking.
 /// </summary>
 public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
-    // The only tools allowed to answer an anonymous caller; anything else must refuse one. A new tool is
-    // account-only by omission — the safe default, since forgetting to list it here can only over-restrict.
+    // Deliberately a second copy of McpAccountGate.PublicTools: reusing the gate's own set would assert
+    // nothing. This is the expectation; the gate is the thing under test.
     private static readonly string[] PublicTools = ["get_blog_post_comments", "list_blog_posts"];
 
-    // Arguments good enough to reach the tool body, so the anonymous call is refused by RequireUser rather than
-    // bouncing off parameter binding first. A tool missing here fails the sweep until someone adds it.
+    // Arguments good enough to reach the tool body, so a served call really runs rather than bouncing off
+    // parameter binding. A tool missing here fails the sweep until someone adds it.
     private static readonly Dictionary<string, string> ArgumentsByTool = new()
     {
         ["list_blog_posts"] = "{}",
@@ -42,28 +45,51 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
             Assert.True(isPublic != marked,
                 $"'{name}' is {Tier(isPublic)} but its description {(marked ? "carries" : "lacks")} the {AuthorizedMarker} marker.");
 
-            var refused = await IsRefusedAnonymously(name);
-            Assert.True(isPublic != refused,
-                $"'{name}' is {Tier(isPublic)} but an anonymous call was {(refused ? "refused" : "served")}.");
+            var response = await CallAnonymously(name);
+            var challenged = response.StatusCode == HttpStatusCode.Unauthorized;
+            Assert.True(isPublic != challenged,
+                $"'{name}' is {Tier(isPublic)} but an anonymous call was answered {(int)response.StatusCode}.");
         }
     }
 
     [Fact]
     public async Task ToolsList_WithoutAToken_StillOffersTheAccountTools()
     {
-        // The whole point of dropping the SDK's list filtering: a model can only tell the user what this site
-        // offers if it can see the account tools before they sign in.
+        // The whole point of listing everything: a model can only tell the user what this site offers if it
+        // can see the account tools before they sign in.
         var names = (await ListTools()).Select(tool => tool.Name).ToList();
         Assert.Contains("submit_job_offer", names);
         Assert.Contains("get_my_comments", names);
     }
 
-    [Fact]
-    public async Task AnAccountToolCall_WithoutAToken_ExplainsHowToSignIn()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("stale-or-forged-token")]
+    public async Task AnAccountTool_WithoutAUsableToken_ChallengesTowardsSupabase(string? bearerToken)
     {
-        var response = await CallAnonymously("get_my_comments");
-        Assert.Contains("kalandra.tech account", response);
-        Assert.Contains("https://www.kalandra.tech/mcp", response);
+        // The 401 is the whole contract: a client's OAuth code reads WWW-Authenticate, finds the resource
+        // metadata, and signs in or refreshes on its own. A tool error saying "please sign in" cannot do that.
+        var response = await factory.PostMcp(
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_my_comments","arguments":{}}}""",
+            bearerToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        var challenge = Assert.Single(response.Headers.WwwAuthenticate);
+        Assert.Equal("Bearer", challenge.Scheme);
+        Assert.Contains("resource_metadata=", challenge.Parameter);
+    }
+
+    [Fact]
+    public async Task TheDiscoveryDocument_StaysReachable_WithTheVeryTokenThatWasRejected()
+    {
+        // The challenge sends the client here to find its authorization server. Challenging this too would
+        // trap a client holding a stale token in a loop it can't discover its way out of.
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "stale-token");
+
+        var response = await client.GetAsync("/.well-known/oauth-protected-resource/mcp", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     private static string Tier(bool isPublic) => isPublic ? "public" : "account-only";
@@ -76,17 +102,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
             .Select(tool => (tool.GetProperty("name").GetString()!, tool.GetProperty("description").GetString() ?? ""))];
     }
 
-    // A refusal is RequireUser's message coming back as a tool error, so the model can read it and prompt the
-    // user — not a transport-level failure.
-    private async Task<bool> IsRefusedAnonymously(string toolName) =>
-        (await CallAnonymously(toolName)).Contains("kalandra.tech account", StringComparison.Ordinal);
-
-    private async Task<string> CallAnonymously(string toolName)
-    {
-        var arguments = ArgumentsByTool[toolName];
-        var request = $$$"""{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"{{{toolName}}}","arguments":{{{arguments}}}}}""";
-        var response = await factory.PostMcp(request);
-        using var document = await McpServerFactory.ReadJsonRpcResponse(response);
-        return document.RootElement.ToString();
-    }
+    private Task<HttpResponseMessage> CallAnonymously(string toolName) =>
+        factory.PostMcp(
+            $$$"""{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"{{{toolName}}}","arguments":{{{ArgumentsByTool[toolName]}}}}}""");
 }

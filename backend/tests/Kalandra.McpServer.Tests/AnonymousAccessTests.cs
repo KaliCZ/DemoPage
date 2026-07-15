@@ -63,31 +63,14 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
     }
 
     [Fact]
-    public async Task AccountToolCall_WithoutAToken_IsRefusedAsAToolErrorTheModelCanRead()
+    public async Task AnyCall_WithAnInvalidToken_IsChallengedRatherThanDowngraded()
     {
+        // Even for a public tool: the authorization spec says an invalid or expired token MUST be answered
+        // with a 401, and only that tells the client to refresh instead of silently acting as nobody.
         var response = await factory.PostMcp(
-            """{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_my_comments","arguments":{}}}""");
-
-        using var document = await McpServerFactory.ReadJsonRpcResponse(response);
-        var result = document.RootElement.GetProperty("result");
-        Assert.True(result.GetProperty("isError").GetBoolean());
-        var text = result.GetProperty("content").EnumerateArray().First().GetProperty("text").GetString();
-        Assert.Contains("kalandra.tech account", text);
-    }
-
-    [Fact]
-    public async Task AnAccountTool_WithAnInvalidToken_IsServedAsAnonymous()
-    {
-        // The accepted trade-off of the anonymous tier: a bad or expired token authenticates as nobody
-        // and gets served rather than challenged — keeping the token fresh is the client's job.
-        var response = await factory.PostMcp(
-            """{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"get_my_comments","arguments":{}}}""",
+            """{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"list_blog_posts","arguments":{}}}""",
             bearerToken: "not-a-valid-token");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var document = await McpServerFactory.ReadJsonRpcResponse(response);
-        var text = document.RootElement.GetProperty("result").GetProperty("content")
-            .EnumerateArray().First().GetProperty("text").GetString();
-        Assert.Contains("kalandra.tech account", text);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

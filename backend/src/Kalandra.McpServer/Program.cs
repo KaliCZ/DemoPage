@@ -41,12 +41,15 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
+const string McpEndpoint = "/mcp";
+
 McpAuth.Use(app);
 McpRateLimits.Use(app);
+McpAccountGate.Use(app, McpEndpoint);
 
-// MCP tools over streamable HTTP. The endpoint itself needs no authorization — the tools' [Authorize]
-// attributes gate the account tier, and an invalid or expired token is simply served as anonymous.
-app.MapMcp("/mcp").RequireRateLimiting(McpRateLimitPolicies.Mcp);
+// MCP tools over streamable HTTP. The endpoint carries no authorization requirement of its own — that would
+// shut the anonymous tier out of the public blog tools; McpAccountGate challenges per tool call instead.
+app.MapMcp(McpEndpoint).RequireRateLimiting(McpRateLimitPolicies.Mcp);
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
