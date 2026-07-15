@@ -7,10 +7,9 @@ namespace Kalandra.McpServer.Infrastructure;
 public static class McpToolErrors
 {
     /// <summary>
-    /// This host's <c>UseExceptionHandler</c>: turns the <see cref="McpException"/>s the tools raise on purpose
-    /// — not signed in, no such slug, invalid email — into the isError result the model reads, the MCP shape of
-    /// the API's RFC 7807 responses. The SDK would do the same, but only after logging it at Error as an
-    /// unhandled exception; catching it first, inside that outer handler, keeps a refused call out of the alerts.
+    /// This host's <c>UseExceptionHandler</c>: answers the <see cref="McpException"/>s the tools raise on
+    /// purpose with the isError result the model reads. The SDK does this too, but only after logging it at
+    /// Error as an unhandled exception, which alerts on every refused call.
     /// </summary>
     public static McpRequestFilter<CallToolRequestParams, CallToolResult> ToToolResult =>
         next => async (context, cancellationToken) =>
@@ -19,7 +18,10 @@ public static class McpToolErrors
             {
                 return await next(context, cancellationToken);
             }
-            catch (McpException exception)
+            // Only the messages the tools author for the model travel back. McpProtocolException derives from
+            // McpException, so it has to be stepped around: a protocol fault or an InternalError is someone
+            // else's text and a real failure, and belongs in the alerts with everything else we don't catch.
+            catch (McpException exception) when (exception is not McpProtocolException)
             {
                 return new CallToolResult
                 {

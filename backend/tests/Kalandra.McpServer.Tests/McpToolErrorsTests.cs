@@ -33,6 +33,19 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
         Assert.True(logs.Noise.IsEmpty, $"Sentry alerts on Warning+, but this refusal logged:\n{string.Join("\n", logs.Noise)}");
     }
 
+    [Fact]
+    public async Task AProtocolFault_IsLeftToTheSdkToReport()
+    {
+        // McpProtocolException derives from McpException, so without care the filter would swallow the SDK's
+        // own failures too — including InternalError, the one thing that must alert.
+        var response = await factory.PostMcp(
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"no_such_tool","arguments":{}}}""");
+
+        using var document = await McpServerFactory.ReadJsonRpcResponse(response);
+        Assert.True(document.RootElement.TryGetProperty("error", out _), "An unknown tool must stay a JSON-RPC error.");
+        Assert.False(document.RootElement.TryGetProperty("result", out _));
+    }
+
     /// <summary>
     /// Collects what the MCP pipeline reports at the level Sentry turns into issues. Scoped to the SDK's own
     /// categories: unrelated hosting warnings (a CI runner with no DataProtection keys, say) aren't this test's
