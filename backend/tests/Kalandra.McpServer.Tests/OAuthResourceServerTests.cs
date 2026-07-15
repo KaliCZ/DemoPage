@@ -35,7 +35,12 @@ public class McpServerFactory : WebApplicationFactory<Program>
             services.AddHttpClient<BlogFeedClient>().ConfigurePrimaryHttpMessageHandler(() => new StubRssFeedHandler()));
     }
 
-    public async Task<HttpResponseMessage> PostMcp(string jsonRpc, string? bearerToken = null)
+    public Task<HttpResponseMessage> PostMcp(string jsonRpc, string? bearerToken = null) =>
+        PostMcpTo(this, jsonRpc, bearerToken);
+
+    /// <param name="host">This factory, or a <c>WithWebHostBuilder</c> variant of it.</param>
+    public static async Task<HttpResponseMessage> PostMcpTo(
+        WebApplicationFactory<Program> host, string jsonRpc, string? bearerToken = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
         {
@@ -45,7 +50,7 @@ public class McpServerFactory : WebApplicationFactory<Program>
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
         if (bearerToken is not null)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
-        return await CreateClient().SendAsync(request, TestContext.Current.CancellationToken);
+        return await host.CreateClient().SendAsync(request, TestContext.Current.CancellationToken);
     }
 
     // The streamable HTTP transport answers a POST either as bare JSON or as an SSE stream carrying

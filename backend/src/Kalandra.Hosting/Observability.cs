@@ -20,10 +20,7 @@ namespace Kalandra.Hosting;
 public static class Observability
 {
     /// <param name="serviceName">Distinguishes the hosts on traces and in Sentry ("api", "mcp").</param>
-    /// <param name="isClientFault">
-    /// Recognizes an exception the host refused by design — answered to the caller, never raised as a Sentry issue.
-    /// </param>
-    public static void Add(WebApplicationBuilder builder, string serviceName, Func<Exception, bool>? isClientFault = null)
+    public static void Add(WebApplicationBuilder builder, string serviceName)
     {
         var sentryConfig = SentryConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
         var betterStackConfig = BetterStackConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
@@ -31,11 +28,11 @@ public static class Observability
         if (sentryConfig is null && builder.Environment.IsProduction())
             throw new InvalidOperationException("Sentry:Dsn must be configured in production.");
 
-        AddSentry(builder, sentryConfig, isClientFault);
+        AddSentry(builder, sentryConfig);
         AddOpenTelemetry(builder, serviceName, sentryConfig, betterStackConfig);
     }
 
-    private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config, Func<Exception, bool>? isClientFault)
+    private static void AddSentry(WebApplicationBuilder builder, SentryConfig? config)
     {
         if (config is null)
             return;
@@ -64,10 +61,6 @@ public static class Observability
 
             // Filter noise — client disconnects and cancelled requests aren't actionable.
             options.AddExceptionFilterForType<OperationCanceledException>();
-
-            if (isClientFault is not null)
-                options.AddExceptionFilter(new ClientFaultFilter(isClientFault));
-
             options.SetBeforeSend((sentryEvent, _) =>
             {
                 if (sentryEvent.Exception is BadHttpRequestException bre
@@ -158,10 +151,5 @@ public static class Observability
             if (aspireEnabled)
                 logging.AddOtlpExporter();
         });
-    }
-
-    private sealed class ClientFaultFilter(Func<Exception, bool> isClientFault) : Sentry.Extensibility.IExceptionFilter
-    {
-        public bool Filter(Exception ex) => isClientFault(ex);
     }
 }

@@ -1,4 +1,5 @@
 using Kalandra.Hosting;
+using Kalandra.McpServer.Infrastructure;
 using Kalandra.McpServer.Tools;
 
 namespace Kalandra.McpServer;
@@ -25,6 +26,7 @@ public static class McpRegistration
             // Stateless: every tool call is a self-contained POST carrying the caller's bearer token,
             // so no session affinity is needed behind the blue/green proxy.
             .WithHttpTransport(transport => transport.Stateless = true)
+            .WithRequestFilters(filters => filters.AddCallToolFilter(McpToolErrors.ToToolResult))
             .WithTools<JobOfferMcpTools>()
             .WithTools<BlogMcpTools>();
 

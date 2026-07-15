@@ -55,10 +55,11 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset
   can do. The SDK's `AddAuthorizationFilters()` would honor `[Authorize]`/`[AllowAnonymous]` attributes, but
   it filters `tools/list` by them with no opt-out — and hard-throws if the attributes are present without it.
   Listing everything therefore means not using it, and not carrying the attributes at all.
-- **A refused call is not an incident.** The SDK logs *every* exception out of a tool at Error, including the
-  `McpException`s the tools raise on purpose to talk to the model. Those are this host's RFC 7807 equivalent —
-  no more an incident than the REST API's 400s — so `McpErrorReporting.IsToolErrorForTheCaller` hands
-  `Observability.Add` the one rule that keeps them out of Sentry. Anything else out of a tool still reports.
+- **A refused call is not an incident.** `McpToolErrors` is this host's `UseExceptionHandler`: a call-tool
+  filter that turns the `McpException`s the tools raise on purpose into the `isError` result the model reads.
+  The SDK does the same thing on its own — but only after logging it at Error as an unhandled exception, which
+  alerts on every refused call. Catching it first, inside the SDK's outer handler, means nothing is logged at
+  all, so no observability filtering is needed anywhere. Anything that isn't an `McpException` still reports.
 - **An invalid or expired token is served as anonymous** — stock ASP.NET behaviour (authentication fails
   open; an endpoint without an authorization requirement never challenges), accepted deliberately over a
   custom presented-token-must-validate policy. Keeping the token fresh is the client's job via OAuth refresh;
@@ -96,7 +97,8 @@ Account tools act as the authenticated caller and open with `McpToolHelpers.Requ
 holds the list of the two public tools and refuses to let anything else answer an anonymous caller, so a new
 tool is account-only unless it is deliberately added there. Tools return the same response contracts the
 controllers serialize — no separate DTO layer. Domain errors become `McpException` messages phrased for a
-language model to act on, the MCP equivalent of the controllers' RFC 7807 responses.
+language model to act on, the MCP equivalent of the controllers' RFC 7807 responses; `McpToolErrors` turns
+them into `isError` results, so throwing one is this host's `return NotFound()`.
 
 `list_blog_posts` links to the public post pages (there is no separate content tool — assistants fetch the
 link). It serves everyone the same per-post totals the blog index shows — views, unique visitors, reactions,
@@ -145,7 +147,8 @@ Deploying needs only the `mcp.kalandra.tech` DNS record and the shared Caddy cer
   `OAuthResourceServerTests` pins the protected-resource metadata document, `AnonymousAccessTests` pins the
   anonymous tier (whole toolset listed, public tools callable, an invalid token served as anonymous), and
   `ToolAuthorizationTests` sweeps every listed tool without a token — the account gate lives in the tools, so
-  this is what stops a new one from leaking.
+  this is what stops a new one from leaking. `McpToolErrorsTests` pins that a deliberate tool error is logged
+  nowhere, since the response looks identical either way and the only symptom is Sentry filling up.
 - The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
 - The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
   noindex).
