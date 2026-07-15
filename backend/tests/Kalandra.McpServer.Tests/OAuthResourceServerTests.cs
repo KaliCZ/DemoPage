@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Kalandra.Blog.Feed;
@@ -32,6 +33,30 @@ public class McpServerFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
             services.AddHttpClient<BlogFeedClient>().ConfigurePrimaryHttpMessageHandler(() => new StubRssFeedHandler()));
+    }
+
+    public async Task<HttpResponseMessage> PostMcp(string jsonRpc, string? bearerToken = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
+        {
+            Content = new StringContent(jsonRpc, Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        if (bearerToken is not null)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+        return await CreateClient().SendAsync(request, TestContext.Current.CancellationToken);
+    }
+
+    // The streamable HTTP transport answers a POST either as bare JSON or as an SSE stream carrying
+    // the JSON-RPC response in a "data:" line — accept both shapes.
+    public static async Task<JsonDocument> ReadJsonRpcResponse(HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var json = response.Content.Headers.ContentType?.MediaType == "text/event-stream"
+            ? body.Split('\n').First(line => line.StartsWith("data: ", StringComparison.Ordinal))["data: ".Length..]
+            : body;
+        return JsonDocument.Parse(json);
     }
 
     private sealed class StubRssFeedHandler : HttpMessageHandler

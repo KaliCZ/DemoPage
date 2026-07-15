@@ -4,11 +4,14 @@ namespace Kalandra.McpServer.Infrastructure;
 
 public static class McpErrorReporting
 {
+    // The SDK offers nothing structural to match on — no subtype, and InvalidRequest is also what a malformed
+    // request gets — so the wording is the only marker. McpErrorReportingTests pins it against the live SDK.
+    private const string AuthorizationRefusedMessage = "Access forbidden: This tool requires authorization.";
+
     /// <summary>
-    /// Recognizes the protocol errors the caller brought on itself — an unauthorized tool call, an unknown
-    /// tool, a malformed request — which the SDK logs at Error even though it already answered them with a
-    /// JSON-RPC error. Only <see cref="McpErrorCode.InternalError"/> means this host actually broke.
+    /// Recognizes the SDK refusing a tool call that lacked a token — a correct answer to the caller, which the
+    /// SDK nonetheless logs at Error and Sentry would otherwise raise as an issue per probing bot.
     /// </summary>
-    public static bool IsClientFault(Exception exception) =>
-        exception is McpProtocolException { ErrorCode: not McpErrorCode.InternalError };
+    public static bool IsUnauthorizedToolCall(Exception exception) =>
+        exception is McpProtocolException { Message: AuthorizationRefusedMessage };
 }

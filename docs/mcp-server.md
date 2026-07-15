@@ -49,10 +49,14 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: public blog t
   only the public tools, and a direct `tools/call` on an account tool is refused. Signing in is
   client-initiated (there is no 401 on connect to force it); the server instructions tell the model to ask
   the user when an account tool is wanted.
-- **A refused call is not an incident.** The SDK answers one with a JSON-RPC error *and* logs it at Error, so
-  without help every bot probing an account tool would raise a Sentry issue. `McpErrorReporting.IsClientFault`
-  hands `Observability.Add` the rule that keeps them out: every `McpProtocolException` is the caller's doing
-  except `InternalError`, the one code that means this host broke.
+- **A refused call is not an incident.** Because the gate is per tool, the refusal can't be an HTTP 401 — the
+  decision needs the JSON-RPC body, which ASP.NET's authorization middleware never sees. The SDK instead
+  throws to unwind into a JSON-RPC error, then logs its own throw at Error, so without help every bot probing
+  an account tool would raise a Sentry issue. `McpErrorReporting.IsUnauthorizedToolCall` hands
+  `Observability.Add` the rule that keeps *only that refusal* out; every other protocol error — a malformed
+  request, an unknown tool — still reports, because those can mean we shipped something broken. The SDK gives
+  it nothing structural to match on, so it matches the refusal's wording and `McpErrorReportingTests` pins
+  that against the live SDK.
 - **An invalid or expired token is served as anonymous** — stock ASP.NET behaviour (authentication fails
   open; an endpoint without an authorization requirement never challenges), accepted deliberately over a
   custom presented-token-must-validate policy. Keeping the token fresh is the client's job via OAuth refresh;
@@ -137,7 +141,8 @@ Deploying needs only the `mcp.kalandra.tech` DNS record and the shared Caddy cer
 - `Kalandra.McpServer.Tests` — HTTP-level tests against the real host with a stubbed RSS feed:
   `OAuthResourceServerTests` pins the protected-resource metadata document, `AnonymousAccessTests` pins the
   anonymous tier (public tools listed and callable, account tools hidden and refused, an invalid token
-  served as anonymous). `McpErrorReportingTests` pins which protocol errors are worth a Sentry issue.
+  served as anonymous). `McpErrorReportingTests` pins which protocol errors are worth a Sentry issue, driving
+  the live SDK to produce its real refusal rather than trusting a hardcoded copy of the message.
 - The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
 - The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
   noindex).
