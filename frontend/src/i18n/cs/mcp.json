@@ -60,7 +60,7 @@
           {
             "name": "list_blog_posts",
             "auth": false,
-            "description": "Publikované články se shrnutími, štítky a odkazy na plný text. Po přihlášení u každého vidíte, zda jste ho už četli."
+            "description": "Publikované články se shrnutími, štítky, odkazy na plný text a počty zobrazení, reakcí a komentářů. Po přihlášení u každého vidíte, zda jste ho už četli."
           },
           {
             "name": "get_blog_post_comments",

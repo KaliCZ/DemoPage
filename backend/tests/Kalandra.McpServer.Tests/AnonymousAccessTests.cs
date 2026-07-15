@@ -38,7 +38,7 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
     }
 
     [Fact]
-    public async Task ListBlogPosts_WithoutAToken_ReturnsThePostsWithoutReadState()
+    public async Task ListBlogPosts_WithoutAToken_ReturnsThePostsWithTotalsButNoReadState()
     {
         var response = await PostMcp(
             """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_blog_posts","arguments":{}}}""");
@@ -49,9 +49,17 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
         Assert.False(result.TryGetProperty("isError", out var isError) && isError.GetBoolean());
 
         var text = result.GetProperty("content").EnumerateArray().First().GetProperty("text").GetString()!;
-        Assert.Contains(McpServerFactory.StubBlogPostSlug, text);
+        using var postsDocument = JsonDocument.Parse(text);
+        var post = postsDocument.RootElement.EnumerateArray().Single();
+
+        Assert.Equal(McpServerFactory.StubBlogPostSlug, post.GetProperty("slug").GetString());
+        // The blog-index totals are served to everyone (zero here: the stub slug has no catalog entry).
+        Assert.Equal(0, post.GetProperty("totalViews").GetInt32());
+        Assert.Equal(0, post.GetProperty("totalReactions").GetInt32());
+        Assert.Equal(0, post.GetProperty("totalComments").GetInt32());
         // Anonymous callers have no reading history, so the per-viewer read state must stay unset.
-        Assert.DoesNotContain("\"watched\":true", text);
+        Assert.True(!post.TryGetProperty("viewerViews", out var viewerViews) || viewerViews.ValueKind == JsonValueKind.Null);
+        Assert.True(!post.TryGetProperty("watched", out var watched) || watched.ValueKind == JsonValueKind.Null);
     }
 
     [Fact]

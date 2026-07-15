@@ -60,7 +60,7 @@
           {
             "name": "list_blog_posts",
             "auth": false,
-            "description": "Published posts with summaries, tags, and links to the full text. Signed in, each post also shows whether you've already read it."
+            "description": "Published posts with summaries, tags, links to the full text, and each post's view, reaction, and comment counts. Signed in, each post also shows whether you've already read it."
           },
           {
             "name": "get_blog_post_comments",

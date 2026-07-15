@@ -27,7 +27,7 @@ public sealed class BlogMcpTools(
     TimeProvider timeProvider,
     IBlogPostCatalog postCatalog,
     BlogFeedClient blogFeedClient,
-    GetViewerBlogViewsHandler viewerViewsHandler,
+    GetBlogPostStatsHandler statsHandler,
     GetBlogCommentsHandler getCommentsHandler,
     PostBlogCommentHandler postCommentHandler,
     ListMyBlogCommentsHandler myBlogCommentsHandler,
@@ -35,24 +35,21 @@ public sealed class BlogMcpTools(
 {
     [McpServerTool(Name = "list_blog_posts")]
     [AllowAnonymous]
-    [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags). " +
+    [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags), each " +
+                 "with the totals the blog index shows: views, unique visitors, reactions, and comments. " +
                  "Each link is a public web page with the full post — fetch it to read the content. " +
                  "For a signed-in user each post also reports viewerViews and watched so you can tell which " +
                  "ones they have already read. Use the slug with the blog comment tools.")]
-    public async Task<IReadOnlyList<BlogPostSummary>> ListBlogPosts(CancellationToken ct = default)
+    public async Task<IReadOnlyList<BlogPostResponse>> ListBlogPosts(CancellationToken ct = default)
     {
         var posts = await blogFeedClient.ListPosts(ct);
-        if (currentUser.User is not { } user)
-            return posts;
 
-        var viewsBySlug = await viewerViewsHandler.List(
-            new ViewerBlogViewsQuery([.. posts.Select(post => post.Slug)], user.Id), ct);
+        // Slugs the catalog doesn't know yet keep zero stats instead of vanishing — the feed may briefly lead it.
+        var catalogPosts = posts.Select(post => postCatalog.Find(post.Slug)).OfType<BlogPost>().ToArray();
+        var stats = await statsHandler.List(new GetBlogPostStatsQuery(catalogPosts, currentUser.User?.Id), ct);
+        var statsBySlug = stats.ToDictionary(stat => stat.Slug, StringComparer.Ordinal);
 
-        return [.. posts.Select(post =>
-        {
-            var views = viewsBySlug.GetValueOrDefault(post.Slug);
-            return post with { ViewerViews = views, Watched = views > 0 };
-        })];
+        return [.. posts.Select(post => BlogPostResponse.Serialize(post, statsBySlug.GetValueOrDefault(post.Slug)))];
     }
 
     [McpServerTool(Name = "get_blog_post_comments")]

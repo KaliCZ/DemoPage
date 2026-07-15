@@ -76,7 +76,7 @@ claude mcp add --transport http kalandra https://mcp.kalandra.tech/mcp
 | `list_my_job_offers` | Account | `ListJobOffersHandler.List` |
 | `get_job_offer_comments` | Account | `ListCommentsHandler.List` |
 | `add_job_offer_comment` | Account | `AddCommentHandler.AddAndSave` |
-| `list_blog_posts` | Public | `BlogFeedClient` (site RSS feed) + `GetViewerBlogViewsHandler` |
+| `list_blog_posts` | Public | `BlogFeedClient` (site RSS feed) + `GetBlogPostStatsHandler` |
 | `get_blog_post_comments` | Public | `GetBlogCommentsHandler.GetForDisplay` |
 | `post_blog_comment` | Account | `PostBlogCommentHandler.PostAndSave` |
 | `get_my_comments` | Account | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
@@ -87,9 +87,9 @@ contracts the controllers serialize — no separate DTO layer. Domain errors bec
 phrased for a language model to act on, the MCP equivalent of the controllers' RFC 7807 responses.
 
 `list_blog_posts` links to the public post pages (there is no separate content tool — assistants fetch the
-link). For a signed-in caller it enriches each post with `viewerViews` and `watched` from one lean query over
-the view documents (`GetViewerBlogViewsHandler`), not the heavier per-post totals the blog index computes;
-for an anonymous caller those fields stay null.
+link). It serves everyone the same per-post totals the blog index shows — views, unique visitors, reactions,
+comments — via the batch `GetBlogPostStatsHandler` the REST stats endpoint uses, and adds `viewerViews` and
+`watched` only for a signed-in caller; for an anonymous one those fields stay null.
 
 ## Rate limiting
 

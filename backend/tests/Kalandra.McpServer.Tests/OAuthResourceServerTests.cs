@@ -11,9 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Kalandra.McpServer.Tests;
 
 /// <summary>
-/// Boots the MCP host without real infrastructure: the database config is never dialled (the anonymous
-/// tier never opens a session) and the blog RSS feed is stubbed in-process, so the public tools can be
-/// exercised end to end while the OAuth behaviour stays pinned by pure HTTP assertions.
+/// Boots the MCP host without real infrastructure: the blog RSS feed is stubbed in-process, and its slug
+/// is deliberately absent from the backend post catalog so the stats batch stays empty and the dead
+/// database config is never dialled — the public tools run end to end on pure HTTP assertions.
 /// </summary>
 public class McpServerFactory : WebApplicationFactory<Program>
 {
