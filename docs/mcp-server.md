@@ -37,30 +37,32 @@ The MCP server is an **OAuth 2.0 resource server**. It issues no tokens and owns
 OAuth 2.1 server runs the whole flow.
 
 ```
-Assistant ──1── POST /mcp (no token)  →  anonymous tier: public blog tools only
+Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset listed, public blog tools callable
           ──2── user signs the server in from the assistant's connector settings
           ──3── GET /.well-known/oauth-protected-resource  →  { resource, authorization_servers: [<supabase>/auth/v1], scopes_supported }
           ──4── OAuth 2.1 + PKCE against Supabase (discovery, client registration, consent)
           ──5── POST /mcp with the access token  →  the full toolset, acting as that user
 ```
 
-- **Authorization is per tool, not per endpoint.** The SDK's `AddAuthorizationFilters()` honors
-  `[Authorize]`/`[AllowAnonymous]` on the tool classes and methods: `tools/list` shows an anonymous caller
-  only the public tools, and a direct `tools/call` on an account tool is refused. Signing in is
-  client-initiated (there is no 401 on connect to force it); the server instructions tell the model to ask
-  the user when an account tool is wanted.
-- **A refused call is not an incident.** Because the gate is per tool, the refusal can't be an HTTP 401 — the
-  decision needs the JSON-RPC body, which ASP.NET's authorization middleware never sees. The SDK instead
-  throws to unwind into a JSON-RPC error, then logs its own throw at Error, so without help every bot probing
-  an account tool would raise a Sentry issue. `McpErrorReporting.IsUnauthorizedToolCall` hands
-  `Observability.Add` the rule that keeps *only that refusal* out; every other protocol error — a malformed
-  request, an unknown tool — still reports, because those can mean we shipped something broken. The SDK gives
-  it nothing structural to match on, so it matches the refusal's wording and `McpErrorReportingTests` pins
-  that against the live SDK.
+- **Authorization is per tool, and the tool itself does it.** Every account tool opens with
+  `McpToolHelpers.RequireUser`, which refuses with a message telling the model to get the user to sign in.
+  There is no framework gate: ASP.NET's authorization middleware runs before the JSON-RPC body is parsed, so
+  it only ever sees `POST /mcp` and cannot know which tool is being called — which is also why a refusal is a
+  tool error rather than an HTTP 401. `ToolAuthorizationTests` is what keeps this honest: it calls every
+  listed tool without a token and fails if one answers that shouldn't.
+- **The whole toolset is listed to everyone**, each account tool's description prefixed `[Authorized]`. A tool
+  the model cannot see is a tool it cannot offer, so hiding them left it unable to tell the user what the site
+  can do. The SDK's `AddAuthorizationFilters()` would honor `[Authorize]`/`[AllowAnonymous]` attributes, but
+  it filters `tools/list` by them with no opt-out — and hard-throws if the attributes are present without it.
+  Listing everything therefore means not using it, and not carrying the attributes at all.
+- **A refused call is not an incident.** The SDK logs *every* exception out of a tool at Error, including the
+  `McpException`s the tools raise on purpose to talk to the model. Those are this host's RFC 7807 equivalent —
+  no more an incident than the REST API's 400s — so `McpErrorReporting.IsToolErrorForTheCaller` hands
+  `Observability.Add` the one rule that keeps them out of Sentry. Anything else out of a tool still reports.
 - **An invalid or expired token is served as anonymous** — stock ASP.NET behaviour (authentication fails
   open; an endpoint without an authorization requirement never challenges), accepted deliberately over a
   custom presented-token-must-validate policy. Keeping the token fresh is the client's job via OAuth refresh;
-  the visible symptom of a stale one is the account tools disappearing.
+  the visible symptom of a stale one is the account tools refusing.
 - `McpAuth` wires JWT bearer validation (Supabase issuer + JWKS) as the *authenticate* scheme and the MCP SDK's
   scheme as the *challenge* scheme. The SDK's `AddMcp` handler serves `/.well-known/oauth-protected-resource`
   from the configured `ProtectedResourceMetadata`.
@@ -90,10 +92,11 @@ claude mcp add --transport http kalandra https://mcp.kalandra.tech/mcp
 | `post_blog_comment` | Account | `PostBlogCommentHandler.PostAndSave` |
 | `get_my_comments` | Account | `ListMyBlogCommentsHandler` + `ListMyJobOfferCommentsHandler` |
 
-Account tools act as the authenticated caller; the tool classes are `[Authorize]` with `[AllowAnonymous]` on
-the two public blog reads, so anything new is account-only unless it opts out. Tools return the same response
-contracts the controllers serialize — no separate DTO layer. Domain errors become `McpException` messages
-phrased for a language model to act on, the MCP equivalent of the controllers' RFC 7807 responses.
+Account tools act as the authenticated caller and open with `McpToolHelpers.RequireUser`; `ToolAuthorizationTests`
+holds the list of the two public tools and refuses to let anything else answer an anonymous caller, so a new
+tool is account-only unless it is deliberately added there. Tools return the same response contracts the
+controllers serialize — no separate DTO layer. Domain errors become `McpException` messages phrased for a
+language model to act on, the MCP equivalent of the controllers' RFC 7807 responses.
 
 `list_blog_posts` links to the public post pages (there is no separate content tool — assistants fetch the
 link). It serves everyone the same per-post totals the blog index shows — views, unique visitors, reactions,
@@ -140,9 +143,9 @@ Deploying needs only the `mcp.kalandra.tech` DNS record and the shared Caddy cer
   `Kalandra.Blog/Feed/`).
 - `Kalandra.McpServer.Tests` — HTTP-level tests against the real host with a stubbed RSS feed:
   `OAuthResourceServerTests` pins the protected-resource metadata document, `AnonymousAccessTests` pins the
-  anonymous tier (public tools listed and callable, account tools hidden and refused, an invalid token
-  served as anonymous). `McpErrorReportingTests` pins which protocol errors are worth a Sentry issue, driving
-  the live SDK to produce its real refusal rather than trusting a hardcoded copy of the message.
+  anonymous tier (whole toolset listed, public tools callable, an invalid token served as anonymous), and
+  `ToolAuthorizationTests` sweeps every listed tool without a token — the account gate lives in the tools, so
+  this is what stops a new one from leaking.
 - The tools' behaviour is covered by the domain handlers' own tests, which they share with the controllers.
 - The frontend consent screen is covered by `frontend/tests/pages.spec.ts` (missing request, sign-in prompt,
   noindex).

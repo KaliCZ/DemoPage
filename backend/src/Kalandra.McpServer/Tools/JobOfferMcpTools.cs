@@ -4,7 +4,6 @@ using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;
-using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -15,7 +14,6 @@ namespace Kalandra.McpServer.Tools;
 /// call, acting as the signed-in user — one domain, two front doors, no second write path.
 /// </summary>
 [McpServerToolType]
-[Authorize]
 public sealed class JobOfferMcpTools(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
@@ -26,7 +24,7 @@ public sealed class JobOfferMcpTools(
     AddCommentHandler addCommentHandler)
 {
     [McpServerTool(Name = "submit_job_offer")]
-    [Description("Submit a job offer to Pavel Kalandra — the same flow as the site's 'Hire me' form. " +
+    [Description("[Authorized] Submit a job offer to Pavel Kalandra — the same flow as the site's 'Hire me' form. " +
                  "Returns the created offer, whose id can be used to follow up with comments.")]
     public async Task<GetJobOfferDetailResponse> SubmitJobOffer(
         [Description("Name of the hiring company.")] string companyName,
@@ -72,7 +70,7 @@ public sealed class JobOfferMcpTools(
     }
 
     [McpServerTool(Name = "list_my_job_offers")]
-    [Description("List the job offers the user has submitted to kalandra.tech, with their current status.")]
+    [Description("[Authorized] List the job offers the user has submitted to kalandra.tech, with their current status.")]
     public async Task<IReadOnlyList<GetJobOfferDetailResponse>> ListMyJobOffers(CancellationToken ct = default)
     {
         var user = McpToolHelpers.RequireUser(currentUser);
@@ -82,7 +80,7 @@ public sealed class JobOfferMcpTools(
     }
 
     [McpServerTool(Name = "get_job_offer_comments")]
-    [Description("Read the comment thread on one of the user's job offers (visible to the offer's author and the site owner).")]
+    [Description("[Authorized] Read the comment thread on one of the user's job offers (visible to the offer's author and the site owner).")]
     public async Task<IReadOnlyList<CommentResponse>> GetJobOfferComments(
         [Description("Id of the job offer, from submit_job_offer or list_my_job_offers.")] Guid jobOfferId,
         CancellationToken ct = default)
@@ -95,7 +93,7 @@ public sealed class JobOfferMcpTools(
     }
 
     [McpServerTool(Name = "add_job_offer_comment")]
-    [Description("Add a comment to one of the user's job offers — the conversation channel with the site owner about that offer.")]
+    [Description("[Authorized] Add a comment to one of the user's job offers — the conversation channel with the site owner about that offer.")]
     public async Task<CommentResponse> AddJobOfferComment(
         [Description("Id of the job offer, from submit_job_offer or list_my_job_offers.")] Guid jobOfferId,
         [Description("The comment text.")] string content,

@@ -12,8 +12,8 @@ namespace Kalandra.McpServer.Tools;
 /// </summary>
 internal static class McpToolHelpers
 {
-    // The account tools are [Authorize]-gated by the MCP authorization filters, so this is a defensive
-    // fallback rather than the normal auth gate.
+    // The account gate: every [Authorized] tool opens with this. The tools are listed to everyone so a model
+    // can see what the site offers, so this — not a tools/list omission — is what keeps them account-only.
     public static CurrentUser RequireUser(ICurrentUserAccessor currentUser) =>
         currentUser.User ?? throw new McpException(
             "This tool needs the user's kalandra.tech account. Reconnect and complete the sign-in prompt — see https://www.kalandra.tech/mcp.");

@@ -9,7 +9,6 @@ using Kalandra.Blog.Queries;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Queries;
 using Kalandra.McpServer.Contracts;
-using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -21,7 +20,6 @@ namespace Kalandra.McpServer.Tools;
 /// Reading the blog is public; the class-level gate keeps everything else account-only by default.
 /// </summary>
 [McpServerToolType]
-[Authorize]
 public sealed class BlogMcpTools(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
@@ -34,7 +32,6 @@ public sealed class BlogMcpTools(
     ListMyJobOfferCommentsHandler myJobOfferCommentsHandler)
 {
     [McpServerTool(Name = "list_blog_posts")]
-    [AllowAnonymous]
     [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags), each " +
                  "with the totals the blog index shows: views, unique visitors, reactions, and comments. " +
                  "Each link is a public web page with the full post — fetch it to read the content. " +
@@ -53,7 +50,6 @@ public sealed class BlogMcpTools(
     }
 
     [McpServerTool(Name = "get_blog_post_comments")]
-    [AllowAnonymous]
     [Description("Read the public comment thread of a blog post. Replies reference their parent via parentCommentId.")]
     public async Task<ListBlogCommentsResponse> GetBlogPostComments(
         [Description("The post's slug, from list_blog_posts.")] string slug,
@@ -67,7 +63,7 @@ public sealed class BlogMcpTools(
     }
 
     [McpServerTool(Name = "post_blog_comment")]
-    [Description("Post a comment on a blog post as the user, optionally as a reply to an existing comment.")]
+    [Description("[Authorized] Post a comment on a blog post as the user, optionally as a reply to an existing comment.")]
     public async Task<BlogCommentResponse> PostBlogComment(
         [Description("The post's slug, from list_blog_posts.")] string slug,
         [Description("The comment text.")] string content,
@@ -100,8 +96,8 @@ public sealed class BlogMcpTools(
     }
 
     [McpServerTool(Name = "get_my_comments")]
-    [Description("Everything the user has said on kalandra.tech and what came back: their blog comments with the " +
-                 "replies received, and their job-offer comments with the site owner's responses.")]
+    [Description("[Authorized] Everything the user has said on kalandra.tech and what came back: their blog comments " +
+                 "with the replies received, and their job-offer comments with the site owner's responses.")]
     public async Task<GetMyCommentsResponse> GetMyComments(CancellationToken ct = default)
     {
         var user = McpToolHelpers.RequireUser(currentUser);

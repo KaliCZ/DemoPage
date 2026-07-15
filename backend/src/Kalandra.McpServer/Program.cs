@@ -9,7 +9,7 @@ using Kalandra.McpServer.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Observability.Add(builder, serviceName: "mcp", isClientFault: McpErrorReporting.IsUnauthorizedToolCall);
+Observability.Add(builder, serviceName: "mcp", isClientFault: McpErrorReporting.IsToolErrorForTheCaller);
 
 builder.Services.AddProblemDetails();
 
