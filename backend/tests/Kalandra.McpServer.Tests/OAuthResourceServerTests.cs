@@ -1,20 +1,24 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Kalandra.Blog.Feed;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kalandra.McpServer.Tests;
 
 /// <summary>
-/// Boots the MCP host with config that is never dialled: an unauthenticated call is answered by the
-/// OAuth challenge before any token validation, Supabase call, or database work happens — which is
-/// exactly the resource-server behaviour these tests pin down.
+/// Boots the MCP host without real infrastructure: the blog RSS feed is stubbed in-process, and its slug
+/// is deliberately absent from the backend post catalog so the stats batch stays empty and the dead
+/// database config is never dialled — the public tools run end to end on pure HTTP assertions.
 /// </summary>
 public class McpServerFactory : WebApplicationFactory<Program>
 {
     public const string ResourceUri = "https://mcp.test.local";
     public const string SupabaseUrl = "https://test-project.supabase.co";
+    public const string StubBlogPostSlug = "strongly-typed-ids";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -25,6 +29,32 @@ public class McpServerFactory : WebApplicationFactory<Program>
         builder.UseSetting("Supabase:ServiceKey", "test-service-key");
         builder.UseSetting("Mcp:ResourceUri", ResourceUri);
         builder.UseSetting("BlogFeed:RssUrl", "http://localhost:4321/rss.xml");
+
+        builder.ConfigureTestServices(services =>
+            services.AddHttpClient<BlogFeedClient>().ConfigurePrimaryHttpMessageHandler(() => new StubRssFeedHandler()));
+    }
+
+    private sealed class StubRssFeedHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var rss = $"""
+                <rss version="2.0"><channel><title>kalandra.tech blog</title>
+                <item>
+                  <title>[EN] Strongly Typed IDs</title>
+                  <description>Why strongly typed ids beat raw Guids.</description>
+                  <link>https://www.kalandra.tech/blog/{StubBlogPostSlug}</link>
+                  <pubDate>Tue, 01 Jul 2026 08:00:00 GMT</pubDate>
+                  <category>dotnet</category>
+                </item>
+                </channel></rss>
+                """;
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(rss, Encoding.UTF8, "application/rss+xml"),
+            };
+            return Task.FromResult(response);
+        }
     }
 }
 
@@ -50,17 +80,4 @@ public class OAuthResourceServerTests(McpServerFactory factory) : IClassFixture<
         Assert.Contains($"{McpServerFactory.SupabaseUrl}/auth/v1", authorizationServers);
     }
 
-    [Fact]
-    public async Task Mcp_WithoutAToken_ChallengesWithTheResourceMetadataUrl()
-    {
-        var client = factory.CreateClient();
-
-        var response = await client.PostAsync("/mcp", new StringContent("{}", Encoding.UTF8, "application/json"), Ct);
-
-        // The 401 + resource_metadata pointer is what makes a client discover Supabase and sign the user in.
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var challenge = string.Join(", ", response.Headers.WwwAuthenticate);
-        Assert.Contains("resource_metadata", challenge);
-        Assert.Contains("oauth-protected-resource", challenge);
-    }
 }

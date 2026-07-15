@@ -1,13 +1,13 @@
 {
   "meta": {
     "title": "MCP | kalandra.tech — Mluvte s tímto webem přes svého AI asistenta",
-    "description": "Připojte Claude nebo jakéhokoliv MCP-kompatibilního AI asistenta ke kalandra.tech: podávejte pracovní nabídky, procházejte blog a čtěte či pište komentáře přes Model Context Protocol."
+    "description": "Připojte Claude nebo jakéhokoliv MCP-kompatibilního AI asistenta ke kalandra.tech: procházejte blog bez účtu a po přihlášení podávejte pracovní nabídky a pište komentáře — přes Model Context Protocol."
   },
   "hero": {
     "titlePrefix": "Mluvte s tímto webem přes ",
     "titleHighlight": "svého AI asistenta",
     "titleSuffix": ".",
-    "description": "Tento web provozuje vlastní Model Context Protocol server. Připojte ho ke Claude nebo jinému MCP-kompatibilnímu asistentovi a ten tu může jednat za vás — podat pracovní nabídku, sledovat konverzaci k ní, procházet blog a zapojit se do komentářů. Každá akce jde přes stejné veřejné API, které používá samotný web.",
+    "description": "Tento web provozuje vlastní Model Context Protocol server. Připojte ho ke Claude nebo jinému MCP-kompatibilnímu asistentovi a hned může procházet blog a číst komentáře — bez účtu. Po přihlášení tu navíc může jednat za vás: podat pracovní nabídku, sledovat konverzaci k ní a zapojit se do komentářů. Každá akce jde přes stejné veřejné API, které používá samotný web.",
     "liveBadge": "Živě"
   },
   "connect": {
@@ -20,7 +20,7 @@
     "copyFailed": "Kopírování selhalo",
     "copyEndpointAriaLabel": "Zkopírovat URL MCP endpointu",
     "authTitle": "Přihlášení",
-    "authDescription": "Při prvním připojení si asistent přihlášení najde sám, otevře kalandra.tech ve vašem prohlížeči a zeptá se, co všechno smí. Jednou to schválíte a zůstane připojený — jedná za váš účet, nic nevkládáte a vaše heslo nikdy nevidí."
+    "authDescription": "K připojení není potřeba účet — nástroje pro blog fungují hned. Účtové nástroje se objeví, jakmile server přihlásíte v nastavení konektorů svého asistenta (v Claude Code: /mcp → kalandra → Authenticate). Přihlášení řeší OAuth: prohlížeč otevře kalandra.tech, jednou schválíte, co asistent smí, a zůstane připojený pod vaším účtem — nic nevkládáte a vaše heslo nikdy nevidí."
   },
   "tools": {
     "title": "Co umí",
@@ -59,12 +59,12 @@
         "tools": [
           {
             "name": "list_blog_posts",
-            "auth": true,
-            "description": "Publikované články se shrnutími a štítky — u každého vidíte, zda jste ho už četli."
+            "auth": false,
+            "description": "Publikované články se shrnutími, štítky, odkazy na plný text a počty zobrazení, reakcí a komentářů. Po přihlášení u každého vidíte, zda jste ho už četli."
           },
           {
             "name": "get_blog_post_comments",
-            "auth": true,
+            "auth": false,
             "description": "Veřejné komentáře u libovolného článku."
           },
           {
@@ -98,7 +98,7 @@
   "how": {
     "title": "Jak to funguje",
     "items": [
-      "Nástroje jsou druhý vstup do stejné domény: každé volání spouští stejný kód jako požadavky samotného webu, pod vaším účtem, se stejnou validací, rate limity a emailovými notifikacemi.",
+      "Nástroje jsou druhý vstup do stejné domény: každé volání spouští stejný kód jako požadavky samotného webu — veřejné anonymně, účtové pod vaším účtem — se stejnou validací, rate limity a emailovými notifikacemi.",
       "Články blogu se čtou z RSS feedu webu, takže asistent vidí přesně to, co je publikované.",
       "Postaveno v .NET s oficiálním MCP C# SDK, běží jako vlastní host — odděleně od REST API, protože vás přihlašuje přes OAuth, ne tokenem, který vydává web."
     ],

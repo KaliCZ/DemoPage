@@ -9,6 +9,7 @@ using Kalandra.Blog.Queries;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Queries;
 using Kalandra.McpServer.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -17,39 +18,42 @@ namespace Kalandra.McpServer.Tools;
 /// <summary>
 /// MCP tools for the blog and the user's own activity. Reads and writes go through the same
 /// domain handlers the REST controllers use; the post list comes from the site's RSS feed.
+/// Reading the blog is public; the class-level gate keeps everything else account-only by default.
 /// </summary>
 [McpServerToolType]
+[Authorize]
 public sealed class BlogMcpTools(
     ICurrentUserAccessor currentUser,
     TimeProvider timeProvider,
     IBlogPostCatalog postCatalog,
     BlogFeedClient blogFeedClient,
-    GetViewerBlogViewsHandler viewerViewsHandler,
+    GetBlogPostStatsHandler statsHandler,
     GetBlogCommentsHandler getCommentsHandler,
     PostBlogCommentHandler postCommentHandler,
     ListMyBlogCommentsHandler myBlogCommentsHandler,
     ListMyJobOfferCommentsHandler myJobOfferCommentsHandler)
 {
     [McpServerTool(Name = "list_blog_posts")]
-    [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags). " +
-                 "Each post also reports viewerViews and watched so you can tell which ones the user has already " +
-                 "read. Use the slug with the blog comment tools.")]
-    public async Task<IReadOnlyList<BlogPostSummary>> ListBlogPosts(CancellationToken ct = default)
+    [AllowAnonymous]
+    [Description("List the published posts on the kalandra.tech blog (title, summary, slug, link, tags), each " +
+                 "with the totals the blog index shows: views, unique visitors, reactions, and comments. " +
+                 "Each link is a public web page with the full post — fetch it to read the content. " +
+                 "For a signed-in user each post also reports viewerViews and watched so you can tell which " +
+                 "ones they have already read. Use the slug with the blog comment tools.")]
+    public async Task<IReadOnlyList<BlogPostResponse>> ListBlogPosts(CancellationToken ct = default)
     {
-        var user = McpToolHelpers.RequireUser(currentUser);
         var posts = await blogFeedClient.ListPosts(ct);
 
-        var viewsBySlug = await viewerViewsHandler.List(
-            new ViewerBlogViewsQuery([.. posts.Select(post => post.Slug)], user.Id), ct);
+        // Slugs the catalog doesn't know yet keep zero stats instead of vanishing — the feed may briefly lead it.
+        var catalogPosts = posts.Select(post => postCatalog.Find(post.Slug)).OfType<BlogPost>().ToArray();
+        var stats = await statsHandler.List(new GetBlogPostStatsQuery(catalogPosts, currentUser.User?.Id), ct);
+        var statsBySlug = stats.ToDictionary(stat => stat.Slug, StringComparer.Ordinal);
 
-        return [.. posts.Select(post =>
-        {
-            var views = viewsBySlug.GetValueOrDefault(post.Slug);
-            return post with { ViewerViews = views, Watched = views > 0 };
-        })];
+        return [.. posts.Select(post => BlogPostResponse.Serialize(post, statsBySlug.GetValueOrDefault(post.Slug)))];
     }
 
     [McpServerTool(Name = "get_blog_post_comments")]
+    [AllowAnonymous]
     [Description("Read the public comment thread of a blog post. Replies reference their parent via parentCommentId.")]
     public async Task<ListBlogCommentsResponse> GetBlogPostComments(
         [Description("The post's slug, from list_blog_posts.")] string slug,

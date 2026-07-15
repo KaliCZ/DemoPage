@@ -44,9 +44,9 @@ app.UseStatusCodePages();
 McpAuth.Use(app);
 McpRateLimits.Use(app);
 
-// MCP tools over streamable HTTP. RequireAuthorization drives the OAuth resource-server challenge
-// (401 + WWW-Authenticate: resource_metadata=…), so a client discovers Supabase and signs the user in.
-app.MapMcp("/mcp").RequireAuthorization().RequireRateLimiting(McpRateLimitPolicies.Mcp);
+// MCP tools over streamable HTTP. The endpoint itself needs no authorization — the tools' [Authorize]
+// attributes gate the account tier, and an invalid or expired token is simply served as anonymous.
+app.MapMcp("/mcp").RequireRateLimiting(McpRateLimitPolicies.Mcp);
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
