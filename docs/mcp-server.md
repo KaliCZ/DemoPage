@@ -114,7 +114,7 @@ rewrites only its own port while the base config glob-imports both. The `mcp-dep
 `backend-deploy` (the API applies the schema first) and gates promotion on `/health/live` reporting the
 deployed commit, exactly like the API.
 
-Requires the `MCP_IMAGE_NAME` repo variable and a `mcp.kalandra.tech` DNS record.
+Deploying needs only the `mcp.kalandra.tech` DNS record and the shared Caddy cert covering the subdomain.
 
 ## Testing
 

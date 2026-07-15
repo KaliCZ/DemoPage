@@ -24,6 +24,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  API_IMAGE_NAME: kalicz/demopage/api
+  MCP_IMAGE_NAME: kalicz/demopage/mcp
 
 jobs:
   e2e:
@@ -297,7 +299,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
           tags: |
             type=sha
             type=raw,value=latest
@@ -361,7 +363,7 @@ jobs:
           JOB_OFFERS_OWNER_NOTIFICATION_EMAIL: ${{ vars.JOB_OFFERS_OWNER_NOTIFICATION_EMAIL }}
           # Digest-pinned, not :latest — the exact build verified by this run
           # is what runs and what comes back after a reboot.
-          IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           EXPECTED_SHA: ${{ github.sha }}
         with:
           host: ${{ vars.OCI_HOST }}
@@ -546,7 +548,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ vars.MCP_IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.MCP_IMAGE_NAME }}
           tags: |
             type=sha
             type=raw,value=latest
@@ -596,7 +598,7 @@ jobs:
           SENTRY_DSN: ${{ secrets.BACKEND_SENTRY_DSN }}
           BLOG_FEED_RSS_URL: https://www.kalandra.tech/rss.xml
           MCP_RESOURCE_URI: https://mcp.kalandra.tech
-          IMAGE_REF: ${{ env.REGISTRY }}/${{ vars.MCP_IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.MCP_IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           EXPECTED_SHA: ${{ github.sha }}
         with:
           host: ${{ vars.OCI_HOST }}
