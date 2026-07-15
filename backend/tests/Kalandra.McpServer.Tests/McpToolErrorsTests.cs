@@ -33,6 +33,11 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
         Assert.True(logs.Noise.IsEmpty, $"Sentry alerts on Warning+, but this refusal logged:\n{string.Join("\n", logs.Noise)}");
     }
 
+    /// <summary>
+    /// Collects what the MCP pipeline reports at the level Sentry turns into issues. Scoped to the SDK's own
+    /// categories: unrelated hosting warnings (a CI runner with no DataProtection keys, say) aren't this test's
+    /// business.
+    /// </summary>
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
         public readonly ConcurrentBag<string> Noise = [];
@@ -41,13 +46,15 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
 
         private sealed class Captor(CapturingLoggerProvider owner, string category) : ILogger
         {
+            private bool IsMcp => category.StartsWith("ModelContextProtocol", StringComparison.Ordinal);
+
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-            public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
+            public bool IsEnabled(LogLevel logLevel) => IsMcp && logLevel >= LogLevel.Warning;
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
                 Func<TState, Exception?, string> formatter)
             {
-                if (logLevel >= LogLevel.Warning)
+                if (IsEnabled(logLevel))
                     owner.Noise.Add($"[{logLevel}] {category}: {formatter(state, exception)}");
             }
         }
