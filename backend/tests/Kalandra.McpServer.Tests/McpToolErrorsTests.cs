@@ -8,9 +8,9 @@ using ModelContextProtocol.Protocol;
 namespace Kalandra.McpServer.Tests;
 
 /// <summary>
-/// The tools raise <c>McpException</c> on purpose to tell the model something it can act on, and the SDK logs
-/// every one at Error as an unhandled exception — enough to alert on each refused call. McpToolErrors catches
-/// them first. Nothing in the response shows whether that still works, so it is pinned here.
+/// The tools raise <c>ToolRefusalException</c> on purpose to tell the model something it can act on, and the
+/// SDK logs every exception at Error as unhandled — enough to alert on each refused call. McpToolErrors catches
+/// ours first, and only ours. Nothing in the response shows whether that still works, so it is pinned here.
 /// </summary>
 public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
@@ -40,9 +40,8 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
     [Fact]
     public async Task AProtocolFault_IsLeftToTheSdkToReport()
     {
-        // McpProtocolException derives from McpException, so without the guard the filter would swallow the
-        // SDK's own failures too — including InternalError, the one thing that must alert. Driven straight at
-        // the filter: over HTTP every protocol fault worth reaching is either gated or turned into a result.
+        // The SDK's own failures — InternalError above all — must keep alerting. Driven straight at the
+        // filter: over HTTP every protocol fault worth reaching is either gated or turned into a result.
         var handler = McpToolErrors.ToToolResult(
             (_, _) => throw new McpProtocolException("Boom.", McpErrorCode.InternalError));
 
@@ -50,9 +49,20 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
     }
 
     [Fact]
+    public async Task SomeoneElsesMcpException_IsLeftToReport()
+    {
+        // A bare McpException is the SDK's type: anything in the pipeline may throw it, and its message was
+        // not authored here for the model — so it is a real failure and belongs in the alerts.
+        var handler = McpToolErrors.ToToolResult((_, _) => throw new McpException("Not authored here."));
+
+        await Assert.ThrowsAsync<McpException>(async () => await handler(null!, Ct));
+    }
+
+    [Fact]
     public async Task AToolsOwnError_IsAnsweredByTheFilter()
     {
-        var handler = McpToolErrors.ToToolResult((_, _) => throw new McpException("No blog post with that slug."));
+        var handler = McpToolErrors.ToToolResult(
+            (_, _) => throw new ToolRefusalException("No blog post with that slug."));
 
         var result = await handler(null!, Ct);
 

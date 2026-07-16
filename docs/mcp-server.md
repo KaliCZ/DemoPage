@@ -63,10 +63,11 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset
   it filters `tools/list` by them with no opt-out — and hard-throws if the attributes are present without it.
   Listing everything therefore means not using it, and not carrying the attributes at all.
 - **A refused call is not an incident.** `McpToolErrors` is this host's `UseExceptionHandler`: a call-tool
-  filter that turns the `McpException`s the tools raise on purpose into the `isError` result the model reads.
-  The SDK does the same thing on its own — but only after logging it at Error as an unhandled exception, which
-  alerts on every refused call. Catching it first, inside the SDK's outer handler, means nothing is logged at
-  all, so no observability filtering is needed anywhere. Anything that isn't an `McpException` still reports.
+  filter that turns the `ToolRefusalException`s the tools raise on purpose into the `isError` result the model
+  reads. The SDK does the same thing on its own — but only after logging it at Error as an unhandled exception,
+  which alerts on every refused call. Catching it first, inside the SDK's outer handler, means nothing is
+  logged at all, so no observability filtering is needed anywhere. The type is this host's own, so anything
+  else — the SDK's `McpException`s included — passes through and still reports.
 - **An invalid or expired token is challenged, not downgraded** — including on the public tools, because the
   spec says an invalid or expired token MUST be answered with a 401. Stock ASP.NET would fail open here
   (authentication that fails leaves an anonymous principal, and an endpoint with no authorization requirement
@@ -106,9 +107,9 @@ claude mcp add --transport http kalandra https://mcp.kalandra.tech/mcp
 Account tools act as the authenticated caller and open with `McpToolHelpers.RequireUser`; `ToolAuthorizationTests`
 holds the list of the two public tools and refuses to let anything else answer an anonymous caller, so a new
 tool is account-only unless it is deliberately added there. Tools return the same response contracts the
-controllers serialize — no separate DTO layer. Domain errors become `McpException` messages phrased for a
-language model to act on, the MCP equivalent of the controllers' RFC 7807 responses; `McpToolErrors` turns
-them into `isError` results, so throwing one is this host's `return NotFound()`.
+controllers serialize — no separate DTO layer. Domain errors become `ToolRefusalException` messages phrased
+for a language model to act on, the MCP equivalent of the controllers' RFC 7807 responses; `McpToolErrors`
+turns them into `isError` results, so throwing one is this host's `return NotFound()`.
 
 `list_blog_posts` links to the public post pages (there is no separate content tool — assistants fetch the
 link). It serves everyone the same per-post totals the blog index shows — views, unique visitors, reactions,

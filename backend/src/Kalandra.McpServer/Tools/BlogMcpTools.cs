@@ -9,7 +9,7 @@ using Kalandra.Blog.Queries;
 using Kalandra.Infrastructure.Auth;
 using Kalandra.JobOffers.Queries;
 using Kalandra.McpServer.Contracts;
-using ModelContextProtocol;
+using Kalandra.McpServer.Infrastructure;
 using ModelContextProtocol.Server;
 
 namespace Kalandra.McpServer.Tools;
@@ -56,7 +56,7 @@ public sealed class BlogMcpTools(
         CancellationToken ct = default)
     {
         if (postCatalog.Find(slug) is not { } post)
-            throw new McpException($"No blog post with slug '{slug}'.");
+            throw new ToolRefusalException($"No blog post with slug '{slug}'.");
 
         var comments = await getCommentsHandler.GetForDisplay(new GetBlogCommentsQuery(post.CommentsStreamId), ct);
         return ListBlogCommentsResponse.Serialize(comments);
@@ -72,7 +72,7 @@ public sealed class BlogMcpTools(
     {
         var user = McpToolHelpers.RequireUser(currentUser);
         if (postCatalog.Find(slug) is not { } post)
-            throw new McpException($"No blog post with slug '{slug}'.");
+            throw new ToolRefusalException($"No blog post with slug '{slug}'.");
 
         var comment = new BlogCommentPosted(
             CommentId: Guid.NewGuid(),
@@ -86,7 +86,7 @@ public sealed class BlogMcpTools(
 
         var result = await postCommentHandler.PostAndSave(new PostBlogCommentCommand(post, comment), ct);
         if (result.Error is { } error)
-            throw new McpException(error switch
+            throw new ToolRefusalException(error switch
             {
                 PostBlogCommentError.ParentCommentNotFound => "The comment you're replying to doesn't exist.",
                 PostBlogCommentError.ParentCommentDeleted => "The comment you're replying to was deleted.",

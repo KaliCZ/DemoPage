@@ -4,7 +4,7 @@ using Kalandra.JobOffers.Contracts;
 using Kalandra.JobOffers.Commands;
 using Kalandra.JobOffers.Entities;
 using Kalandra.JobOffers.Queries;
-using ModelContextProtocol;
+using Kalandra.McpServer.Infrastructure;
 using ModelContextProtocol.Server;
 
 namespace Kalandra.McpServer.Tools;
@@ -57,7 +57,7 @@ public sealed class JobOfferMcpTools(
 
         var result = await createHandler.CreateAndSave(command, ct);
         if (result.Error is { } error)
-            throw new McpException(error switch
+            throw new ToolRefusalException(error switch
             {
                 CreateJobOfferError.TooManyAttachments => "Too many attachments.",
                 CreateJobOfferError.TotalSizeTooLarge => "The attachments exceed the total size limit.",
@@ -88,7 +88,7 @@ public sealed class JobOfferMcpTools(
         var user = McpToolHelpers.RequireUser(currentUser);
         var comments = await listCommentsHandler.List(new ListCommentsQuery(jobOfferId, user), ct);
         if (comments is null)
-            throw new McpException("No such job offer, or it doesn't belong to you.");
+            throw new ToolRefusalException("No such job offer, or it doesn't belong to you.");
         return comments.Select(CommentResponse.Serialize).ToList();
     }
 
@@ -110,7 +110,7 @@ public sealed class JobOfferMcpTools(
 
         var result = await addCommentHandler.AddAndSave(command, ct);
         if (result.Error is { } error)
-            throw new McpException(error switch
+            throw new ToolRefusalException(error switch
             {
                 AddCommentError.NotFound => "No such job offer.",
                 AddCommentError.NotAuthorized => "That job offer doesn't belong to you.",
