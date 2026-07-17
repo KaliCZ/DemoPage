@@ -99,7 +99,10 @@ public static class Observability
                                 && !host.EndsWith("ingest.sentry.io", StringComparison.OrdinalIgnoreCase));
                     })
                     .AddSource("Marten")
-                    .AddNpgsql();
+                    .AddNpgsql()
+                    .SetSampler(new ParentBasedSampler(new MartenDaemonPollSampler()))
+                    // Must be registered before the exporters — they enqueue spans on end, so a later filter is too late.
+                    .AddProcessor(new DistributedLockPollFilter());
 
                 if (sentryConfig is not null)
                     tracing.AddSentryOtlpExporter(sentryConfig.Dsn.Value);
