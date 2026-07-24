@@ -54,9 +54,11 @@ Assistant ──1── POST /mcp (no token)  →  anonymous tier: whole toolset
 - **`McpAccountGate` issues that challenge**, as middleware ahead of the endpoint. It has to sit there: the SDK
   cannot challenge from inside a tool, because by then the response is already a JSON-RPC envelope, and stock
   `RequireAuthorization` would shut the anonymous tier out of the whole endpoint while never seeing the body
-  that says which tool is wanted. It owns the list of public tools, so a new tool is account-only until named
-  there; `ToolAuthorizationTests` calls every listed tool without a token and fails if one answers that
-  shouldn't. `McpToolHelpers.RequireUser` stays as the backstop inside each tool.
+  that says which tool is wanted. It owns the list of public tools and fails closed: an anonymous tools/call
+  is challenged unless it names a public tool, which covers unknown tools, new tools not yet named public, and
+  misshapen calls that name nothing at all — bot traffic that would otherwise reach the SDK and alert at Error
+  on every probe. `ToolAuthorizationTests` calls every listed tool without a token and fails if one answers
+  that shouldn't. `McpToolHelpers.RequireUser` stays as the backstop inside each tool.
 - **The whole toolset is listed to everyone**, each account tool's description prefixed `[Authorized]`. A tool
   the model cannot see is a tool it cannot offer, so hiding them left it unable to tell the user what the site
   can do. The SDK's `AddAuthorizationFilters()` would honor `[Authorize]`/`[AllowAnonymous]` attributes, but
