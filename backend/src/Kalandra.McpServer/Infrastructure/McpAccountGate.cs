@@ -81,15 +81,15 @@ public static class McpAccountGate
         context.Request.EnableBuffering();
         try
         {
+            // Fail closed: a tools/call is an account call unless it names a public tool. That covers
+            // misshapen calls too (params or name missing or of the wrong kind) — challenging them keeps
+            // them out of the SDK, which answers each with a protocol error only after alerting at Error.
             using var document = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted);
             return document.RootElement is { ValueKind: JsonValueKind.Object } request
                 && request.TryGetProperty("method", out var method)
                 && method.ValueKind == JsonValueKind.String
                 && method.ValueEquals("tools/call")
-                && request.TryGetProperty("params", out var parameters)
-                && parameters.TryGetProperty("name", out var name)
-                && name.GetString() is { } toolName
-                && !PublicTools.Contains(toolName);
+                && !NamesAPublicTool(request);
         }
         catch (JsonException)
         {
@@ -101,4 +101,12 @@ public static class McpAccountGate
             context.Request.Body.Position = 0;
         }
     }
+
+    private static bool NamesAPublicTool(JsonElement request) =>
+        request.TryGetProperty("params", out var parameters)
+        && parameters.ValueKind == JsonValueKind.Object
+        && parameters.TryGetProperty("name", out var name)
+        && name.ValueKind == JsonValueKind.String
+        && name.GetString() is { } toolName
+        && PublicTools.Contains(toolName);
 }
