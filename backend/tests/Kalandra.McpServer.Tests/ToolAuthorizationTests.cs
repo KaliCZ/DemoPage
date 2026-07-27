@@ -90,6 +90,26 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
         Assert.Contains("error=\"invalid_token\"", challenge.Parameter);
     }
 
+    [Theory]
+    // Valid JSON in shapes the protocol never produces: params that aren't an object, a tool name that
+    // isn't a string, no params at all. Scanners send these anonymously, and anything but the gate's own
+    // challenge is noise — a 500 out of the gate, or the SDK alerting at Error before it answers. A call
+    // that names no public tool is an account call, however misshapen (fail closed).
+    [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":null}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":[]}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":"get_my_comments"}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":123}}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"arguments":{}}}""")]
+    [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call"}""")]
+    public async Task AMisshapenToolCall_WithoutAToken_IsChallengedLikeAnyAccountCall(string jsonRpc)
+    {
+        var response = await factory.PostMcp(jsonRpc);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        var challenge = Assert.Single(response.Headers.WwwAuthenticate);
+        Assert.Equal("Bearer", challenge.Scheme);
+    }
+
     [Fact]
     public async Task AFirstVisitWithNoToken_GetsAPlainChallenge_NotAnErrorCode()
     {
