@@ -5,6 +5,9 @@ using Kalandra.Infrastructure.Email;
 using Kalandra.Infrastructure.Storage;
 using Kalandra.Infrastructure.Turnstile;
 using Kalandra.Infrastructure.Users;
+using Marten;
+using Marten.Events;
+using Marten.Events.Daemon.Coordination;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -38,9 +41,25 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
+    // Generous because CI runs Docker and several test hosts in parallel; progress-based waits return
+    // the moment the daemon catches up, so the cap only bites when something is genuinely broken.
+    private static readonly TimeSpan AsyncDaemonTimeout = TimeSpan.FromSeconds(60);
+
     public FakeSupabaseAdminService FakeAdminService { get; } = new();
     public TestEmailSender EmailSender { get; } = new();
     public FakeUserInfoService UserInfoService { get; } = new();
+
+    /// <summary>
+    /// Waits until the async daemon has processed every event committed so far, then returns the sent
+    /// emails matching the predicate. The result is final for those events — a missing or extra
+    /// notification is a real bug, not a race — so callers assert exact counts without sleeping.
+    /// </summary>
+    public async Task<EmailMessage[]> WaitForDeliveredEmailsAsync(Func<EmailMessage, bool> predicate)
+    {
+        var store = Services.GetRequiredService<IDocumentStore>();
+        await store.WaitForNonStaleProjectionDataAsync(AsyncDaemonTimeout);
+        return [.. EmailSender.Sent.Where(predicate)];
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -106,6 +125,29 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
+        await WaitForNotificationSubscriptionsToStartAsync();
+    }
+
+    // SubscribeFromPresent seeds each subscription at the current high-water mark when its shard starts —
+    // an event committed before that would be skipped, never emailed. Agents register only after seeding,
+    // so waiting for registration while the database is still empty guarantees no test event is missed.
+    private async Task WaitForNotificationSubscriptionsToStartAsync()
+    {
+        var store = (DocumentStore)Services.GetRequiredService<IDocumentStore>();
+        var expectedShards = store.Options.Projections.AllShards().Select(shard => shard.Name.Identity).ToHashSet();
+        var daemon = Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
+
+        using var cancellation = new CancellationTokenSource(AsyncDaemonTimeout);
+        try
+        {
+            while (!expectedShards.IsSubsetOf(daemon.CurrentAgents().Select(agent => agent.Name.Identity)))
+                await Task.Delay(100, cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw new TimeoutException(
+                $"The async daemon did not start subscriptions [{string.Join(", ", expectedShards)}] within {AsyncDaemonTimeout}.");
+        }
     }
 
     public new async ValueTask DisposeAsync()
