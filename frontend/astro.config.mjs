@@ -19,10 +19,13 @@ const sentryProject = process.env.SENTRY_PROJECT;
 
 export default defineConfig({
   site,
+  // Paired with `build.format: "file"` so Cloudflare Pages serves the slash-less URLs that canonicals, sitemap, and links declare.
+  trailingSlash: "never",
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : undefined,
   },
   build: {
+    format: "file",
     inlineStylesheets: "always",
   },
   // The sitemap is a custom endpoint (src/pages/sitemap.xml.ts) fed by per-page
