@@ -785,7 +785,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content }, Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var email = Assert.Single(await WaitForEmailsAsync(m => m.TextBody.Value.Contains(content), expectedCount: 1));
+        var email = Assert.Single(await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(content)));
         Assert.Equal("author@kalandra.local", email.To.Address);
         Assert.Contains(slug, email.Subject.Value);
         Assert.Contains($"https://www.kalandra.tech/blog/{slug}", email.TextBody.Value);
@@ -804,7 +804,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(userId: Guid.NewGuid(), email: "replier@test.com");
         await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = replyContent, parentCommentId = parentId }, Ct);
 
-        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(replyContent), expectedCount: 2);
+        var emails = await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(replyContent));
         Assert.Equal(2, emails.Length);
         Assert.Contains(emails, m => m.To.Address == "author@kalandra.local");
         var parentNotification = Assert.Single(emails, m => m.To.Address == "parent-author@test.com");
@@ -825,10 +825,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
             new { content = replyContent, parentCommentId = parent.GetProperty("id").GetString() },
             Ct);
 
-        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(replyContent), expectedCount: 1);
-        // Grace period: a wrong extra notification would arrive moments later.
-        await Task.Delay(1500, Ct);
-        emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(replyContent))];
+        var emails = await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(replyContent));
 
         var email = Assert.Single(emails);
         Assert.Equal("author@kalandra.local", email.To.Address);
@@ -849,25 +846,10 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var comments = (await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/comments", Ct))).GetProperty("comments");
         Assert.Equal(1, comments.GetArrayLength());
 
-        await Task.Delay(1500, Ct);
-        Assert.DoesNotContain(factory.EmailSender.Sent, m => m.TextBody.Value.Contains(content));
+        Assert.Empty(await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(content)));
     }
 
     // ───── Helpers ─────
-
-    private async Task<Kalandra.Infrastructure.Email.EmailMessage[]> WaitForEmailsAsync(
-        Func<Kalandra.Infrastructure.Email.EmailMessage, bool> predicate, int expectedCount)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(20);
-        while (DateTime.UtcNow < deadline)
-        {
-            var matches = factory.EmailSender.Sent.Where(predicate).ToArray();
-            if (matches.Length >= expectedCount)
-                return matches;
-            await Task.Delay(200, Ct);
-        }
-        return [.. factory.EmailSender.Sent.Where(predicate)];
-    }
 
     /// <summary>Unique per test — the factory shares one database across the class.</summary>
     private static string NewSlug() => $"post-{Guid.NewGuid():N}";
