@@ -19,8 +19,13 @@ const { metadata, lang } = Astro.props;
 const t = lang === "cs" ? csBlog : enBlog;
 
 // The slug is the last path segment — identical for /blog/x and /cs/blog/x —
-// and keys the post's reaction and comment streams in the backend.
-const slug = Astro.url.pathname.replace(/\/$/, "").split("/").pop()!;
+// and keys the post's reaction and comment streams in the backend. At build time
+// `build.format: "file"` makes the segment end in ".html", so strip it.
+const slug = Astro.url.pathname
+  .replace(/\/$/, "")
+  .split("/")
+  .pop()!
+  .replace(/\.html$/, "");
 const pagePath = `blog/${slug}`;
 
 // blogPostStaticPaths only builds routes for declared languages, so the variant exists.

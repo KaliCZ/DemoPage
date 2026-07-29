@@ -9,7 +9,7 @@ test.describe("Page rendering", () => {
   });
 
   test("home page loads in Czech", async ({ page }) => {
-    await page.goto("/cs/");
+    await page.goto("/cs");
     await expect(page).toHaveTitle(/kalandra\.tech/);
     await expect(page.getByRole("link", { name: "Najměte mě" })).toBeVisible();
   });

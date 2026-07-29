@@ -18,7 +18,7 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 ---
 
-<Layout title={t.meta.title} description={t.meta.description} activePage="profile" lang={lang}>
+<Layout title={t.meta.title} description={t.meta.description} activePage="profile" lang={lang} noindex>
   <!-- Hero -->
   <section class="max-w-3xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">

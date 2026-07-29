@@ -29,7 +29,14 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "";
 const listPath = localePath(lang, "job-offers");
 ---
 
-<Layout title={t.detailMeta.title} description={t.detailMeta.description} activePage="job-offers" pagePath="job-offers/detail" lang={lang}>
+<Layout
+  title={t.detailMeta.title}
+  description={t.detailMeta.description}
+  activePage="job-offers"
+  pagePath="job-offers/detail"
+  lang={lang}
+  noindex
+>
   <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
