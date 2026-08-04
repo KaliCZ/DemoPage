@@ -1,0 +1,384 @@
+---
+import BlogCode from "../../../components/BlogCode.astro";
+import BlogPostLayout from "../../../components/BlogPostLayout.astro";
+import { blogPostStaticPaths, type BlogPostMetadata } from "../../../blog/types";
+import { defaultLocale, localePath, type Locale } from "../../../i18n/utils";
+
+export const metadata: BlogPostMetadata = {
+  variants: {
+    en: {
+      title: "Type-Safe Intervals in Your .NET API",
+      summary:
+        "Swap a pair of loose start and end fields for a single Kalicz.StrongTypes interval that can never run backwards. It validates on construction, serializes on the API boundary, and maps to real database columns you can filter on.",
+    },
+    cs: {
+      title: "Typově bezpečné intervaly ve tvém .NET API",
+      summary:
+        "Vyměň dvojici volných polí start a end za jeden Kalicz.StrongTypes interval, který nikdy nemůže běžet pozpátku. Validuje se při vytvoření, serializuje na hranici API a mapuje se na skutečné databázové sloupce, podle kterých můžeš filtrovat.",
+    },
+  },
+  pubDate: "2026-07-13",
+  tags: ["dotnet", "csharp", "strong-types", "type-safety", "intervals", "ef-core"],
+};
+
+export const getStaticPaths = () => blogPostStaticPaths(metadata);
+
+const lang = (Astro.params.lang ?? defaultLocale) as Locale;
+
+const beforeEntitySnippet = `public sealed class Membership
+{
+    public Guid Id { get; init; }
+    public DateOnly StartDate { get; init; }
+    public DateOnly EndDate { get; init; }
+}`;
+
+const beforeCheckSnippet = `public Membership Start(DateOnly startDate, DateOnly endDate)
+{
+    // Nothing in the type stops the end from being before the start.
+    if (endDate < startDate)
+        throw new ArgumentException("End date must be on or after the start date.");
+
+    return new Membership { Id = Guid.NewGuid(), StartDate = startDate, EndDate = endDate };
+}
+
+// Every reader has to trust that check ran somewhere upstream.
+int lengthInDays = membership.EndDate.DayNumber - membership.StartDate.DayNumber;`;
+
+const afterEntitySnippet = `public sealed class Membership
+{
+    public Guid Id { get; init; }
+    public FiniteInterval<DateOnly> Period { get; init; }
+}`;
+
+const constructionSnippet = `// throws if the end is before the start
+FiniteInterval<DateOnly> period = FiniteInterval<DateOnly>.Create(startDate, endDate);
+
+// null instead of throwing
+FiniteInterval<DateOnly>? maybe = FiniteInterval<DateOnly>.TryCreate(startDate, endDate);
+
+// the range knows its own length
+int lengthInDays = period.Days();`;
+
+const usageSnippet = `// Is the membership active on a given day?
+bool activeToday = membership.Period.Contains(DateOnly.FromDateTime(DateTime.UtcNow));
+
+// Would a new membership overlap one that already exists?
+bool clashes = existing.Period.Overlaps(requested.Period);`;
+
+const variantsSnippet = `// Both ends known: a fixed-term membership.
+FiniteInterval<DateOnly> fixedTerm = FiniteInterval<DateOnly>.Create(start, end);
+
+// Start known, no end yet: a membership that is still running.
+IntervalFrom<DateOnly> ongoing = IntervalFrom<DateOnly>.Create(start);
+
+// Either end may be open, as long as one is set.
+Interval<DateOnly> window = Interval<DateOnly>.Create(start, end);`;
+
+const jsonSnippet = `{
+  "period": { "start": "2026-01-01", "end": "2026-12-31" }
+}`;
+
+const efSnippet = `public sealed class Membership
+{
+    public Guid Id { get; init; }
+    public FiniteInterval<DateOnly> Period { get; init; }
+}
+
+// Program.cs - one call attaches the value converters.
+services.AddDbContext<AppDbContext>(options => options
+    .UseNpgsql(connectionString)
+    .UseStrongTypes());`;
+
+const querySnippet = `// The interval maps to real start and end columns, so the database can filter on it.
+var longRunning = await db.Memberships
+    .Where(m => m.Period.End.DayNumber - m.Period.Start.DayNumber > 30)
+    .ToListAsync();
+
+foreach (var membership in longRunning)
+    await email.SendRenewalOfferAsync(membership);`;
+---
+
+<BlogPostLayout metadata={metadata} lang={lang}>
+  {
+    lang === "cs" ? (
+      <Fragment>
+        <p>
+          Tohle je pokračování článku{" "}
+          <a href={localePath(lang, "blog/zero-code-validations-in-your-dotnet-api")}>Validace v .NET API bez jediného řádku kódu</a>. Ten
+          byl o balíčku <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>, malé knihovně, která vyměňuje primitivní typy
+          jako <code>string</code> a <code>int</code> za typy, jež si nesou vlastní záruky, takže validuješ jednou na hranici a zbytek
+          vynutí překladač. Ke konci jsem psal, že chystám <code>Interval&lt;T&gt;</code>. Verze 1.2.0 ho právě vydala, takže tady je ten
+          slíbený samostatný článek.
+        </p>
+
+        <p>
+          Začnu konkrétním příkladem. Řekněme, že stavíš předplatné. Člen se přihlásí k nějakému datu a jeho členství běží do jiného data.
+          Nabízející se model jsou dvě pole:
+        </p>
+
+        <BlogCode code={beforeEntitySnippet} lang="csharp" />
+
+        <p>
+          A hned je tu problém. Nic nebrání tomu, aby konec byl před začátkem.{" "}
+          <code>
+            new Membership {"{"} StartDate = today, EndDate = yesterday {"}"}
+          </code>{" "}
+          se v pohodě zkompiluje. Takže každá metoda, která takový objekt vytváří, musí kontrolovat, a každá metoda, která ho čte, musí
+          věřit, že se kontrola stala někde výš.
+        </p>
+
+        <BlogCode code={beforeCheckSnippet} lang="csharp" />
+
+        <p>
+          Je to stejná písnička jako minule. Ten <code>if</code> dokáže, že rozsah je platný, pak se důkaz zahodí a další metoda níž musí
+          kontrolovat znovu. I počítání délky je svá vlastní past. Uděláš off-by-one na <code>DayNumber</code>, nebo zapomeneš, jestli je
+          konec inkluzivní, a tvůj filtr „delší než 30 dní“ potichu počítá špatná členství.
+        </p>
+
+        <h2>Rozsah, který nemůže být pozpátku</h2>
+
+        <p>
+          Interval je jen začátek a konec s jedním pravidlem: konec není nikdy před začátkem. A přesně takovéhle pravidlo silný typ umí
+          držet. Takže místo dvou volných polí dostane členství jeden:
+        </p>
+
+        <BlogCode code={afterEntitySnippet} lang="csharp" />
+
+        <p>
+          Vytvoříš ho přes <code>Create</code>, které to pravidlo ověří jednou, v okamžiku vytvoření:
+        </p>
+
+        <BlogCode code={constructionSnippet} lang="csharp" />
+
+        <p>
+          Od té chvíle je rozsah správný všude, kam se dostane. Žádná metoda níž nemusí znovu kontrolovat pořadí dat, protože{" "}
+          <code>FiniteInterval&lt;DateOnly&gt;</code>, kde je konec před začátkem, prostě nemůže existovat. A ten typ ví věci, které dvojice
+          polí nikdy neznala. Umí ti říct svoji délku, jestli obsahuje nějaké datum a jestli se překrývá s jiným rozsahem:
+        </p>
+
+        <BlogCode code={usageSnippet} lang="csharp" />
+
+        <p>
+          To poslední je přesně ta věc, kterou bys jinak napsal, mírně ji pokazil a obalil pěti unit testy. Tady je to jedno volání metody a
+          hraniční případy žijí v knihovně.
+        </p>
+
+        <h2>Jeden typ, čtyři tvary</h2>
+
+        <p>
+          Ne každý rozsah má oba konce. Členství na dobu určitou má začátek i konec. To průběžné má začátek a zatím žádný konec. Promo akce
+          může běžet do nějakého data bez skutečného začátku. Balíček má pro každý případ variantu a všechny sdílí stejnou záruku:
+        </p>
+
+        <BlogCode code={variantsSnippet} lang="csharp" />
+
+        <p>
+          <code>FiniteInterval&lt;T&gt;</code> potřebuje oba konce. <code>IntervalFrom&lt;T&gt;</code> ohraničuje jen začátek, což se skvěle
+          hodí na členství, které pořád běží. <code>IntervalUntil&lt;T&gt;</code> ohraničuje jen konec. A <code>Interval&lt;T&gt;</code>{" "}
+          dovolí kterýkoli konec nechat otevřený, dokud je aspoň jeden nastavený. Konečný interval můžeš zdarma rozšířit na otevřený a zúžit
+          zpátky s explicitní kontrolou, když to potřebuješ.
+        </p>
+
+        <h2>Přejde přes hranici API zadarmo</h2>
+
+        <p>
+          Jako zbytek balíčku se i intervaly serializují do JSONu a zpět bez jakékoli konfigurace. Request s předplatným přijde jako jeden
+          vnořený objekt:
+        </p>
+
+        <BlogCode code={jsonSnippet} lang="json" />
+
+        <p>
+          Když klient pošle konec před začátkem, deserializace selže na hranici a tvůj endpoint ho nikdy neuvidí. Stejné jako výměna{" "}
+          <code>string</code> za <code>NonEmptyString</code>, jen že teď je invariant o dvou hodnotách a jejich vztahu.
+        </p>
+
+        <h2>A dosáhne až do databáze</h2>
+
+        <p>
+          Tahle část se mi na příkladu s předplatným líbí nejvíc. S balíčkem <code>Kalicz.StrongTypes.EfCore</code> se interval stane
+          vlastností entity a jedno volání na options builderu navěsí mapování:
+        </p>
+
+        <BlogCode code={efSnippet} lang="csharp" />
+
+        <p>
+          Ve výchozím nastavení se interval mapuje na dva obyčejné sloupce, jeden pro začátek a jeden pro konec. Nic exotického na straně
+          úložiště. Ale protože to jsou skutečné sloupce, databáze podle nich umí filtrovat. Takže to, co jsem doopravdy chtěl, najít každé
+          členství, které běží víc než třicet dní, abych těm členům poslal nabídku na prodloužení, je jenom dotaz:
+        </p>
+
+        <BlogCode code={querySnippet} lang="csharp" />
+
+        <p>
+          Žádné načítání všech řádků a filtrování v paměti. Rozsah žije v databázi jako dvě data a EF Core přeloží porovnání do SQL. A kdyby
+          se do těch sloupců někdy dostala špatná data, jejich načtení vyhodí chybu, místo aby ti podalo potichu obrácený rozsah.
+        </p>
+
+        <h2>Zase míň hraničních případů</h2>
+
+        <p>
+          Je to stejná výhra jako v prvním článku, jen na trochu jiném místě. Celá kategorie chyb, obrácený rozsah, off-by-one v délce,
+          zapomenutá inkluzivita, přestane být možná. Testy, které tyhle věci hlídaly, zmizí a zůstanou testy o chování, na kterém opravdu
+          záleží. Kolegové na review se přestanou ptát „a co když je konec před začátkem?“, protože to se už nezkompiluje.
+        </p>
+
+        <p>
+          Pokud už Kalicz.StrongTypes používáš, <code>Interval&lt;T&gt;</code> a jeho varianty jsou v balíčku od verze 1.2.0, takže stačí
+          aktualizovat. Pokud jsi to ještě nezkoušel, na stránce <a href={localePath(lang, "strong-types")}>StrongTypes</a> najdeš další
+          příklady a diagramy, zdrojáky žijí na{" "}
+          <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
+            GitHubu
+          </a>{" "}
+          a balíček je na{" "}
+          <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
+            NuGetu
+          </a>
+          . Vezmi další dvojici začátek a konec ve svém modelu, ať je to předplatné, rezervace nebo interval reportu, a dej jí skutečný typ.
+          Ten obrácený rozsah, kterému jsi nikdy úplně nevěřil, zmizí.
+        </p>
+      </Fragment>
+    ) : (
+      <Fragment>
+        <p>
+          This one is a follow-up to{" "}
+          <a href={localePath(lang, "blog/zero-code-validations-in-your-dotnet-api")}>Zero-Code Validations in Your .NET API</a>. That post
+          was about <a href={localePath(lang, "strong-types")}>Kalicz.StrongTypes</a>, a small package that swaps primitive types like{" "}
+          <code>string</code> and <code>int</code> for types that carry their own guarantees, so you validate once at the boundary and the
+          compiler enforces the rest. Near the end I said an <code>Interval&lt;T&gt;</code> was coming. Version 1.2.0 just shipped it, so
+          here is the separate post I promised.
+        </p>
+
+        <p>
+          Let me start with a real example. Say you are building subscriptions. A member joins on some date and their membership runs until
+          another date. The obvious model is two fields:
+        </p>
+
+        <BlogCode code={beforeEntitySnippet} lang="csharp" />
+
+        <p>
+          And right away there is a problem. Nothing stops the end from being before the start.{" "}
+          <code>
+            new Membership {"{"} StartDate = today, EndDate = yesterday {"}"}
+          </code>{" "}
+          compiles happily. So every method that creates one has to check, and every method that reads one has to trust the check happened
+          somewhere upstream.
+        </p>
+
+        <BlogCode code={beforeCheckSnippet} lang="csharp" />
+
+        <p>
+          It is the same story as before. The <code>if</code> proves the range is valid, then the proof is thrown away and the next method
+          down has to check all over again. Computing the length is its own little trap too. An off-by-one on <code>DayNumber</code>, or
+          forgetting whether the end is inclusive, and your "longer than 30 days" filter quietly counts the wrong memberships.
+        </p>
+
+        <h2>A range that can't be backwards</h2>
+
+        <p>
+          An interval is just a start and an end with one rule: the end is never before the start. That is exactly the kind of rule a strong
+          type is good at holding. So instead of two loose fields, the membership gets one:
+        </p>
+
+        <BlogCode code={afterEntitySnippet} lang="csharp" />
+
+        <p>
+          You build it through <code>Create</code>, which checks the rule once, at the point of construction:
+        </p>
+
+        <BlogCode code={constructionSnippet} lang="csharp" />
+
+        <p>
+          After that, the range is correct everywhere it goes. No method downstream has to re-check the order of the dates, because a{" "}
+          <code>FiniteInterval&lt;DateOnly&gt;</code> whose end is before its start simply cannot exist. And the type knows things a pair of
+          fields never did. It can tell you its own length, whether it contains a date, and whether it overlaps another range:
+        </p>
+
+        <BlogCode code={usageSnippet} lang="csharp" />
+
+        <p>
+          That last one is the sort of thing you would otherwise write, get subtly wrong, and cover with five unit tests. Here it is one
+          method call, and the edge cases live in the library.
+        </p>
+
+        <h2>One type, four shapes</h2>
+
+        <p>
+          Not every range has both ends. A fixed-term membership has a start and an end. An ongoing one has a start and no end yet. A promo
+          might run until some cut-off with no real beginning. The package has a variant for each, and they all share the same guarantee:
+        </p>
+
+        <BlogCode code={variantsSnippet} lang="csharp" />
+
+        <p>
+          <code>FiniteInterval&lt;T&gt;</code> needs both ends. <code>IntervalFrom&lt;T&gt;</code> bounds only the start, which is perfect
+          for a membership that is still running. <code>IntervalUntil&lt;T&gt;</code> bounds only the end. And{" "}
+          <code>Interval&lt;T&gt;</code> lets either end stay open as long as at least one is set. You can widen a finite interval into an
+          open one for free, and narrow back with an explicit check when you need to.
+        </p>
+
+        <h2>It crosses the API boundary for free</h2>
+
+        <p>
+          Like the rest of the package, intervals serialize to and from JSON with no configuration. The subscription request comes in as one
+          nested object:
+        </p>
+
+        <BlogCode code={jsonSnippet} lang="json" />
+
+        <p>
+          If the client sends an end before the start, deserialization fails at the boundary and your endpoint never sees it. Same as
+          swapping a <code>string</code> for a <code>NonEmptyString</code>, except now the invariant is about two values and how they
+          relate.
+        </p>
+
+        <h2>And it reaches the database</h2>
+
+        <p>
+          This is the part I like most for the subscription example. With the <code>Kalicz.StrongTypes.EfCore</code> package, the interval
+          becomes a property on the entity, and one call on the options builder wires up the mapping:
+        </p>
+
+        <BlogCode code={efSnippet} lang="csharp" />
+
+        <p>
+          By default the interval maps to two ordinary columns, one for the start and one for the end. Nothing exotic on the storage side.
+          But because they are real columns, the database can filter on them. So the thing I actually wanted, finding every membership that
+          has been running for more than thirty days so I can email those members a renewal offer, is just a query:
+        </p>
+
+        <BlogCode code={querySnippet} lang="csharp" />
+
+        <p>
+          No loading every row and filtering in memory. The range lives in the database as two dates, and EF Core translates the comparison
+          to SQL. And if bad data ever does end up in those columns, reading it back throws instead of handing you a silently backwards
+          range.
+        </p>
+
+        <h2>Fewer edge cases, again</h2>
+
+        <p>
+          It is the same win as the first post, in a slightly different spot. A whole category of bugs, the backwards range, the off-by-one
+          length, the forgotten inclusivity, stops being possible. The tests that checked for those go away, and what is left are tests
+          about behavior that actually matters. Reviewers stop asking "what if the end is before the start?" because that no longer
+          compiles.
+        </p>
+
+        <p>
+          If you already use Kalicz.StrongTypes, <code>Interval&lt;T&gt;</code> and its variants are in the box as of v1.2.0, so just
+          update. If you have not tried it yet, the <a href={localePath(lang, "strong-types")}>StrongTypes page</a> has more examples and
+          diagrams, the source lives on{" "}
+          <a href="https://github.com/KaliCZ/StrongTypes" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+          , and the package is on{" "}
+          <a href="https://www.nuget.org/packages/Kalicz.StrongTypes" target="_blank" rel="noopener noreferrer">
+            NuGet
+          </a>
+          . Take the next start-and-end pair in your model, whether it is a subscription, a booking, or a report window, and give it a real
+          type. The backwards range you never quite trusted goes away.
+        </p>
+      </Fragment>
+    )
+  }
+</BlogPostLayout>
