@@ -12,7 +12,7 @@
     "concurrently": "^10.0.4",
     "cross-env": "^10.1.0",
     "serve": "^14.2.6",
-    "supabase": "^2.111.0",
+    "supabase": "^2.113.0",
     "wait-on": "^9.1.0"
   }
 }
