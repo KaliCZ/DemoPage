@@ -68,7 +68,7 @@
       {
         "color": "primary",
         "icon": "label",
-        "heading": "Validované obaly",
+        "heading": "Validované typy",
         "items": [
           { "name": "NonEmptyString", "description": "Zaručeně nenulový, neprázdný řetězec, který není ani jen samé bílé znaky." },
           {
@@ -78,6 +78,10 @@
           {
             "name": "NonEmptyEnumerable<T>",
             "description": "Read-only sekvence s alespoň jedním prvkem — Head a Tail jsou vždy bezpečně přístupné."
+          },
+          {
+            "name": "Interval<T>, FiniteInterval<T>, IntervalFrom<T>, IntervalUntil<T>",
+            "description": "Validované rozsahy nad libovolným IComparable<T>. Začátek nikdy není po konci a rovnou nabízí Contains, Overlaps a GetOverlap."
           }
         ]
       },
