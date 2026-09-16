@@ -37,7 +37,8 @@ const tProjects = projectTranslations[lang];
         lang === "cs" && "whitespace-nowrap",
       ]}
     >
-      {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleName}</span>
+      {t.hero.titlePrefix}
+      <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleName}</span>
     </h1>
 
     <!-- Subtitle + "What is this page?" copy on the left, QR card on the right.
@@ -46,14 +47,11 @@ const tProjects = projectTranslations[lang];
          the "What is this page?" heading instead, which gave it too much air. -->
     <div class="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-10 lg:gap-16 items-start mb-16 max-w-5xl">
       <div>
-        <p class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12">
-          {t.hero.subtitle}
-        </p>
-        <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">
-          {t.whatsHere.title}
-        </h2>
+        <p class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12">{t.hero.subtitle}</p>
+        <h2 class="font-headline text-3xl font-extrabold mb-6 tracking-tight">{t.whatsHere.title}</h2>
         <p class="text-on-surface-variant text-lg leading-relaxed">
-          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>{t.whatsHere.paragraph1}
+          <strong class="text-on-surface">{t.whatsHere.siteName}</strong>
+          {t.whatsHere.paragraph1}
         </p>
       </div>
       <QrCodeCard

@@ -75,16 +75,14 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
 
     <!-- Canonical & hreflang — hreflang needs a pair, so single-locale pages emit only the canonical -->
     <link rel="canonical" href={canonicalUrl} />
-    {
-      alternateLocales.length > 1 && (
-        <>
-          {alternateLocales.map((locale) => (
-            <link rel="alternate" hreflang={locale} href={locale === "cs" ? csUrl : enUrl} />
-          ))}
-          <link rel="alternate" hreflang="x-default" href={alternateLocales.includes("en") ? enUrl : csUrl} />
-        </>
-      )
-    }
+    {alternateLocales.length > 1 && (
+      <>
+        {alternateLocales.map((locale) => (
+          <link rel="alternate" hreflang={locale} href={locale === "cs" ? csUrl : enUrl} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={alternateLocales.includes("en") ? enUrl : csUrl} />
+      </>
+    )}
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <link rel="alternate" type="application/rss+xml" title={feed.title} href={feed.path} />
 
@@ -95,11 +93,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content={lang === "cs" ? "cs_CZ" : "en_US"} />
-    {
-      alternateLocales.includes(lang === "cs" ? "en" : "cs") && (
-        <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
-      )
-    }
+    {alternateLocales.includes(lang === "cs" ? "en" : "cs") && (
+      <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
+    )}
 
     <!-- Self-hosted fonts: preload the latin subset files so the browser starts
          downloading them immediately on HTML parse, before CSS is even fetched.
@@ -107,30 +103,25 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
-    {
-      lang !== "en" && (
-        <>
-          <link rel="preload" href="/fonts/inter-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
-          <link rel="preload" href="/fonts/manrope-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
-          <link rel="preload" href="/fonts/space-grotesk-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
-        </>
-      )
-    }
+    {lang !== "en" && (
+      <>
+        <link rel="preload" href="/fonts/inter-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/manrope-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/space-grotesk-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+      </>
+    )}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
 
-    {
-      /*
+    {/*
       Sentry init lives in src/lib/observability.ts — importing it for its side effect runs
       `Sentry.init(...)` and exposes `window.observability` for inline page scripts. Astro hoists
       this <script> into <head>. The init is gated on PUBLIC_SENTRY_DSN at build time, so when no
       DSN is configured the @sentry/browser chunk is tree-shaken out entirely.
-    */
-    }
+    */}
     <script>
       import "../lib/observability";
     </script>
-
     <script>
       // Dev-only OTel; the DEV constant lets Vite drop this branch (and its ~100 KB of deps) from prod.
       if (import.meta.env.DEV) {
@@ -139,12 +130,9 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         });
       }
     </script>
-
-    {
-      /* Per-page head injection. Pages can add <link>/<meta>/<script> tags
+    {/* Per-page head injection. Pages can add <link>/<meta>/<script> tags
         that need to be in <head> (e.g. preconnect to per-page third-party
-        origins) by passing them with `slot="head"`. */
-    }
+        origins) by passing them with `slot="head"`. */}
     <slot name="head" />
 
     <script is:inline>
@@ -285,7 +273,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         if (adminTestErrorsLink && p.isAdmin) adminTestErrorsLink.classList.remove("hidden");
       })();
     </script>
-
     <!-- Main content -->
     <main id="main-content" class="pt-32 pb-24 flex-1">
       <slot />
@@ -296,7 +283,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <script>
       import "../lib/theme-toggle";
     </script>
-
     <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
     <AuthDialog lang={lang} />
 
@@ -433,7 +419,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         return session?.user ?? null;
       };
     </script>
-
     <Snackbar />
 
     <script>
@@ -460,7 +445,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         history.replaceState(null, "", window.location.pathname + window.location.search);
       }
     </script>
-
     <script>
       import "../lib/details-animation";
     </script>

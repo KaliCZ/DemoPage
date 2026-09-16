@@ -31,22 +31,18 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
     <!-- Hero -->
     <section class="mb-16 md:mb-20">
       <div class="flex items-center gap-2 mb-6">
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label text-xs font-bold uppercase tracking-widest"
-        >
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label text-xs font-bold uppercase tracking-widest">
           <span class="size-1.5 rounded-full bg-tertiary animate-pulse" aria-hidden="true"></span>
           {t.hero.liveBadge}
         </span>
         <code class="font-mono text-sm text-on-surface-variant">mcp.kalandra.tech/mcp</code>
       </div>
       <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
-        {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleHighlight}</span>{
-          t.hero.titleSuffix
-        }
+        {t.hero.titlePrefix}
+        <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleHighlight}</span>
+        {t.hero.titleSuffix}
       </h1>
-      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed max-w-3xl">
-        {t.hero.description}
-      </p>
+      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed max-w-3xl">{t.hero.description}</p>
     </section>
 
     <!-- Connect -->
@@ -61,7 +57,9 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
               {t.connect.endpointLabel}
             </div>
             <div class="flex items-center justify-between gap-3 bg-surface-container-high rounded-lg px-4 py-3">
-              <code class="font-mono text-sm md:text-base text-on-surface truncate" data-mcp-endpoint>{mcpEndpoint}</code>
+              <code class="font-mono text-sm md:text-base text-on-surface truncate" data-mcp-endpoint>
+                {mcpEndpoint}
+              </code>
               <button
                 type="button"
                 data-copy-endpoint
@@ -82,7 +80,9 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
               {t.connect.claudeCodeLabel}
             </div>
             <div class="bg-surface-container-high rounded-lg px-4 py-3 overflow-x-auto">
-              <code class="font-mono text-sm text-on-surface whitespace-nowrap" data-mcp-command>{claudeCommand}</code>
+              <code class="font-mono text-sm text-on-surface whitespace-nowrap" data-mcp-command>
+                {claudeCommand}
+              </code>
             </div>
             <div class="mt-3">
               <button
@@ -113,34 +113,32 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
     <section class="mb-16 md:mb-20">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.tools.title}</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {
-          t.tools.groups.map((group) => (
-            <Card padding="compact">
-              <div class="flex items-center gap-2 mb-4">
-                <Icon name={`material-symbols:${group.icon}`} class="size-5 text-primary" aria-hidden="true" />
-                <h3 class="font-headline text-lg font-bold text-on-surface">{group.title}</h3>
-              </div>
-              <ul class="flex flex-col gap-4">
-                {group.tools.map((tool) => (
-                  <li>
-                    <div class="flex items-center gap-2 flex-wrap mb-1">
-                      <code class="font-mono text-[13px] font-semibold text-on-surface">{tool.name}</code>
-                      <span
-                        class:list={[
-                          "px-1.5 py-0.5 rounded font-label text-[9px] font-bold uppercase tracking-wider",
-                          tool.auth ? "bg-tertiary/10 text-tertiary" : "bg-primary/10 text-primary",
-                        ]}
-                      >
-                        {tool.auth ? t.tools.accountBadge : t.tools.publicBadge}
-                      </span>
-                    </div>
-                    <p class="font-body text-sm text-on-surface-variant leading-snug">{tool.description}</p>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ))
-        }
+        {t.tools.groups.map((group) => (
+          <Card padding="compact">
+            <div class="flex items-center gap-2 mb-4">
+              <Icon name={`material-symbols:${group.icon}`} class="size-5 text-primary" aria-hidden="true" />
+              <h3 class="font-headline text-lg font-bold text-on-surface">{group.title}</h3>
+            </div>
+            <ul class="flex flex-col gap-4">
+              {group.tools.map((tool) => (
+                <li>
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <code class="font-mono text-[13px] font-semibold text-on-surface">{tool.name}</code>
+                    <span
+                      class:list={[
+                        "px-1.5 py-0.5 rounded font-label text-[9px] font-bold uppercase tracking-wider",
+                        tool.auth ? "bg-tertiary/10 text-tertiary" : "bg-primary/10 text-primary",
+                      ]}
+                    >
+                      {tool.auth ? t.tools.accountBadge : t.tools.publicBadge}
+                    </span>
+                  </div>
+                  <p class="font-body text-sm text-on-surface-variant leading-snug">{tool.description}</p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ))}
       </div>
     </section>
 
@@ -148,14 +146,12 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
     <section class="mb-16 md:mb-20">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.examples.title}</h2>
       <ul class="flex flex-col gap-3">
-        {
-          t.examples.prompts.map((prompt) => (
-            <li class="flex items-start gap-3 bg-surface-container-low rounded-xl px-5 py-4 border border-outline-variant/40">
-              <Icon name="material-symbols:chat-bubble-outline" class="size-4 mt-1 shrink-0 text-primary" aria-hidden="true" />
-              <span class="font-body text-on-surface italic">“{prompt}”</span>
-            </li>
-          ))
-        }
+        {t.examples.prompts.map((prompt) => (
+          <li class="flex items-start gap-3 bg-surface-container-low rounded-xl px-5 py-4 border border-outline-variant/40">
+            <Icon name="material-symbols:chat-bubble-outline" class="size-4 mt-1 shrink-0 text-primary" aria-hidden="true" />
+            <span class="font-body text-on-surface italic">“{prompt}”</span>
+          </li>
+        ))}
       </ul>
     </section>
 
@@ -163,19 +159,19 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
     <section class="mb-24">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.how.title}</h2>
       <ul class="flex flex-col gap-3 mb-6">
-        {
-          t.how.items.map((item) => (
-            <li class="flex items-start gap-3">
-              <Icon name="material-symbols:check-circle" class="size-5 mt-0.5 shrink-0 text-tertiary" aria-hidden="true" />
-              <span class="font-body text-on-surface-variant leading-relaxed">{item}</span>
-            </li>
-          ))
-        }
+        {t.how.items.map((item) => (
+          <li class="flex items-start gap-3">
+            <Icon name="material-symbols:check-circle" class="size-5 mt-0.5 shrink-0 text-tertiary" aria-hidden="true" />
+            <span class="font-body text-on-surface-variant leading-relaxed">{item}</span>
+          </li>
+        ))}
       </ul>
       <p class="font-body text-on-surface-variant">
-        {t.how.projectLinkPrefix}<a href={localePath(lang, "project")} class="text-primary font-semibold hover:underline"
-          >{t.how.projectLinkText}</a
-        >{t.how.projectLinkSuffix}
+        {t.how.projectLinkPrefix}
+        <a href={localePath(lang, "project")} class="text-primary font-semibold hover:underline">
+          {t.how.projectLinkText}
+        </a>
+        {t.how.projectLinkSuffix}
       </p>
     </section>
   </div>

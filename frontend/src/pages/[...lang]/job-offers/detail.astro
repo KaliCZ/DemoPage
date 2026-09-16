@@ -42,9 +42,7 @@ const listPath = localePath(lang, "job-offers");
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
     </h1>
-    <p class="text-lg text-on-surface-variant font-body max-w-xl">
-      {t.hero.subtitle}
-    </p>
+    <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
   </section>
 
   <!-- Loading (shown until auth check completes) -->
@@ -59,12 +57,8 @@ const listPath = localePath(lang, "job-offers");
   <section id="login-prompt" class="signed-out-only hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
-        {t.loginPrompt.title}
-      </h2>
-      <p class="text-on-surface-variant font-body mb-6">
-        {t.loginPrompt.description}
-      </p>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
       <button
         id="offers-sign-in"
         type="button"
