@@ -41,14 +41,12 @@ const accentClass = accent
   : ["border border-outline-variant/40"];
 ---
 
-{
-  as === "a" ? (
-    <a href={href} class:list={[bgClass, "rounded-xl", padClass, accentClass, extraClass]} {...rest}>
-      <slot />
-    </a>
-  ) : (
-    <div class:list={[bgClass, "rounded-xl", padClass, accentClass, extraClass]} {...rest}>
-      <slot />
-    </div>
-  )
-}
+{as === "a" ? (
+  <a href={href} class:list={[bgClass, "rounded-xl", padClass, accentClass, extraClass]} {...rest}>
+    <slot />
+  </a>
+) : (
+  <div class:list={[bgClass, "rounded-xl", padClass, accentClass, extraClass]} {...rest}>
+    <slot />
+  </div>
+)}

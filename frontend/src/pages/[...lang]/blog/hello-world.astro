@@ -24,17 +24,15 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 ---
 
 <BlogPostLayout metadata={metadata} lang={lang}>
-  {
-    lang === "cs" ? (
-      <Fragment>
-        <p>Ahoj, já jsem Pavel — a tohle je můj blog, kam budu čas od času házet svoje nápady, názory a zkušenosti.</p>
-        <p>Hodně mě baví DX (developer experience), takže o tom nejspíš bude i většina zdejších příspěvků.</p>
-      </Fragment>
-    ) : (
-      <Fragment>
-        <p>Hello, I'm Pavel — and this is my blog, where I might dump my ideas, opinions, and experiences every once in a while.</p>
-        <p>I focus on DX (developer experience) a lot, so that's probably what most of these posts will end up being about.</p>
-      </Fragment>
-    )
-  }
+  {lang === "cs" ? (
+    <Fragment>
+      <p>Ahoj, já jsem Pavel — a tohle je můj blog, kam budu čas od času házet svoje nápady, názory a zkušenosti.</p>
+      <p>Hodně mě baví DX (developer experience), takže o tom nejspíš bude i většina zdejších příspěvků.</p>
+    </Fragment>
+  ) : (
+    <Fragment>
+      <p>Hello, I'm Pavel — and this is my blog, where I might dump my ideas, opinions, and experiences every once in a while.</p>
+      <p>I focus on DX (developer experience) a lot, so that's probably what most of these posts will end up being about.</p>
+    </Fragment>
+  )}
 </BlogPostLayout>

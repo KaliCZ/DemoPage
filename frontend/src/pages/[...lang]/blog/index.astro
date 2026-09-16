@@ -53,42 +53,36 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "";
 <Layout title={t.meta.title} description={t.meta.description} activePage="blog" lang={lang}>
   <section class="max-w-3xl mx-auto px-4 md:px-8">
     <div class="mb-12 md:mb-16">
-      <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-[1.1] text-on-surface">
-        {t.index.title}
-      </h1>
-      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">
-        {t.index.subtitle}
-      </p>
+      <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-[1.1] text-on-surface">{t.index.title}</h1>
+      <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">{t.index.subtitle}</p>
       <BlogRssLink label={t.rss.label} title={t.rss.title} class="mt-6" />
     </div>
 
     {posts.length === 0 && <p class="font-body text-on-surface-variant">{t.index.empty}</p>}
 
-    {
-      posts.length > 0 && (
-        <BlogList
-          client:idle
-          apiUrl={apiUrl}
-          posts={listPosts}
-          t={{
-            updatedOn: t.index.updatedOn,
-            sortLabel: t.index.sortLabel,
-            sortRecent: t.index.sortRecent,
-            sortReactions: t.index.sortReactions,
-            sortViews: t.index.sortViews,
-            unreadOnly: t.index.unreadOnly,
-            unreadEmpty: t.index.unreadEmpty,
-            statViews: t.index.statViews,
-            statPeople: t.index.statPeople,
-            statReactions: t.index.statReactions,
-            statComments: t.index.statComments,
-            paginationPrev: t.index.paginationPrev,
-            paginationNext: t.index.paginationNext,
-            paginationPage: t.index.paginationPage,
-            readState: t.readState,
-          }}
-        />
-      )
-    }
+    {posts.length > 0 && (
+      <BlogList
+        client:idle
+        apiUrl={apiUrl}
+        posts={listPosts}
+        t={{
+          updatedOn: t.index.updatedOn,
+          sortLabel: t.index.sortLabel,
+          sortRecent: t.index.sortRecent,
+          sortReactions: t.index.sortReactions,
+          sortViews: t.index.sortViews,
+          unreadOnly: t.index.unreadOnly,
+          unreadEmpty: t.index.unreadEmpty,
+          statViews: t.index.statViews,
+          statPeople: t.index.statPeople,
+          statReactions: t.index.statReactions,
+          statComments: t.index.statComments,
+          paginationPrev: t.index.paginationPrev,
+          paginationNext: t.index.paginationNext,
+          paginationPage: t.index.paginationPage,
+          readState: t.readState,
+        }}
+      />
+    )}
   </section>
 </Layout>

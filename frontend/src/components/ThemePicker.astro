@@ -24,20 +24,18 @@ const options: { value: "light" | "system" | "dark"; label: string; icon: string
 ---
 
 <div class="inline-flex items-center gap-0.5 rounded-full border border-on-surface/30 p-0.5" role="group" aria-label={labels.label}>
-  {
-    options.map((opt) => (
-      <button
-        type="button"
-        data-theme-option={opt.value}
-        title={opt.label}
-        aria-label={opt.label}
-        aria-pressed="false"
-        class="theme-opt grid place-items-center rounded-full p-1.5 text-on-surface-variant transition cursor-pointer"
-      >
-        <Icon name={`material-symbols:${opt.icon}`} class="size-[18px]" aria-hidden="true" />
-      </button>
-    ))
-  }
+  {options.map((opt) => (
+    <button
+      type="button"
+      data-theme-option={opt.value}
+      title={opt.label}
+      aria-label={opt.label}
+      aria-pressed="false"
+      class="theme-opt grid place-items-center rounded-full p-1.5 text-on-surface-variant transition cursor-pointer"
+    >
+      <Icon name={`material-symbols:${opt.icon}`} class="size-[18px]" aria-hidden="true" />
+    </button>
+  ))}
 </div>
 
 <style>

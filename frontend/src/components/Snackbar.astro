@@ -2,9 +2,15 @@
 import { Icon } from "astro-icon/components";
 ---
 
-<template id="icon-check-circle"><Icon name="material-symbols:check-circle" class="size-[18px] shrink-0" aria-hidden="true" /></template>
-<template id="icon-error"><Icon name="material-symbols:error" class="size-[18px] shrink-0" aria-hidden="true" /></template>
-<template id="icon-info"><Icon name="material-symbols:info" class="size-[18px] shrink-0" aria-hidden="true" /></template>
+<template id="icon-check-circle">
+  <Icon name="material-symbols:check-circle" class="size-[18px] shrink-0" aria-hidden="true" />
+</template>
+<template id="icon-error">
+  <Icon name="material-symbols:error" class="size-[18px] shrink-0" aria-hidden="true" />
+</template>
+<template id="icon-info">
+  <Icon name="material-symbols:info" class="size-[18px] shrink-0" aria-hidden="true" />
+</template>
 
 <!-- Global snackbar -->
 <div
@@ -21,8 +27,10 @@ import { Icon } from "astro-icon/components";
         id="snackbar-close"
         type="button"
         class="hidden flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-        aria-label="Close"><Icon name="material-symbols:close" class="size-[18px]" /></button
+        aria-label="Close"
       >
+        <Icon name="material-symbols:close" class="size-[18px]" />
+      </button>
     </div>
     <div id="snackbar-trace" class="hidden flex items-start gap-2 pl-8 text-xs opacity-70">
       <span id="snackbar-trace-text" class="break-all"></span>
@@ -30,8 +38,10 @@ import { Icon } from "astro-icon/components";
         id="snackbar-trace-copy"
         type="button"
         class="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
-        aria-label="Copy trace ID"><Icon name="material-symbols:content-copy" class="size-3.5" /></button
+        aria-label="Copy trace ID"
       >
+        <Icon name="material-symbols:content-copy" class="size-3.5" />
+      </button>
     </div>
   </div>
 </div>
