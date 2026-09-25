@@ -68,7 +68,7 @@
       {
         "color": "primary",
         "icon": "label",
-        "heading": "Validated wrappers",
+        "heading": "Validated types",
         "items": [
           { "name": "NonEmptyString", "description": "Guaranteed non-null, non-empty, non-whitespace string." },
           {
@@ -78,6 +78,10 @@
           {
             "name": "NonEmptyEnumerable<T>",
             "description": "Read-only sequence with at least one element — Head and Tail are always safe to access."
+          },
+          {
+            "name": "Interval<T>, FiniteInterval<T>, IntervalFrom<T>, IntervalUntil<T>",
+            "description": "Validated ranges over any IComparable<T>. The start is never after the end, with built-in Contains, Overlaps, and GetOverlap."
           }
         ]
       },
