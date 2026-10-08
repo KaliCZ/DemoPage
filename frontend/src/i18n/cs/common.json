@@ -33,7 +33,13 @@
     "confirmationSent": "Zkontrolujte svůj e-mail a potvrďte svůj účet.",
     "signingIn": "Dokončuji přihlášení",
     "verifying": "Ověřování…",
-    "callbackError": "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu."
+    "callbackError": "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu.",
+    "forgotPassword": "Zapomněli jste heslo?",
+    "resetPassword": "Obnovení hesla",
+    "resetPasswordDescription": "Zadejte e-mail, se kterým jste se registrovali, a pošleme vám odkaz pro nastavení nového hesla.",
+    "sendResetLink": "Poslat odkaz",
+    "rememberedPassword": "Vzpomněli jste si?",
+    "resetLinkSent": "Pokud k tomuto e-mailu existuje účet, posíláme na něj odkaz pro obnovení hesla. Zkontrolujte svou schránku."
   },
   "theme": {
     "label": "Motiv",

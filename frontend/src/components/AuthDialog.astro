@@ -1,10 +1,10 @@
 ---
 /**
- * Sign-in / sign-up dialog with Turnstile protection and Google OAuth.
+ * Sign-in / sign-up / password-reset dialog with Turnstile protection and Google OAuth.
  *
  * Self-contained component: renders the <dialog> markup and owns all the
  * dialog-specific JS (mode switching, Turnstile lifecycle, submit handlers).
- * Exposes `window.__openAuthDialog()` so the header sign-in buttons (in
+ * Exposes `window.__openAuthDialog(mode?)` so the header sign-in buttons (in
  * Layout.astro) can trigger it without knowing about internals.
  *
  * Supabase client is a shared singleton from lib/supabase.ts so both this
@@ -12,7 +12,7 @@
  */
 import { Icon } from "astro-icon/components";
 import IconGoogle from "./icons/IconGoogle.astro";
-import type { Locale } from "../i18n/utils";
+import { localePath, type Locale } from "../i18n/utils";
 import enCommon from "../i18n/en/common.json";
 import csCommon from "../i18n/cs/common.json";
 
@@ -26,6 +26,8 @@ const t = lang === "cs" ? csCommon : enCommon;
 
 <dialog
   id="auth-dialog"
+  data-reset-password-path={localePath(lang, "reset-password")}
+  data-home-path={localePath(lang, "home")}
   class="m-auto bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 max-w-sm w-full backdrop:bg-black/50"
 >
   <button
@@ -42,6 +44,9 @@ const t = lang === "cs" ? csCommon : enCommon;
       <h2 id="auth-dialog-title" class="font-headline text-xl font-bold text-on-surface">
         {t.auth.signIn}
       </h2>
+      <p id="auth-dialog-description" class="hidden mt-2 text-sm font-body text-on-surface-variant">
+        {t.auth.resetPasswordDescription}
+      </p>
     </div>
 
     <!-- Email / password form -->
@@ -58,7 +63,7 @@ const t = lang === "cs" ? csCommon : enCommon;
           class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
         />
       </div>
-      <div>
+      <div id="auth-password-field">
         <label for="auth-password" class="block text-sm font-label font-semibold text-on-surface mb-1.5">
           {t.auth.password}
         </label>
@@ -70,6 +75,15 @@ const t = lang === "cs" ? csCommon : enCommon;
           minlength="6"
           class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
         />
+        <div class="mt-1.5 text-right">
+          <button
+            type="button"
+            id="auth-dialog-forgot"
+            class="text-xs font-label font-semibold text-primary hover:underline cursor-pointer"
+          >
+            {t.auth.forgotPassword}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -92,22 +106,24 @@ const t = lang === "cs" ? csCommon : enCommon;
       </button>
     </p>
 
-    <!-- Divider -->
-    <div class="flex items-center gap-3">
-      <div class="flex-1 border-t border-outline-variant/20"></div>
-      <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
-      <div class="flex-1 border-t border-outline-variant/20"></div>
-    </div>
+    <div id="auth-dialog-alternatives" class="space-y-5">
+      <!-- Divider -->
+      <div class="flex items-center gap-3">
+        <div class="flex-1 border-t border-outline-variant/20"></div>
+        <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
+        <div class="flex-1 border-t border-outline-variant/20"></div>
+      </div>
 
-    <!-- Google OAuth -->
-    <button
-      type="button"
-      id="auth-dialog-google"
-      class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
-    >
-      <IconGoogle class="w-5 h-5" />
-      {t.auth.continueWithGoogle}
-    </button>
+      <!-- Google OAuth -->
+      <button
+        type="button"
+        id="auth-dialog-google"
+        class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
+      >
+        <IconGoogle class="w-5 h-5" />
+        {t.auth.continueWithGoogle}
+      </button>
+    </div>
   </div>
 </dialog>
 
@@ -119,6 +135,10 @@ const t = lang === "cs" ? csCommon : enCommon;
     authHaveAccountLabel: t.auth.haveAccount,
     authConfirmationSentLabel: t.auth.confirmationSent,
     authVerifyingLabel: t.auth.verifying,
+    authResetPasswordLabel: t.auth.resetPassword,
+    authSendResetLinkLabel: t.auth.sendResetLink,
+    authRememberedPasswordLabel: t.auth.rememberedPassword,
+    authResetLinkSentLabel: t.auth.resetLinkSent,
   }}
 >
   window.__authDialogLabels = {
@@ -128,10 +148,15 @@ const t = lang === "cs" ? csCommon : enCommon;
     haveAccount: authHaveAccountLabel,
     confirmationSent: authConfirmationSentLabel,
     verifying: authVerifyingLabel,
+    resetPassword: authResetPasswordLabel,
+    sendResetLink: authSendResetLinkLabel,
+    rememberedPassword: authRememberedPasswordLabel,
+    resetLinkSent: authResetLinkSentLabel,
   };
 </script>
 
 <script>
+  import type { AuthDialogMode } from "../lib/auth";
   import { getSupabaseClient } from "../lib/supabase";
   import {
     createTurnstile,
@@ -142,7 +167,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     recordSuccess,
   } from "../lib/turnstile";
 
-  let authDialogMode: "signin" | "signup" = "signin";
+  let authDialogMode: AuthDialogMode = "signin";
 
   // Shared Turnstile widget for the auth dialog. Exposed on window so future
   // features (e.g. profile page password change) can reuse the same helper.
@@ -193,10 +218,10 @@ const t = lang === "cs" ? csCommon : enCommon;
     if (!turnstileRendered) renderAuthTurnstile();
   }
 
-  async function openAuthDialog() {
+  async function openAuthDialog(mode: AuthDialogMode = "signin") {
     const supabase = await getSupabaseClient();
     if (!supabase) return;
-    authDialogMode = "signin";
+    authDialogMode = mode;
     updateAuthDialogMode();
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.showModal();
     if (turnstileEnabled()) {
@@ -219,17 +244,37 @@ const t = lang === "cs" ? csCommon : enCommon;
       errorEl.className = "hidden text-error text-sm font-body";
     }
 
-    if (authDialogMode === "signin") {
-      if (title) title.textContent = labels.signIn;
-      if (submit) submit.textContent = labels.signIn;
-      if (toggle) toggle.childNodes[0].textContent = labels.noAccount + " ";
-      if (switchBtn) switchBtn.textContent = labels.signUp;
-    } else {
-      if (title) title.textContent = labels.signUp;
-      if (submit) submit.textContent = labels.signUp;
-      if (toggle) toggle.childNodes[0].textContent = labels.haveAccount + " ";
-      if (switchBtn) switchBtn.textContent = labels.signIn;
-    }
+    const modeLabels: Record<AuthDialogMode, { title: string; submit: string; togglePrompt: string; toggleAction: string }> = {
+      signin: { title: labels.signIn, submit: labels.signIn, togglePrompt: labels.noAccount, toggleAction: labels.signUp },
+      signup: { title: labels.signUp, submit: labels.signUp, togglePrompt: labels.haveAccount, toggleAction: labels.signIn },
+      reset: {
+        title: labels.resetPassword,
+        submit: labels.sendResetLink,
+        togglePrompt: labels.rememberedPassword,
+        toggleAction: labels.signIn,
+      },
+    };
+    const current = modeLabels[authDialogMode];
+    if (title) title.textContent = current.title;
+    if (submit) submit.textContent = current.submit;
+    if (toggle) toggle.childNodes[0].textContent = current.togglePrompt + " ";
+    if (switchBtn) switchBtn.textContent = current.toggleAction;
+
+    const isReset = authDialogMode === "reset";
+    document.getElementById("auth-dialog-description")?.classList.toggle("hidden", !isReset);
+    document.getElementById("auth-password-field")?.classList.toggle("hidden", isReset);
+    document.getElementById("auth-dialog-forgot")?.classList.toggle("hidden", authDialogMode !== "signin");
+    document.getElementById("auth-dialog-alternatives")?.classList.toggle("hidden", isReset);
+  }
+
+  // Reset links go through /auth/callback, the only page allowed to receive session tokens in the URL.
+  function passwordResetRedirectUrl(): string {
+    const { resetPasswordPath, homePath } = (document.getElementById("auth-dialog") as HTMLDialogElement).dataset;
+    const here = new URL(window.location.href);
+    // Asking for a fresh link from the reset page itself keeps that page's original destination.
+    const returnTo = here.pathname === resetPasswordPath ? (here.searchParams.get("next") ?? homePath!) : here.pathname + here.search;
+    const next = `${resetPasswordPath}?next=${encodeURIComponent(returnTo)}`;
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
   }
 
   function setSubmitBusy(busy: boolean) {
@@ -313,7 +358,20 @@ const t = lang === "cs" ? csCommon : enCommon;
       }
     };
 
-    if (authDialogMode === "signup") {
+    if (authDialogMode === "reset") {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        ...authOptions,
+        redirectTo: passwordResetRedirectUrl(),
+      });
+      if (resetError) {
+        finishFailure(resetError.message);
+      } else {
+        setSubmitBusy(false);
+        (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
+        const labels = (window as any).__authDialogLabels;
+        (window as any).__showSnackbar?.(labels.resetLinkSent, "info", 8000);
+      }
+    } else if (authDialogMode === "signup") {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -373,6 +431,11 @@ const t = lang === "cs" ? csCommon : enCommon;
   document.getElementById("auth-dialog-switch")?.addEventListener("click", () => {
     authDialogMode = authDialogMode === "signin" ? "signup" : "signin";
     updateAuthDialogMode();
+  });
+  document.getElementById("auth-dialog-forgot")?.addEventListener("click", () => {
+    authDialogMode = "reset";
+    updateAuthDialogMode();
+    document.getElementById("auth-email")?.focus();
   });
   document.getElementById("auth-dialog-close")?.addEventListener("click", () => {
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();

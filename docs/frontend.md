@@ -82,6 +82,8 @@ Supabase Auth with email/password + Google OAuth. Client-side auth state is mana
 
 The sign-in dialog (`AuthDialog.astro`) is included in the layout — pages don't need to add it.
 
+**Password reset.** The dialog's "Forgot password?" mode emails a Supabase recovery link. Like OAuth, the link lands on `/auth/callback` — the only page that accepts session tokens in the URL — which forwards to `/reset-password`. That page offers the new-password form only to sessions opened from an emailed link (`amr` of `otp` / `magiclink` / `recovery`), the same sessions Supabase lets set a password without the current one; a password or Google session changes its password on the profile page instead.
+
 ## Blog
 
 Posts are first-class Astro pages, not a CMS — git is the source of truth.

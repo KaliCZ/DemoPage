@@ -33,7 +33,13 @@
     "confirmationSent": "Check your email to confirm your account.",
     "signingIn": "Finishing sign-in",
     "verifying": "Verifying…",
-    "callbackError": "Sign-in could not be completed. Please try again."
+    "callbackError": "Sign-in could not be completed. Please try again.",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset Password",
+    "resetPasswordDescription": "Enter the email you signed up with and we'll send you a link to choose a new password.",
+    "sendResetLink": "Send Reset Link",
+    "rememberedPassword": "Remembered it?",
+    "resetLinkSent": "If an account exists for that email, a password reset link is on its way. Check your inbox."
   },
   "theme": {
     "label": "Theme",
