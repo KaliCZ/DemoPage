@@ -215,6 +215,10 @@ In **Authentication → URL Configuration**:
   - `https://kalandra.tech/**`
   - `http://localhost:4321/**` (for local development)
 
+#### Configure Auth Emails
+
+Sign-up confirmations and password-reset links are sent by Supabase itself, not the backend. Its built-in mailer only delivers to members of the Supabase project team, so set up a custom SMTP server under **Authentication → Emails → SMTP Settings** before real users can reset their passwords.
+
 #### Create Storage Bucket
 
 1. In Supabase dashboard: **Storage → New bucket**

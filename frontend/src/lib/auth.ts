@@ -8,8 +8,14 @@ export async function getCurrentUser(): Promise<any | null> {
   return ((await (window as any).__getUser?.()) as any | null) ?? null;
 }
 
+export type AuthDialogMode = "signin" | "signup" | "reset";
+
 export function openAuthDialog(): void {
   (window as any).__openAuthDialog?.();
+}
+
+export function openPasswordResetDialog(): void {
+  (window as any).__openAuthDialog?.("reset" satisfies AuthDialogMode);
 }
 
 export function userHasAdminRole(user: any): boolean {

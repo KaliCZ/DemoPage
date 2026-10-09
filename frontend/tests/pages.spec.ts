@@ -274,6 +274,46 @@ test.describe("Blog", () => {
     expect(body).not.toContain("/admin");
     expect(body).not.toContain("/auth/callback");
     expect(body).not.toContain("/oauth/consent");
+    expect(body).not.toContain("/reset-password");
+  });
+});
+
+test.describe("Password reset", () => {
+  test("the sign-in dialog switches to reset mode and back", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("#auth-sign-in-desktop").click();
+    const dialog = page.locator("#auth-dialog");
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Forgot password?" }).click();
+    await expect(dialog.locator("#auth-dialog-title")).toHaveText("Reset Password");
+    await expect(dialog.locator("#auth-dialog-submit")).toHaveText("Send Reset Link");
+    await expect(dialog.locator("#auth-password")).toBeHidden();
+    await expect(dialog.locator("#auth-dialog-google")).toBeHidden();
+
+    await dialog.locator("#auth-dialog-switch").click();
+    await expect(dialog.locator("#auth-dialog-title")).toHaveText("Sign In");
+    await expect(dialog.locator("#auth-password")).toBeVisible();
+    await expect(dialog.locator("#auth-dialog-google")).toBeVisible();
+  });
+
+  test("the reset page without an emailed link offers to send one", async ({ page }) => {
+    await page.goto("/reset-password");
+    await expect(page.locator("#reset-invalid")).toBeVisible();
+    await expect(page.locator("#reset-form-section")).toBeHidden();
+
+    await page.getByRole("button", { name: "Send a New Link" }).click();
+    await expect(page.locator("#auth-dialog-title")).toHaveText("Reset Password");
+  });
+
+  test("the reset page is localized", async ({ page }) => {
+    await page.goto("/cs/reset-password");
+    await expect(page.locator("h1")).toContainText("Obnovení hesla");
+  });
+
+  test("the reset page is not indexable", async ({ page }) => {
+    await page.goto("/reset-password");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
   });
 });
 
