@@ -76,13 +76,14 @@ test("a failed CAPTCHA cannot submit a recovery request", async ({ page }) => {
 });
 
 test("a blocked CAPTCHA script can be loaded again on retry", async ({ page }) => {
-  await mockTurnstile(page);
-  await page.route(turnstileScript, (route) => route.abort(), { times: 1 });
+  await page.route(turnstileScript, (route) => route.abort());
   await page.route(recoveryEndpoint, (route) => route.fulfill({ json: {} }));
   await openPasswordReset(page);
   await page.locator("#auth-dialog-submit").click();
   await expect(page.getByRole("alert")).toContainText("The security check could not finish.");
   await expect(page.locator("#auth-dialog-submit")).toBeEnabled();
+  await page.unroute(turnstileScript);
+  await mockTurnstile(page);
   await page.locator("#auth-dialog-submit").click();
   await expect(page.locator("#auth-dialog")).toBeHidden();
 });
@@ -158,17 +159,15 @@ test("invalid sign-in credentials still count as a failed auth attempt", async (
 });
 
 test("an invalid email never starts CAPTCHA verification", async ({ page }) => {
-  const captchaRequests: string[] = [];
-  await page.route(turnstileScript, (route) => {
-    captchaRequests.push(route.request().url());
-    return route.abort();
-  });
+  await mockTurnstile(page);
+  const preload = page.waitForResponse(turnstileScript);
   await openPasswordReset(page);
+  await preload;
   await page.locator("#auth-email").fill("not-an-email");
   await page.locator("#auth-dialog-submit").click();
   await expect(page.locator("#auth-email")).toBeFocused();
   await expect(page.locator("#auth-dialog-submit")).toBeEnabled();
-  expect(captchaRequests).toEqual([]);
+  await expect(page.locator("#auth-turnstile-container")).toBeEmpty();
 });
 
 test("a response from a closed dialog cannot close a newly opened dialog", async ({ page }) => {

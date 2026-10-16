@@ -224,6 +224,10 @@ const t = lang === "cs" ? csCommon : enCommon;
     authDialogMode = mode;
     updateAuthDialogMode();
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.showModal();
+    if (turnstileEnabled()) {
+      // Submission retries and reports any preload failure.
+      void ensureTurnstileRendered(authDialogRevision).catch(() => {});
+    }
   }
 
   function updateAuthDialogMode() {
