@@ -219,6 +219,16 @@ In **Authentication → URL Configuration**:
 
 Sign-up confirmations and password-reset links are sent by Supabase itself, not the backend. Its built-in mailer only delivers to members of the Supabase project team, so set up a custom SMTP server under **Authentication → Emails → SMTP Settings** before real users can reset their passwords.
 
+For Brevo, use the SMTP login and an **SMTP key** as the password; REST API keys cannot authenticate SMTP.
+
+Supabase stores these credentials separately from the GitHub `SMTP_PASSWORD` secret used by backend notifications, so a backend deployment does not rotate the Auth mailer's key.
+
+If `/auth/v1/recover` returns a 5xx response:
+
+1. Find the request in **Logs → Auth** using its timestamp and `sb-request-id`.
+2. Check the reported SMTP authentication, connectivity, or sender failure against the [Brevo SMTP settings](https://developers.brevo.com/docs/smtp-integration).
+3. Verify recovery by requesting a reset link, opening the email, and signing in with the new password.
+
 #### Create Storage Bucket
 
 1. In Supabase dashboard: **Storage → New bucket**
