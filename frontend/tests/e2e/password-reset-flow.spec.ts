@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
+import { mockTurnstile } from "../helpers/turnstile";
 
 /**
  * E2E test for the forgot-password flow against local Supabase:
@@ -48,6 +49,10 @@ async function waitForResetLink(request: APIRequestContext, to: string): Promise
 }
 
 test.describe("Password Reset Flow", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockTurnstile(page);
+  });
+
   test.beforeAll(async ({ request }) => {
     for (const user of [resetUser, usedLinkUser]) {
       const response = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
@@ -74,7 +79,6 @@ test.describe("Password Reset Flow", () => {
 
     await dialog.locator("#auth-email").fill(resetUser.email);
     await dialog.getByRole("button", { name: "Send Reset Link" }).click();
-    // Submitting waits on a Turnstile challenge first, which the dialog allows up to 15s.
     await expect(dialog).toBeHidden({ timeout: 20000 });
     await expect(page.getByText("a password reset link is on its way")).toBeVisible();
 
