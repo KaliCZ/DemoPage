@@ -226,8 +226,10 @@ Supabase stores these credentials separately from the GitHub `SMTP_PASSWORD` sec
 If `/auth/v1/recover` returns a 5xx response:
 
 1. Find the request in **Logs → Auth** using its timestamp and `sb-request-id`.
-2. Check the reported SMTP authentication, connectivity, or sender failure against the [Brevo SMTP settings](https://developers.brevo.com/docs/smtp-integration).
-3. Verify recovery by requesting a reset link, opening the email, and signing in with the new password.
+2. Use the logged error to distinguish SMTP failures from database timeouts or failed CAPTCHA verification.
+3. For SMTP errors, check the [Brevo SMTP settings](https://developers.brevo.com/docs/smtp-integration).
+4. For timeouts, check Supabase resource metrics and provider status.
+5. Verify recovery by requesting a reset link, opening the email, and signing in with the new password.
 
 #### Create Storage Bucket
 
