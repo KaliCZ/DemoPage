@@ -24,12 +24,21 @@ const environment = import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env
 // chain off this promise so anything fired before the SDK arrives still lands. Pulling only the
 // functions we use off the module by name (rather than the whole `Sentry` namespace) is what lets the
 // bundler tree-shake Session Replay (rrweb) — the SDK's heaviest feature — out of the chunk entirely.
-type SentryApi = Pick<typeof import("@sentry/browser"), "setUser" | "addBreadcrumb" | "logger">;
+type SentryApi = Pick<typeof import("@sentry/browser"), "setUser" | "addBreadcrumb" | "logger" | "captureException">;
 // Import eagerly (this module runs in <head>) rather than deferring, so init wins the race against the
 // client:idle islands: their API calls are only traced, and early errors only captured, once init runs.
 const sentryReady: Promise<SentryApi> | null = sentryDsn
   ? import("@sentry/browser").then(
-      ({ init, browserTracingIntegration, consoleLoggingIntegration, getCurrentScope, setUser, addBreadcrumb, logger }) => {
+      ({
+        init,
+        browserTracingIntegration,
+        consoleLoggingIntegration,
+        getCurrentScope,
+        setUser,
+        addBreadcrumb,
+        logger,
+        captureException,
+      }) => {
         init({
           dsn: sentryDsn,
           environment,
@@ -80,7 +89,7 @@ const sentryReady: Promise<SentryApi> | null = sentryDsn
           "url.query": window.location.search,
           "http.referer": document.referrer,
         });
-        return { setUser, addBreadcrumb, logger };
+        return { setUser, addBreadcrumb, logger, captureException };
       },
     )
   : null;

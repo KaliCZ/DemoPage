@@ -223,6 +223,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     if (!supabase) return;
     authDialogMode = mode;
     updateAuthDialogMode();
+    setSubmitBusy(authSubmitInFlight);
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.showModal();
     if (turnstileEnabled()) {
       // Submission retries and reports any preload failure.
@@ -304,6 +305,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     return authTurnstile.waitForToken(15000);
   }
 
+  // Supabase saves the session before returning, so closing the dialog must not unlock another submission.
   let authSubmitInFlight = false;
 
   function showAuthError(message: string) {
@@ -325,12 +327,13 @@ const t = lang === "cs" ? csCommon : enCommon;
     setSubmitBusy(true);
     try {
       await authDialogSubmitInner(revision);
-    } catch {
-      if (revision === authDialogRevision) showAuthError((window as any).__authDialogLabels.networkError);
+    } catch (error) {
+      window.observability?.captureException(error, { operation: "auth-dialog-submit" });
+      if (revision === authDialogRevision) showAuthError((window as any).__authDialogLabels.serviceUnavailable);
     } finally {
+      authSubmitInFlight = false;
+      setSubmitBusy(false);
       if (revision === authDialogRevision) {
-        authSubmitInFlight = false;
-        setSubmitBusy(false);
         authTurnstile.remove();
         turnstileRendered = false;
       }
@@ -385,7 +388,6 @@ const t = lang === "cs" ? csCommon : enCommon;
       if (resetError) {
         finishFailure(resetError);
       } else {
-        setSubmitBusy(false);
         (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
         const labels = (window as any).__authDialogLabels;
         (window as any).__showSnackbar?.(labels.resetLinkSent, "info", 8000);
@@ -400,7 +402,6 @@ const t = lang === "cs" ? csCommon : enCommon;
       if (signUpError) {
         finishFailure(signUpError);
       } else {
-        setSubmitBusy(false);
         recordSuccess(AUTH_FAIL_KEY);
         // Count the signup itself — more than 1 in 4h escalates next attempt.
         recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
@@ -422,7 +423,6 @@ const t = lang === "cs" ? csCommon : enCommon;
       if (signInError) {
         finishFailure(signInError);
       } else {
-        setSubmitBusy(false);
         recordSuccess(AUTH_FAIL_KEY);
         (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
       }
@@ -467,7 +467,6 @@ const t = lang === "cs" ? csCommon : enCommon;
   const authDialogElement = document.getElementById("auth-dialog") as HTMLDialogElement | null;
   authDialogElement?.addEventListener("close", () => {
     authDialogRevision++;
-    authSubmitInFlight = false;
     setSubmitBusy(false);
     authTurnstile.remove();
     turnstileRendered = false;

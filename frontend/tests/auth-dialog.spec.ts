@@ -128,19 +128,106 @@ test("a network failure restores the form without an unhandled exception", async
   expect(pageErrors).toEqual([]);
 });
 
-test("an unexpected auth exception restores the form without an unhandled rejection", async ({ page }) => {
+test("an unexpected auth exception is reported and restores the form", async ({ page }) => {
   await mockTurnstile(page);
   const pageErrors: string[] = [];
+  const reportedErrors: Array<{ name: string; message: string; context: unknown }> = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.exposeFunction("reportAuthError", (error: (typeof reportedErrors)[number]) => reportedErrors.push(error));
   await openPasswordReset(page);
   await page.evaluate(async () => {
+    window.observability!.captureException = (error, context) => {
+      const exception = error as Error;
+      (window as any).reportAuthError({ name: exception.name, message: exception.message, context });
+    };
     const supabase = await (window as any).__supabaseReady;
-    supabase.auth.resetPasswordForEmail = () => Promise.reject(new Error("Connection interrupted"));
+    supabase.auth.resetPasswordForEmail = () => Promise.reject(new TypeError("Unexpected auth failure"));
   });
   await page.locator("#auth-dialog-submit").click();
-  await expect(page.getByRole("alert")).toContainText("Could not reach the server.");
+  await expect(page.getByRole("alert")).toHaveText("The account service is temporarily unavailable. Please try again later.");
   await expect(page.locator("#auth-dialog-submit")).toBeEnabled();
+  await expect
+    .poll(() => reportedErrors)
+    .toEqual([{ name: "TypeError", message: "Unexpected auth failure", context: { operation: "auth-dialog-submit" } }]);
   expect(pageErrors).toEqual([]);
+});
+
+for (const firstResult of ["success", "failure"] as const) {
+  test(`reopening the dialog keeps sign-ins serialized until ${firstResult}`, async ({ page }) => {
+    await mockTurnstile(page);
+    const emails: string[] = [];
+    let releaseFirstResponse!: () => void;
+    const firstResponseReady = new Promise<void>((resolve) => (releaseFirstResponse = resolve));
+    await page.route(/\/auth\/v1\/token\?/, async (route) => {
+      const { email } = route.request().postDataJSON();
+      emails.push(email);
+      if (emails.length === 1) {
+        await firstResponseReady;
+        if (firstResult === "failure") {
+          await route.fulfill({ status: 503, body: "Service unavailable" });
+          return;
+        }
+      }
+      const accessToken = [
+        Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
+        Buffer.from(JSON.stringify({ sub: email, exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url"),
+        "signature",
+      ].join(".");
+      await route.fulfill({
+        json: {
+          access_token: accessToken,
+          refresh_token: "test-refresh-token",
+          expires_in: 3600,
+          token_type: "bearer",
+          user: { id: email, email, user_metadata: {} },
+        },
+      });
+    });
+
+    await page.goto("/");
+    await page.locator("#auth-sign-in-desktop").click();
+    await page.locator("#auth-email").fill("first@example.com");
+    await page.locator("#auth-password").fill("password-123");
+    await page.locator("#auth-dialog-submit").click();
+    await expect.poll(() => emails).toEqual(["first@example.com"]);
+    await page.locator("#auth-dialog-close").click();
+    await page.locator("#auth-sign-in-desktop").click();
+
+    for (const id of [
+      "auth-dialog-submit",
+      "auth-email",
+      "auth-password",
+      "auth-dialog-switch",
+      "auth-dialog-forgot",
+      "auth-dialog-google",
+    ]) {
+      await expect(page.locator(`#${id}`)).toBeDisabled();
+    }
+    await page.locator("#auth-password").dispatchEvent("keydown", { key: "Enter" });
+    expect(emails).toEqual(["first@example.com"]);
+
+    releaseFirstResponse();
+    await expect(page.locator("#auth-dialog-submit")).toBeEnabled();
+    await expect(page.locator("#auth-dialog-submit")).toHaveText("Sign In");
+    await expect(page.locator("#auth-dialog")).toBeVisible();
+    await expect(page.getByRole("alert")).toBeHidden();
+    await page.locator("#auth-email").fill("second@example.com");
+    await page.locator("#auth-dialog-submit").click();
+    await expect(page.locator("#auth-dialog")).toBeHidden();
+    await expect.poll(() => page.evaluate(async () => (await (window as any).__getUser())?.email)).toBe("second@example.com");
+    expect(emails).toEqual(["first@example.com", "second@example.com"]);
+  });
+}
+
+test("closing a pending CAPTCHA releases the submission guard", async ({ page }) => {
+  await mockTurnstile(page, "pending");
+  await openPasswordReset(page);
+  await page.locator("#auth-dialog-submit").click();
+  await expect(page.locator("#auth-turnstile-container")).toHaveText("Challenge in progress");
+  await page.locator("#auth-dialog-close").click();
+  await page.locator("#auth-sign-in-desktop").click();
+  await expect(page.locator("#auth-dialog-submit")).toBeEnabled();
+  await expect(page.locator("#auth-dialog-submit")).toHaveText("Sign In");
 });
 
 test("invalid sign-in credentials still count as a failed auth attempt", async ({ page }) => {
