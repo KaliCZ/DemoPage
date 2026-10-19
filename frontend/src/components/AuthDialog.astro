@@ -323,6 +323,7 @@ const t = lang === "cs" ? csCommon : enCommon;
     if (!emailInput.reportValidity()) return;
     if (authDialogMode !== "reset" && !passwordInput.reportValidity()) return;
     const revision = authDialogRevision;
+    const focusedControl = document.activeElement;
     authSubmitInFlight = true;
     setSubmitBusy(true);
     try {
@@ -336,6 +337,9 @@ const t = lang === "cs" ? csCommon : enCommon;
       if (revision === authDialogRevision) {
         authTurnstile.remove();
         turnstileRendered = false;
+        if (authDialogElement?.open && document.activeElement === document.body && focusedControl instanceof HTMLElement) {
+          focusedControl.focus();
+        }
       }
     }
   }

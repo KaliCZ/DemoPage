@@ -1,8 +1,35 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Route } from "@playwright/test";
 
 import { mockTurnstile, turnstileScript } from "./helpers/turnstile";
 const recoveryEndpoint = /\/auth\/v1\/recover(?:\?|$)/;
 const resetUnavailable = "We couldn’t confirm that the reset email was sent. Check your inbox, then try again later.";
+
+function signInResponse(email: string) {
+  const accessToken = [
+    Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
+    Buffer.from(JSON.stringify({ sub: email, exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url"),
+    "signature",
+  ].join(".");
+  return {
+    access_token: accessToken,
+    refresh_token: "test-refresh-token",
+    expires_in: 3600,
+    token_type: "bearer",
+    user: { id: email, email, user_metadata: {} },
+  };
+}
+
+async function installRequestTimeoutClock(page: Page) {
+  await page.clock.install();
+  await page.addInitScript(() => {
+    // Playwright's clock controls JavaScript timers, but not native AbortSignal timeouts.
+    AbortSignal.timeout = (milliseconds) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException("The request timed out", "TimeoutError")), milliseconds);
+      return controller.signal;
+    };
+  });
+}
 
 async function openPasswordReset(page: Page, path = "/") {
   await page.goto(path);
@@ -11,7 +38,7 @@ async function openPasswordReset(page: Page, path = "/") {
   await page.locator("#auth-email").fill("reset@example.com");
 }
 
-test("a recovery timeout restores the form and a retry sends a fresh CAPTCHA token", async ({ page }) => {
+test("a recovery gateway timeout restores the form and a retry sends a fresh CAPTCHA token", async ({ page }) => {
   await mockTurnstile(page);
   const requests: Array<{ email: string; gotrue_meta_security: { captcha_token: string } }> = [];
   let releaseResponse!: () => void;
@@ -168,20 +195,7 @@ for (const firstResult of ["success", "failure"] as const) {
           return;
         }
       }
-      const accessToken = [
-        Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
-        Buffer.from(JSON.stringify({ sub: email, exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url"),
-        "signature",
-      ].join(".");
-      await route.fulfill({
-        json: {
-          access_token: accessToken,
-          refresh_token: "test-refresh-token",
-          expires_in: 3600,
-          token_type: "bearer",
-          user: { id: email, email, user_metadata: {} },
-        },
-      });
+      await route.fulfill({ json: signInResponse(email) });
     });
 
     await page.goto("/");
@@ -216,6 +230,71 @@ for (const firstResult of ["success", "failure"] as const) {
     await expect(page.locator("#auth-dialog")).toBeHidden();
     await expect.poll(() => page.evaluate(async () => (await (window as any).__getUser())?.email)).toBe("second@example.com");
     expect(emails).toEqual(["first@example.com", "second@example.com"]);
+  });
+}
+
+for (const mode of ["signin", "signup", "reset"] as const) {
+  test(`a stalled ${mode} request is aborted before a reopened dialog accepts another sign-in`, async ({ page }) => {
+    await installRequestTimeoutClock(page);
+    await mockTurnstile(page);
+    const authEndpoint = /\/auth\/v1\/(token|signup|recover)(?:\?|$)/;
+    let stalledRequest: Route | undefined;
+    await page.route(authEndpoint, async (route) => {
+      if (!stalledRequest) {
+        stalledRequest = route;
+        return;
+      }
+      await route.fulfill({ json: signInResponse(route.request().postDataJSON().email) });
+    });
+
+    await page.goto("/");
+    await page.locator("#auth-sign-in-desktop").click();
+    if (mode === "signup") await page.locator("#auth-dialog-switch").click();
+    if (mode === "reset") await page.locator("#auth-dialog-forgot").click();
+    await page.locator("#auth-email").fill("first@example.com");
+    if (mode !== "reset") await page.locator("#auth-password").fill("password-123");
+    await page.locator("#auth-dialog-submit").click();
+    await expect.poll(() => !!stalledRequest).toBe(true);
+    await page.locator("#auth-dialog-close").click();
+    await page.locator("#auth-sign-in-desktop").click();
+    await expect(page.locator("#auth-dialog-google")).toBeDisabled();
+
+    const aborted = page.waitForEvent("requestfailed", (request) => authEndpoint.test(request.url()));
+    await page.clock.fastForward(30001);
+    expect((await aborted).failure()?.errorText).toContain("ERR_ABORTED");
+    await expect(page.locator("#auth-dialog-submit")).toBeEnabled();
+    await expect(page.locator("#auth-dialog-google")).toBeEnabled();
+    await expect(page.getByRole("alert")).toBeHidden();
+
+    await page.locator("#auth-email").fill("second@example.com");
+    await page.locator("#auth-password").fill("password-456");
+    await page.locator("#auth-dialog-submit").click();
+    await expect(page.locator("#auth-dialog")).toBeHidden();
+    await stalledRequest!.fulfill({ json: signInResponse("first@example.com") });
+    await expect.poll(() => page.evaluate(async () => (await (window as any).__getUser())?.email)).toBe("second@example.com");
+  });
+}
+
+for (const control of ["auth-email", "auth-password", "auth-dialog-submit", "auth-dialog-close"]) {
+  test(`a failed sign-in preserves keyboard focus on ${control}`, async ({ page }) => {
+    await mockTurnstile(page);
+    let pendingRequest: Route | undefined;
+    await page.route(/\/auth\/v1\/token\?/, (route) => {
+      pendingRequest = route;
+    });
+    await page.goto("/");
+    await page.locator("#auth-sign-in-desktop").click();
+    await page.locator("#auth-email").fill("reset@example.com");
+    await page.locator("#auth-password").fill("wrong-password");
+    const submitControl = control === "auth-dialog-close" ? "auth-password" : control;
+    await page.locator(`#${submitControl}`).press("Enter");
+    await expect.poll(() => !!pendingRequest).toBe(true);
+    await expect(page.locator("body")).toBeFocused();
+    if (control === "auth-dialog-close") await page.locator("#auth-dialog-close").focus();
+
+    await pendingRequest!.fulfill({ status: 400, json: { code: "invalid_credentials", message: "Invalid login credentials" } });
+    await expect(page.getByRole("alert")).toHaveText("Invalid login credentials");
+    await expect(page.locator(`#${control}`)).toBeFocused();
   });
 }
 
