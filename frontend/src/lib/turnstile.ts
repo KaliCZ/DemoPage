@@ -47,29 +47,36 @@ export function turnstileEnabled(): boolean {
 
 const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
 
-// Load Cloudflare's Turnstile API on first need rather than on every page. Idempotent: bails if the
-// API is already present or a matching tag is already in the document (a page that needs the widget
-// at load, like hire-me, injects its own).
-function loadTurnstileScript(): void {
-  if (!SITE_KEY || window.turnstile) return;
-  if (document.querySelector(`script[src^="${TURNSTILE_SCRIPT_SRC}"]`)) return;
+// Reuse the script when another form on this page already loaded Turnstile.
+function loadTurnstileScript(): HTMLScriptElement {
+  const existing = document.querySelector<HTMLScriptElement>(`script[src^="${TURNSTILE_SCRIPT_SRC}"]`);
+  if (existing) return existing;
   const script = document.createElement("script");
-  script.src = TURNSTILE_SCRIPT_SRC;
+  script.src = `${TURNSTILE_SCRIPT_SRC}?render=explicit`;
   script.async = true;
   script.defer = true;
   document.head.appendChild(script);
+  return script;
 }
 
-export function whenTurnstileReady(): Promise<void> {
+export function whenTurnstileReady(): Promise<boolean> {
+  if (window.turnstile) return Promise.resolve(true);
+  if (!SITE_KEY) return Promise.resolve(false);
   return new Promise((resolve) => {
-    if (window.turnstile) return resolve();
-    loadTurnstileScript();
-    const iv = setInterval(() => {
-      if (window.turnstile) {
-        clearInterval(iv);
-        resolve();
-      }
+    const script = loadTurnstileScript();
+    const finish = (ready: boolean) => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+      script.removeEventListener("error", onError);
+      if (!ready) script.remove();
+      resolve(ready);
+    };
+    const onError = () => finish(false);
+    const interval = setInterval(() => {
+      if (window.turnstile) finish(true);
     }, 100);
+    const timeout = setTimeout(() => finish(false), 10000);
+    script.addEventListener("error", onError, { once: true });
   });
 }
 
@@ -116,6 +123,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
   // because `getResponse` returning "" doesn't tell us whether the challenge
   // is still running or has silently been invalidated.
   let currentToken = "";
+  let challengeFailed = false;
   let pendingResolvers: Array<(token: string) => void> = [];
 
   const notifyToken = (token: string) => {
@@ -133,6 +141,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
   // stuck on "Verifying…" for 15s every time the site key is
   // misconfigured.
   const failPending = () => {
+    challengeFailed = true;
     const resolvers = pendingResolvers;
     pendingResolvers = [];
     resolvers.forEach((r) => r(""));
@@ -150,6 +159,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
         widgetId = null;
       }
       currentToken = "";
+      challengeFailed = false;
       widgetId = window.turnstile.render(selector, {
         sitekey: SITE_KEY,
         theme: "auto",
@@ -158,6 +168,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
         callback: (token: string) => notifyToken(token),
         "expired-callback": () => {
           currentToken = "";
+          failPending();
         },
         "error-callback": (errorCode?: string) => {
           currentToken = "";
@@ -177,13 +188,13 @@ export function createTurnstile(selector: string): TurnstileWidget {
     },
     execute() {
       if (widgetId === null || !window.turnstile) return;
-      // Each execute() starts a fresh challenge, so invalidate any
-      // previously cached token so waitForToken actually waits for the
-      // new one rather than resolving instantly with the stale value.
       currentToken = "";
+      challengeFailed = false;
       try {
         window.turnstile.execute(widgetId);
-      } catch {}
+      } catch {
+        failPending();
+      }
     },
     getToken() {
       if (currentToken) return currentToken;
@@ -192,27 +203,33 @@ export function createTurnstile(selector: string): TurnstileWidget {
     },
     waitForToken(timeoutMs = 10000) {
       if (currentToken) return Promise.resolve(currentToken);
+      if (challengeFailed) return Promise.resolve("");
       if (widgetId === null || !window.turnstile) return Promise.resolve("");
       return new Promise<string>((resolve) => {
         let settled = false;
         const done = (token: string) => {
           if (settled) return;
           settled = true;
+          clearTimeout(timeout);
+          pendingResolvers = pendingResolvers.filter((pending) => pending !== done);
           resolve(token);
         };
         pendingResolvers.push(done);
-        setTimeout(() => done(""), timeoutMs);
+        const timeout = setTimeout(() => done(""), timeoutMs);
       });
     },
     reset() {
+      failPending();
       if (widgetId !== null && window.turnstile) {
         try {
           window.turnstile.reset(widgetId);
         } catch {}
       }
       currentToken = "";
+      challengeFailed = false;
     },
     remove() {
+      failPending();
       if (widgetId !== null && window.turnstile) {
         try {
           window.turnstile.remove(widgetId);
@@ -220,7 +237,7 @@ export function createTurnstile(selector: string): TurnstileWidget {
         widgetId = null;
       }
       currentToken = "";
-      pendingResolvers = [];
+      challengeFailed = false;
     },
   };
 }
