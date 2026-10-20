@@ -34,6 +34,9 @@ public sealed class BlogPostCatalog : IBlogPostCatalog
             new BlogPost(
                 Slug: "hello-world",
                 CommentsStreamId: Guid.Parse("b1090002-0000-4000-8000-0000000000c0")),
+            new BlogPost(
+                Slug: "type-safe-intervals-in-your-dotnet-api",
+                CommentsStreamId: Guid.Parse("b1090003-0000-4000-8000-0000000000c0")),
         }.ToDictionary(post => post.Slug, StringComparer.Ordinal);
 
     public BlogPost? Find(string slug) => Posts.GetValueOrDefault(slug);
