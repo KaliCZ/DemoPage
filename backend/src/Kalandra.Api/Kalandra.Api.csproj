@@ -20,10 +20,10 @@
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="Kalicz.StrongTypes" Version="2.0.1" />
     <PackageReference Include="Kalicz.StrongTypes.OpenApi.Swashbuckle" Version="2.0.1" />
-    <PackageReference Include="Marten" Version="9.50.2" />
+    <PackageReference Include="Marten" Version="9.51.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.13" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.1" />
   </ItemGroup>
 
 </Project>
