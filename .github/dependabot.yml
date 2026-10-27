@@ -41,3 +41,16 @@ updates:
       npm:
         patterns:
           - "*"
+
+  # Docker — the backend Dockerfiles pin base images to tag + digest; this is
+  # what moves the digest when Microsoft rebuilds a tag in place.
+  - package-ecosystem: docker
+    directories:
+      - /backend/src/Kalandra.Api
+      - /backend/src/Kalandra.McpServer
+    schedule:
+      interval: weekly
+    groups:
+      docker:
+        patterns:
+          - "*"
