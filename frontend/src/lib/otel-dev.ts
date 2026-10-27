@@ -2,13 +2,14 @@
 // Emits to the Aspire dashboard via PUBLIC_OTLP_TRACES_ENDPOINT, which the AppHost injects per-instance.
 
 import type { Context } from "@opentelemetry/api";
-import { DiagConsoleLogger, DiagLogLevel, diag, SpanKind, trace } from "@opentelemetry/api";
+import { context, DiagConsoleLogger, DiagLogLevel, diag, propagation, SpanKind, trace } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from "@opentelemetry/core";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
 import { resourceFromAttributes } from "@opentelemetry/resources";
-import { BatchSpanProcessor, WebTracerProvider } from "@opentelemetry/sdk-trace-web";
+import { BatchSpanProcessor, TracerProvider } from "@opentelemetry/sdk-trace";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 const endpoint = import.meta.env.PUBLIC_OTLP_TRACES_ENDPOINT;
@@ -44,15 +45,19 @@ if (!endpoint) {
   }
   const contextManager = new PageRootContextManager();
 
-  const provider = new WebTracerProvider({
+  const provider = new TracerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: "web",
     }),
-    spanProcessors: [new BatchSpanProcessor(new OTLPTraceExporter({ url: endpoint }))],
+    spanProcessors: [new BatchSpanProcessor({ exporter: new OTLPTraceExporter({ url: endpoint }) })],
   });
-  provider.register({
-    contextManager,
-  });
+  trace.setGlobalTracerProvider(provider);
+  context.setGlobalContextManager(contextManager.enable());
+  propagation.setGlobalPropagator(
+    new CompositePropagator({
+      propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+    }),
+  );
 
   registerInstrumentations({
     instrumentations: [
