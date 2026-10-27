@@ -3,7 +3,7 @@
 # Build on the native builder platform and cross-publish to the target arch.
 # This avoids running dotnet restore/publish under QEMU emulation, which is
 # extremely slow when the CI runner is amd64 and the target is arm64.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine@sha256:cc02b814237a76c4735fb6eeee87181597b5e56f2ce458a435e527674d91f4d7 AS build
 ARG COMMIT_SHA=unknown
 ARG TARGETARCH
 WORKDIR /src
@@ -26,7 +26,7 @@ RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -p:SourceRevisionId=$COMMIT_SHA
 
 # Runtime image — this one matches TARGETPLATFORM (arm64 in prod).
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:254fe017495996d3abcc487ffacdcce2b73affb380d3af87af12c8dff41fe0b0 AS runtime
 WORKDIR /app
 
 # Ownership marker for the shared host: the deploy's image prune is scoped to
