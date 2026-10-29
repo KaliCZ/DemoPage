@@ -1,4 +1,5 @@
 using Kalandra.Hosting;
+using Kalandra.McpServer.Infrastructure;
 using Kalandra.McpServer.Tools;
 
 namespace Kalandra.McpServer;
@@ -16,17 +17,17 @@ public static class McpRegistration
                 options.ServerInfo = new() { Name = "kalandra-tech", Version = AppVersion.InformationalVersion };
                 options.ServerInstructions =
                     "Tools for interacting with Pavel Kalandra's showcase site kalandra.tech. Browsing blog posts " +
-                    "and reading their comments works without signing in. Submitting and following up on job offers " +
-                    "and writing comments act as the signed-in user — those tools appear once the user authenticates " +
-                    "this server with their kalandra.tech account (OAuth). If the user asks for one of them, tell " +
-                    "them to sign this server in from their assistant's connector settings.";
+                    "and reading their comments works without signing in. Tools marked [Authorized] act as the " +
+                    "signed-in user — submitting and following up on job offers, and writing comments. They are " +
+                    "listed even when nobody is signed in, so you can tell the user what this site offers; calling " +
+                    "one without an account fails with an OAuth challenge that lets the client start the sign-in. " +
+                    "If the user wants one of those tools, tell them to complete that sign-in with their " +
+                    "kalandra.tech account, or to connect this server from their assistant's connector settings.";
             })
             // Stateless: every tool call is a self-contained POST carrying the caller's bearer token,
             // so no session affinity is needed behind the blue/green proxy.
             .WithHttpTransport(transport => transport.Stateless = true)
-            // Enforces the tools' [Authorize]/[AllowAnonymous] attributes and filters tools/list by them,
-            // so anonymous callers only see the public tools.
-            .AddAuthorizationFilters()
+            .WithRequestFilters(filters => filters.AddCallToolFilter(McpToolErrors.ToToolResult))
             .WithTools<JobOfferMcpTools>()
             .WithTools<BlogMcpTools>();
 

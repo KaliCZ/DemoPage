@@ -23,17 +23,15 @@ const { title, items } = Astro.props;
   <div class="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-hide items-center">
     <span class="shrink-0 font-label text-[10px] uppercase tracking-widest text-on-surface-variant pr-1">{title}</span>
     <span class="shrink-0 w-px h-4 bg-outline-variant/40" aria-hidden="true"></span>
-    {
-      items.map((item) => (
-        <a
-          href={`#${item.id}`}
-          class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
-          data-toc-target={item.id}
-        >
-          {item.label}
-        </a>
-      ))
-    }
+    {items.map((item) => (
+      <a
+        href={`#${item.id}`}
+        class="toc-pill shrink-0 font-label text-xs px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+        data-toc-target={item.id}
+      >
+        {item.label}
+      </a>
+    ))}
   </div>
 </nav>
 

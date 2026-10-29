@@ -8,6 +8,7 @@
   <Project Path="backend/src/Kalandra.McpServer/Kalandra.McpServer.csproj" />
   <Project Path="backend/tests/Kalandra.Api.IntegrationTests/Kalandra.Api.IntegrationTests.csproj" />
   <Project Path="backend/tests/Kalandra.Blog.Tests/Kalandra.Blog.Tests.csproj" />
+  <Project Path="backend/tests/Kalandra.Hosting.Tests/Kalandra.Hosting.Tests.csproj" />
   <Project Path="backend/tests/Kalandra.JobOffers.Tests/Kalandra.JobOffers.Tests.csproj" />
   <Project Path="backend/tests/Kalandra.McpServer.Tests/Kalandra.McpServer.Tests.csproj" />
   <Project Path="backend/tests/Kalandra.Infrastructure.Tests/Kalandra.Infrastructure.Tests.csproj" />

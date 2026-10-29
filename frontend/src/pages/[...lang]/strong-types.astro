@@ -48,11 +48,9 @@ const tocItems = [
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
-  {
-    /* Diagrams and shield badges are hosted on third-party domains. Establishing the
+  {/* Diagrams and shield badges are hosted on third-party domains. Establishing the
       TLS connection during HTML parse — rather than after the parser reaches each
-      <img> — knocks ~200ms off the LCP image's resource-load delay. */
-  }
+      <img> — knocks ~200ms off the LCP image's resource-load delay. */}
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin slot="head" />
   <link rel="preconnect" href="https://img.shields.io" crossorigin slot="head" />
   <div class="max-w-7xl mx-auto px-4 md:px-8">
@@ -67,13 +65,11 @@ const tocItems = [
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         <div class="lg:col-span-7">
           <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight mb-8 leading-[1.1] text-on-surface">
-            {t.hero.titlePrefix}<span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary"
-              >{t.hero.titleHighlight}</span
-            >{t.hero.titleSuffix}
+            {t.hero.titlePrefix}
+            <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleHighlight}</span>
+            {t.hero.titleSuffix}
           </h1>
-          <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">
-            {t.hero.description}
-          </p>
+          <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed">{t.hero.description}</p>
         </div>
 
         <div class="lg:col-span-5 flex flex-col gap-6">
@@ -107,22 +103,20 @@ const tocItems = [
                width/height attributes are critical: without them the badges popping
                in shifted the page by 0.213 CLS. -->
           <ul class="flex flex-wrap items-center gap-2" aria-label={t.badges.ariaLabel}>
-            {
-              strongTypesBadges.map((badge) => (
-                <li>
-                  <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
-                    <img
-                      src={strongTypesBadgeSrc(badge.id, t.badges.downloadsLabel)}
-                      alt={t.badges.alts[badge.id]}
-                      width={badge.width}
-                      height={badge.height}
-                      loading="lazy"
-                      class="block h-5"
-                    />
-                  </a>
-                </li>
-              ))
-            }
+            {strongTypesBadges.map((badge) => (
+              <li>
+                <a href={badge.href} target="_blank" rel="noopener noreferrer" class="inline-block">
+                  <img
+                    src={strongTypesBadgeSrc(badge.id, t.badges.downloadsLabel)}
+                    alt={t.badges.alts[badge.id]}
+                    width={badge.width}
+                    height={badge.height}
+                    loading="lazy"
+                    class="block h-5"
+                  />
+                </a>
+              </li>
+            ))}
           </ul>
 
           <div class="flex flex-wrap items-center gap-3">
@@ -151,12 +145,8 @@ const tocItems = [
 
     <!-- Why -->
     <section id="why" class="mb-24 md:mb-32">
-      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
-        {t.why.title}
-      </h2>
-      <p class="font-body text-on-surface-variant mb-10 text-lg leading-relaxed">
-        {t.why.subtitle}
-      </p>
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.why.title}</h2>
+      <p class="font-body text-on-surface-variant mb-10 text-lg leading-relaxed">{t.why.subtitle}</p>
 
       <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with
            the page. This is the LCP element on this page at typical desktop viewports,
@@ -173,51 +163,45 @@ const tocItems = [
       />
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {
-          t.why.points.map((point) => (
-            <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-              <Icon name={`material-symbols:${point.icon.replace(/_/g, "-")}`} class="size-7 text-primary mb-4 block" aria-hidden="true" />
-              <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{point.title}</h3>
-              <p class="font-body text-on-surface-variant text-sm leading-relaxed">{point.description}</p>
-            </div>
-          ))
-        }
+        {t.why.points.map((point) => (
+          <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+            <Icon name={`material-symbols:${point.icon.replace(/_/g, "-")}`} class="size-7 text-primary mb-4 block" aria-hidden="true" />
+            <h3 class="font-headline font-bold text-lg mb-2 text-on-surface">{point.title}</h3>
+            <p class="font-body text-on-surface-variant text-sm leading-relaxed">{point.description}</p>
+          </div>
+        ))}
       </div>
     </section>
 
     <!-- Features -->
     <section id="features" class="mb-24 md:mb-32">
-      <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">
-        {t.features.title}
-      </h2>
+      <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.features.title}</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {
-          t.features.groups.map((group) => {
-            const accent = group.color === "tertiary" ? "text-tertiary" : "text-primary";
-            const dot = group.color === "tertiary" ? "bg-tertiary" : "bg-primary";
-            return (
-              <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
-                <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", accent]}>
-                  <Icon name={`material-symbols:${group.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
-                  {group.heading}
-                </h3>
-                <ul class="space-y-5">
-                  {group.items.map((item) => (
-                    <li class="font-body text-on-surface-variant">
-                      <div class="flex items-start gap-2">
-                        <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-[10px]", dot]} aria-hidden="true" />
-                        <div>
-                          <code class="font-mono text-[15px] font-bold text-on-surface block leading-snug">{item.name}</code>
-                          <p class="font-body text-sm text-on-surface-variant mt-1.5 leading-relaxed">{item.description}</p>
-                        </div>
+        {t.features.groups.map((group) => {
+          const accent = group.color === "tertiary" ? "text-tertiary" : "text-primary";
+          const dot = group.color === "tertiary" ? "bg-tertiary" : "bg-primary";
+          return (
+            <div class="bg-surface-container p-8 rounded-xl border border-outline-variant/40">
+              <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", accent]}>
+                <Icon name={`material-symbols:${group.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
+                {group.heading}
+              </h3>
+              <ul class="space-y-5">
+                {group.items.map((item) => (
+                  <li class="font-body text-on-surface-variant">
+                    <div class="flex items-start gap-2">
+                      <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-[10px]", dot]} aria-hidden="true" />
+                      <div>
+                        <code class="font-mono text-[15px] font-bold text-on-surface block leading-snug">{item.name}</code>
+                        <p class="font-body text-sm text-on-surface-variant mt-1.5 leading-relaxed">{item.description}</p>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })
-        }
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
 
       <!-- Package layout diagram. -->
@@ -234,87 +218,75 @@ const tocItems = [
 
     <!-- Examples -->
     <section id="examples" class="mb-24 md:mb-32">
-      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
-        {t.examples.title}
-      </h2>
-      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
-        {t.examples.subtitle}
-      </p>
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.examples.title}</h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">{t.examples.subtitle}</p>
       <div class="space-y-8">
-        {
-          t.examples.items.map((example) => {
-            const hasDiagram = "diagram" in example && example.diagram;
-            return (
-              <div class="rounded-xl border border-outline-variant/40 overflow-hidden">
-                <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
-                  <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
-                  <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
-                </div>
-                <div class:list={["grid", hasDiagram ? "lg:grid-cols-2 lg:divide-x lg:divide-outline-variant/30" : "grid-cols-1"]}>
-                  <pre
-                    class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface m-0"
-                    set:text={example.code}
-                  />
-                  {hasDiagram && (
-                    <div class="p-6 flex items-center justify-center">
-                      <img
-                        src={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].src}
-                        data-src-dark={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].srcDark}
-                        alt={example.diagram!.alt}
-                        loading="lazy"
-                        decoding="async"
-                        data-zoomable
-                        class="block max-w-full h-auto cursor-zoom-in transition-transform hover:scale-[1.01]"
-                      />
-                    </div>
-                  )}
-                </div>
+        {t.examples.items.map((example) => {
+          const hasDiagram = "diagram" in example && example.diagram;
+          return (
+            <div class="rounded-xl border border-outline-variant/40 overflow-hidden">
+              <div class="px-6 pt-5 pb-3 border-b border-outline-variant/30">
+                <h3 class="font-headline font-bold text-on-surface text-lg">{example.title}</h3>
+                <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{example.description}</p>
               </div>
-            );
-          })
-        }
+              <div class:list={["grid", hasDiagram ? "lg:grid-cols-2 lg:divide-x lg:divide-outline-variant/30" : "grid-cols-1"]}>
+                <pre
+                  class="px-6 py-5 overflow-x-auto bg-surface-container-low font-mono text-sm leading-relaxed text-on-surface m-0"
+                  set:text={example.code}
+                ></pre>
+                {hasDiagram && (
+                  <div class="p-6 flex items-center justify-center">
+                    <img
+                      src={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].src}
+                      data-src-dark={strongTypesDiagrams[example.diagram!.key as StrongTypesDiagramKey].srcDark}
+                      alt={example.diagram!.alt}
+                      loading="lazy"
+                      decoding="async"
+                      data-zoomable
+                      class="block max-w-full h-auto cursor-zoom-in transition-transform hover:scale-[1.01]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
 
     <!-- Links -->
     <section id="get-started" class="mb-24">
-      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">
-        {t.links.title}
-      </h2>
-      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">
-        {t.links.subtitle}
-      </p>
+      <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.links.title}</h2>
+      <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">{t.links.subtitle}</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {
-          t.links.items.map((item) => {
-            const iconName = linkIconMap[item.icon] ?? "material-symbols:link";
-            const isGitHub = item.icon === "github";
-            return (
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex items-start gap-4"
-              >
-                <div class="shrink-0 size-10 rounded-lg bg-primary/10 grid place-items-center text-primary group-hover:bg-primary/15 transition-colors">
-                  {isGitHub ? <IconGitHub class="w-5 h-5" /> : <Icon name={iconName} class="size-5" aria-hidden="true" />}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{item.title}</h3>
-                  <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{item.description}</p>
-                  <span class="font-mono text-xs text-on-surface-variant mt-3 inline-flex items-center gap-1">
-                    {item.cta}
-                    <Icon
-                      name="material-symbols:arrow-outward"
-                      class="size-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </div>
-              </a>
-            );
-          })
-        }
+        {t.links.items.map((item) => {
+          const iconName = linkIconMap[item.icon] ?? "material-symbols:link";
+          const isGitHub = item.icon === "github";
+          return (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md flex items-start gap-4"
+            >
+              <div class="shrink-0 size-10 rounded-lg bg-primary/10 grid place-items-center text-primary group-hover:bg-primary/15 transition-colors">
+                {isGitHub ? <IconGitHub class="w-5 h-5" /> : <Icon name={iconName} class="size-5" aria-hidden="true" />}
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-headline font-bold text-on-surface group-hover:text-primary transition-colors">{item.title}</h3>
+                <p class="font-body text-sm text-on-surface-variant mt-1 leading-relaxed">{item.description}</p>
+                <span class="font-mono text-xs text-on-surface-variant mt-3 inline-flex items-center gap-1">
+                  {item.cta}
+                  <Icon
+                    name="material-symbols:arrow-outward"
+                    class="size-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+                    aria-hidden="true"
+                  />
+                </span>
+              </div>
+            </a>
+          );
+        })}
       </div>
     </section>
   </div>

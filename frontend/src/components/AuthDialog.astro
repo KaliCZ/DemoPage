@@ -1,10 +1,10 @@
 ---
 /**
- * Sign-in / sign-up dialog with Turnstile protection and Google OAuth.
+ * Sign-in / sign-up / password-reset dialog with Turnstile protection and Google OAuth.
  *
  * Self-contained component: renders the <dialog> markup and owns all the
  * dialog-specific JS (mode switching, Turnstile lifecycle, submit handlers).
- * Exposes `window.__openAuthDialog()` so the header sign-in buttons (in
+ * Exposes `window.__openAuthDialog(mode?)` so the header sign-in buttons (in
  * Layout.astro) can trigger it without knowing about internals.
  *
  * Supabase client is a shared singleton from lib/supabase.ts so both this
@@ -12,7 +12,7 @@
  */
 import { Icon } from "astro-icon/components";
 import IconGoogle from "./icons/IconGoogle.astro";
-import type { Locale } from "../i18n/utils";
+import { localePath, type Locale } from "../i18n/utils";
 import enCommon from "../i18n/en/common.json";
 import csCommon from "../i18n/cs/common.json";
 
@@ -26,6 +26,8 @@ const t = lang === "cs" ? csCommon : enCommon;
 
 <dialog
   id="auth-dialog"
+  data-reset-password-path={localePath(lang, "reset-password")}
+  data-home-path={localePath(lang, "home")}
   class="m-auto bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 max-w-sm w-full backdrop:bg-black/50"
 >
   <button
@@ -42,22 +44,31 @@ const t = lang === "cs" ? csCommon : enCommon;
       <h2 id="auth-dialog-title" class="font-headline text-xl font-bold text-on-surface">
         {t.auth.signIn}
       </h2>
+      <p id="auth-dialog-description" class="hidden mt-2 text-sm font-body text-on-surface-variant">
+        {t.auth.resetPasswordDescription}
+      </p>
     </div>
 
     <!-- Email / password form -->
     <div class="space-y-3">
       <div>
-        <label for="auth-email" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.email}</label>
+        <label for="auth-email" class="block text-sm font-label font-semibold text-on-surface mb-1.5">
+          {t.auth.email}
+        </label>
         <input
           type="email"
           id="auth-email"
+          autocomplete="email"
+          aria-describedby="auth-dialog-error"
           placeholder={t.auth.emailPlaceholder}
           required
           class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
         />
       </div>
-      <div>
-        <label for="auth-password" class="block text-sm font-label font-semibold text-on-surface mb-1.5">{t.auth.password}</label>
+      <div id="auth-password-field">
+        <label for="auth-password" class="block text-sm font-label font-semibold text-on-surface mb-1.5">
+          {t.auth.password}
+        </label>
         <input
           type="password"
           id="auth-password"
@@ -66,12 +77,21 @@ const t = lang === "cs" ? csCommon : enCommon;
           minlength="6"
           class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
         />
+        <div class="mt-1.5 text-right">
+          <button
+            type="button"
+            id="auth-dialog-forgot"
+            class="text-xs font-label font-semibold text-primary hover:underline cursor-pointer"
+          >
+            {t.auth.forgotPassword}
+          </button>
+        </div>
       </div>
     </div>
 
     <div id="auth-turnstile-container" class="flex justify-center empty:hidden"></div>
 
-    <p id="auth-dialog-error" class="hidden text-error text-sm font-body"></p>
+    <p id="auth-dialog-error" role="alert" class="hidden text-error text-sm font-body"></p>
 
     <button
       type="button"
@@ -83,27 +103,29 @@ const t = lang === "cs" ? csCommon : enCommon;
 
     <p id="auth-dialog-toggle" class="text-center text-sm font-body text-on-surface-variant">
       {t.auth.noAccount}
-      <button type="button" id="auth-dialog-switch" class="text-primary font-semibold hover:underline cursor-pointer"
-        >{t.auth.signUp}</button
-      >
+      <button type="button" id="auth-dialog-switch" class="text-primary font-semibold hover:underline cursor-pointer">
+        {t.auth.signUp}
+      </button>
     </p>
 
-    <!-- Divider -->
-    <div class="flex items-center gap-3">
-      <div class="flex-1 border-t border-outline-variant/20"></div>
-      <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
-      <div class="flex-1 border-t border-outline-variant/20"></div>
-    </div>
+    <div id="auth-dialog-alternatives" class="space-y-5">
+      <!-- Divider -->
+      <div class="flex items-center gap-3">
+        <div class="flex-1 border-t border-outline-variant/20"></div>
+        <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
+        <div class="flex-1 border-t border-outline-variant/20"></div>
+      </div>
 
-    <!-- Google OAuth -->
-    <button
-      type="button"
-      id="auth-dialog-google"
-      class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
-    >
-      <IconGoogle class="w-5 h-5" />
-      {t.auth.continueWithGoogle}
-    </button>
+      <!-- Google OAuth -->
+      <button
+        type="button"
+        id="auth-dialog-google"
+        class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold font-label bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer"
+      >
+        <IconGoogle class="w-5 h-5" />
+        {t.auth.continueWithGoogle}
+      </button>
+    </div>
   </div>
 </dialog>
 
@@ -115,6 +137,17 @@ const t = lang === "cs" ? csCommon : enCommon;
     authHaveAccountLabel: t.auth.haveAccount,
     authConfirmationSentLabel: t.auth.confirmationSent,
     authVerifyingLabel: t.auth.verifying,
+    authResetPasswordLabel: t.auth.resetPassword,
+    authSendResetLinkLabel: t.auth.sendResetLink,
+    authRememberedPasswordLabel: t.auth.rememberedPassword,
+    authResetLinkSentLabel: t.auth.resetLinkSent,
+    authSigningInLabel: t.auth.signingIn,
+    authCreatingAccountLabel: t.auth.creatingAccount,
+    authSendingResetLinkLabel: t.auth.sendingResetLink,
+    authCaptchaUnavailableLabel: t.auth.captchaUnavailable,
+    authServiceUnavailableLabel: t.auth.serviceUnavailable,
+    authResetUnavailableLabel: t.auth.resetUnavailable,
+    authNetworkErrorLabel: t.errors.networkError,
   }}
 >
   window.__authDialogLabels = {
@@ -124,10 +157,22 @@ const t = lang === "cs" ? csCommon : enCommon;
     haveAccount: authHaveAccountLabel,
     confirmationSent: authConfirmationSentLabel,
     verifying: authVerifyingLabel,
+    resetPassword: authResetPasswordLabel,
+    sendResetLink: authSendResetLinkLabel,
+    rememberedPassword: authRememberedPasswordLabel,
+    resetLinkSent: authResetLinkSentLabel,
+    signingIn: authSigningInLabel,
+    creatingAccount: authCreatingAccountLabel,
+    sendingResetLink: authSendingResetLinkLabel,
+    captchaUnavailable: authCaptchaUnavailableLabel,
+    serviceUnavailable: authServiceUnavailableLabel,
+    resetUnavailable: authResetUnavailableLabel,
+    networkError: authNetworkErrorLabel,
   };
 </script>
 
 <script>
+  import type { AuthDialogMode } from "../lib/auth";
   import { getSupabaseClient } from "../lib/supabase";
   import {
     createTurnstile,
@@ -138,7 +183,8 @@ const t = lang === "cs" ? csCommon : enCommon;
     recordSuccess,
   } from "../lib/turnstile";
 
-  let authDialogMode: "signin" | "signup" = "signin";
+  let authDialogMode: AuthDialogMode = "signin";
+  let authDialogRevision = 0;
 
   // Shared Turnstile widget for the auth dialog. Exposed on window so future
   // features (e.g. profile page password change) can reuse the same helper.
@@ -154,19 +200,7 @@ const t = lang === "cs" ? csCommon : enCommon;
 
   let turnstileRendered = false;
 
-  /**
-   * Render the Turnstile widget in `execution: "execute"` mode — the
-   * widget sits dormant until we call `execute()` on submit. This gives
-   * us a fresh, per-submission token:
-   *
-   * - It can't go stale between dialog open and click.
-   * - Password manager fill events that happen BEFORE submit don't poison
-   *   a token that was already issued, because no token exists yet.
-   * - If Cloudflare wants an interactive challenge for this session, the
-   *   widget surfaces a visible checkbox on execute (appearance =
-   *   "interaction-only" keeps it hidden when the invisible challenge
-   *   passes, visible only when Cloudflare asks for one).
-   */
+  // Execute on submit so the token cannot expire while the user fills the form.
   function renderAuthTurnstile() {
     if (!turnstileEnabled()) return;
     const force = shouldForceInteractive(AUTH_FAIL_KEY) || shouldForceInteractive(AUTH_SIGNUP_KEY, 1, SIGNUP_WINDOW_MS);
@@ -177,28 +211,23 @@ const t = lang === "cs" ? csCommon : enCommon;
     turnstileRendered = true;
   }
 
-  /**
-   * Make sure the widget exists before we try to pull a token from it.
-   * Covers the case where the user clicks Sign In before the deferred
-   * render in openAuthDialog has fired (slow network, cached script still
-   * resolving, etc.).
-   */
-  async function ensureTurnstileRendered() {
-    if (!turnstileEnabled() || turnstileRendered) return;
-    await whenTurnstileReady();
+  async function ensureTurnstileRendered(revision: number): Promise<boolean> {
+    if (turnstileRendered) return true;
+    if (!(await whenTurnstileReady()) || revision !== authDialogRevision) return false;
     if (!turnstileRendered) renderAuthTurnstile();
+    return true;
   }
 
-  async function openAuthDialog() {
+  async function openAuthDialog(mode: AuthDialogMode = "signin") {
     const supabase = await getSupabaseClient();
     if (!supabase) return;
-    authDialogMode = "signin";
+    authDialogMode = mode;
     updateAuthDialogMode();
+    setSubmitBusy(authSubmitInFlight);
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.showModal();
     if (turnstileEnabled()) {
-      whenTurnstileReady().then(() => {
-        if (!turnstileRendered) renderAuthTurnstile();
-      });
+      // Submission retries and reports any preload failure.
+      void ensureTurnstileRendered(authDialogRevision).catch(() => {});
     }
   }
 
@@ -215,110 +244,168 @@ const t = lang === "cs" ? csCommon : enCommon;
       errorEl.className = "hidden text-error text-sm font-body";
     }
 
-    if (authDialogMode === "signin") {
-      if (title) title.textContent = labels.signIn;
-      if (submit) submit.textContent = labels.signIn;
-      if (toggle) toggle.childNodes[0].textContent = labels.noAccount + " ";
-      if (switchBtn) switchBtn.textContent = labels.signUp;
-    } else {
-      if (title) title.textContent = labels.signUp;
-      if (submit) submit.textContent = labels.signUp;
-      if (toggle) toggle.childNodes[0].textContent = labels.haveAccount + " ";
-      if (switchBtn) switchBtn.textContent = labels.signIn;
-    }
+    const modeLabels: Record<AuthDialogMode, { title: string; submit: string; togglePrompt: string; toggleAction: string }> = {
+      signin: { title: labels.signIn, submit: labels.signIn, togglePrompt: labels.noAccount, toggleAction: labels.signUp },
+      signup: { title: labels.signUp, submit: labels.signUp, togglePrompt: labels.haveAccount, toggleAction: labels.signIn },
+      reset: {
+        title: labels.resetPassword,
+        submit: labels.sendResetLink,
+        togglePrompt: labels.rememberedPassword,
+        toggleAction: labels.signIn,
+      },
+    };
+    const current = modeLabels[authDialogMode];
+    if (title) title.textContent = current.title;
+    if (submit) submit.textContent = current.submit;
+    if (toggle) toggle.childNodes[0].textContent = current.togglePrompt + " ";
+    if (switchBtn) switchBtn.textContent = current.toggleAction;
+
+    const isReset = authDialogMode === "reset";
+    document.getElementById("auth-dialog-description")?.classList.toggle("hidden", !isReset);
+    document.getElementById("auth-password-field")?.classList.toggle("hidden", isReset);
+    document.getElementById("auth-dialog-forgot")?.classList.toggle("hidden", authDialogMode !== "signin");
+    document.getElementById("auth-dialog-alternatives")?.classList.toggle("hidden", isReset);
   }
 
-  function setSubmitBusy(busy: boolean) {
+  // Reset links go through /auth/callback, the only page allowed to receive session tokens in the URL.
+  function passwordResetRedirectUrl(): string {
+    const { resetPasswordPath, homePath } = (document.getElementById("auth-dialog") as HTMLDialogElement).dataset;
+    const here = new URL(window.location.href);
+    // Asking for a fresh link from the reset page itself keeps that page's original destination.
+    const returnTo = here.pathname === resetPasswordPath ? (here.searchParams.get("next") ?? homePath!) : here.pathname + here.search;
+    const next = `${resetPasswordPath}?next=${encodeURIComponent(returnTo)}`;
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  }
+
+  function setSubmitBusy(busy: boolean, message?: string) {
     const submit = document.getElementById("auth-dialog-submit") as HTMLButtonElement | null;
     if (!submit) return;
     const labels = (window as any).__authDialogLabels;
     submit.disabled = busy;
+    submit.setAttribute("aria-busy", String(busy));
+    for (const id of ["auth-email", "auth-password", "auth-dialog-switch", "auth-dialog-forgot", "auth-dialog-google"]) {
+      const control = document.getElementById(id) as HTMLInputElement | HTMLButtonElement | null;
+      if (control) control.disabled = busy;
+    }
     submit.classList.toggle("opacity-60", busy);
     submit.classList.toggle("cursor-not-allowed", busy);
     if (busy) {
-      submit.dataset.prevText = submit.textContent || "";
-      submit.textContent = labels?.verifying || "Verifying…";
+      submit.dataset.prevText ??= submit.textContent || "";
+      submit.textContent = message ?? labels.verifying;
     } else if (submit.dataset.prevText) {
       submit.textContent = submit.dataset.prevText;
       delete submit.dataset.prevText;
     }
   }
 
-  /**
-   * Ask Turnstile for a fresh token right now. With the widget rendered
-   * in `execution: "execute"` mode, each call starts a new challenge —
-   * the resulting token is issued AFTER any password-manager fill
-   * events, so it reflects the current session state and can't be stale
-   * by the time it reaches Supabase. If Cloudflare wants a visible
-   * interaction, the widget surfaces the checkbox and waitForToken
-   * keeps waiting until the user completes it.
-   *
-   * Returns "" only if the widget isn't enabled or something goes
-   * catastrophically wrong (Turnstile script never loaded, hostname
-   * blocked, 15s elapsed with no response). Callers should treat "" as
-   * "submit without a token and let the server return the real error".
-   */
-  async function requestFreshCaptchaToken(): Promise<string> {
+  async function requestFreshCaptchaToken(revision: number): Promise<string> {
     if (!turnstileEnabled()) return "";
-    await ensureTurnstileRendered();
+    if (!(await ensureTurnstileRendered(revision))) return "";
     authTurnstile.execute();
     return authTurnstile.waitForToken(15000);
   }
 
+  // Supabase saves the session before returning, so closing the dialog must not unlock another submission.
   let authSubmitInFlight = false;
 
-  async function authDialogSubmit() {
-    if (authSubmitInFlight) return;
-    authSubmitInFlight = true;
-    try {
-      await authDialogSubmitInner();
-    } finally {
-      authSubmitInFlight = false;
+  function showAuthError(message: string) {
+    const errorEl = document.getElementById("auth-dialog-error");
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.className = "text-error text-sm font-body";
     }
   }
 
-  async function authDialogSubmitInner() {
+  async function authDialogSubmit() {
+    if (authSubmitInFlight) return;
+    const emailInput = document.getElementById("auth-email") as HTMLInputElement;
+    const passwordInput = document.getElementById("auth-password") as HTMLInputElement;
+    if (!emailInput.reportValidity()) return;
+    if (authDialogMode !== "reset" && !passwordInput.reportValidity()) return;
+    const revision = authDialogRevision;
+    const focusedControl = document.activeElement;
+    authSubmitInFlight = true;
+    setSubmitBusy(true);
+    try {
+      await authDialogSubmitInner(revision);
+    } catch (error) {
+      window.observability?.captureException(error, { operation: "auth-dialog-submit" });
+      if (revision === authDialogRevision) showAuthError((window as any).__authDialogLabels.serviceUnavailable);
+    } finally {
+      authSubmitInFlight = false;
+      setSubmitBusy(false);
+      if (revision === authDialogRevision) {
+        authTurnstile.remove();
+        turnstileRendered = false;
+        if (authDialogElement?.open && document.activeElement === document.body && focusedControl instanceof HTMLElement) {
+          focusedControl.focus();
+        }
+      }
+    }
+  }
+
+  async function authDialogSubmitInner(revision: number) {
     const supabase = await getSupabaseClient();
-    if (!supabase) return;
+    if (revision !== authDialogRevision) return;
+    const labels = (window as any).__authDialogLabels;
+    if (!supabase) {
+      showAuthError(labels.serviceUnavailable);
+      return;
+    }
     const email = (document.getElementById("auth-email") as HTMLInputElement)?.value;
     const password = (document.getElementById("auth-password") as HTMLInputElement)?.value;
     const errorEl = document.getElementById("auth-dialog-error");
     if (errorEl) errorEl.classList.add("hidden");
 
-    // Flip to busy immediately — we're about to trigger the captcha
-    // challenge and then a network round-trip. If the challenge
-    // escalates to a visible checkbox, the button stays in "Verifying…"
-    // until the user completes it, which is the correct signal that the
-    // sign-in is paused on them.
-    setSubmitBusy(true);
-    const captchaToken = await requestFreshCaptchaToken();
-    const authOptions: any = captchaToken ? { captchaToken } : {};
+    const mode = authDialogMode;
+    const captchaToken = await requestFreshCaptchaToken(revision);
+    if (revision !== authDialogRevision) return;
+    if (turnstileEnabled() && !captchaToken) {
+      showAuthError(labels.captchaUnavailable);
+      return;
+    }
+    const authOptions = captchaToken ? { captchaToken } : {};
+    const submittingLabels: Record<AuthDialogMode, string> = {
+      signin: labels.signingIn,
+      signup: labels.creatingAccount,
+      reset: labels.sendingResetLink,
+    };
+    setSubmitBusy(true, submittingLabels[mode]);
 
-    const finishFailure = (message: string) => {
-      setSubmitBusy(false);
-      recordFailure(AUTH_FAIL_KEY);
-      if (errorEl) {
-        errorEl.textContent = message;
-        errorEl.className = "text-error text-sm font-body";
-      }
-      if (turnstileEnabled()) {
-        authTurnstile.reset();
-        // Device-wide escalation: after repeated failures across
-        // sessions we force the visible widget on next dialog open too.
-        if (shouldForceInteractive(AUTH_FAIL_KEY)) renderAuthTurnstile();
+    const finishFailure = (error: { message: string; status?: number }) => {
+      if (error.status && error.status >= 500) {
+        showAuthError(mode === "reset" ? labels.resetUnavailable : labels.serviceUnavailable);
+      } else if (!error.status) {
+        showAuthError(labels.networkError);
+      } else {
+        if (mode !== "reset" && error.status !== 429) recordFailure(AUTH_FAIL_KEY);
+        showAuthError(error.message);
       }
     };
 
-    if (authDialogMode === "signup") {
+    if (mode === "reset") {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        ...authOptions,
+        redirectTo: passwordResetRedirectUrl(),
+      });
+      if (revision !== authDialogRevision) return;
+      if (resetError) {
+        finishFailure(resetError);
+      } else {
+        (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
+        const labels = (window as any).__authDialogLabels;
+        (window as any).__showSnackbar?.(labels.resetLinkSent, "info", 8000);
+      }
+    } else if (mode === "signup") {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: { ...authOptions, data: { full_name: email.split("@")[0] } },
       });
+      if (revision !== authDialogRevision) return;
       if (signUpError) {
-        finishFailure(signUpError.message);
+        finishFailure(signUpError);
       } else {
-        setSubmitBusy(false);
         recordSuccess(AUTH_FAIL_KEY);
         // Count the signup itself — more than 1 in 4h escalates next attempt.
         recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
@@ -336,10 +423,10 @@ const t = lang === "cs" ? csCommon : enCommon;
         password,
         options: authOptions,
       });
+      if (revision !== authDialogRevision) return;
       if (signInError) {
-        finishFailure(signInError.message);
+        finishFailure(signInError);
       } else {
-        setSubmitBusy(false);
         recordSuccess(AUTH_FAIL_KEY);
         (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
       }
@@ -370,6 +457,11 @@ const t = lang === "cs" ? csCommon : enCommon;
     authDialogMode = authDialogMode === "signin" ? "signup" : "signin";
     updateAuthDialogMode();
   });
+  document.getElementById("auth-dialog-forgot")?.addEventListener("click", () => {
+    authDialogMode = "reset";
+    updateAuthDialogMode();
+    document.getElementById("auth-email")?.focus();
+  });
   document.getElementById("auth-dialog-close")?.addEventListener("click", () => {
     (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
   });
@@ -377,6 +469,12 @@ const t = lang === "cs" ? csCommon : enCommon;
   // Clicks on the backdrop and on the dialog's own padding both target the <dialog>, so hit-test
   // the rect; the press must also start outside so a text-selection drag can't close it.
   const authDialogElement = document.getElementById("auth-dialog") as HTMLDialogElement | null;
+  authDialogElement?.addEventListener("close", () => {
+    authDialogRevision++;
+    setSubmitBusy(false);
+    authTurnstile.remove();
+    turnstileRendered = false;
+  });
   const outsideAuthDialog = (event: MouseEvent) => {
     if (!authDialogElement) return false;
     const rect = authDialogElement.getBoundingClientRect();

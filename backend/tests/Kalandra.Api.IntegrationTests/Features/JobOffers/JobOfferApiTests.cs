@@ -697,7 +697,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var offerId = AssertValidGuid(await ParseJsonAsync(response), "id");
 
-        var email = Assert.Single(await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1));
+        var email = Assert.Single(await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(marker)));
         Assert.Equal("owner@kalandra.local", email.To.Address);
         Assert.Equal("New job offer: Senior Developer at Acme Corp", email.Subject.Value);
         Assert.Contains("john@acme.com", email.TextBody.Value);
@@ -713,10 +713,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var response = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { content = marker }, Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1);
-        // Grace period: a wrong extra notification would arrive moments later.
-        await Task.Delay(1500, Ct);
-        emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(marker))];
+        var emails = await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(marker));
 
         var email = Assert.Single(emails);
         Assert.Equal("owner@kalandra.local", email.To.Address);
@@ -734,10 +731,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var response = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { content = marker }, Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 1);
-        // Grace period: a wrong extra notification would arrive moments later.
-        await Task.Delay(1500, Ct);
-        emails = [.. factory.EmailSender.Sent.Where(m => m.TextBody.Value.Contains(marker))];
+        var emails = await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(marker));
 
         var email = Assert.Single(emails);
         Assert.Equal("notified-author@test.com", email.To.Address);
@@ -755,7 +749,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var response = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { content = marker }, Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var emails = await WaitForEmailsAsync(m => m.TextBody.Value.Contains(marker), expectedCount: 2);
+        var emails = await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(marker));
         Assert.Equal(2, emails.Length);
         Assert.Contains(emails, m => m.To.Address == "owner@kalandra.local");
         Assert.Contains(emails, m => m.To.Address == "watched-author@test.com");
@@ -809,20 +803,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     // ───── Helpers ─────
 
     private static readonly Guid AdminUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
-    private async Task<Kalandra.Infrastructure.Email.EmailMessage[]> WaitForEmailsAsync(
-        Func<Kalandra.Infrastructure.Email.EmailMessage, bool> predicate, int expectedCount)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(20);
-        while (DateTime.UtcNow < deadline)
-        {
-            var matches = factory.EmailSender.Sent.Where(predicate).ToArray();
-            if (matches.Length >= expectedCount)
-                return matches;
-            await Task.Delay(200, Ct);
-        }
-        return [.. factory.EmailSender.Sent.Where(predicate)];
-    }
 
     private Guid Authenticate(
         string email = "test@example.com",

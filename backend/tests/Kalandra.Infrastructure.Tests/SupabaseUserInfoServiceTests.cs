@@ -25,7 +25,7 @@ public class SupabaseUserInfoServiceTests
 
         public Task<User?> CreateUser(AdminUserAttributes attributes) => throw new NotImplementedException();
         public Task<User?> CreateUser(string email, string password, AdminUserAttributes? attributes = null) => throw new NotImplementedException();
-        public Task<bool> DeleteUser(string uid) => throw new NotImplementedException();
+        public Task<bool> DeleteUser(string uid, bool shouldSoftDelete = false) => throw new NotImplementedException();
         public Task<User?> GetUser(string jwt) => throw new NotImplementedException();
         public Task<bool> InviteUserByEmail(string email, InviteUserByEmailOptions? options = null) => throw new NotImplementedException();
         public Task<UserList<User>?> ListUsers(string? filter = null, string? sortBy = null, Constants.SortOrder sortOrder = Constants.SortOrder.Descending, int? page = null, int? perPage = null) => throw new NotImplementedException();

@@ -6,6 +6,8 @@ Astro SSG site with Tailwind CSS, deployed to Cloudflare Pages as static files. 
 
 Every route page lives in `pages/[...lang]/` and uses Astro's rest parameter to handle all locales from a single file. English gets no prefix (`/about`), Czech gets `/cs/about`.
 
+URLs never carry a trailing slash — `trailingSlash: "never"` + `build.format: "file"` in `astro.config.mjs` make Cloudflare Pages serve `/about` directly and 308 `/about/` into it. Home pages are `/` and `/cs`. Build every link, canonical, and sitemap entry through `localePath` so all signals agree on the slash-less form (mismatched signals get duplicate URLs indexed by Google).
+
 **Translation file rules:**
 
 - One JSON file per page per language, plus `common.json` for shared strings (nav, footer, auth, a11y).
@@ -80,6 +82,8 @@ Supabase Auth with email/password + Google OAuth. Client-side auth state is mana
 
 The sign-in dialog (`AuthDialog.astro`) is included in the layout — pages don't need to add it.
 
+**Password reset.** The dialog's "Forgot password?" mode emails a Supabase recovery link. Like OAuth, the link lands on `/auth/callback` — the only page that accepts session tokens in the URL — which forwards to `/reset-password`. That page offers the new-password form only to sessions opened from an emailed link (`amr` of `otp` / `magiclink` / `recovery`), the same sessions Supabase lets set a password without the current one; a password or Google session changes its password on the profile page instead.
+
 ## Blog
 
 Posts are first-class Astro pages, not a CMS — git is the source of truth.
@@ -95,7 +99,7 @@ Posts are first-class Astro pages, not a CMS — git is the source of truth.
 
 ## Sitemap
 
-`/sitemap.xml` is a custom endpoint (`src/pages/sitemap.xml.ts`), not an integration. A static page opts in by exporting `pageMeta` (`src/lib/page-meta.ts`); its `updatedDate` becomes the `<lastmod>` — **bump it when you meaningfully edit a page**. Pages without the export (profile, admin, auth callback) stay out of the sitemap. Blog posts contribute `updatedDate ?? pubDate` from their own metadata and emit URLs only for their declared languages (hreflang alternates only when a post declares more than one); the blog index entry tracks the newest post.
+`/sitemap.xml` is a custom endpoint (`src/pages/sitemap.xml.ts`), not an integration. A static page opts in by exporting `pageMeta` (`src/lib/page-meta.ts`); its `updatedDate` becomes the `<lastmod>` — **bump it when you meaningfully edit a page**. Pages without the export (profile, admin, auth callback) stay out of the sitemap; the auth-gated shells among them (profile, admin pages, job-offers detail) additionally pass `noindex` to Layout so crawlers that find them via the CSS-hidden admin nav links don't index them. Blog posts contribute `updatedDate ?? pubDate` from their own metadata and emit URLs only for their declared languages (hreflang alternates only when a post declares more than one); the blog index entry tracks the newest post.
 
 ## Accessibility
 

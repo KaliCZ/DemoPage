@@ -213,12 +213,11 @@
         page-break-inside: avoid;
         break-inside: avoid;
       }
-      /* Force DevOps & Quality (and everything after it in the sidebar) onto
-     page 2 — keeps page 1's sidebar focused on tech foundations and pushes
-     the delivery/quality block into the deeper-experience half of the CV. */
+      /* Keep DevOps & Quality together so a page break can't split its list
+     mid-item; it flows naturally to page 2 when it doesn't fit on page 1. */
       .sb-devops {
-        page-break-before: always;
-        break-before: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
       .pm-item {
         margin-bottom: 2mm;

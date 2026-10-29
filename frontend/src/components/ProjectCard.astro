@@ -33,12 +33,12 @@ const accentTitleHover = accent === "tertiary" ? "group-hover:text-tertiary" : "
 <Card as="a" href={href} accent={accent} class:list={["flex flex-col", extraClass]}>
   <div class="flex items-center gap-3 mb-4">
     <Icon name={`material-symbols:${icon}`} class:list={["size-6", accentText]} aria-hidden="true" />
-    <h2 class:list={["font-headline text-2xl font-bold transition-colors", accentTitleHover]}>
-      {title}
-    </h2>
+    <h2 class:list={["font-headline text-2xl font-bold transition-colors", accentTitleHover]}>{title}</h2>
   </div>
   <div class="text-on-surface-variant leading-relaxed mb-6 flex-1 space-y-3">
-    {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    {paragraphs.map((paragraph) => (
+      <p>{paragraph}</p>
+    ))}
   </div>
   <span class:list={["font-label text-sm uppercase tracking-widest flex items-center gap-1", accentText]}>
     {cta}

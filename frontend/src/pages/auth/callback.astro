@@ -1,10 +1,11 @@
 ---
 /**
- * OAuth callback landing page.
+ * Auth redirect landing page — for OAuth sign-ins and password-reset email links.
  *
- * Supabase redirects here after a successful OAuth handshake with the URL hash
- * containing `access_token` and friends. We load the Supabase client eagerly
- * so `detectSessionInUrl` (default true) parses and persists the session
+ * Supabase redirects here after a successful OAuth handshake or a verified
+ * reset link, with the URL hash containing `access_token` and friends. We
+ * load the Supabase client eagerly so `detectSessionInUrl` (default true)
+ * parses and persists the session
  * before any other page-level auth UI tries to read from localStorage — this
  * avoids the "just signed in but header says signed out" flash that happened
  * when the redirect landed on a normal page and relied on the lazy-loaded
@@ -13,7 +14,7 @@
  * On success: redirect to `?next=<path>` (or `/`) — the session is already in
  * localStorage so the destination's pre-paint script picks it up on first
  * render.
- * On failure: forward to `/` with an `error_description` in the hash so the
+ * On failure: forward to `next` with an `error_description` in the hash so the
  * generic handler in Layout.astro surfaces the error snackbar.
  *
  * This page is intentionally bare (no Layout) so it renders in a single
@@ -69,16 +70,13 @@ import enCommon from "../../i18n/en/common.json";
 
     <script>
       import { getSupabaseClient } from "../../lib/supabase";
+      import { sameOriginPath } from "../../lib/redirect";
       import enCommon from "../../i18n/en/common.json";
       import csCommon from "../../i18n/cs/common.json";
 
       (async () => {
         const url = new URL(window.location.href);
-
-        // Only trust `next` if it's a site-relative path — never an absolute
-        // URL (which could point at an attacker-controlled origin).
-        const nextParam = url.searchParams.get("next");
-        const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+        const next = sameOriginPath(url.searchParams.get("next"), "/");
 
         const hash = new URLSearchParams(window.location.hash.substring(1));
         const hashErr = hash.get("error_description");

@@ -28,9 +28,7 @@ const t = translations[lang];
         <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
       </h1>
       <p class="text-lg text-on-surface-variant font-body">{t.hero.subtitle}</p>
-      <p class="text-sm text-on-surface-variant font-body mt-3">
-        {t.hero.subtitleInfo}
-      </p>
+      <p class="text-sm text-on-surface-variant font-body mt-3">{t.hero.subtitleInfo}</p>
     </div>
   </section>
 
@@ -38,12 +36,8 @@ const t = translations[lang];
   <section id="login-prompt" class="signed-out-only max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <div class="max-w-4xl bg-surface-container rounded-2xl border border-outline-variant/40 p-8 md:p-12 text-center">
       <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
-      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">
-        {t.loginPrompt.title}
-      </h2>
-      <p class="text-on-surface-variant font-body mb-6">
-        {t.loginPrompt.description}
-      </p>
+      <h2 class="font-headline text-2xl font-bold text-on-surface mb-3">{t.loginPrompt.title}</h2>
+      <p class="text-on-surface-variant font-body mb-6">{t.loginPrompt.description}</p>
       <button
         id="hire-me-sign-in"
         type="button"
@@ -63,7 +57,9 @@ const t = translations[lang];
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label for="companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.companyName}</label>
+          <label for="companyName" class="block text-sm font-label font-semibold text-on-surface mb-2">
+            {t.form.companyName}
+          </label>
           <input
             type="text"
             id="companyName"
@@ -75,7 +71,9 @@ const t = translations[lang];
           />
         </div>
         <div>
-          <label for="contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactName}</label>
+          <label for="contactName" class="block text-sm font-label font-semibold text-on-surface mb-2">
+            {t.form.contactName}
+          </label>
           <input
             type="text"
             id="contactName"
@@ -90,7 +88,9 @@ const t = translations[lang];
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label for="contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.contactEmail}</label>
+          <label for="contactEmail" class="block text-sm font-label font-semibold text-on-surface mb-2">
+            {t.form.contactEmail}
+          </label>
           <input
             type="email"
             id="contactEmail"
@@ -102,7 +102,9 @@ const t = translations[lang];
           />
         </div>
         <div>
-          <label for="jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.jobTitle}</label>
+          <label for="jobTitle" class="block text-sm font-label font-semibold text-on-surface mb-2">
+            {t.form.jobTitle}
+          </label>
           <input
             type="text"
             id="jobTitle"
@@ -116,7 +118,9 @@ const t = translations[lang];
       </div>
 
       <div>
-        <label for="description" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.description}</label>
+        <label for="description" class="block text-sm font-label font-semibold text-on-surface mb-2">
+          {t.form.description}
+        </label>
         <textarea
           id="description"
           name="description"
@@ -130,7 +134,9 @@ const t = translations[lang];
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label for="salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.salaryRange}</label>
+          <label for="salaryRange" class="block text-sm font-label font-semibold text-on-surface mb-2">
+            {t.form.salaryRange}
+          </label>
           <input
             type="text"
             id="salaryRange"
@@ -141,7 +147,9 @@ const t = translations[lang];
           />
         </div>
         <div>
-          <label for="location" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.location}</label>
+          <label for="location" class="block text-sm font-label font-semibold text-on-surface mb-2">
+            {t.form.location}
+          </label>
           <input
             type="text"
             id="location"
@@ -160,11 +168,15 @@ const t = translations[lang];
           name="isRemote"
           class="w-5 h-5 rounded border-outline-variant/20 text-primary focus:ring-primary/30 accent-primary"
         />
-        <label for="isRemote" class="text-sm font-label font-semibold text-on-surface">{t.form.isRemote}</label>
+        <label for="isRemote" class="text-sm font-label font-semibold text-on-surface">
+          {t.form.isRemote}
+        </label>
       </div>
 
       <div>
-        <label for="additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.additionalNotes}</label>
+        <label for="additionalNotes" class="block text-sm font-label font-semibold text-on-surface mb-2">
+          {t.form.additionalNotes}
+        </label>
         <textarea
           id="additionalNotes"
           name="additionalNotes"
@@ -176,10 +188,10 @@ const t = translations[lang];
       </div>
 
       <div>
-        <label for="attachments" class="block text-sm font-label font-semibold text-on-surface mb-2">{t.form.attachments}</label>
-        <p class="text-xs text-on-surface-variant font-body mb-3">
-          {t.form.attachmentsHint}
-        </p>
+        <label for="attachments" class="block text-sm font-label font-semibold text-on-surface mb-2">
+          {t.form.attachments}
+        </label>
+        <p class="text-xs text-on-surface-variant font-body mb-3">{t.form.attachmentsHint}</p>
         <label
           for="attachments"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/20 text-on-surface font-label text-sm cursor-pointer hover:border-primary/30 transition-colors"
@@ -226,11 +238,12 @@ const t = translations[lang];
       if (e && !e.value && p.email) e.value = p.email;
     })();
   </script>
-
-  <template id="icon-description"
-    ><Icon name="material-symbols:description" class="size-[18px] text-on-surface-variant shrink-0" aria-hidden="true" /></template
-  >
-  <template id="icon-close"><Icon name="material-symbols:close" class="size-[18px]" aria-hidden="true" /></template>
+  <template id="icon-description">
+    <Icon name="material-symbols:description" class="size-[18px] text-on-surface-variant shrink-0" aria-hidden="true" />
+  </template>
+  <template id="icon-close">
+    <Icon name="material-symbols:close" class="size-[18px]" aria-hidden="true" />
+  </template>
 
   <dialog
     id="confirm-incomplete-dialog"
@@ -241,9 +254,7 @@ const t = translations[lang];
       <h2 id="confirm-incomplete-title" class="font-headline text-xl font-bold text-on-surface">
         {t.form.confirmIncomplete.title}
       </h2>
-      <p class="text-sm text-on-surface-variant font-body">
-        {t.form.confirmIncomplete.description}
-      </p>
+      <p class="text-sm text-on-surface-variant font-body">{t.form.confirmIncomplete.description}</p>
       <ul id="confirm-incomplete-fields" class="list-disc pl-5 text-sm text-on-surface font-body space-y-1"></ul>
       <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button

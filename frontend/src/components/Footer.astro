@@ -32,12 +32,12 @@ const { lang, t } = Astro.props;
   <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
     <div class="text-lg font-bold text-on-surface font-headline">kalandra.tech</div>
     <div class="flex items-center gap-6">
-      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, "privacy")}
-        >{t.footer.privacy}</a
-      >
-      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, "terms")}
-        >{t.footer.terms}</a
-      >
+      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, "privacy")}>
+        {t.footer.privacy}
+      </a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-label" href={localePath(lang, "terms")}>
+        {t.footer.terms}
+      </a>
     </div>
     <div class="flex items-center gap-6">
       <a

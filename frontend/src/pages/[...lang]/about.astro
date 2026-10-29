@@ -53,9 +53,11 @@ const tocItems = [
           {t.hero.location}
         </a>
         <p class="font-body text-xl md:text-2xl text-on-surface-variant max-w-2xl leading-relaxed mb-10">
-          {t.hero.subtitle}{" "}{t.hero.strongTypesPrefix}<a href={localePath(lang, "strong-types")} class="text-primary hover:underline"
-            >{t.hero.strongTypesLinkText}</a
-          >{t.hero.strongTypesSuffix}
+          {t.hero.subtitle} {t.hero.strongTypesPrefix}
+          <a href={localePath(lang, "strong-types")} class="text-primary hover:underline">
+            {t.hero.strongTypesLinkText}
+          </a>
+          {t.hero.strongTypesSuffix}
         </p>
         <div class="flex gap-6 flex-wrap">
           <a
@@ -126,9 +128,7 @@ const tocItems = [
   <Band id="values" borders="top">
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
     <div class="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
-      <h2 class="font-headline text-4xl font-extrabold mb-12 tracking-tight">
-        {t.values.title}
-      </h2>
+      <h2 class="font-headline text-4xl font-extrabold mb-12 tracking-tight">{t.values.title}</h2>
       <!-- Asymmetric two-column layout: short pillars stack on the left, the
            long-form Empowered Teams pillar (with its lede + two paragraphs)
            occupies the right column on its own. The split is driven by the
@@ -136,49 +136,45 @@ const tocItems = [
            pillars adapts the layout without rewiring it. -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
         <ul class="space-y-10">
-          {
-            t.values.pillars
-              .filter((pillar) => !("paragraphs" in pillar))
-              .map((pillar) => (
-                <li class="flex gap-4">
-                  <Icon
-                    name={`material-symbols:${pillar.icon.replace(/_/g, "-")}`}
-                    class:list={["size-[30px] shrink-0 mt-1", `text-${pillar.color}`]}
-                    aria-hidden="true"
-                  />
-                  <div class="flex-1">
-                    <h3 class="font-bold text-xl mb-2">{pillar.title}</h3>
-                    <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
-                  </div>
-                </li>
-              ))
-          }
+          {t.values.pillars
+            .filter((pillar) => !("paragraphs" in pillar))
+            .map((pillar) => (
+              <li class="flex gap-4">
+                <Icon
+                  name={`material-symbols:${pillar.icon.replace(/_/g, "-")}`}
+                  class:list={["size-[30px] shrink-0 mt-1", `text-${pillar.color}`]}
+                  aria-hidden="true"
+                />
+                <div class="flex-1">
+                  <h3 class="font-bold text-xl mb-2">{pillar.title}</h3>
+                  <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
+                </div>
+              </li>
+            ))}
         </ul>
         <ul class="space-y-10">
-          {
-            t.values.pillars
-              .filter((pillar) => "paragraphs" in pillar && pillar.paragraphs)
-              .map((pillar) => (
-                <li class="flex gap-4">
-                  <Icon
-                    name={`material-symbols:${pillar.icon.replace(/_/g, "-")}`}
-                    class:list={["size-[30px] shrink-0 mt-1", `text-${pillar.color}`]}
-                    aria-hidden="true"
-                  />
-                  <div class="flex-1">
-                    <h3 class="font-bold text-xl mb-2">{pillar.title}</h3>
-                    <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
-                    {"paragraphs" in pillar && pillar.paragraphs && (
-                      <div class="mt-4 space-y-4">
-                        {pillar.paragraphs.map((para) => (
-                          <p class="text-on-surface-variant leading-relaxed">{para}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </li>
-              ))
-          }
+          {t.values.pillars
+            .filter((pillar) => "paragraphs" in pillar && pillar.paragraphs)
+            .map((pillar) => (
+              <li class="flex gap-4">
+                <Icon
+                  name={`material-symbols:${pillar.icon.replace(/_/g, "-")}`}
+                  class:list={["size-[30px] shrink-0 mt-1", `text-${pillar.color}`]}
+                  aria-hidden="true"
+                />
+                <div class="flex-1">
+                  <h3 class="font-bold text-xl mb-2">{pillar.title}</h3>
+                  <p class="text-on-surface-variant leading-relaxed">{pillar.description}</p>
+                  {"paragraphs" in pillar && pillar.paragraphs && (
+                    <div class="mt-4 space-y-4">
+                      {pillar.paragraphs.map((para) => (
+                        <p class="text-on-surface-variant leading-relaxed">{para}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
         </ul>
       </div>
     </div>
@@ -188,42 +184,36 @@ const tocItems = [
   <Band id="skills" level="lowest">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
-        <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
-          {t.skills.title}
-        </h2>
-        <p class="font-body text-on-surface-variant max-w-2xl mx-auto">
-          {t.skills.subtitle}
-        </p>
+        <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">{t.skills.title}</h2>
+        <p class="font-body text-on-surface-variant max-w-2xl mx-auto">{t.skills.subtitle}</p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {
-          t.skills.categories.map((cat) => (
-            <Card>
-              <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", `text-${cat.color}`]}>
-                <Icon name={`material-symbols:${cat.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
-                {cat.label}
-              </h3>
-              {"description" in cat && cat.description && (
-                <p class="font-body text-on-surface-variant text-sm leading-relaxed mb-5">{cat.description}</p>
-              )}
-              <ul class="space-y-3">
-                {cat.items.map((item) => {
-                  const title = typeof item === "string" ? item : item.title;
-                  const description = typeof item === "string" ? null : item.description;
-                  return (
-                    <li class="font-body text-on-surface-variant flex items-start gap-2">
-                      <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-2", `bg-${cat.color}`]} />
-                      <div class="flex-1">
-                        <span>{title}</span>
-                        {description && <p class="font-body text-on-surface-variant/70 text-xs leading-snug mt-1">{description}</p>}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </Card>
-          ))
-        }
+        {t.skills.categories.map((cat) => (
+          <Card>
+            <h3 class:list={["font-label text-sm uppercase tracking-widest mb-6 flex items-center gap-2", `text-${cat.color}`]}>
+              <Icon name={`material-symbols:${cat.icon.replace(/_/g, "-")}`} class="size-[18px]" aria-hidden="true" />
+              {cat.label}
+            </h3>
+            {"description" in cat && cat.description && (
+              <p class="font-body text-on-surface-variant text-sm leading-relaxed mb-5">{cat.description}</p>
+            )}
+            <ul class="space-y-3">
+              {cat.items.map((item) => {
+                const title = typeof item === "string" ? item : item.title;
+                const description = typeof item === "string" ? null : item.description;
+                return (
+                  <li class="font-body text-on-surface-variant flex items-start gap-2">
+                    <span class:list={["w-1.5 h-1.5 rounded-full shrink-0 mt-2", `bg-${cat.color}`]} />
+                    <div class="flex-1">
+                      <span>{title}</span>
+                      {description && <p class="font-body text-on-surface-variant/70 text-xs leading-snug mt-1">{description}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        ))}
       </div>
     </div>
   </Band>
@@ -237,29 +227,23 @@ const tocItems = [
   <Band id="personal" borders="bottom" class="mb-8 lg:mb-12">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
-        <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">
-          {t.personal.title}
-        </h2>
-        <p class="font-body text-on-surface-variant max-w-2xl mx-auto">
-          {t.personal.subtitle}
-        </p>
+        <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter mb-4">{t.personal.title}</h2>
+        <p class="font-body text-on-surface-variant max-w-2xl mx-auto">{t.personal.subtitle}</p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {
-          t.personal.items.map((item) => (
-            <Card level="lowest" padding="compact" class="flex items-start gap-4">
-              <Icon
-                name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
-                class:list={["size-8 shrink-0", `text-${item.color}`]}
-                aria-hidden="true"
-              />
-              <div>
-                <h3 class="font-headline font-bold text-lg mb-1">{item.title}</h3>
-                <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
-              </div>
-            </Card>
-          ))
-        }
+        {t.personal.items.map((item) => (
+          <Card level="lowest" padding="compact" class="flex items-start gap-4">
+            <Icon
+              name={`material-symbols:${item.icon.replace(/_/g, "-")}`}
+              class:list={["size-8 shrink-0", `text-${item.color}`]}
+              aria-hidden="true"
+            />
+            <div>
+              <h3 class="font-headline font-bold text-lg mb-1">{item.title}</h3>
+              <p class="font-body text-on-surface-variant text-sm leading-relaxed">{item.description}</p>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   </Band>
@@ -267,9 +251,7 @@ const tocItems = [
   <!-- Career Journey Section -->
   <section id="career" class="max-w-7xl mx-auto px-4 md:px-8">
     <div class="text-center mb-16">
-      <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">
-        {t.career.title}
-      </h2>
+      <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">{t.career.title}</h2>
     </div>
 
     <!-- Timeline. Entries alternate sides via `side: "left" | "right"` in the
@@ -280,62 +262,58 @@ const tocItems = [
       <div class="absolute left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/30 hidden md:block"></div>
 
       <div class="space-y-12 md:space-y-0">
-        {
-          t.career.entries.map((entry, i) => {
-            const isRight = entry.side === "right";
-            const accent = isRight ? "primary" : "tertiary";
-            const dotShadow = isRight ? "shadow-[0_0_15px_rgba(72,88,171,0.3)]" : "shadow-[0_0_15px_rgba(0,106,106,0.2)]";
-            const hasSubEntries = "subEntries" in entry && entry.subEntries;
-            const isLast = i === t.career.entries.length - 1;
+        {t.career.entries.map((entry, i) => {
+          const isRight = entry.side === "right";
+          const accent = isRight ? "primary" : "tertiary";
+          const dotShadow = isRight ? "shadow-[0_0_15px_rgba(72,88,171,0.3)]" : "shadow-[0_0_15px_rgba(0,106,106,0.2)]";
+          const hasSubEntries = "subEntries" in entry && entry.subEntries;
+          const isLast = i === t.career.entries.length - 1;
 
-            const sideColumn = (
-              <div class:list={["relative md:w-1/2", isRight ? "md:pl-16" : "md:pr-16 md:text-right"]}>
-                <div
-                  class:list={[
-                    "absolute top-0 w-4 h-4 rounded-full z-10 hidden md:block",
-                    isRight ? "-left-2 md:-left-1.5" : "-right-2",
-                    `bg-${accent}`,
-                    dotShadow,
-                  ]}
-                />
-                <Card accent={accent}>
-                  <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
-                  <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
-                  {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
-                  {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
-                  {entry.description && !hasSubEntries && (
-                    <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
-                  )}
-                  {hasSubEntries && (
-                    <div class="space-y-6 text-left">
-                      {entry.subEntries!.map((sub) => (
-                        <div class="border-l-2 border-primary/30 pl-4">
-                          <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
-                          <p class="font-bold mt-1">{sub.role}</p>
-                          {sub.description && (
-                            <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              </div>
-            );
+          const sideColumn = (
+            <div class:list={["relative md:w-1/2", isRight ? "md:pl-16" : "md:pr-16 md:text-right"]}>
+              <div
+                class:list={[
+                  "absolute top-0 w-4 h-4 rounded-full z-10 hidden md:block",
+                  isRight ? "-left-2 md:-left-1.5" : "-right-2",
+                  `bg-${accent}`,
+                  dotShadow,
+                ]}
+              />
+              <Card accent={accent}>
+                <span class="font-label text-tertiary text-xs uppercase tracking-widest">{entry.date}</span>
+                <h3 class="font-headline text-2xl font-bold mt-2">{entry.role}</h3>
+                {entry.company && <p class="font-label text-on-surface-variant mb-4">{entry.company}</p>}
+                {hasSubEntries && <p class="font-label text-on-surface-variant mb-6">{entry.yearsLabel}</p>}
+                {entry.description && !hasSubEntries && (
+                  <p class="font-body text-on-surface-variant text-sm leading-relaxed whitespace-pre-line">{entry.description}</p>
+                )}
+                {hasSubEntries && (
+                  <div class="space-y-6 text-left">
+                    {entry.subEntries!.map((sub) => (
+                      <div class="border-l-2 border-primary/30 pl-4">
+                        <p class="font-label text-xs text-tertiary uppercase tracking-widest">{sub.date}</p>
+                        <p class="font-bold mt-1">{sub.role}</p>
+                        {sub.description && <p class="font-body text-on-surface-variant text-sm leading-relaxed mt-1">{sub.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          );
 
-            // Right-side rows always pad below; left-side rows do too, except
-            // for the final entry which closes the timeline with no trailing gap.
-            const needsBottomGap = isRight || !isLast;
-            const spacer = <div class="hidden md:block w-1/2" />;
+          // Right-side rows always pad below; left-side rows do too, except
+          // for the final entry which closes the timeline with no trailing gap.
+          const needsBottomGap = isRight || !isLast;
+          const spacer = <div class="hidden md:block w-1/2" />;
 
-            return (
-              <div class:list={["md:flex items-center w-full", isRight ? "justify-end" : "justify-start", needsBottomGap && "md:mb-24"]}>
-                {isRight ? spacer : sideColumn}
-                {isRight ? sideColumn : spacer}
-              </div>
-            );
-          })
-        }
+          return (
+            <div class:list={["md:flex items-center w-full", isRight ? "justify-end" : "justify-start", needsBottomGap && "md:mb-24"]}>
+              {isRight ? spacer : sideColumn}
+              {isRight ? sideColumn : spacer}
+            </div>
+          );
+        })}
       </div>
     </div>
   </section>
