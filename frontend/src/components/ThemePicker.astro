@@ -12,10 +12,6 @@ interface Props {
 
 const { labels } = Astro.props;
 
-// Three-state toggle: explicit light/dark plus a "system" middle that follows
-// the OS preference (the default when the visitor has never picked one). The
-// active segment is highlighted purely from the `data-theme-pref` attribute the
-// pre-paint script sets on <html>, so the right one paints with no flash.
 const options: { value: "light" | "system" | "dark"; label: string; icon: string }[] = [
   { value: "light", label: labels.light, icon: "light-mode" },
   { value: "system", label: labels.system, icon: "computer" },
@@ -39,9 +35,7 @@ const options: { value: "light" | "system" | "dark"; label: string; icon: string
 </div>
 
 <style>
-  /* Inactive segments are dimmed; the one matching the stored preference is
-     lit. Driven by the html[data-theme-pref] attribute so the active state is
-     correct on first paint — no JS-driven flash. */
+  /* Keyed off html[data-theme-pref], set by Layout's pre-paint script, so the active option is right on first paint. */
   .theme-opt {
     opacity: 0.5;
   }

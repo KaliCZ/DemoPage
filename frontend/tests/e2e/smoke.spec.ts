@@ -1,13 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-/**
- * E2E smoke tests that verify frontend + backend integration.
- * These require both services to be running:
- * - Frontend at http://localhost:4321
- * - Backend API at http://localhost:5000
- * - Local Supabase at http://localhost:54321
- */
-
 test.describe("E2E Smoke Tests", () => {
   test("backend health endpoint is reachable and healthy", async ({ request }) => {
     const response = await request.get("http://localhost:5000/health");
@@ -22,7 +14,6 @@ test.describe("E2E Smoke Tests", () => {
     await expect(page.locator("#login-prompt")).toBeVisible();
     await expect(page.locator("#login-prompt")).toContainText("Authentication Required");
     await expect(page.locator("#login-prompt button")).toContainText("Sign In");
-    // Form should be hidden until authenticated
     await expect(page.locator("#job-offer-form-section")).toBeHidden();
   });
 

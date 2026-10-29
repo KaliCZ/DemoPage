@@ -34,7 +34,6 @@ public class BlogController(
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
-    // The anonymous visitor id the client mints and stores locally; keys views and reactions before sign-in.
     private bool TryGetVisitorId(out Guid visitorId) =>
         Guid.TryParse(Request.Headers["X-Visitor-Id"].ToString(), out visitorId);
 
@@ -43,8 +42,6 @@ public class BlogController(
         ModelState.AddModelError("visitorId", "Required");
         return ValidationProblem();
     }
-
-    // ───── Reactions ─────
 
     [HttpGet("reactions")]
     [AllowAnonymous]
@@ -87,8 +84,6 @@ public class BlogController(
         return GetBlogReactionsResponse.Serialize(reactions);
     }
 
-    // ───── Views ─────
-
     [HttpPost("views")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.BlogWrite)]
@@ -123,8 +118,6 @@ public class BlogController(
         return new RecordBlogPostViewResponse(view.PreviousViewCount, view.TotalViews, view.UniqueVisitors);
     }
 
-    // ───── Stats ─────
-
     /// <summary>Batch stats for the blog index; the absolute route sidesteps the class-level {slug} template.</summary>
     [HttpGet("/api/blog/stats")]
     [AllowAnonymous]
@@ -142,8 +135,6 @@ public class BlogController(
         return GetBlogStatsResponse.Serialize(stats);
     }
 
-    // ───── Visitor link ─────
-
     /// <summary>On sign-in, attributes the visitor's anonymous views and reactions to their account.</summary>
     [HttpPost("/api/blog/visitor/link")]
     [EnableRateLimiting(RateLimitPolicies.BlogWrite)]
@@ -158,8 +149,6 @@ public class BlogController(
         await linkVisitorHandler.LinkAndSave(new LinkVisitorCommand(visitorId, AppUser.Id), ct);
         return NoContent();
     }
-
-    // ───── Comments ─────
 
     [HttpGet("comments")]
     [AllowAnonymous]
@@ -188,8 +177,7 @@ public class BlogController(
         if (postCatalog.Find(slug) is not { } post)
             return NotFound();
 
-        // Client-supplied so an accidental resend reuses it and the handler dedupes to one
-        // comment; we mint one only when a caller omits it.
+        // Client-supplied so an accidental resend dedupes to one comment.
         var commentId = request.CommentId is { } id && id != Guid.Empty ? id : Guid.NewGuid();
 
         var comment = new BlogCommentPosted(

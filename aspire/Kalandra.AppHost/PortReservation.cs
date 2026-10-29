@@ -5,7 +5,7 @@ namespace Kalandra.AppHost;
 
 internal sealed record ReservedPort(int Port, TcpListener Listener);
 
-// One port per AppHost-owned endpoint. OTLP HTTP is separate from gRPC because the browser exporter speaks HTTP only.
+// OTLP HTTP gets its own port because the browser exporter can't speak gRPC.
 internal sealed record AppHostPorts(
     ReservedPort Dashboard,
     ReservedPort Otlp,
@@ -47,7 +47,6 @@ internal static class PortReservation
         return ReservePinned(offset);
     }
 
-    // Fail early with a clear message if a pinned port is taken.
     private static AppHostPorts ReservePinned(int offset)
     {
         var pinned = new (int Port, string Label)[]
@@ -80,7 +79,6 @@ internal static class PortReservation
             Source: $"KALANDRA_PORT_OFFSET={offset}");
     }
 
-    // No offset: walk up from each default until a free port is found.
     private static AppHostPorts ReserveAuto()
     {
         var dashboard = ReserveFreePortFrom(DashboardDefault, "dashboard");
@@ -95,7 +93,6 @@ internal static class PortReservation
             Source: allAtDefault ? "default ports" : "default ports, stepped past in-use");
     }
 
-    // Binds the first free port at or above `start`; caller keeps the listener until hand-off.
     private static ReservedPort ReserveFreePortFrom(int start, string label, int maxAttempts = 100)
     {
         for (var port = start; port < start + maxAttempts; port++)

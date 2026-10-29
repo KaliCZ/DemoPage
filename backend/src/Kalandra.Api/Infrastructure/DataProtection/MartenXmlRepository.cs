@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.DataProtection.Repositories;
 
 namespace Kalandra.Api.Infrastructure.DataProtection;
 
-// IXmlRepository is sync by contract. Block on Marten's async APIs — the repository
-// is hit once at startup and again only on key rotation (~every 90 days by default),
-// outside any request context where sync-over-async would matter.
+// IXmlRepository is sync by contract; blocking is fine because it runs only at startup and key rotation, outside any request.
 public class MartenXmlRepository(IDocumentStore store) : IXmlRepository
 {
     public IReadOnlyCollection<XElement> GetAllElements()

@@ -1,15 +1,5 @@
 ---
-/**
- * Sign-in / sign-up / password-reset dialog with Turnstile protection and Google OAuth.
- *
- * Self-contained component: renders the <dialog> markup and owns all the
- * dialog-specific JS (mode switching, Turnstile lifecycle, submit handlers).
- * Exposes `window.__openAuthDialog(mode?)` so the header sign-in buttons (in
- * Layout.astro) can trigger it without knowing about internals.
- *
- * Supabase client is a shared singleton from lib/supabase.ts so both this
- * component and Layout.astro use the same instance.
- */
+/** Sign-in / sign-up / password-reset dialog, opened from anywhere via `window.__openAuthDialog(mode?)`. */
 import { Icon } from "astro-icon/components";
 import IconGoogle from "./icons/IconGoogle.astro";
 import { localePath, type Locale } from "../i18n/utils";
@@ -49,7 +39,6 @@ const t = lang === "cs" ? csCommon : enCommon;
       </p>
     </div>
 
-    <!-- Email / password form -->
     <div class="space-y-3">
       <div>
         <label for="auth-email" class="block text-sm font-label font-semibold text-on-surface mb-1.5">
@@ -109,14 +98,12 @@ const t = lang === "cs" ? csCommon : enCommon;
     </p>
 
     <div id="auth-dialog-alternatives" class="space-y-5">
-      <!-- Divider -->
       <div class="flex items-center gap-3">
         <div class="flex-1 border-t border-outline-variant/20"></div>
         <span class="text-xs font-label text-on-surface-variant">{t.auth.or}</span>
         <div class="flex-1 border-t border-outline-variant/20"></div>
       </div>
 
-      <!-- Google OAuth -->
       <button
         type="button"
         id="auth-dialog-google"
@@ -186,15 +173,13 @@ const t = lang === "cs" ? csCommon : enCommon;
   let authDialogMode: AuthDialogMode = "signin";
   let authDialogRevision = 0;
 
-  // Shared Turnstile widget for the auth dialog. Exposed on window so future
-  // features (e.g. profile page password change) can reuse the same helper.
+  // createTurnstile is exposed on window for future reuse (e.g. a profile password change).
   const authTurnstile = createTurnstile("#auth-turnstile-container");
   (window as any).__createTurnstile = createTurnstile;
 
-  // Single device-wide counter for failed auth attempts (sign-in or sign-up).
-  // Changing the email on the same browser doesn't reset it — it's the same person.
+  // Device-wide, not per email: switching emails in the same browser is still the same person.
   const AUTH_FAIL_KEY = "auth-fail";
-  // Separate counter for successful signups — more than 1 account in 4h is suspicious.
+  // Counts successful signups — more than one account per window is suspicious.
   const AUTH_SIGNUP_KEY = "auth-signup";
   const SIGNUP_WINDOW_MS = 4 * 60 * 60 * 1000;
 
@@ -407,7 +392,7 @@ const t = lang === "cs" ? csCommon : enCommon;
         finishFailure(signUpError);
       } else {
         recordSuccess(AUTH_FAIL_KEY);
-        // Count the signup itself — more than 1 in 4h escalates next attempt.
+        // Recorded as a "failure" so another signup within the window forces an interactive challenge.
         recordFailure(AUTH_SIGNUP_KEY, SIGNUP_WINDOW_MS);
         if (!data.session) {
           (document.getElementById("auth-dialog") as HTMLDialogElement)?.close();
@@ -436,10 +421,7 @@ const t = lang === "cs" ? csCommon : enCommon;
   async function authDialogGoogle() {
     const supabase = await getSupabaseClient();
     if (!supabase) return;
-    // Route OAuth returns through a dedicated callback page so the Supabase
-    // client is loaded eagerly and the session is persisted before any UI
-    // tries to read from localStorage. The current path is preserved in
-    // `next` so the user lands back where they started signing in.
+    // Return via /auth/callback so the session is persisted before any page reads it from localStorage.
     const next = window.location.pathname + window.location.search;
     const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
     await supabase.auth.signInWithOAuth({
@@ -487,14 +469,11 @@ const t = lang === "cs" ? csCommon : enCommon;
   authDialogElement?.addEventListener("click", (event) => {
     if (authDialogPressStartedOutside && outsideAuthDialog(event)) authDialogElement.close();
   });
-  // Allow Enter key to submit from either field
   const submitOnEnter = (e: KeyboardEvent) => {
     if (e.key === "Enter") authDialogSubmit();
   };
   document.getElementById("auth-email")?.addEventListener("keydown", submitOnEnter);
   document.getElementById("auth-password")?.addEventListener("keydown", submitOnEnter);
 
-  // Expose opener so Layout's header sign-in buttons can trigger the dialog
-  // without duplicating the dialog markup.
   (window as any).__openAuthDialog = openAuthDialog;
 </script>

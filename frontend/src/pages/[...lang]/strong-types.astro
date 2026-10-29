@@ -48,9 +48,7 @@ const tocItems = [
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="strong-types" lang={lang}>
-  {/* Diagrams and shield badges are hosted on third-party domains. Establishing the
-      TLS connection during HTML parse — rather than after the parser reaches each
-      <img> — knocks ~200ms off the LCP image's resource-load delay. */}
+  {/* The LCP diagram and the badges are on third-party hosts; connecting during HTML parse cuts ~200ms of LCP load delay. */}
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin slot="head" />
   <link rel="preconnect" href="https://img.shields.io" crossorigin slot="head" />
   <div class="max-w-7xl mx-auto px-4 md:px-8">
@@ -59,8 +57,6 @@ const tocItems = [
       items={[{ label: tCommon.nav.projects, href: localePath(lang, "projects") }, { label: tCommon.nav.projectStrongTypes }]}
       class="mb-8"
     />
-    <!-- Hero. Two columns at lg+: prose on the left, the call-to-action stack
-         (CTAs, badges, install command) on the right so neither half feels empty. -->
     <section id="overview" class="mb-16 md:mb-20">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         <div class="lg:col-span-7">
@@ -73,7 +69,6 @@ const tocItems = [
         </div>
 
         <div class="lg:col-span-5 flex flex-col gap-6">
-          <!-- Install command -->
           <div class="bg-surface-container rounded-xl border border-outline-variant/40 p-1">
             <div class="flex items-center gap-2 px-3 pt-2 pb-1 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
               <Icon name="material-symbols:terminal" class="size-3.5" aria-hidden="true" />
@@ -98,10 +93,6 @@ const tocItems = [
             </div>
           </div>
 
-          <!-- Live status badges. URLs/dimensions live in lib/strong-types-badges.ts;
-               i18n only carries alt text and the localized "downloads" label. The
-               width/height attributes are critical: without them the badges popping
-               in shifted the page by 0.213 CLS. -->
           <ul class="flex flex-wrap items-center gap-2" aria-label={t.badges.ariaLabel}>
             {strongTypesBadges.map((badge) => (
               <li>
@@ -143,15 +134,11 @@ const tocItems = [
       </div>
     </section>
 
-    <!-- Why -->
     <section id="why" class="mb-24 md:mb-32">
       <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.why.title}</h2>
       <p class="font-body text-on-surface-variant mb-10 text-lg leading-relaxed">{t.why.subtitle}</p>
 
-      <!-- Featured diagram. data-src-dark hooks the theme toggle so the SVG flips with
-           the page. This is the LCP element on this page at typical desktop viewports,
-           so it's eager + fetchpriority="high" — Lighthouse otherwise reports a ~1.8s
-           "resource load delay" while it waits for layout before requesting the image. -->
+      <!-- The LCP element at desktop widths, hence fetchpriority="high" and no lazy loading. -->
       <img
         src={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].src}
         data-src-dark={strongTypesDiagrams[t.why.diagram.key as StrongTypesDiagramKey].srcDark}
@@ -173,7 +160,6 @@ const tocItems = [
       </div>
     </section>
 
-    <!-- Features -->
     <section id="features" class="mb-24 md:mb-32">
       <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.features.title}</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -204,7 +190,6 @@ const tocItems = [
         })}
       </div>
 
-      <!-- Package layout diagram. -->
       <img
         src={strongTypesDiagrams[t.packageLayout.diagram.key as StrongTypesDiagramKey].src}
         data-src-dark={strongTypesDiagrams[t.packageLayout.diagram.key as StrongTypesDiagramKey].srcDark}
@@ -216,7 +201,6 @@ const tocItems = [
       />
     </section>
 
-    <!-- Examples -->
     <section id="examples" class="mb-24 md:mb-32">
       <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.examples.title}</h2>
       <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">{t.examples.subtitle}</p>
@@ -254,7 +238,6 @@ const tocItems = [
       </div>
     </section>
 
-    <!-- Links -->
     <section id="get-started" class="mb-24">
       <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.links.title}</h2>
       <p class="font-body text-on-surface-variant mb-12 max-w-3xl text-lg leading-relaxed">{t.links.subtitle}</p>
@@ -293,11 +276,6 @@ const tocItems = [
 
   <OnThisPage title={t.toc.title} items={tocItems} />
 
-  <!-- Diagram lightbox. Single shared <dialog> instance; we clone the clicked source <img>
-       into [data-lightbox-slot] each time so the lightbox renders the already-loaded image
-       at its natural size from the very first frame (no broken-image flash, no zero-size
-       collapse from an empty src=""). Native <dialog> gives us free Escape-to-close and
-       focus management for the modal. -->
   <dialog
     id="diagram-lightbox"
     aria-label={t.lightbox.dialogLabel}
@@ -341,10 +319,7 @@ const tocItems = [
     }
   });
 
-  // Diagram lightbox: clicking any <img data-zoomable> clones it into the dialog slot
-  // and opens the shared <dialog>. tabindex=0 + keydown handlers make the imgs keyboard-
-  // activatable; cloning the already-loaded image avoids the broken-image flash that comes
-  // from setting .src on a placeholder element with an empty initial src.
+  // Cloning the already-loaded <img> avoids the broken-image flash of setting .src on an empty placeholder.
   const lightbox = document.getElementById("diagram-lightbox") as HTMLDialogElement | null;
   const lightboxSlot = lightbox?.querySelector<HTMLElement>("[data-lightbox-slot]");
   const lightboxClose = document.querySelector<HTMLButtonElement>("[data-lightbox-close]");
@@ -355,12 +330,7 @@ const tocItems = [
     clone.removeAttribute("data-zoomable");
     clone.removeAttribute("tabindex");
     clone.removeAttribute("role");
-    // Scale up to fit ~85% of viewport while preserving aspect ratio. The diagrams
-    // are SVGs so scaling up renders crisply, and the lightbox should be _bigger_
-    // than the inline rendering — not pinned to whatever pixel size the SVG's
-    // viewBox happens to declare. Setting explicit width/height as attributes
-    // also reserves layout space immediately, sidestepping the "freshly cloned
-    // <img> reports naturalWidth = 0 until the cached fetch resolves" problem.
+    // Sized from the source because a fresh clone reports naturalWidth 0, and explicit attributes let the SVG scale past its viewBox.
     const naturalW = source.naturalWidth || 800;
     const naturalH = source.naturalHeight || 600;
     const maxW = window.innerWidth * 0.85;
@@ -368,8 +338,7 @@ const tocItems = [
     const scale = Math.min(maxW / naturalW, maxH / naturalH);
     clone.width = Math.round(naturalW * scale);
     clone.height = Math.round(naturalH * scale);
-    // The page-level imgs use loading="lazy"; cloneNode carries that over,
-    // which delays even the cache hit. Force eager.
+    // cloneNode carries over loading="lazy", which delays even a cache hit.
     clone.loading = "eager";
     clone.className = "block object-contain";
     lightboxSlot.replaceChildren(clone);
@@ -388,16 +357,14 @@ const tocItems = [
     });
   });
 
-  // Preload the dark variant so toggling is a cache hit. Initial-render src
-  // selection is handled pre-paint by the inline script in Layout.astro.
+  // Preload the dark variant so toggling is a cache hit.
   document.querySelectorAll<HTMLImageElement>("img[data-src-dark]").forEach((img) => {
     if (img.dataset.srcDark) new Image().src = img.dataset.srcDark;
   });
 
   lightboxClose?.addEventListener("click", () => lightbox?.close());
 
-  // Backdrop click closes. The dialog's own click event fires on the backdrop pseudo-element
-  // by reporting `event.target === dialog` (since clicks on contents bubble from inner elements).
+  // Backdrop clicks target the <dialog> itself; clicks on its contents target inner elements.
   lightbox?.addEventListener("click", (event) => {
     if (event.target === lightbox) lightbox.close();
   });

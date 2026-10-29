@@ -5,17 +5,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * E2E test for the blog reactions + comments flow against the real backend:
- *   1. Anonymous visitor can react (no sign-in), but commenting still needs an account
- *   2. An anonymous reaction is attributed to the account after signing in
- *   3. Read tracking records the reader's view and drives the index controls
- *   4. After sign-in: toggle a reaction (persists across reload), post a
- *      comment, reply to it, and delete the reply (tombstone)
- *
- * Requires local Supabase, backend API at :5000, and frontend at :4321.
- */
-
 const API_URL = process.env.PUBLIC_API_URL || "http://localhost:5000";
 const SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -67,7 +56,6 @@ const readTrackingUser = {
   fullName: "E2E Read Tracking User",
 };
 
-/** Polls the mail catcher until an email to `to` whose text mentions `containing` arrives. */
 async function waitForEmail(request: import("@playwright/test").APIRequestContext, { to, containing }: { to: string; containing: string }) {
   const query = `to:"${to}" "${containing}"`;
   await expect
@@ -114,7 +102,7 @@ test.describe("Blog Flow", () => {
     await expect(thumbsUp).toBeVisible();
     await expect(reactions.getByRole("button", { name: "Thumbs down" })).toBeVisible();
 
-    // Anonymous reactions land directly — no auth dialog. Toggle on then off so counts stay put.
+    // Toggled back off afterwards so counts stay put for the other tests.
     const toggleOn = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
     await thumbsUp.click();
     expect((await toggleOn).ok()).toBeTruthy();
@@ -125,7 +113,7 @@ test.describe("Blog Flow", () => {
     await toggleOff;
     await expect(thumbsUp).toHaveAttribute("aria-pressed", "false");
 
-    // The sign-in CTA below the comments opens the dialog; the top-right X and the backdrop both close it.
+    // The dialog must close both via its X and via a backdrop click (top-left corner).
     const signInCta = page.locator("#blog-signin-cta");
     await signInCta.getByRole("button", { name: "Sign In" }).click();
     await expect(page.locator("#auth-dialog")).toBeVisible();
@@ -136,7 +124,6 @@ test.describe("Blog Flow", () => {
     await page.mouse.click(10, 10);
     await expect(page.locator("#auth-dialog")).not.toBeVisible();
 
-    // Reactions accept a visitor id anonymously; comments still require an account.
     const anonReaction = await request.post(`${API_URL}/api/blog/${SLUG}/reactions/toggle`, {
       headers: { "X-Visitor-Id": randomUUID() },
       data: { kind: "Rocket" },
@@ -159,7 +146,6 @@ test.describe("Blog Flow", () => {
     const baseline = await request.get(`${API_URL}/api/blog/${SLUG}/reactions`);
     const countBefore = (await baseline.json()).counts.heart;
 
-    // React while signed out — no dialog; the reaction lands under the anonymous visitor id.
     const toggleSettled = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
     await heart.click();
     expect((await toggleSettled).ok()).toBeTruthy();
@@ -184,15 +170,12 @@ test.describe("Blog Flow", () => {
   });
 
   test("read tracking records the reader's own count and drives the unread filter", async ({ page }) => {
-    // Signed out: no sign-in nag on the post; the index hides the unread filter. (Public view/reader
-    // counts are gated off until the pre-rollout traffic is seeded, so they aren't asserted here.)
     await page.goto(POST_PATH);
     await expect(page.getByText("Sign in to track your reading.")).toHaveCount(0);
     await page.goto("/blog");
     await expect(page.locator("#blog-sort")).toBeVisible();
     await expect(page.locator("#blog-unread-filter")).toHaveCount(0);
 
-    // Sign in on the post: the reader's first view reads as "not read yet" (no prior session).
     await page.goto(POST_PATH);
     await page.evaluate(
       async ({ email, password }) => {
@@ -205,7 +188,6 @@ test.describe("Blog Flow", () => {
     );
     await expect(page.getByText("Not read yet")).toBeVisible();
 
-    // The index shows the reader's own read state, and the unread filter drops the post they've read.
     await page.goto("/blog");
     const readCard = page.locator("ul[role=list] > li").filter({ hasText: "Zero-Code Validations" });
     await expect(readCard.getByText("Read once")).toBeVisible();
@@ -228,20 +210,16 @@ test.describe("Blog Flow", () => {
       { email: testUser.email, password: testUser.password },
     );
 
-    // Reaction toggles on and survives a reload (state comes from the backend).
     const reactions = page.locator('section[aria-label="Was this useful?"]');
     const thumbsUp = reactions.getByRole("button", { name: "Thumbs up" });
     await expect(thumbsUp).toHaveAttribute("aria-pressed", "false");
 
-    // Count-relative assertion — earlier runs may have left reactions behind.
-    // Baseline from the API, not the UI: the rendered count races the island's
-    // async fetch, while the post-toggle UI always converges on server state.
+    // Relative to an API baseline: earlier runs leave reactions behind, and the rendered count races the island's fetch.
     const thumbsUpCount = thumbsUp.locator("span").nth(1);
     const baseline = await request.get(`${API_URL}/api/blog/${SLUG}/reactions`);
     const countBefore = (await baseline.json()).counts.thumbsUp;
 
-    // The UI flips optimistically, so wait for the server write to land before
-    // reloading — a reload mid-flight would abort the request and lose the toggle.
+    // The UI flips optimistically, so wait for the write — reloading mid-flight would abort it.
     const toggleSettled = page.waitForResponse((response) => response.url().includes("/reactions/toggle"));
     await thumbsUp.click();
     expect((await toggleSettled).ok()).toBeTruthy();
@@ -253,10 +231,8 @@ test.describe("Blog Flow", () => {
     await expect(reloadedThumbsUp).toHaveAttribute("aria-pressed", "true");
     await expect(reloadedThumbsUp.locator("span").nth(1)).toHaveText(String(countBefore + 1));
 
-    // Signed in, the sign-in CTA is gone (Layout's auth-known-in tier hides it).
     await expect(page.locator("#blog-signin-cta")).not.toBeVisible();
 
-    // Post a top-level comment.
     const comments = page.locator('section[aria-label="Comments"]');
     const commentText = `E2E comment ${Date.now()}`;
     sharedCommentText = commentText;
@@ -266,16 +242,12 @@ test.describe("Blog Flow", () => {
     await expect(commentItem).toBeVisible();
     await expect(commentItem).toContainText(testUser.fullName);
 
-    // A success snackbar confirms the post landed.
     const snackbar = page.locator("#snackbar");
     await expect(snackbar).toContainText("Comment posted.");
     await expect(snackbar.locator("> div")).toHaveClass(/bg-tertiary-container/);
 
-    // Storing the comment triggers the notification subscription, which emails the
-    // blog author — the email must land in the local mail catcher.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: commentText });
 
-    // Reply to it.
     await commentItem.getByRole("button", { name: "Reply" }).click();
     const replyText = `E2E reply ${Date.now()}`;
     await comments.getByRole("textbox").fill(replyText);
@@ -286,13 +258,12 @@ test.describe("Blog Flow", () => {
     // Self-reply: the blog author is notified, the parent author (same user) is not.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: replyText });
 
-    // Collapsing the parent hides its replies; expanding brings them back.
     await commentItem.getByRole("button", { name: "Hide replies" }).click();
     await expect(replyItem).toBeHidden();
     await commentItem.getByRole("button", { name: /^Show replies/ }).click();
     await expect(replyItem).toBeVisible();
 
-    // Delete the reply — inline confirm, then the tombstone placeholder takes its place.
+    // The second click is the inline confirm.
     await replyItem.getByRole("button", { name: "Delete" }).click();
     await replyItem.getByRole("button", { name: "Delete" }).click();
     await expect(comments.getByText(replyText)).toHaveCount(0);
@@ -322,16 +293,12 @@ test.describe("Blog Flow", () => {
     await comments.getByRole("button", { name: "Post comment" }).click();
     await expect(comments.getByText(crossReplyText)).toBeVisible();
 
-    // One workflow, two notifications: the blog author and the parent comment's author.
     await waitForEmail(request, { to: AUTHOR_EMAIL, containing: crossReplyText });
     await waitForEmail(request, { to: testUser.email, containing: crossReplyText });
   });
 
   test("the backend accepts reactions on every published post (slug catalogs don't drift)", async ({ page, request }) => {
-    // The backend gates reactions to slugs in BlogPostCatalog; the frontend owns the
-    // actual posts. Enumerate the published posts from the sitemap and prove the
-    // backend recognizes each — a new frontend post whose slug wasn't added to the
-    // catalog fails here.
+    // The backend only accepts reactions on slugs in its BlogPostCatalog, so every sitemap post must be listed there.
     await page.goto(POST_PATH);
     await page.evaluate(
       async ({ email, password }) => {
@@ -380,8 +347,7 @@ test.describe("Blog Flow", () => {
         { email, password },
       );
 
-    // Wait for the profile page's eviction ping so the upload has fully applied
-    // (preview updated + server cache dropped) before we read the URL or navigate away.
+    // The cache-eviction POST is the upload's last step, so awaiting it means the upload fully applied.
     const uploadAvatar = async (file: string) => {
       const evicted = page.waitForResponse((r) => r.url().includes("/api/users/me/refresh") && r.request().method() === "POST");
       await page.locator("#avatar-file-input").setInputFiles(file);
@@ -389,13 +355,11 @@ test.describe("Blog Flow", () => {
       return page.locator("#avatar-preview-img").getAttribute("src");
     };
 
-    // Sign in on the profile page and set an initial avatar.
     await page.goto("/profile");
     await signIn(avatarChangeUser);
     await expect(page.locator("#avatar-change-btn")).toBeVisible();
     await uploadAvatar(portrait200);
 
-    // Post a comment, then reload so it renders from the server with the resolved avatar.
     await page.goto(POST_PATH);
     const comments = page.locator('section[aria-label="Comments"]');
     const commentText = `E2E avatar-change ${Date.now()}`;
@@ -403,6 +367,7 @@ test.describe("Blog Flow", () => {
     await comments.getByRole("button", { name: "Post comment" }).click();
     await expect(comments.locator("li").filter({ hasText: commentText }).first()).toBeVisible();
 
+    // Reload so the comment renders from the server with its resolved avatar.
     await page.reload();
     const firstAvatar = page
       .locator('section[aria-label="Comments"]')
@@ -415,13 +380,11 @@ test.describe("Blog Flow", () => {
     const firstSrc = await firstAvatar.getAttribute("src");
     expect(firstSrc).toContain("/storage/v1/object/public/avatars/");
 
-    // Change the avatar; the profile page evicts this user's server-side cache.
     await page.goto("/profile");
     await expect(page.locator("#avatar-change-btn")).toBeVisible();
     const newAvatarSrc = await uploadAvatar(portrait400);
     expect(newAvatarSrc).not.toBe(firstSrc);
 
-    // Revisit the post — the past comment reflects the new avatar, not the cached one.
     await page.goto(POST_PATH);
     const finalAvatar = page
       .locator('section[aria-label="Comments"]')

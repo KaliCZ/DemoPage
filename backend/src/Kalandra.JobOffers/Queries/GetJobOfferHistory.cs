@@ -47,11 +47,7 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
 
         var entries = new List<JobOfferHistoryEntry>();
 
-        // Replay the stream through a fresh aggregate so state reconstruction
-        // goes through the real JobOffer.Apply() methods — this keeps the
-        // history handler from having its own shadow copy of the apply logic.
-        // For JobOfferEdited we snapshot fields before and after Apply() and
-        // diff the two to produce structured FieldChange records.
+        // Replay through the real JobOffer.Apply() so field diffs never need a shadow copy of the apply logic.
         var replay = new JobOffer();
 
         foreach (var evt in offerEvents)
@@ -106,7 +102,6 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
             }
         }
 
-        // Comments live on a separate stream and don't affect field state.
         foreach (var evt in commentEvents)
         {
             if (evt.Data is JobOfferCommentAdded cm)
@@ -132,11 +127,6 @@ public class GetJobOfferHistoryHandler(IQuerySession session)
         JobOfferStatus.Cancelled => "Cancelled",
     };
 
-    /// <summary>
-    /// Immutable snapshot of the fields that can change via JobOfferEdited.
-    /// Taken before and after Apply() so we can diff the two without having
-    /// to mirror the aggregate's apply logic in this handler.
-    /// </summary>
     private record FieldSnapshot(
         string CompanyName,
         string ContactName,

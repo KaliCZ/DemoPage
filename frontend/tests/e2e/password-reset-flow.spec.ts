@@ -1,16 +1,6 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { mockTurnstile } from "../helpers/turnstile";
 
-/**
- * E2E test for the forgot-password flow against local Supabase:
- *   1. Request a reset link from the sign-in dialog
- *   2. Open the emailed link, choose a new password, and land back on the page the reset started from
- *   3. Only the new password signs in afterwards
- *   4. A link that was already used is rejected, with a way to request a fresh one
- *
- * Requires local Supabase (including its Mailpit mail catcher) and the frontend at :4321.
- */
-
 const SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -28,7 +18,6 @@ const usedLinkUser = {
   password: "old-password-123",
 };
 
-/** Polls the mail catcher for the password-reset email to `to` and returns the verification link in it. */
 async function waitForResetLink(request: APIRequestContext, to: string): Promise<string> {
   let link = "";
   await expect

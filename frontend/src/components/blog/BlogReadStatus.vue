@@ -20,11 +20,9 @@ const props = defineProps<{
 const loaded = ref(false);
 const totalViews = ref<number | null>(null);
 const uniqueVisitors = ref(0);
-// Only set when signed in — the reader's personal "read N times" note.
 const readLabel = ref<string | null>(null);
 
-// One recorded view per auth state ("anon", then each user id) per page load —
-// auth-change also fires for token refreshes. The 15-minute window is enforced server-side.
+// One view per auth state per page load, since auth-change also fires for token refreshes.
 let recordedForKey: string | null = null;
 
 async function recordView(user: any) {

@@ -1,22 +1,15 @@
 # syntax=docker/dockerfile:1-labs
 
-# Build on the native builder platform and cross-publish to the target arch.
-# This avoids running dotnet restore/publish under QEMU emulation, which is
-# extremely slow when the CI runner is amd64 and the target is arm64.
+# Build natively and cross-publish so restore/publish never run under slow QEMU emulation.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine@sha256:cc02b814237a76c4735fb6eeee87181597b5e56f2ce458a435e527674d91f4d7 AS build
 ARG COMMIT_SHA=unknown
 ARG TARGETARCH
 WORKDIR /src
 
-# Restore from project files alone so this layer stays cached across
-# source-only changes; --parents (labs syntax) keeps the src/<Project>/ layout
-# that a plain glob COPY would flatten. Restore targets the same arch as
-# publish, which otherwise rejects the assets file as RID-less.
+# --parents keeps the src/<Project>/ layout a glob COPY would flatten; restore must match publish's arch or publish rejects the assets file as RID-less.
 COPY --parents src/*/*.csproj ./
 RUN dotnet restore src/Kalandra.Api/Kalandra.Api.csproj -a $TARGETARCH
 
-# Copy everything (.dockerignore is the blacklist) and publish the API — its
-# project references decide what's built, so adding a project needs no change here.
 COPY . .
 RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -c Release \
@@ -25,13 +18,10 @@ RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -o /app \
     -p:SourceRevisionId=$COMMIT_SHA
 
-# Runtime image — this one matches TARGETPLATFORM (arm64 in prod).
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:254fe017495996d3abcc487ffacdcce2b73affb380d3af87af12c8dff41fe0b0 AS runtime
 WORKDIR /app
 
-# Ownership marker for the shared host: the deploy's image prune is scoped to
-# this label, so it only ever removes this app's old images — never another
-# app's or the shared Caddy image.
+# The deploy's image prune is scoped to this label so it never removes another app's images on the shared host.
 LABEL tech.kalandra.app=demopage
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

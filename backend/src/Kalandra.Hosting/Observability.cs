@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
-// Microsoft.AspNetCore.Hosting carries Sentry's UseSentry(IWebHostBuilder, Action<SentryAspNetCoreOptions>);
-// don't add `using Sentry.AspNetCore` — its ISentryBuilder overload wins resolution and breaks this.
+// Don't add `using Sentry.AspNetCore`: its ISentryBuilder UseSentry overload wins over the IWebHostBuilder one imported here.
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +18,6 @@ namespace Kalandra.Hosting;
 
 public static class Observability
 {
-    /// <param name="serviceName">Distinguishes the hosts on traces and in Sentry ("api", "mcp").</param>
     public static void Add(WebApplicationBuilder builder, string serviceName)
     {
         var sentryConfig = SentryConfig.AddOptionalSingleton(builder.Services, builder.Configuration);
@@ -42,14 +40,10 @@ public static class Observability
             options.Dsn = config.Dsn.Value;
             options.Release = AppVersion.InformationalVersion;
 
-            // UseOtlp sends traces to Sentry as raw OTel spans (via AddSentryOtlpExporter below) and turns off
-            // the SDK's own request tracing, so the OTel pipeline isn't duplicated on Sentry's side.
+            // Sentry takes traces from the OTel pipeline (AddSentryOtlpExporter below), so its own tracing is off to avoid duplicates.
             options.UseOtlp();
             options.DisableSentryHttpMessageHandler = true;
 
-            // EnableLogs wires Sentry.AspNetCore's structured logger provider so ILogger calls flow into
-            // Sentry's Logs product. Issues fire from Warning+ and unhandled exceptions; Info+ becomes
-            // breadcrumbs attached to those issues; everything Info+ also lands as a structured log.
             options.EnableLogs = true;
             options.MinimumEventLevel = LogLevel.Warning;
             options.MinimumBreadcrumbLevel = LogLevel.Information;

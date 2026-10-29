@@ -2,11 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Kalandra.Api.Infrastructure;
 
-/// <summary>
-/// Adds the error enum value as a validation error on the given field
-/// and returns an RFC 7807 ValidationProblem response. The enum name
-/// becomes the error code the frontend uses for i18n key lookup.
-/// </summary>
+/// <summary>The enum name becomes the error code the frontend looks up as an i18n key, so renaming a value is a breaking change.</summary>
 public static class ControllerExtensions
 {
     extension(ControllerBase controller)

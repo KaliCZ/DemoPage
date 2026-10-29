@@ -1,10 +1,7 @@
 namespace Kalandra.Blog.Entities;
 
 /// <summary>
-/// One reactor's reaction of a single kind on a post. Keyed by the reactor identity
-/// (UserId when signed in, else VisitorId), so a person's reaction collapses to one row per
-/// (post, kind) across devices and the count dedupes by construction. UserId and VisitorId are
-/// stored too, so the reactor's origin stays legible and sign-in can re-key the anonymous rows.
+/// Keyed by UserId when signed in, else VisitorId, so a person's reaction is one row per (post, kind) across devices; both ids are kept so sign-in can re-key anonymous rows.
 /// </summary>
 public class BlogReaction
 {

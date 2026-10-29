@@ -88,8 +88,7 @@ public class BlogCommentNotificationsTests
     [Fact]
     public void ReplyToDeletedParent_DoesNotNotifyItsAuthor()
     {
-        // Reachable only through a race (parent deleted while the reply was in flight) —
-        // the tombstoned author still must not be emailed.
+        // Reachable only through a race: the parent is deleted while the reply is in flight.
         var parent = Parent("parent@test.com", isDeleted: true);
 
         var notifications = BlogCommentNotifications.Plan(Comment("visitor@test.com"), parent, AuthorEmail);

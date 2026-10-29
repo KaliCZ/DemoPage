@@ -227,8 +227,7 @@ async function saveStatus() {
   await load();
 }
 
-// The page's auth-gate script controls section visibility; the island only has
-// to (re)load data when a qualifying user appears, and not reload for the same one.
+// The page's auth-gate script owns section visibility; the island just loads once per qualifying user.
 let loadedForUserId: string | null = null;
 
 function applyUser(user: any) {
@@ -259,7 +258,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
 
 <template>
   <div>
-    <!-- Load spinner -->
     <div v-if="!loaded" class="text-center py-12">
       <MaterialIcon :d="paths.progressActivity" class="size-[30px] text-on-surface-variant animate-spin inline-block" />
     </div>
@@ -267,7 +265,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
     <p v-else-if="loadErrorMessage" class="text-sm text-on-surface-variant font-body">{{ loadErrorMessage }}</p>
 
     <template v-else-if="offer">
-      <!-- Detail card -->
       <div v-show="!editing" id="offer-detail" class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
           <div>
@@ -323,7 +320,7 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         </div>
       </div>
 
-      <!-- Edit form (user mode) — created fresh on each edit so it starts from the current offer -->
+      <!-- v-if, not v-show, so each edit starts from the current offer -->
       <JobOfferEditForm
         v-if="editing && props.t.editForm"
         :offer="offer"
@@ -333,7 +330,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         @discard="editing = false"
       />
 
-      <!-- User actions -->
       <div v-if="!editing && (canEdit || canCancel) && props.t.userActions" id="user-actions" class="mt-6 flex gap-4">
         <button
           v-if="canEdit"
@@ -357,7 +353,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         </button>
       </div>
 
-      <!-- Cancel confirmation -->
       <div
         v-if="cancelConfirming && !editing && props.t.userActions"
         id="cancel-controls"
@@ -384,7 +379,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
         </button>
       </div>
 
-      <!-- Admin status controls -->
       <div
         v-if="isAdmin && props.t.admin && offer.status !== 'Cancelled'"
         id="admin-controls"

@@ -4,11 +4,7 @@ using System.Text.Json;
 
 namespace Kalandra.Api.IntegrationTests.Helpers;
 
-/// <summary>
-/// An HttpMessageHandler that serves fake OpenID Connect discovery and JWKS
-/// endpoints, so the standard JWKS validation path works in tests without
-/// a running Supabase instance.
-/// </summary>
+/// <summary>Serves fake OIDC discovery and JWKS endpoints so the real JWKS validation path runs without Supabase.</summary>
 public class FakeJwksHandler : HttpMessageHandler
 {
     private readonly string _issuer;

@@ -55,16 +55,6 @@ interface Props {
 
 const { activePage, lang, langUrls, t } = Astro.props;
 
-// One ordered list of nav items, in the order they appear on the bar.
-// Items with `children` are rendered as a hover dropdown on desktop (the parent
-// is still a real link to its own `page`), and as a plain link on mobile —
-// touch devices have no hover, so mobile users go to the index page and pick
-// from the cards there.
-//
-// The parent of a dropdown is "active" when its own page is active OR any
-// child's page is. That keeps the nav highlight on "Projects" while the user
-// is on /projects, /project, or /strong-types — the page-level breadcrumb
-// then tells them which specific project.
 type NavLeaf = {
   label: string;
   page: ActivePage;
@@ -93,7 +83,6 @@ const navItems: NavItem[] = [
 ];
 ---
 
-<!-- Skip to content (accessibility) -->
 <a
   href="#main-content"
   class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-on-primary focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold"
@@ -101,24 +90,20 @@ const navItems: NavItem[] = [
   {t.a11y.skipToContent}
 </a>
 
-<!-- Navigation -->
 <nav class="bg-background/70 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-on-surface/40" aria-label={t.a11y.mainNavigation}>
   <div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
     <a href={localePath(lang, "home")} class="text-xl font-bold tracking-tighter text-on-surface font-headline">
       kalandra.tech
     </a>
 
-    <!-- Theme picker + Language picker + Auth (mobile) -->
     <div class="flex md:hidden items-center gap-2">
       <ThemePicker labels={{ label: t.theme.label, light: t.theme.light, system: t.theme.system, dark: t.theme.dark }} />
-      <!-- Language picker (mobile) -->
       <LanguagePicker
         lang={lang}
         activePage={activePage}
         langUrls={langUrls}
         labels={{ language: t.a11y.language, switchToEnglish: t.a11y.switchToEnglish, switchToCzech: t.a11y.switchToCzech }}
       />
-      <!-- Auth (mobile) -->
       <button
         id="auth-sign-in-mobile"
         type="button"
@@ -135,8 +120,6 @@ const navItems: NavItem[] = [
     <div class="hidden md:flex pt-1 items-center gap-8 font-headline tracking-tighter font-bold text-nowrap">
       {navItems.map((item) =>
         item.children ? (
-          // Dropdown parent: a real link to its own page with a hover-only
-          // menu of children. The chevron is a hint, not a control.
           <div class="relative group">
             <a
               href={localePath(lang, item.page)}
@@ -193,17 +176,14 @@ const navItems: NavItem[] = [
       )}
     </div>
 
-    <!-- Theme picker + Language picker + Auth (desktop) -->
     <div class="hidden md:flex items-center gap-2">
       <ThemePicker labels={{ label: t.theme.label, light: t.theme.light, system: t.theme.system, dark: t.theme.dark }} />
-      <!-- Language picker (desktop) -->
       <LanguagePicker
         lang={lang}
         activePage={activePage}
         langUrls={langUrls}
         labels={{ language: t.a11y.language, switchToEnglish: t.a11y.switchToEnglish, switchToCzech: t.a11y.switchToCzech }}
       />
-      <!-- Auth (desktop) -->
       <div id="auth-container-desktop" class="flex items-center">
         <button
           id="auth-sign-in-desktop"
@@ -280,9 +260,7 @@ const navItems: NavItem[] = [
     </div>
   </div>
 
-  <!-- Mobile nav. No hover dropdown — touch devices don't have hover, so dropdown
-       parents collapse to a plain link to their own index page (e.g. /projects),
-       and the user picks from the cards there. Children are ignored at this width. -->
+  <!-- Touch devices have no hover, so dropdown parents collapse to a plain link to their index page. -->
   <div class="md:hidden flex items-center">
     <div class="flex items-center gap-4 px-4 overflow-x-auto font-headline tracking-tighter font-bold text-sm text-nowrap">
       {navItems.map(({ label, page, active }) => (

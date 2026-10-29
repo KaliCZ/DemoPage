@@ -2,11 +2,7 @@ using StrongTypes;
 
 namespace Kalandra.JobOffers.Events;
 
-/// <summary>
-/// Represents an edit to a job offer. Null for a field means the field was
-/// NOT changed by this edit — it should be skipped by projections and by the
-/// activity log. Only fields with a non-null value were actually modified.
-/// </summary>
+/// <summary>A null field was not changed by this edit.</summary>
 public record JobOfferEdited(
     Guid EditedByUserId,
     Email EditedByEmail,

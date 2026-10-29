@@ -13,7 +13,6 @@ public class SupabaseUserInfoService(
 
     public async Task PingAsync(CancellationToken ct)
     {
-        // perPage=1 keeps the round-trip minimal; we only need to confirm the key is accepted.
         await adminAuthClient.ListUsers(
             filter: null,
             sortBy: null,
@@ -77,7 +76,6 @@ public class SupabaseUserInfoService(
                 }
             }
 
-            // Fall back to email prefix
             displayName ??= user.Email?.Split('@')[0] ?? userId.ToString();
 
             return new UserPublicInfo(displayName, avatarUrl);

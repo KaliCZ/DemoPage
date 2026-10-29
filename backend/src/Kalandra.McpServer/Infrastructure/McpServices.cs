@@ -9,11 +9,7 @@ namespace Kalandra.McpServer.Infrastructure;
 
 public static class McpServices
 {
-    /// <summary>
-    /// Request-scoped identity plus the Supabase-backed services the tools' domain handlers depend on:
-    /// IStorageService (CreateJobOfferHandler) and IUserInfoService (resolving comment authors). These
-    /// registrations mirror the API's for the same handlers.
-    /// </summary>
+    /// <summary>Mirrors the API's registrations so the shared domain handlers resolve the same services here.</summary>
     public static IServiceCollection AddMcpServices(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();

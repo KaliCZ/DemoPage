@@ -10,15 +10,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kalandra.McpServer.Tests;
 
-/// <summary>
-/// Boots the MCP host without real infrastructure: the blog RSS feed is stubbed in-process, and its slug
-/// is deliberately absent from the backend post catalog so the stats batch stays empty and the dead
-/// database config is never dialled — the public tools run end to end on pure HTTP assertions.
-/// </summary>
 public class McpServerFactory : WebApplicationFactory<Program>
 {
     public const string ResourceUri = "https://mcp.test.local";
     public const string SupabaseUrl = "https://test-project.supabase.co";
+    // Deliberately absent from the post catalog, so the public tools never dial the dead database.
     public const string StubBlogPostSlug = "strongly-typed-ids";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -53,8 +49,7 @@ public class McpServerFactory : WebApplicationFactory<Program>
         return await host.CreateClient().SendAsync(request, TestContext.Current.CancellationToken);
     }
 
-    // The streamable HTTP transport answers a POST either as bare JSON or as an SSE stream carrying
-    // the JSON-RPC response in a "data:" line — accept both shapes.
+    // The streamable HTTP transport may answer as bare JSON or as an SSE stream with the response in a "data:" line.
     public static async Task<JsonDocument> ReadJsonRpcResponse(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -102,7 +97,6 @@ public class OAuthResourceServerTests(McpServerFactory factory) : IClassFixture<
         response.EnsureSuccessStatusCode();
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
 
-        // The canonical resource id an assistant asks Supabase for a token against (RFC 8707/9728).
         Assert.Equal(McpServerFactory.ResourceUri, document.RootElement.GetProperty("resource").GetString());
 
         var authorizationServers = document.RootElement.GetProperty("authorization_servers")

@@ -1,15 +1,5 @@
 ---
-// A horizontal full-width band, used to break the page into themed strips.
-// Bands sit one step above the page surface (`bg-surface-container-low` —
-// subtle cream in light mode, raised dark grey in dark mode) so the same
-// class produces the right look in both modes without a `dark:` swap.
-//
-// `level="lowest"` flattens the band to the page-surface tone, leaving only
-// the borders to bracket the section — used for sections that should feel
-// like a continuation of the page rather than a distinct strip.
-//
-// `borders` lets each band own only the edges it actually needs (e.g. the
-// last band of a stack carries `bottom`, the first carries `top`).
+// level="lowest" flattens the band to the page tone, for sections that continue the page rather than form a distinct strip.
 interface Props {
   id?: string;
   level?: "low" | "lowest";

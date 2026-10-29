@@ -5,10 +5,6 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Kalandra.Api.Infrastructure;
 
-/// <summary>
-/// Adds the Bearer security requirement to operations decorated with [Authorize],
-/// so Swagger UI shows the lock icon and sends the Authorization header.
-/// </summary>
 public class AuthorizeOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)

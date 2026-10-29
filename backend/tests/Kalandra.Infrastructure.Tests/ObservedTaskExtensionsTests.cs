@@ -63,8 +63,7 @@ public class ObservedTaskExtensionsTests
         }
     }
 
-    // Synchronous on purpose: an await here would pin the abandoned task in this frame's awaiter
-    // slot (Debug builds extend local lifetimes), keeping it reachable past the GC assertion.
+    // Synchronous on purpose: in Debug builds an await would keep the abandoned task reachable past the GC assertion.
     private static void AbandonTaskThenFaultIt(Exception marker)
     {
         var hung = new TaskCompletionSource();

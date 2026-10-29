@@ -1,9 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * E2E tests: expects both backend (port 5000) and frontend (port 4321) to be running.
- * Use `make test-e2e` to start everything and run these tests.
- */
+/** Expects the backend and served frontend to be running already; `npm run test:e2e` at the repo root starts both. */
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,

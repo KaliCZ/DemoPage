@@ -16,11 +16,7 @@ export function requestErrorMessage(strings: RequestErrorStrings, status?: numbe
   return strings.generic;
 }
 
-/**
- * Shows a failed request in the snackbar: the ProblemDetails error mapped
- * through `errorMap` when available, otherwise the status-based fallback.
- * Returns the message shown so callers can also render it inline.
- */
+/** Returns the message it showed in the snackbar so callers can also render it inline. */
 export async function showRequestError(
   response: Response | undefined,
   errorMap: ApiErrorMap,

@@ -21,14 +21,12 @@ const lang = (Astro.params.lang ?? defaultLocale) as Locale;
 const t = translations[lang];
 
 const mcpEndpoint = "https://mcp.kalandra.tech/mcp";
-// No auth header: the server is an OAuth resource server, so the assistant discovers the
-// sign-in itself and there is nothing for the reader to paste.
+// No auth header: the server is an OAuth resource server, so the assistant discovers the sign-in itself.
 const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="mcp" lang={lang}>
   <div class="max-w-5xl mx-auto px-4 md:px-8">
-    <!-- Hero -->
     <section class="mb-16 md:mb-20">
       <div class="flex items-center gap-2 mb-6">
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label text-xs font-bold uppercase tracking-widest">
@@ -45,12 +43,10 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
       <p class="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed max-w-3xl">{t.hero.description}</p>
     </section>
 
-    <!-- Connect -->
     <section class="mb-16 md:mb-20">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.connect.title}</h2>
       <Card>
         <div class="flex flex-col gap-6">
-          <!-- Endpoint -->
           <div>
             <div class="flex items-center gap-2 mb-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
               <Icon name="material-symbols:link" class="size-3.5" aria-hidden="true" />
@@ -73,7 +69,6 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
             <p class="font-body text-sm text-on-surface-variant mt-2">{t.connect.transportNote}</p>
           </div>
 
-          <!-- Claude Code command -->
           <div>
             <div class="flex items-center gap-2 mb-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
               <Icon name="material-symbols:terminal" class="size-3.5" aria-hidden="true" />
@@ -97,7 +92,6 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
             </div>
           </div>
 
-          <!-- Sign-in -->
           <div class="border-t border-outline-variant/40 pt-6">
             <div class="flex items-center gap-2 mb-2 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
               <Icon name="material-symbols:lock" class="size-3.5" aria-hidden="true" />
@@ -109,7 +103,6 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
       </Card>
     </section>
 
-    <!-- Tools -->
     <section class="mb-16 md:mb-20">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.tools.title}</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -142,7 +135,6 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
       </div>
     </section>
 
-    <!-- Try asking -->
     <section class="mb-16 md:mb-20">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.examples.title}</h2>
       <ul class="flex flex-col gap-3">
@@ -155,7 +147,6 @@ const claudeCommand = `claude mcp add --transport http kalandra ${mcpEndpoint}`;
       </ul>
     </section>
 
-    <!-- How it works -->
     <section class="mb-24">
       <h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-6">{t.how.title}</h2>
       <ul class="flex flex-col gap-3 mb-6">

@@ -14,7 +14,6 @@ public class SupabaseUserInfoServiceTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    /// <summary>Stand-in Gotrue admin client whose GetUserById is scripted per test; nothing else is called.</summary>
     private sealed class FakeGotrueAdminClient : IGotrueAdminClient<User>
     {
         public required Func<string, Task<User?>> OnGetUserById { get; init; }
@@ -114,7 +113,7 @@ public class SupabaseUserInfoServiceTests
             () => service.GetUserInfoAsync([Guid.NewGuid()], cancelled.Token));
     }
 
-    // Pins the API DI factory's assumption: ActivatorUtilities can construct this service without a registered timeout.
+    // The API and MCP hosts build this via ActivatorUtilities, which must work without a registered timeout.
     [Fact]
     public void DiActivation_SucceedsWithoutARegisteredTimeout()
     {

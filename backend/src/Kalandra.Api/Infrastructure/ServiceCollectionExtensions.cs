@@ -24,12 +24,8 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        // The store itself is shared with the MCP host; this host owns the schema and, below, is the only
-        // one that runs the daemon — so an event written by an MCP tool is still emailed exactly once.
         services.AddAppMartenStore(configuration, environment, ownsSchema: true)
-            // Notification emails are delivered by subscriptions reacting to committed events, run by the
-            // async daemon. SubscribeFromPresent so a first deploy doesn't replay history and re-send every
-            // past notification; HotCold so only one instance delivers during a blue/green overlap.
+            // SubscribeFromPresent so a first deploy doesn't re-send past notifications; HotCold so only one instance delivers during a blue/green overlap.
             .AddSubscriptionWithServices<BlogCommentNotificationSubscription>(ServiceLifetime.Scoped, o =>
             {
                 o.IncludeType<BlogCommentPosted>();
@@ -101,10 +97,7 @@ public static class ServiceCollectionExtensions
             var options = new Supabase.Gotrue.ClientOptions
             {
                 Url = $"{projectUrl}/auth/v1",
-                // Supabase's auth gateway requires the `apikey` header on every request.
-                // AdminClient only sends `Authorization: Bearer <serviceKey>` by default,
-                // so we inject apikey here. For `sb_secret_…` keys the Authorization header
-                // is accepted as an opaque token rather than JWT-verified.
+                // Supabase's auth gateway requires the `apikey` header, which AdminClient doesn't send by default.
                 Headers = { ["apikey"] = serviceKey },
             };
             return new Supabase.Gotrue.AdminClient(serviceKey, options);
@@ -112,8 +105,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IStorageService, SupabaseStorageService>();
 
-        // The source is built inside the factory (not as its own registration) so a test swapping
-        // IUserInfoService for a fake doesn't leave a stray source that fails DI validation.
+        // Built inside the factory so replacing IUserInfoService leaves no orphaned registration to fail DI validation.
         services.AddSingleton<IUserInfoService>(sp => new CachingUserInfoService(
             ActivatorUtilities.CreateInstance<SupabaseUserInfoService>(sp),
             sp.GetRequiredService<IDistributedCache>(),
@@ -128,7 +120,7 @@ public static class ServiceCollectionExtensions
     {
         if (environment.IsDevelopment())
         {
-            // Skip the Cloudflare round-trip locally so dev works offline; the test key would have rubber-stamped it anyway.
+            // Skip the Cloudflare round-trip so local dev works offline.
             services.AddSingleton<ITurnstileValidator, AlwaysPassTurnstileValidator>();
         }
         else
@@ -158,7 +150,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddEmailServices(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        // appsettings.json defaults to the local mail catcher; production overrides Host/Port/Username/Password via env.
         EmailConfig.AddSingleton(services, configuration, environment);
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         return services;
@@ -166,7 +157,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddUserInfoCache(this IServiceCollection services, IConfiguration configuration)
     {
-        // Redis when configured; otherwise an in-process distributed cache so tests and a bare run need no Redis.
+        // In-process fallback so tests and a bare run need no Redis.
         var redis = configuration.GetConnectionString("redis");
         if (string.IsNullOrWhiteSpace(redis))
             services.AddDistributedMemoryCache();

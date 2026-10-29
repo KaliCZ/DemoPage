@@ -23,8 +23,6 @@ public class ConfigProductionReadinessTests
     private static IConfiguration Config(Dictionary<string, string?> values) =>
         new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
-    // --- Supabase ---
-
     [Fact]
     public void Supabase_InProduction_WithLocalhostUrl_Throws() =>
         Assert.Throws<InvalidOperationException>(() => SupabaseConfig.AddSingleton(
@@ -46,8 +44,6 @@ public class ConfigProductionReadinessTests
             Config(new() { ["Supabase:ProjectUrl"] = "http://localhost:54321", ["Supabase:ServiceKey"] = "local" }),
             Development);
 
-    // --- Turnstile ---
-
     [Fact]
     public void Turnstile_InProduction_WithTestKey_Throws() =>
         Assert.Throws<InvalidOperationException>(() => TurnstileConfig.AddSingleton(
@@ -68,8 +64,6 @@ public class ConfigProductionReadinessTests
             new ServiceCollection(),
             Config(new() { ["Turnstile:SecretKey"] = "1x0000000000000000000000000000000AA" }),
             Development);
-
-    // --- Email ---
 
     private static Dictionary<string, string?> EmailBase() => new()
     {

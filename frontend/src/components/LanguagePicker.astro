@@ -16,9 +16,7 @@ interface Props {
 
 const { lang, activePage, langUrls, labels } = Astro.props;
 
-// Both flags are always shown so the available pair is visible at a glance; the
-// active locale is highlighted and the other dimmed. Flags are inline SVG (not
-// emoji) — emoji regional-indicator flags don't render on Windows.
+// Flags are inline SVG because emoji regional-indicator flags don't render on Windows.
 const options: { locale: Locale; label: string }[] = [
   { locale: "en", label: labels.switchToEnglish },
   { locale: "cs", label: labels.switchToCzech },

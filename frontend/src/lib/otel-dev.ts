@@ -1,5 +1,4 @@
-// Dev-only OTel: dynamic-imported under import.meta.env.DEV so Vite tree-shakes it out of prod (Sentry's loader owns prod).
-// Emits to the Aspire dashboard via PUBLIC_OTLP_TRACES_ENDPOINT, which the AppHost injects per-instance.
+// Dev-only tracing to the Aspire dashboard; prod tracing is Sentry's (see observability.ts).
 
 import type { Context } from "@opentelemetry/api";
 import { context, DiagConsoleLogger, DiagLogLevel, diag, propagation, SpanKind, trace } from "@opentelemetry/api";
@@ -62,7 +61,6 @@ if (!endpoint) {
   registerInstrumentations({
     instrumentations: [
       new FetchInstrumentation({
-        // Propagate traceparent to anything on localhost (Vite proxy + direct backend hits).
         propagateTraceHeaderCorsUrls: [/^https?:\/\/localhost(:\d+)?\//, /^https?:\/\/127\.0\.0\.1(:\d+)?\//],
         // Skip telemetry-of-telemetry to avoid self-loops.
         ignoreUrls: [new RegExp("^" + endpoint.replace(/[/.]/g, "\\$&")), /betterstackdata\.com\//, /betterstack\.net\//, /sentry\.io\//],

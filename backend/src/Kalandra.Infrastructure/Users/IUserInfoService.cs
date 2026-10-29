@@ -9,9 +9,6 @@ public interface IUserInfoService
     /// <summary>Drops any cached copy of a user's profile — call after the user changes their own name or avatar.</summary>
     Task EvictAsync(Guid userId, CancellationToken ct);
 
-    /// <summary>
-    /// Lightweight probe that the backing auth admin API is reachable with the
-    /// configured credentials. Throws if not. Used by the /health endpoint.
-    /// </summary>
+    /// <summary>Throws if the auth admin API is unreachable or rejects the configured credentials.</summary>
     Task PingAsync(CancellationToken ct);
 }

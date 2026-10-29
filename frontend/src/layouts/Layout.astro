@@ -33,12 +33,11 @@ interface Props {
   lang?: Locale;
   /** Canonical path override for pages nested under an activePage section (e.g. "blog/<slug>"). */
   pagePath?: string;
-  /** Locales this page exists in — defaults to all; single-language blog posts narrow it so hreflang never claims a 404. */
+  /** Locales this page exists in, so hreflang never advertises a 404. */
   alternateLocales?: Locale[];
   /** Per-locale language-picker targets for pages whose counterpart is not simply pagePath (e.g. an untranslated post falls back to the blog index). */
   langUrls?: Partial<Record<Locale, string>>;
   ogType?: "website" | "article";
-  /** Keeps a page out of search results — for flows reached from elsewhere, like the OAuth consent screen. */
   noindex?: boolean;
 }
 
@@ -74,7 +73,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" />
 
-    <!-- Canonical & hreflang — hreflang needs a pair, so single-locale pages emit only the canonical -->
+    <!-- hreflang needs a pair, so single-locale pages emit only the canonical -->
     <link rel="canonical" href={canonicalUrl} />
     {alternateLocales.length > 1 && (
       <>
@@ -87,7 +86,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <link rel="alternate" type="application/rss+xml" title={feed.title} href={feed.path} />
 
-    <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content="kalandra.tech" />
     <meta property="og:title" content={title} />
@@ -98,9 +96,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       <meta property="og:locale:alternate" content={lang === "cs" ? "en_US" : "cs_CZ"} />
     )}
 
-    <!-- Self-hosted fonts: preload the latin subset files so the browser starts
-         downloading them immediately on HTML parse, before CSS is even fetched.
-         The @font-face declarations in global.css point at these same files. -->
+    <!-- Must match the @font-face URLs in global.css, or the preload is wasted. -->
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -114,12 +110,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
 
-    {/*
-      Sentry init lives in src/lib/observability.ts — importing it for its side effect runs
-      `Sentry.init(...)` and exposes `window.observability` for inline page scripts. Astro hoists
-      this <script> into <head>. The init is gated on PUBLIC_SENTRY_DSN at build time, so when no
-      DSN is configured the @sentry/browser chunk is tree-shaken out entirely.
-    */}
+    {/* Loaded in <head> so Sentry initializes before the islands make their first API calls. */}
     <script>
       import "../lib/observability";
     </script>
@@ -131,26 +122,17 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         });
       }
     </script>
-    {/* Per-page head injection. Pages can add <link>/<meta>/<script> tags
-        that need to be in <head> (e.g. preconnect to per-page third-party
-        origins) by passing them with `slot="head"`. */}
     <slot name="head" />
 
     <script is:inline>
       (function () {
-        // Stored preference is "light" | "dark", or absent meaning "follow the
-        // OS" (the system default). Expose it as data-theme-pref so the theme
-        // picker can highlight the active segment on first paint.
+        // Exposed as data-theme-pref so the theme picker highlights the active option on first paint.
         var pref = localStorage.getItem("theme");
         if (pref !== "light" && pref !== "dark") pref = "system";
         document.documentElement.dataset.themePref = pref;
         if (pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
-          // Pre-paint swap of theme-aware images. As the body parses, swap
-          // any `[data-src-dark]` <img> to its dark variant before the
-          // browser paints the light one. MutationObserver callbacks fire
-          // as microtasks before the next paint, so the dark URL is what
-          // the preload-scanner and renderer see.
+          // MutationObserver callbacks run before the next paint, so [data-src-dark] images never flash their light src.
           var swap = function (img) {
             if (!img.dataset.srcLight) img.dataset.srcLight = img.getAttribute("src") || "";
             var dark = img.dataset.srcDark;
@@ -169,11 +151,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
             { once: true },
           );
         }
-        // Pre-detect auth state from supabase's localStorage token to avoid header flash on navigation.
-        // The supabase-js client persists session under a key like `sb-<project-ref>-auth-token`.
-        // We also extract the user's display name + avatar so the profile chip's width is stable
-        // before the supabase JS module hydrates — otherwise the empty name span grows after first
-        // paint and shifts surrounding header elements.
+        // Reads supabase-js's persisted session (sb-<project-ref>-auth-token) so the header paints the right auth state and chip width with no flash.
         try {
           var session = null;
           for (var i = 0; i < localStorage.length; i++) {
@@ -207,9 +185,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       })();
     </script>
     <style is:global>
-      /* Pre-paint auth visibility to prevent header flash before supabase client hydrates.
-       These !important rules win over Tailwind's `hidden` class. The module script below
-       removes the `auth-known-*` class once getSession() resolves, returning control to JS. */
+      /* !important beats Tailwind's `hidden` until updateAuthUI removes the auth-known-* class. */
       html.auth-known-in #auth-sign-in-desktop,
       html.auth-known-in #auth-sign-in-mobile {
         display: none !important;
@@ -225,9 +201,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         display: none !important;
       }
 
-      /* Generic helpers any page can use to gate content on auth state pre-paint.
-       Add `signed-in-only` to elements that should only be visible when signed in,
-       and `signed-out-only` to elements that should only be visible when signed out. */
       html.auth-known-in .signed-out-only {
         display: none !important;
       }
@@ -243,8 +216,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <Navbar activePage={activePage} lang={lang} langUrls={langUrls} t={t} />
 
     <script is:inline>
-      // Prefill the profile chip from the session we parsed in the head pre-detect script,
-      // so the chip's width is finalized before first paint. Runs synchronously during parse.
+      // Inline right after Navbar so the profile chip is filled from __authPrefill before first paint.
       (function () {
         var p = window.__authPrefill;
         if (!p) return;
@@ -274,7 +246,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         if (adminTestErrorsLink && p.isAdmin) adminTestErrorsLink.classList.remove("hidden");
       })();
     </script>
-    <!-- Main content -->
     <main id="main-content" class="pt-32 pb-24 flex-1">
       <slot />
     </main>
@@ -284,7 +255,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
     <script>
       import "../lib/theme-toggle";
     </script>
-    <!-- Auth dialog (email/password + Google OAuth) — self-contained component -->
     <AuthDialog lang={lang} />
 
     <script>
@@ -312,11 +282,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       function updateAuthUI(user: any) {
         identifyUser(user);
 
-        // The pre-paint script set `auth-known-in/out` so the right header
-        // chip and `signed-in-only` / `signed-out-only` page sections paint
-        // immediately. Once we have a real session result, JS owns visibility
-        // and those CSS hooks must be removed — otherwise the !important
-        // rules they declare keep showing the old state when we sign in/out.
+        // JS owns visibility from here; the pre-paint auth-known-* !important rules would pin the initial state across sign-in/out.
         document.documentElement.classList.remove("auth-known-in", "auth-known-out");
 
         const signInDesktop = document.getElementById("auth-sign-in-desktop");
@@ -361,9 +327,6 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         }
       }
 
-      // Wire up click handlers immediately — no need to wait for supabase.
-      // Sign-in just opens the dialog; sign-out awaits the supabase client
-      // so the listener is on the button before the deferred init fires.
       const openDialog = () => (window as any).__openAuthDialog?.();
       document.getElementById("auth-sign-in-desktop")?.addEventListener("click", openDialog);
       document.getElementById("auth-sign-in-mobile")?.addEventListener("click", openDialog);
@@ -374,10 +337,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         updateAuthUI(null);
       });
 
-      // Defer supabase init until after window.load so the chunk fetch
-      // doesn't compete with LCP-critical resources. The pre-paint script
-      // already provides auth UI state from localStorage. __supabaseReady
-      // is exposed synchronously so callers can `await` it.
+      // Deferred past window.load so the supabase chunk doesn't compete with LCP-critical resources.
       const initSupabase = () =>
         getSupabaseClient().then((supabase) => {
           if (!supabase) return null;
@@ -426,8 +386,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
       import enCommonHash from "../i18n/en/common.json";
       import csCommonHash from "../i18n/cs/common.json";
 
-      // Handle auth error/callback fragments in the URL (e.g. expired confirmation links).
-      // Sign out any existing session — the person clicking the link is the one who signed up.
+      // An auth error fragment (e.g. an expired confirmation link) signs out any session, since whoever clicked the link is the one who signed up.
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const authError = hashParams.get("error_description");
       const strayAccessToken = hashParams.get("access_token");
@@ -436,9 +395,7 @@ const canonicalUrl = lang === "cs" ? csUrl : enUrl;
         (window as any).__showSnackbar(decodeURIComponent(authError), "error", 0);
         history.replaceState(null, "", window.location.pathname + window.location.search);
       } else if (strayAccessToken) {
-        // In the normal flow OAuth tokens only ever appear at /auth/callback.
-        // Seeing one on any other page means the user opened an old/reused
-        // link — treat it as a failed sign-in and surface an error.
+        // OAuth tokens only belong at /auth/callback, so one here means an old or reused link.
         (window as any).__supabaseReady?.then((s: any) => s?.auth.signOut());
         const lang = document.documentElement.lang === "cs" ? "cs" : "en";
         const msg = (lang === "cs" ? csCommonHash : enCommonHash).auth.callbackError;

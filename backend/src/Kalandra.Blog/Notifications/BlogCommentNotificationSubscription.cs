@@ -11,12 +11,9 @@ using StrongTypes;
 namespace Kalandra.Blog.Notifications;
 
 /// <summary>
-/// Sends the blog-comment notification emails as comments are committed: the author hears about every
-/// comment, and a reply also notifies the parent comment's author. The async daemon delivers each
-/// event here at least once, so a comment is never stored without its notifications following.
+/// The async daemon delivers each event at least once, hence the per-recipient dedupe in DeliverAsync.
 /// </summary>
-// IServiceProvider, not IDocumentStore: Marten resolves the subscription while it is still building the
-// store, so a direct IDocumentStore dependency deadlocks the container. Resolve the store lazily at run time.
+// IServiceProvider, not IDocumentStore: Marten resolves this while building the store, so injecting the store deadlocks the container.
 public class BlogCommentNotificationSubscription(
     IServiceProvider services,
     IEmailSender emailSender,
@@ -40,7 +37,6 @@ public class BlogCommentNotificationSubscription(
 
     private async Task NotifyCommentAsync(Guid commentsStreamId, BlogCommentPosted comment, IDocumentOperations operations, CancellationToken ct)
     {
-        // The event only carries its comment stream id; the catalog maps that back to the post's slug.
         if (postCatalog.FindByCommentsStreamId(commentsStreamId) is not { } post)
             return;
 

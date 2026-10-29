@@ -8,11 +8,7 @@ public record ToggleBlogReactionCommand(string Slug, Guid VisitorId, CurrentUser
 
 public class ToggleBlogReactionHandler(IDocumentSession session)
 {
-    /// <summary>
-    /// Toggling has no failure mode — anyone may react, signed in or not. The reactor's row is
-    /// keyed by their identity, so different reactors never touch the same row and concurrent
-    /// reactions can't conflict.
-    /// </summary>
+    /// <summary>Rows are keyed by reactor, so concurrent reactions from different people never conflict.</summary>
     public async Task ToggleAndSave(ToggleBlogReactionCommand command, CancellationToken ct)
     {
         var reactorId = command.User?.Id ?? command.VisitorId;

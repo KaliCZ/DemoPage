@@ -1,14 +1,5 @@
 ---
-/**
- * OAuth consent screen.
- *
- * Supabase's OAuth 2.1 server runs the authorization flow but delegates the consent UI to us: it
- * redirects here with an `authorization_id`, and this page approves or denies it as the signed-in
- * user. Everything runs with the user's own session — the service key is never involved.
- *
- * English-only: Supabase is configured with a single authorization path, so there's no locale
- * segment to route on, and the visitor arrives from a third-party app rather than the site's nav.
- */
+/** English-only: Supabase's OAuth server redirects to a single consent path, so there's no locale segment to route on. */
 import Layout from "../../layouts/Layout.astro";
 import t from "../../i18n/en/oauth.json";
 ---
@@ -143,7 +134,6 @@ import t from "../../i18n/en/oauth.json";
       return fail(t.errors.failed);
     }
 
-    // Hands control back to the OAuth client with the code (approve) or an error (deny).
     window.location.replace(data.redirect_url);
   }
 
@@ -173,8 +163,7 @@ import t from "../../i18n/en/oauth.json";
   if (!authorizationId) {
     fail(t.errors.missingRequest);
   } else {
-    // Layout fires auth-change on load and on every sign-in/out, so this covers the
-    // "signed in after landing here" case too.
+    // Layout fires auth-change on load and on every sign-in/out, so this also handles signing in on this page.
     window.addEventListener("auth-change", (event) => {
       const user = (event as CustomEvent).detail?.user;
       if (!user) {

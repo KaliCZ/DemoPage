@@ -10,7 +10,7 @@ namespace Kalandra.Api.Features.TestErrors;
 [Authorize(Policy = AuthPolicies.Admin)]
 public class TestErrorsController(ILogger<TestErrorsController> logger) : ControllerBase
 {
-    /// <summary>Throws an exception immediately. Used to verify error tracking.</summary>
+    /// <summary>Lets an admin verify error tracking end to end.</summary>
     [HttpPost("throw")]
     public IActionResult Throw()
     {

@@ -1,9 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * Frontend-only tests: builds and serves the static site, then runs tests.
- * These test page rendering, navigation, i18n, and dark mode — no backend needed.
- */
+/** Static-site tests only; tests/e2e needs the backend and runs via playwright.e2e.config.ts. */
 export default defineConfig({
   testDir: "./tests",
   testIgnore: "**/e2e/**",

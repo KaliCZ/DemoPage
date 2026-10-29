@@ -39,8 +39,6 @@ public class JobOffersController(
 {
     private CurrentUser AppUser => currentUser.RequiredUser;
 
-    // ───── Create ─────
-
     [HttpPost]
     [EnableRateLimiting(RateLimitPolicies.HireMeCreateUser)]
     [RequestSizeLimit(20 * 1024 * 1024)]
@@ -57,10 +55,8 @@ public class JobOffersController(
         if (!await turnstileValidator.ValidateAsync(turnstileToken, remoteIp, ct))
             return this.ValidationError("captcha", CreateOfferError.CaptchaFailed);
 
-        // ContentType isn't validated separately — browsers always set it. .ToNonEmpty()
-        // throwing here would mean a malformed request with no Content-Type on the file
-        // part, where a 500 is fine.
-        // OpenReadStream() wraps the framework's request buffer — disposed at end of request.
+        // ToNonEmpty() throws only on a file part with no Content-Type, which browsers always send, so a 500 there is fine.
+        // OpenReadStream() wraps the request buffer, which the framework disposes at end of request.
         var files = new List<CreateJobOfferFile>(attachments?.Count ?? 0);
         foreach (var (i, f) in (attachments ?? []).Index())
         {
@@ -79,8 +75,7 @@ public class JobOffersController(
         if (!ModelState.IsValid)
             return ValidationProblem();
 
-        // Client-supplied so an accidental resend reuses it and the handler dedupes to one
-        // offer; we mint one only when a caller omits it.
+        // Client-supplied so an accidental resend dedupes to one offer.
         var offerId = request.Id is { } requestedId && requestedId != Guid.Empty ? requestedId : Guid.NewGuid();
 
         var command = new CreateJobOfferCommand(
@@ -118,8 +113,6 @@ public class JobOffersController(
         return CreatedAtAction(nameof(GetDetail), new { id = streamId },
             GetJobOfferDetailResponse.Serialize(offer!));
     }
-
-    // ───── Edit ─────
 
     [HttpPatch("{id:guid}")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
@@ -165,8 +158,6 @@ public class JobOffersController(
         });
     }
 
-    // ───── Cancel ─────
-
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -202,8 +193,6 @@ public class JobOffersController(
             return GetJobOfferDetailResponse.Serialize(result.Success!);
         });
     }
-
-    // ───── Update Status (Admin) ─────
 
     [HttpPatch("{id:guid}/status")]
     [Authorize(Policy = AuthPolicies.Admin)]
@@ -243,8 +232,6 @@ public class JobOffersController(
         });
     }
 
-    // ───── Add Comment ─────
-
     [HttpPost("{id:guid}/comments")]
     [ProducesResponseType<CommentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -256,8 +243,7 @@ public class JobOffersController(
         [FromBody] AddCommentRequest request,
         CancellationToken ct)
     {
-        // Client-supplied so an accidental resend reuses it and the handler dedupes to one
-        // comment; we mint one only when a caller omits it.
+        // Client-supplied so an accidental resend dedupes to one comment.
         var commentId = request.CommentId is { } requestedId && requestedId != Guid.Empty ? requestedId : Guid.NewGuid();
 
         var command = new AddCommentCommand(
@@ -280,8 +266,6 @@ public class JobOffersController(
 
         return CommentResponse.Serialize(result.Success!);
     }
-
-    // ───── List ─────
 
     [HttpGet("mine")]
     [ProducesResponseType<ListJobOffersResponse>(StatusCodes.Status200OK)]
@@ -309,8 +293,6 @@ public class JobOffersController(
         return await ListOffersAsync(showAll: true, status, page, pageSize, ct);
     }
 
-    // ───── Get Detail ─────
-
     [HttpGet("{id:guid}")]
     [ProducesResponseType<GetJobOfferDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -323,8 +305,6 @@ public class JobOffersController(
             return NotFound();
         return GetJobOfferDetailResponse.Serialize(offer);
     }
-
-    // ───── Download Attachment ─────
 
     [HttpGet("{id:guid}/attachments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -349,8 +329,6 @@ public class JobOffersController(
             enableRangeProcessing: true);
     }
 
-    // ───── History ─────
-
     [HttpGet("{id:guid}/history")]
     [ProducesResponseType<JobOfferHistoryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -365,8 +343,6 @@ public class JobOffersController(
         return new JobOfferHistoryResponse(entries.Select(HistoryEntryResponse.Serialize));
     }
 
-    // ───── List Comments ─────
-
     [HttpGet("{id:guid}/comments")]
     [ProducesResponseType<ListCommentsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -380,8 +356,6 @@ public class JobOffersController(
 
         return new ListCommentsResponse(comments.Select(CommentResponse.Serialize));
     }
-
-    // ───── Private helpers ─────
 
     private async Task<ListJobOffersResponse> ListOffersAsync(
         bool showAll,

@@ -4,9 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Kalandra.Hosting;
 
 /// <summary>
-/// Configuration for the BetterStack OTLP exporter.
-/// Not currently used — observability has been consolidated onto Sentry (see <see cref="SentryConfig"/>).
-/// Kept as nullable/optional so the wiring can be re-enabled without re-introducing the plumbing.
+/// Dormant while Sentry is the active backend; optional so the BetterStack exporters can be re-enabled by configuration alone.
 /// </summary>
 public record BetterStackConfig(
     NonEmptyString SourceToken,

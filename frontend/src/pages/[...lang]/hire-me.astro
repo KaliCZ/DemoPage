@@ -21,7 +21,6 @@ const t = translations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="hire-me" lang={lang}>
-  <!-- Hero -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <div class="max-w-3xl">
       <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
@@ -32,7 +31,6 @@ const t = translations[lang];
     </div>
   </section>
 
-  <!-- Login prompt (shown when not authenticated) -->
   <section id="login-prompt" class="signed-out-only max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <div class="max-w-4xl bg-surface-container rounded-2xl border border-outline-variant/40 p-8 md:p-12 text-center">
       <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
@@ -48,7 +46,6 @@ const t = translations[lang];
     </div>
   </section>
 
-  <!-- Form (shown when authenticated, initially with disabled fields) -->
   <section id="job-offer-form-section" class="signed-in-only hidden max-w-7xl mx-auto px-4 md:px-8 mb-16">
     <form
       id="job-offer-form"
@@ -224,10 +221,7 @@ const t = translations[lang];
     </form>
   </section>
 
-  <!-- Prefill name/email from the cached session blob the head pre-paint
-       script parsed. Runs synchronously here, right after the form is in
-       the DOM, so the values are set before the browser paints the form.
-       Empty-value guards prevent overwriting browser autofill. -->
+  <!-- Inline right after the form so Layout's pre-paint session prefill lands before first paint, without overwriting autofill. -->
   <script is:inline>
     (function () {
       var p = window.__authPrefill;
@@ -292,16 +286,10 @@ const t = translations[lang];
     }}
   >
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
-    // Wake up the database in case the provider suspended it (e.g. Neon free tier).
-    // The health endpoint runs a Postgres check, so this warms the connection
-    // while the user is filling out the form.
+    // The health endpoint runs a Postgres check, so this warms the DB while the user fills in the form.
     fetch(apiUrl + "/health").catch(function () {});
 
-    // The initial prefill from window.__authPrefill happens in a small
-    // inline script right after the form section, so values are set
-    // before paint. This handler covers later sign-ins/sign-outs once
-    // supabase confirms the session. Empty-value guards prevent
-    // overwriting anything the user or pre-paint already filled in.
+    // Covers sign-ins after load; the pre-paint prefill is the inline script right after the form.
     function prefillContactFields(name, email) {
       var nameField = document.getElementById("contactName");
       if (nameField && !nameField.value && name) nameField.value = name;
@@ -324,15 +312,10 @@ const t = translations[lang];
       }
     });
 
-    // Sign in button on the login prompt
     document.getElementById("hire-me-sign-in")?.addEventListener("click", function () {
       document.getElementById("auth-sign-in-desktop")?.click();
     });
 
-    // Turnstile widget — explicit render so we can switch appearance modes.
-    // After hitting the backend rate limit (2 submissions / 30 min), we
-    // re-render the widget in 'always' (interactive) mode so the user must
-    // click "I am human" before we resend with the bypass header.
     var turnstileWidgetId = null;
     var interactiveCaptchaMode = false;
 
@@ -358,7 +341,6 @@ const t = translations[lang];
         cb();
         return;
       }
-      // No longer loaded globally — this form needs the widget, so pull the script in on demand.
       if (turnstileSiteKey && !document.querySelector('script[src^="https://challenges.cloudflare.com/turnstile"]')) {
         var s = document.createElement("script");
         s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
@@ -378,16 +360,14 @@ const t = translations[lang];
       renderTurnstile("interaction-only");
     });
 
-    // File input handling
     var maxFiles = 5;
-    var maxTotalBytes = 15 * 1024 * 1024; // 15 MB
+    var maxTotalBytes = 15 * 1024 * 1024;
     var selectedFiles = [];
     var descriptionIconHtml = document.getElementById("icon-description").innerHTML;
     var closeIconHtml = document.getElementById("icon-close").innerHTML;
 
     document.getElementById("attachments")?.addEventListener("change", function (e) {
       var newFiles = Array.from(e.target.files || []);
-      // Merge with existing, enforcing max count
       selectedFiles = selectedFiles.concat(newFiles).slice(0, maxFiles);
       renderFileList();
       e.target.value = ""; // allow re-selecting same file
@@ -431,7 +411,6 @@ const t = translations[lang];
       return div.innerHTML;
     }
 
-    // --- Inline validation ---
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     function getFieldError(field) {
@@ -495,7 +474,6 @@ const t = translations[lang];
       return valid;
     }
 
-    // Attach blur validation to all form fields
     var formEl = document.getElementById("job-offer-form");
     if (formEl) {
       formEl.querySelectorAll("input[name], textarea[name]").forEach(function (field) {
@@ -517,9 +495,6 @@ const t = translations[lang];
       });
     }
 
-    // Ask the user to confirm when optional fields or attachments are empty.
-    // Required fields are handled by validateAllFields above, so here we only
-    // look at the fields that are legitimately optional.
     function getMissingOptionalFields(form) {
       var missing = [];
       if (!form.salaryRange.value.trim()) missing.push(incompleteFieldLabels.salaryRange);
@@ -583,7 +558,6 @@ const t = translations[lang];
     // Reused across retries of the current draft so a resend dedupes into one offer server-side.
     var pendingOfferId = null;
 
-    // Form submission
     document.getElementById("job-offer-form")?.addEventListener("submit", async function (e) {
       e.preventDefault();
       var form = e.target;
@@ -606,14 +580,13 @@ const t = translations[lang];
         var token = await window.__getAccessToken?.();
         if (!token) throw new Error("Not authenticated");
 
-        // Validate file constraints client-side
         var totalSize = selectedFiles.reduce(function (sum, f) {
           return sum + f.size;
         }, 0);
         if (selectedFiles.length > maxFiles) throw new Error("Too many files");
         if (totalSize > maxTotalBytes) throw new Error("Files too large");
 
-        // Get Turnstile token from the hidden input created by the widget
+        // The Turnstile widget injects this hidden input.
         var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
         if (!turnstileResponse) {
           window.__showSnackbar?.(captchaError, "error");
@@ -683,7 +656,6 @@ const t = translations[lang];
         }
 
         var offer = await response.json();
-        // Reset back to invisible mode after a successful submission.
         interactiveCaptchaMode = false;
         window.observability?.track("job-offer-submitted", { offerId: offer.id });
         sessionStorage.setItem("snackbar", JSON.stringify({ message: successText, type: "success" }));
@@ -695,7 +667,7 @@ const t = translations[lang];
           submitBtn.disabled = false;
         }
       } finally {
-        // Reset Turnstile widget for next attempt (token is single-use)
+        // Turnstile tokens are single-use.
         if (turnstileWidgetId !== null && window.turnstile) {
           try {
             window.turnstile.reset(turnstileWidgetId);

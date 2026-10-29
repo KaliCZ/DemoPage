@@ -18,8 +18,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // allowIntegerValues: false so a raw number for an enum field is rejected at
-        // binding (a clean 400) instead of deserializing to an out-of-range value.
+        // Reject a raw number for an enum at binding (a clean 400) rather than deserialize an out-of-range value.
         options.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
     });
@@ -71,7 +70,6 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.Configure<HostOptions>(
     o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
-// "live" = deploy-gate liveness (process up + build commit, no external deps); "ready" = full readiness.
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, timeout: TimeSpan.FromSeconds(5), tags: ["ready"])
     .AddCheck<CommitHashHealthCheck>("version", tags: ["live", "ready"])
@@ -101,8 +99,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-// Liveness for the blue/green deploy gate: process up + expected commit, no external deps — a
-// shared DB/Supabase outage breaks both slots equally and must not roll back a good build.
+// The blue/green deploy gate skips external deps: a shared DB/Supabase outage breaks both slots and must not roll back a good build.
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),

@@ -1,2 +1,1 @@
-# Persistent volume for Caddy's /data directory (TLS state, etc.).
 [Volume]

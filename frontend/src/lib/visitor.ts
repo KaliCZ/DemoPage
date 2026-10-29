@@ -1,16 +1,10 @@
-/**
- * The anonymous visitor id: a client-minted UUID kept in localStorage that keys a
- * reader's views and reactions before they sign in. On sign-in it is linked to the
- * account so prior anonymous activity is attributed (see the backend LinkVisitor); on
- * sign-out it is rotated so the next anonymous session is a clean, unlinked identity.
- */
+/** Client-minted id that keys a reader's views and reactions before they sign in. */
 import { getAccessToken, getCurrentUser } from "./auth";
 
 const VISITOR_ID_KEY = "kalandra_visitor_id";
 const LINKED_MARKER_PREFIX = "kalandra_visitor_linked:";
 
-// Only a fallback for when localStorage is blocked (private mode); normally we read storage
-// each call so a rotation is seen even across separately-bundled island modules.
+// Fallback only for blocked localStorage; storage is read on each call so separately-bundled islands see a rotation.
 let cachedVisitorId: string | null = null;
 
 export function getVisitorId(): string {
@@ -28,11 +22,6 @@ export function getVisitorId(): string {
   }
 }
 
-/**
- * Mints and stores a fresh visitor id, returning it. Used on sign-out (so a shared computer's later
- * activity isn't attributed to the account that left) and when a write is refused because the id is
- * already claimed by another account.
- */
 export function resetVisitorId(): string {
   const id = crypto.randomUUID();
   try {
@@ -44,7 +33,6 @@ export function resetVisitorId(): string {
   return id;
 }
 
-/** Adds the visitor header (and, when signed in, the bearer token) to a blog API request. */
 export function visitorHeaders(token: string | null): Record<string, string> {
   const headers: Record<string, string> = { "X-Visitor-Id": getVisitorId() };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -83,8 +71,8 @@ export async function ensureVisitorLinked(apiUrl: string): Promise<void> {
   }
 }
 
-// Rotate on sign-out. Wired once at module load (guarded) — this runs before any island's
-// own auth-change handler, so islands read the fresh id when they reload their data.
+// Rotate on sign-out so a shared computer's later activity isn't attributed to the account that left; registered at
+// module load so it runs before the islands' own auth-change handlers reload their data.
 if (typeof window !== "undefined" && !(window as any).__blogVisitorRotationWired) {
   (window as any).__blogVisitorRotationWired = true;
   let wasSignedIn = false;

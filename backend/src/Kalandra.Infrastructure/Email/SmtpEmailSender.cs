@@ -15,8 +15,7 @@ public class SmtpEmailSender(EmailConfig config, ILogger<SmtpEmailSender> logger
         mimeMessage.Subject = message.Subject;
         mimeMessage.Body = new TextPart("plain") { Text = message.TextBody };
 
-        // Auto picks STARTTLS on 587 and stays plaintext against the local dev
-        // mail catcher, which offers no TLS.
+        // Auto picks STARTTLS on 587 and stays plaintext against the local mail catcher, which offers no TLS.
         using var client = new SmtpClient();
         await client.ConnectAsync(config.Host, config.Port, SecureSocketOptions.Auto, ct);
         if (config.Credentials is { } credentials)

@@ -15,8 +15,7 @@ public class BlogPostCatalogTests
     [Fact]
     public void CommentStreams_AreDistinctPerPost()
     {
-        // They share one global Marten id namespace, so a copy-paste that collides two posts'
-        // comment streams would cross-contaminate them.
+        // Stream ids share one global Marten namespace, so a copy-pasted id would merge two posts' comments.
         var zeroCode = Catalog.Find("zero-code-validations-in-your-dotnet-api")!;
         var helloWorld = Catalog.Find("hello-world")!;
         Assert.Distinct([zeroCode.CommentsStreamId, helloWorld.CommentsStreamId]);

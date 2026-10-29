@@ -5,10 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Kalandra.Infrastructure.Users;
 
 /// <summary>
-/// Caches author profiles so a comment thread doesn't re-fetch each one from Supabase on every load.
-/// Profile edits bypass this service, so freshness rests on the TTL plus an explicit <see cref="EvictAsync"/>.
-/// Profiles the source can't resolve are cached briefly too, so a Supabase outage costs one bounded
-/// fetch per author per window instead of one per page load.
+/// Profile edits bypass this cache, so their callers must <see cref="EvictAsync"/>; unresolvable profiles are cached briefly to bound Supabase load during an outage.
 /// </summary>
 public class CachingUserInfoService(
     IUserInfoService source,
@@ -30,8 +27,7 @@ public class CachingUserInfoService(
         var result = new Dictionary<Guid, UserPublicInfo>();
         var misses = new List<Guid>();
 
-        // Concurrent, not batched — IDistributedCache has no batch API; overlapping the
-        // single-key calls is what removes the sequential round-trip wait.
+        // IDistributedCache has no batch API, so overlap the single-key reads instead.
         var reads = await Task.WhenAll(userIds.Distinct().Select(userId => TryReadAsync(userId, ct)));
         foreach (var (userId, found, cached) in reads)
         {
@@ -62,8 +58,7 @@ public class CachingUserInfoService(
         _ = EvictAgainAfterDelayAsync(userId);
     }
 
-    // A read that fetched the old profile just before the update commits can write it back after
-    // the immediate eviction above; this second pass clears that resurrected entry.
+    // A read racing the profile update can write the old profile back after the first eviction; this pass clears it.
     private async Task EvictAgainAfterDelayAsync(Guid userId)
     {
         try

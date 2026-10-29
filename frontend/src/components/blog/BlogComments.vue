@@ -176,8 +176,6 @@ async function submit() {
       return;
     }
     if (!res.ok) {
-      // ProblemDetails error codes map onto i18n keys (same convention as the
-      // hire-me form); anything unmapped falls back to the generic message.
       const apiError = await getApiError(res, {
         parentCommentId: {
           ParentCommentNotFound: props.t.errors.ParentCommentNotFound,
@@ -254,7 +252,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
   <section :aria-label="props.t.heading">
     <h2 class="font-headline text-2xl font-bold tracking-tight mb-6">{{ props.t.heading }}</h2>
 
-    <!-- Composer -->
     <div v-if="viewerChecked && viewerId" class="mb-10">
       <div v-if="replyTo" class="mb-2 flex items-start gap-2 rounded-lg border-l-4 border-primary bg-surface-container-low py-2 pr-2 pl-3">
         <div class="min-w-0 flex-1">
@@ -297,7 +294,6 @@ onUnmounted(() => window.removeEventListener("auth-change", onAuthChange));
       </div>
     </div>
 
-    <!-- Thread -->
     <p v-if="loadFailed" class="font-body text-sm text-error">{{ props.t.loadError }}</p>
     <p v-else-if="loaded && thread.length === 0" class="font-body text-sm text-on-surface-variant">
       {{ props.t.empty }}

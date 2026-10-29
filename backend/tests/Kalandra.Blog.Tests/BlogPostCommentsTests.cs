@@ -34,8 +34,6 @@ public class BlogPostCommentsTests
         return comments;
     }
 
-    // --- Post ---
-
     [Fact]
     public void Post_TopLevel_ReturnsTheEvent()
     {
@@ -81,8 +79,6 @@ public class BlogPostCommentsTests
 
         Assert.Equal(PostBlogCommentError.ParentCommentDeleted, result.Error);
     }
-
-    // --- Delete ---
 
     [Fact]
     public void Delete_OwnComment_EmitsTombstone()
@@ -141,8 +137,6 @@ public class BlogPostCommentsTests
 
         Assert.Equal(DeleteBlogCommentError.AlreadyDeleted, result.Error);
     }
-
-    // --- Apply ---
 
     [Fact]
     public void Apply_Tombstone_MarksCommentDeletedButKeepsThreadStructure()

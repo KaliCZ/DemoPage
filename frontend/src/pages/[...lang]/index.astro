@@ -6,9 +6,6 @@ import { locales, defaultLocale, localePath, type Locale } from "../../i18n/util
 import type { PageMeta } from "../../lib/page-meta";
 import enStrings from "../../i18n/en/home.json";
 import csStrings from "../../i18n/cs/home.json";
-// Project cards on the home page render the same content as on the /projects
-// index — both surfaces read from the same JSON so a copy edit lands in both
-// places at once.
 import enProjects from "../../i18n/en/projects.json";
 import csProjects from "../../i18n/cs/projects.json";
 
@@ -29,7 +26,6 @@ const tProjects = projectTranslations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="home" lang={lang}>
-  <!-- Hero -->
   <section class="max-w-7xl mx-auto px-4 md:px-8 mb-24 lg:mb-40">
     <h1
       class:list={[
@@ -41,10 +37,6 @@ const tProjects = projectTranslations[lang];
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.titleName}</span>
     </h1>
 
-    <!-- Subtitle + "What is this page?" copy on the left, QR card on the right.
-         items-start anchors the QR card's top edge to the same y-axis as the
-         "Software engineer..." subtitle line — previously the card sat next to
-         the "What is this page?" heading instead, which gave it too much air. -->
     <div class="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-10 lg:gap-16 items-start mb-16 max-w-5xl">
       <div>
         <p class="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed mb-12">{t.hero.subtitle}</p>
@@ -69,11 +61,7 @@ const tProjects = projectTranslations[lang];
       />
     </div>
 
-    <!-- Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
-      <!-- About Me card. Same <ProjectCard> component as the project cards below
-           — visually identical, no point keeping inline markup just because the
-           page it links to isn't a "project" per se. -->
       <ProjectCard
         href={localePath(lang, "about")}
         icon="person"
@@ -83,9 +71,6 @@ const tProjects = projectTranslations[lang];
         cta={t.cards.about.cta}
       />
 
-      <!-- Project cards. Shared component AND shared content with the /projects
-           index — both pages read from projects.json so a copy edit there
-           updates both surfaces. -->
       <ProjectCard
         href={localePath(lang, "project")}
         icon="rocket-launch"

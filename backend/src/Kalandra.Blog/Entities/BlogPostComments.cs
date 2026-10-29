@@ -19,10 +19,7 @@ public class BlogPostComment
     public bool IsDeleted { get; set; }
 }
 
-/// <summary>
-/// Live-aggregated state of one post's comment stream. Deletion is a tombstone:
-/// the comment stays in the thread so replies keep their context.
-/// </summary>
+/// <summary>Deletion is a tombstone so replies keep their context.</summary>
 public class BlogPostComments
 {
     public Guid Id { get; set; }

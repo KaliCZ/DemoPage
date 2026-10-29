@@ -9,10 +9,6 @@ using ModelContextProtocol.Server;
 
 namespace Kalandra.McpServer.Tools;
 
-/// <summary>
-/// MCP tools for job offers. Each is a thin adapter over the same domain handlers the REST controllers
-/// call, acting as the signed-in user — one domain, two front doors, no second write path.
-/// </summary>
 [McpServerToolType]
 public sealed class JobOfferMcpTools(
     ICurrentUserAccessor currentUser,

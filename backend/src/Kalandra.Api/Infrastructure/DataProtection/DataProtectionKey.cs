@@ -1,8 +1,6 @@
 namespace Kalandra.Api.Infrastructure.DataProtection;
 
-// Marten-backed storage for ASP.NET Core data-protection keys. Keys must survive
-// container destruction so cookies/antiforgery payloads encrypted before a deploy
-// can still be decrypted after it.
+// Persisted so payloads encrypted before a deploy still decrypt after the container is replaced.
 public class DataProtectionKey
 {
     public string Id { get; set; } = default!;

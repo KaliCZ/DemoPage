@@ -14,11 +14,6 @@ using ModelContextProtocol.Server;
 
 namespace Kalandra.McpServer.Tools;
 
-/// <summary>
-/// MCP tools for the blog and the user's own activity. Reads and writes go through the same
-/// domain handlers the REST controllers use; the post list comes from the site's RSS feed.
-/// Reading the blog is public; the class-level gate keeps everything else account-only by default.
-/// </summary>
 [McpServerToolType]
 public sealed class BlogMcpTools(
     ICurrentUserAccessor currentUser,

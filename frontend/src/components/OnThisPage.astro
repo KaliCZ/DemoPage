@@ -12,9 +12,7 @@ interface Props {
 const { title, items } = Astro.props;
 ---
 
-<!-- Sticky bottom-bar TOC, shown at all viewport widths.
-     One UX, one mental model — desktop gets the same scrollable pill row as mobile,
-     freeing the page's horizontal space for content. -->
+<!-- One bottom bar at every width, so desktop keeps its horizontal space for content. -->
 <nav
   id="toc-bar"
   class="fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-sm border-t border-outline-variant/40 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
@@ -41,7 +39,6 @@ const { title, items } = Astro.props;
     color: var(--color-primary);
     font-weight: 600;
   }
-  /* Hide scrollbar for the pill bar */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -49,10 +46,7 @@ const { title, items } = Astro.props;
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  /* Bottom padding so content isn't hidden behind the sticky bar — applied at all widths
-     since the bar is now always visible. Tuned to roughly match the bar's own height
-     (py-2 outer + py-1.5 pill + ~16px text line + 1px border ≈ 45px) so the footer sits
-     flush against the bar without a visible gap. */
+  /* Roughly the fixed bar's height, so the footer clears it without a visible gap. */
   body {
     padding-bottom: 3rem;
   }

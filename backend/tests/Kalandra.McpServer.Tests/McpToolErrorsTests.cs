@@ -7,16 +7,11 @@ using ModelContextProtocol.Protocol;
 
 namespace Kalandra.McpServer.Tests;
 
-/// <summary>
-/// The tools raise <c>ToolRefusalException</c> on purpose to tell the model something it can act on, and the
-/// SDK logs every exception at Error as unhandled — enough to alert on each refused call. McpToolErrors catches
-/// ours first, and only ours. Nothing in the response shows whether that still works, so it is pinned here.
-/// </summary>
+/// <summary>The SDK logs every tool exception at Error, so these pin that McpToolErrors answers our refusals, and only ours, before they alert.</summary>
 public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
     [Theory]
-    // Arguments the model got wrong: deliberate answers it can self-correct from, and every one of them would
-    // otherwise alert. (Signing in isn't here — McpAccountGate challenges that before a tool ever runs.)
+    // No sign-in case: McpAccountGate challenges that before a tool runs.
     [InlineData("get_blog_post_comments", """{"slug":"no-such-post"}""", "No blog post with slug")]
     [InlineData("get_blog_post_comments", """{"slug":""}""", "No blog post with slug")]
     public async Task AToolErrorMeantForTheModel_IsAnswered_AndLoggedNowhere(
@@ -40,8 +35,7 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
     [Fact]
     public async Task AProtocolFault_IsLeftToTheSdkToReport()
     {
-        // The SDK's own failures — InternalError above all — must keep alerting. Driven straight at the
-        // filter: over HTTP every protocol fault worth reaching is either gated or turned into a result.
+        // Driven at the filter directly: over HTTP every reachable protocol fault is gated or turned into a result.
         var handler = McpToolErrors.ToToolResult(
             (_, _) => throw new McpProtocolException("Boom.", McpErrorCode.InternalError));
 
@@ -51,8 +45,7 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
     [Fact]
     public async Task SomeoneElsesMcpException_IsLeftToReport()
     {
-        // A bare McpException is the SDK's type: anything in the pipeline may throw it, and its message was
-        // not authored here for the model — so it is a real failure and belongs in the alerts.
+        // A bare McpException can come from anywhere in the pipeline, so its message wasn't written for the model.
         var handler = McpToolErrors.ToToolResult((_, _) => throw new McpException("Not authored here."));
 
         await Assert.ThrowsAsync<McpException>(async () => await handler(null!, Ct));
@@ -72,11 +65,7 @@ public class McpToolErrorsTests(McpServerFactory factory) : IClassFixture<McpSer
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    /// <summary>
-    /// Collects what the MCP pipeline reports at the level Sentry turns into issues. Scoped to the SDK's own
-    /// categories: unrelated hosting warnings (a CI runner with no DataProtection keys, say) aren't this test's
-    /// business.
-    /// </summary>
+    /// <summary>Scoped to the SDK's categories so unrelated hosting warnings, like missing DataProtection keys on CI, don't fail the test.</summary>
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
         public readonly ConcurrentBag<string> Noise = [];

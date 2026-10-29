@@ -29,7 +29,6 @@ const detailPath = localePath(lang, "job-offers/detail");
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="job-offers" lang={lang}>
-  <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
@@ -37,15 +36,12 @@ const detailPath = localePath(lang, "job-offers/detail");
     <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
   </section>
 
-  <!-- Loading (shown until auth check completes) -->
   <section id="auth-loading" class="max-w-5xl mx-auto px-8 mb-16">
     <div class="text-center py-12">
       <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
     </div>
   </section>
 
-  <!-- Login prompt. `signed-out-only` hooks Layout's pre-paint CSS so this
-       is shown immediately for signed-out users, before supabase loads. -->
   <section id="login-prompt" class="signed-out-only hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
@@ -61,8 +57,7 @@ const detailPath = localePath(lang, "job-offers/detail");
     </div>
   </section>
 
-  <!-- Offers list. `signed-in-only` keeps it visible for signed-in users
-       during the supabase init delay. -->
+  <!-- `signed-in-only` overrides `hidden` pre-paint for signed-in users until Supabase loads. -->
   <section id="offers-list-section" class="signed-in-only hidden max-w-5xl mx-auto px-8 mb-16">
     <JobOffersList
       client:idle
@@ -105,7 +100,7 @@ const detailPath = localePath(lang, "job-offers/detail");
     document.getElementById("offers-sign-in")?.addEventListener("click", openAuthDialog);
 
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
-    // Wake up the database (see hire-me.astro for details).
+    // Warm the DB (see hire-me.astro).
     fetch(`${import.meta.env.PUBLIC_API_URL || ""}/health`).catch(() => {});
   </script>
 </Layout>

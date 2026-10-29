@@ -6,10 +6,6 @@ using StrongTypes;
 
 namespace Kalandra.Infrastructure.Auth;
 
-/// <summary>
-/// Builds a <see cref="CurrentUser"/> from the validated JWT claims Supabase issues. Shared by every
-/// host's request-scoped accessor so the API and the MCP server read the same identity from a token.
-/// </summary>
 public static class CurrentUserFactory
 {
     public static CurrentUser? FromClaimsPrincipal(ClaimsPrincipal? principal)
@@ -34,10 +30,7 @@ public static class CurrentUserFactory
             AvatarUrl: avatarUrl);
     }
 
-    /// <summary>
-    /// Role claim values are canonicalized to enum names when the token is validated,
-    /// so a strict (case-sensitive) parse is enough here.
-    /// </summary>
+    /// <summary>Roles were canonicalized to enum names at token validation, so a strict parse is enough.</summary>
     private static ImmutableArray<UserRole> ExtractRoles(ClaimsPrincipal principal)
     {
         var builder = ImmutableArray.CreateBuilder<UserRole>();
@@ -49,10 +42,6 @@ public static class CurrentUserFactory
         return builder.ToImmutable();
     }
 
-    /// <summary>
-    /// Parses user_metadata looking for "full_name" and "avatar_url",
-    /// falling back to the email's local part for the name.
-    /// </summary>
     private static (NonEmptyString FullName, Uri? AvatarUrl) ExtractUserMetadata(string? userMetadata, MailAddress email)
     {
         // MailAddress guarantees a non-empty local part on a successful construction.

@@ -12,16 +12,12 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     private readonly HttpClient client = factory.CreateClient();
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    // ───── Auth ─────
-
     [Fact]
     public async Task Create_WithoutAuth_Returns401()
     {
         var response = await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-
-    // ───── Create ─────
 
     [Fact]
     public async Task Create_WithValidData_ReturnsDetailWithCorrectValues()
@@ -72,7 +68,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [InlineData("CompanyName", 200)]
     [InlineData("ContactName", 200)]
     [InlineData("JobTitle", 200)]
-    [InlineData("ContactEmail", 254)] // Email caps at RFC 5321's 254 chars; value still has to look like an email, we exceed by lengthening the local-part
+    [InlineData("ContactEmail", 254)] // RFC 5321 cap; exceeded via the local part so the value still parses as an email
     [InlineData("Description", 5000)]
     [InlineData("SalaryRange", 100)]
     [InlineData("Location", 200)]
@@ -112,7 +108,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Authenticate(email: "create-dedupe@test.com");
         var offerId = Guid.NewGuid();
 
-        // An accidental resend (double-submit, retry) carries the same client-generated id.
         var first = await client.PostAsync("/api/job-offers",
             CreateValidFormContent(overrides: new() { ["Id"] = offerId.ToString() }), Ct);
         var second = await client.PostAsync("/api/job-offers",
@@ -171,8 +166,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             Ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        // Email's [JsonConverter] rejects bad formats at deserialization time, so
-        // ASP.NET surfaces the failure under the JSON path key — not the property name.
+        // Email's JSON converter rejects it during deserialization, so the error is keyed by the JSON path.
         AssertValidationFieldError(await ParseJsonAsync(response), "$.contactEmail");
     }
 
@@ -209,7 +203,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         var (id, _) = await CreateOfferAs("comment-dedupe@test.com");
         var commentId = Guid.NewGuid();
 
-        // An accidental resend (double-submit, retry) carries the same client-generated id.
         var first = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { commentId, content = "Only once" }, Ct);
         var second = await client.PostAsJsonAsync($"/api/job-offers/{id}/comments", new { commentId, content = "Only once" }, Ct);
 
@@ -262,8 +255,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ───── Get Detail ─────
-
     [Fact]
     public async Task GetDetail_AsOtherUser_Returns404()
     {
@@ -290,14 +281,11 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("Acme Corp", json.GetProperty("companyName").GetString());
     }
 
-    // ───── List Mine ─────
-
     [Fact]
     public async Task ListMine_ReturnsOwnOffersOnly()
     {
         var (ownerId, _) = await CreateOfferAs("listowner@test.com");
 
-        // Owner's list contains their offer
         var ownerListRes = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, ownerListRes.StatusCode);
         var ownerList = await ParseJsonAsync(ownerListRes);
@@ -306,7 +294,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             ownerList.GetProperty("items").EnumerateArray(),
             item => item.GetProperty("id").GetString() == ownerId);
 
-        // Other user's list does not contain it
         Authenticate("listother@test.com");
         var otherListRes = await client.GetAsync("/api/job-offers/mine", Ct);
         Assert.Equal(HttpStatusCode.OK, otherListRes.StatusCode);
@@ -315,8 +302,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             otherList.GetProperty("items").EnumerateArray(),
             item => item.GetProperty("id").GetString() == ownerId);
     }
-
-    // ───── List All (Admin) ─────
 
     [Fact]
     public async Task ListAll_AsNonAdmin_Returns403()
@@ -388,7 +373,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public async Task ListMine_PageSizeLimitsResults()
     {
-        // Create 2 offers for the same user
         var userId = Authenticate("pagelimit@test.com");
         await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
         await client.PostAsync("/api/job-offers", CreateValidFormContent(), Ct);
@@ -406,8 +390,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(1, page2.GetProperty("items").GetArrayLength());
         Assert.True(page2.GetProperty("pagination").GetProperty("hasPreviousPage").GetBoolean());
     }
-
-    // ───── Edit ─────
 
     [Fact]
     public async Task Edit_AsOwner_WhenSubmitted_UpdatesOfferAndHistory()
@@ -431,7 +413,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
             Ct);
         Assert.Equal(HttpStatusCode.OK, editRes.StatusCode);
 
-        // Verify response reflects new values
         var edited = await ParseJsonAsync(editRes);
         Assert.Equal("Updated Corp", edited.GetProperty("companyName").GetString());
         Assert.Equal("Jane Doe", edited.GetProperty("contactName").GetString());
@@ -441,13 +422,11 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("$200k", edited.GetProperty("salaryRange").GetString());
         Assert.Equal("Submitted", edited.GetProperty("status").GetString());
 
-        // Verify detail endpoint also reflects edit
         var detailRes = await client.GetAsync($"/api/job-offers/{id}", Ct);
         var detail = await ParseJsonAsync(detailRes);
         Assert.Equal("Updated Corp", detail.GetProperty("companyName").GetString());
         Assert.Equal("CTO", detail.GetProperty("jobTitle").GetString());
 
-        // Verify history has Edited event
         var historyRes = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
         var history = await ParseJsonAsync(historyRes);
         var entries = history.GetProperty("entries");
@@ -462,7 +441,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
     {
         var (id, _) = await CreateOfferAs("partialedit@test.com");
 
-        // Send only jobTitle — all other fields should remain unchanged
         var editRes = await client.PatchAsJsonAsync(
             $"/api/job-offers/{id}",
             new { jobTitle = "Principal Engineer" },
@@ -505,8 +483,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.BadRequest, editRes.StatusCode);
     }
 
-    // ───── Cancel ─────
-
     [Fact]
     public async Task Cancel_AsOwner_SetsCancelledStatusAndHistory()
     {
@@ -522,7 +498,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("Cancelled", cancelled.GetProperty("status").GetString());
         Assert.Equal(id, cancelled.GetProperty("id").GetString());
 
-        // Verify history
         var historyRes = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
         var history = await ParseJsonAsync(historyRes);
         var entries = history.GetProperty("entries");
@@ -563,8 +538,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.BadRequest, secondCancel.StatusCode);
     }
 
-    // ───── Admin Status Change ─────
-
     [Fact]
     public async Task AdminChangeStatus_UpdatesStatusAndHistory()
     {
@@ -582,7 +555,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("InReview", updated.GetProperty("status").GetString());
         Assert.Equal(id, updated.GetProperty("id").GetString());
 
-        // Verify history
         var historyRes = await client.GetAsync($"/api/job-offers/{id}/history", Ct);
         var history = await ParseJsonAsync(historyRes);
         var entries = history.GetProperty("entries");
@@ -626,8 +598,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.BadRequest, reopenRes.StatusCode);
     }
 
-    // ───── Comments ─────
-
     [Fact]
     public async Task Comments_OwnerCanAddAndList()
     {
@@ -646,7 +616,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("Hello, any update?", comment.GetProperty("content").GetString());
         AssertValidTimestamp(comment, "createdAt");
 
-        // List comments
         var listRes = await client.GetAsync($"/api/job-offers/{id}/comments", Ct);
         Assert.Equal(HttpStatusCode.OK, listRes.StatusCode);
         var comments = await ParseJsonAsync(listRes);
@@ -674,7 +643,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("admin@test.com", comment.GetProperty("userEmail").GetString());
         Assert.Equal("Thanks, reviewing now!", comment.GetProperty("content").GetString());
 
-        // Verify visible to owner
         AuthenticateAs(ownerId, "owner@test.com");
         var listRes = await client.GetAsync($"/api/job-offers/{id}/comments", Ct);
         var comments = await ParseJsonAsync(listRes);
@@ -683,8 +651,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal("Thanks, reviewing now!", commentArray[0].GetProperty("content").GetString());
         Assert.Equal(AdminUserId.ToString(), commentArray[0].GetProperty("userId").GetString());
     }
-
-    // ───── Notification emails (via the job-offer subscription) ─────
 
     [Fact]
     public async Task Create_NotifiesTheOwner()
@@ -755,8 +721,6 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Contains(emails, m => m.To.Address == "watched-author@test.com");
     }
 
-    // ───── Attachments ─────
-
     [Fact]
     public async Task DownloadAttachment_RoundTrips_MatchingContent()
     {
@@ -791,16 +755,12 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.NotFound, downloadResponse.StatusCode);
     }
 
-    // ───── Health ─────
-
     [Fact]
     public async Task Health_ReturnsOk()
     {
         var response = await client.GetAsync("/health", Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
-
-    // ───── Helpers ─────
 
     private static readonly Guid AdminUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
@@ -820,10 +780,7 @@ public class JobOfferApiTests(TestWebApplicationFactory factory) : IClassFixture
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    /// <summary>
-    /// Creates an offer as a fresh user and returns the new offer's id + the user's id.
-    /// Leaves the client authenticated as that user.
-    /// </summary>
+    /// <summary>Leaves the client authenticated as the new user.</summary>
     private async Task<(string OfferId, Guid UserId)> CreateOfferAs(string email)
     {
         var userId = Authenticate(email);

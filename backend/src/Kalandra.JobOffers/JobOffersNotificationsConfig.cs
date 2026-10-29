@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 
 namespace Kalandra.JobOffers;
 
-/// <summary>Where new-offer and comment notifications for the site owner land.</summary>
 public record JobOffersNotificationsConfig(MailAddress OwnerEmail)
 {
     public static JobOffersNotificationsConfig AddSingleton(
@@ -19,7 +18,6 @@ public record JobOffersNotificationsConfig(MailAddress OwnerEmail)
 
         var config = new JobOffersNotificationsConfig(OwnerEmail: new MailAddress(ownerEmail));
 
-        // .local is the dev placeholder domain; in production it would drop every notification.
         if (!environment.IsDevelopment() && config.OwnerEmail.Host.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
                 "JobOffers:OwnerNotificationEmail is still a .local address — a production deploy must set a real recipient.");

@@ -27,16 +27,11 @@ export interface AuthGateOptions {
   loadingId: string;
   /** Login prompt / access-denied section shown when the visitor doesn't qualify. */
   blockedId: string;
-  /** Page content shown when the visitor qualifies. */
   contentId: string;
   requireAdmin?: boolean;
 }
 
-/**
- * Toggles the loading / blocked / content sections of an auth-gated page on
- * every `auth-change`. Pre-paint visibility is handled separately by the
- * `signed-in-only` / `signed-out-only` CSS tiers in Layout.astro.
- */
+/** Pre-paint visibility is handled separately by the `signed-in-only` / `signed-out-only` CSS rules in Layout.astro. */
 export function wireAuthGate({ loadingId, blockedId, contentId, requireAdmin = false }: AuthGateOptions): void {
   window.addEventListener("auth-change", (event) => {
     const user = (event as CustomEvent).detail?.user;

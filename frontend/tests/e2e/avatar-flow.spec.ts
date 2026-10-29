@@ -4,20 +4,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * E2E test for the avatar feature:
- *   1. Sign in
- *   2. Upload an avatar via the profile page
- *   3. Verify the preview and nav header update
- *   4. Submit a job offer + add a comment
- *   5. Verify the avatar appears next to the comment in the job offer detail
- *
- * Requires:
- *   - Local Supabase running (npm run dev:supabase)
- *   - Backend API at http://localhost:5000 with the `avatars` storage bucket created
- *   - Frontend at http://localhost:4321
- */
-
 const API_URL = process.env.PUBLIC_API_URL || "http://localhost:5000";
 const SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -49,7 +35,6 @@ test.describe("Avatar Flow", () => {
   });
 
   test("upload avatar → verify in profile, nav, and comments", async ({ page }) => {
-    // 1. Sign in via the profile page
     await page.goto("/profile");
     await page.evaluate(
       async ({ email, password }) => {
@@ -64,44 +49,35 @@ test.describe("Avatar Flow", () => {
       { email: testUser.email, password: testUser.password },
     );
 
-    // Profile section becomes visible after sign-in
     await expect(page.locator("#profile-section")).toBeVisible();
     await expect(page.locator("#avatar-change-btn")).toBeVisible();
 
-    // Initially, no avatar — initial circle visible, image hidden
     await expect(page.locator("#avatar-preview-initial")).toBeVisible();
     await expect(page.locator("#avatar-preview-img")).toBeHidden();
 
-    // 2. Upload an avatar (use the existing portrait in public/)
     const avatarPath = path.join(__dirname, "..", "..", "public", "images", "pavel-portrait-200.webp");
     await page.locator("#avatar-file-input").setInputFiles(avatarPath);
 
-    // Wait for the upload + session refresh to complete
     await expect(page.locator("#avatar-preview-img")).toBeVisible({
       timeout: 10000,
     });
     await expect(page.locator("#avatar-preview-initial")).toBeHidden();
 
-    // The img src should point to the avatars storage path
     const previewSrc = await page.locator("#avatar-preview-img").getAttribute("src");
     expect(previewSrc).toContain("/storage/v1/object/public/avatars/");
 
-    // 3. Submit a job offer and add a comment via the API
     const token = await page.evaluate(async () => {
       return await (window as any).__getAccessToken?.();
     });
     expect(token).toBeTruthy();
 
-    // Create a job offer via the hire-me form (avoids form-data complexity in test)
     await page.goto("/hire-me");
     await page.fill("#companyName", "Avatar Test Corp");
     await page.fill("#contactName", "Avatar Tester");
     await page.fill("#contactEmail", "avatar@test.com");
     await page.fill("#jobTitle", "Avatar Engineer");
     await page.fill("#description", "Testing avatars in comments end-to-end.");
-    // The submit handler reads the first [name="cf-turnstile-response"] input.
-    // The real widget can render at any moment and prepend an empty one, so
-    // stamp every matching input (and re-stamp right before confirming).
+    // The real widget can render late and prepend an empty response input that the submit handler reads first, so stamp them all.
     const stampTurnstileToken = () =>
       page.evaluate(() => {
         const inputs = document.querySelectorAll<HTMLInputElement>('[name="cf-turnstile-response"]');
@@ -118,23 +94,18 @@ test.describe("Avatar Flow", () => {
 
     await stampTurnstileToken();
     await page.click("#submit-btn");
-    // The incomplete-submission confirmation appears because optional fields
-    // are left blank; confirm to proceed.
     await expect(page.locator("#confirm-incomplete-dialog")).toBeVisible();
     await stampTurnstileToken();
     await page.click("#confirm-incomplete-confirm");
     await expect(page).toHaveURL(/\/job-offers\/detail\?id=/, { timeout: 15000 });
 
-    // Wait for the offer detail to load
     await expect(page.locator("#offer-detail-section")).toBeVisible({
       timeout: 10000,
     });
 
-    // 4. Add a comment via the page UI
     await page.fill("#comment-input", "This comment should show my avatar");
     await page.click("#send-comment");
 
-    // 5. Verify the comment appears with the avatar img (not initial)
     const commentList = page.locator("#comments-list");
     await expect(commentList).toContainText("This comment should show my avatar", { timeout: 10000 });
     const commentAvatar = commentList.locator("img").first();

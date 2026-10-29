@@ -10,9 +10,7 @@ const site = "https://www.kalandra.tech";
 // Aspire injects PORT and services__api__http__0; both are undefined outside Aspire.
 const aspireApiUrl = process.env.services__api__http__0;
 
-// Source map upload to Sentry only runs when SENTRY_AUTH_TOKEN is present (set in the prod
-// frontend-deploy job). Locally and in CI test builds the plugin is omitted entirely, so the
-// build stays quiet and offline.
+// Only the production deploy sets SENTRY_AUTH_TOKEN; every other build skips the upload plugin and stays offline.
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 const sentryOrg = process.env.SENTRY_ORG;
 const sentryProject = process.env.SENTRY_PROJECT;
@@ -28,8 +26,7 @@ export default defineConfig({
     format: "file",
     inlineStylesheets: "always",
   },
-  // The sitemap is a custom endpoint (src/pages/sitemap.xml.ts) fed by per-page
-  // metadata exports, not an integration.
+  // No sitemap integration — src/pages/sitemap.xml.ts builds it from per-page metadata.
   integrations: [icon(), vue()],
   i18n: {
     defaultLocale: "en",
@@ -40,10 +37,7 @@ export default defineConfig({
   },
   vite: {
     build: {
-      // 'hidden' emits .map files but strips the sourceMappingURL comment from the bundle, so the
-      // browser never requests them; Sentry resolves stack traces via the uploaded copies (matched
-      // by debug ID). Must live under `vite.build` — Astro's own `build` key ignores `sourcemap`.
-      // Only meaningful when the upload plugin below is active; keep `false` in dev/CI to skip the cost.
+      // Must live under `vite.build` — Astro's own `build` ignores `sourcemap`; "hidden" keeps the sourceMappingURL out of the bundle.
       sourcemap: sentryAuthToken ? "hidden" : false,
     },
     plugins: [
@@ -55,12 +49,9 @@ export default defineConfig({
               org: sentryOrg,
               project: sentryProject,
               sourcemaps: {
-                // Astro emits the browser bundle into dist/_astro; upload only those, plus the
-                // .map files alongside. Skip the static HTML / public assets.
+                // Deleted after upload so Cloudflare Pages never serves them.
                 filesToDeleteAfterUpload: ["dist/**/*.map"],
               },
-              // Tie uploaded maps to the deployed commit so Sentry can correlate stack traces
-              // across releases without us having to invent a version string.
               release: { name: process.env.GITHUB_SHA },
             }),
           ]

@@ -33,7 +33,6 @@ const listPath = localePath(lang, "admin/job-offers");
   lang={lang}
   noindex
 >
-  <!-- Hero -->
   <section class="max-w-5xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
@@ -41,14 +40,12 @@ const listPath = localePath(lang, "admin/job-offers");
     <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
   </section>
 
-  <!-- Loading (shown until auth check completes) -->
   <section id="admin-loading" class="max-w-5xl mx-auto px-8 mb-16">
     <div class="text-center py-12">
       <Icon name="material-symbols:progress-activity" class="size-[30px] text-on-surface-variant animate-spin" aria-hidden="true" />
     </div>
   </section>
 
-  <!-- Access denied -->
   <section id="access-denied" class="hidden max-w-5xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <Icon name="material-symbols:block" class="size-12 text-error mb-4 mx-auto block" aria-hidden="true" />
@@ -63,7 +60,6 @@ const listPath = localePath(lang, "admin/job-offers");
     </div>
   </section>
 
-  <!-- Offer detail -->
   <section id="offer-detail-section" class="hidden max-w-3xl mx-auto px-8 mb-16">
     <a
       id="back-to-list"
@@ -127,8 +123,7 @@ const listPath = localePath(lang, "admin/job-offers");
     wireAuthGate({ loadingId: "admin-loading", blockedId: "access-denied", contentId: "offer-detail-section", requireAdmin: true });
 
     // TODO: Remove once uptime monitoring (e.g. Sentry) keeps the DB alive.
-    // Wake up the database (see hire-me.astro for details) — notification
-    // emails deep-link straight to this page.
+    // Warm the DB (see hire-me.astro) — notification emails deep-link straight to this page.
     fetch(`${import.meta.env.PUBLIC_API_URL || ""}/health`).catch(() => {});
   </script>
 </Layout>

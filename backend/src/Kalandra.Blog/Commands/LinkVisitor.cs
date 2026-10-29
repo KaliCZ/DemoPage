@@ -7,10 +7,6 @@ public record LinkVisitorCommand(Guid VisitorId, Guid UserId);
 
 public class LinkVisitorHandler(IDocumentSession session)
 {
-    /// <summary>
-    /// Folds a visitor's anonymous activity into their account on sign-in: re-keys their
-    /// reactions to the account (merging any that the account already made) and stamps their view rows.
-    /// </summary>
     public async Task LinkAndSave(LinkVisitorCommand command, CancellationToken ct)
     {
         var anonymousReactions = await session.Query<BlogReaction>()
@@ -19,7 +15,7 @@ public class LinkVisitorHandler(IDocumentSession session)
         foreach (var reaction in anonymousReactions)
         {
             session.Delete(reaction);
-            // Re-key to the account; if the account already reacted this kind, the upsert dedupes to one row.
+            // If the account already reacted with this kind, the upsert dedupes to one row.
             session.Store(new BlogReaction
             {
                 Id = BlogReaction.IdFor(reaction.Slug, command.UserId, reaction.Kind),

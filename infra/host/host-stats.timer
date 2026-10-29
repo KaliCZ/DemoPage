@@ -1,6 +1,3 @@
-# Posts the health digest once a day at 09:00. RandomizedDelaySec spreads the
-# send so it doesn't fire at the exact same second as other timers.
-# Persistent=true catches up a missed run after the VM was off.
 [Unit]
 Description=Send the daily host health digest to Slack
 

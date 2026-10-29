@@ -31,7 +31,6 @@ public class ListMyBlogCommentsHandler(
         return results.OrderByDescending(r => r.Comment.PostedAt).ToList();
     }
 
-    /// <summary>One post's contribution: my non-deleted comments, each with its direct non-deleted replies.</summary>
     public static IEnumerable<MyBlogComment> Collect(BlogPost post, BlogPostComments comments, Guid userId) =>
         comments.Comments
             .Where(c => c.UserId == userId && !c.IsDeleted)

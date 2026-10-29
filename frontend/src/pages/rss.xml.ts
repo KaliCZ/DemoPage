@@ -5,12 +5,7 @@ import { publishedPosts } from "../blog/posts";
 import { feed } from "../blog/feeds";
 import enBlog from "../i18n/en/blog.json";
 
-// One feed for the whole blog. A post is written in English, Czech, or both;
-// RSS has no per-item language field, so each item is prefixed with its
-// language tags ("[EN]/[CS]") and a bilingual post shows both titles
-// ("English / Czech"), keeping the language visible in any reader. The item
-// links to the post's default-locale page, which carries the language
-// switcher. Summary-only by design. The channel language is the site default.
+// RSS has no per-item language field, so each title carries its [EN]/[CS] tags.
 export function GET(context: APIContext) {
   const posts = publishedPosts();
   // ISO date strings order lexicographically, so .sort() finds the newest edit.

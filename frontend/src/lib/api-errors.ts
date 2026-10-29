@@ -1,20 +1,12 @@
 /** Nested error map: field name → error code → localized message. */
 export type ApiErrorMap = Record<string, Record<string, string>>;
 
-/** Result from parsing a ProblemDetails API error response. */
 export type ApiErrorResult = {
   message: string | null;
   traceId?: string;
 };
 
-/**
- * Extracts the first localized error and traceId from a ProblemDetails response.
- * Returns an object with the translated message (if found) and traceId (if present),
- * or null if the response doesn't contain either.
- *
- * Expected response shape (RFC 7807):
- * { "errors": { "fieldName": ["ErrorCode"] }, "traceId": "00-..." }
- */
+/** First localized field error and traceId from a ProblemDetails response; null when it has neither. */
 export async function getApiError(response: Response, errorMap: ApiErrorMap): Promise<ApiErrorResult | null> {
   if (response.status < 400) return null;
   try {
@@ -38,8 +30,7 @@ export async function getApiError(response: Response, errorMap: ApiErrorMap): Pr
   return null;
 }
 
-// Expose globally for inline define:vars scripts that can't use ES imports.
-// Guarded so server-rendered islands can import this module during prerender.
+// Exposed for define:vars inline scripts, which can't import modules; guarded because islands import this during prerender.
 declare global {
   interface Window {
     __getApiError: typeof getApiError;

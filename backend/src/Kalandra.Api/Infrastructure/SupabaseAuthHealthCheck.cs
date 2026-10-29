@@ -5,14 +5,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Kalandra.Api.Infrastructure;
 
 /// <summary>
-/// Verifies that the Supabase Auth admin API is reachable with the configured
-/// service key, catching a missing or revoked key at /health rather than as a
-/// runtime 401 the first time a user touches auth-admin functionality. Failures
-/// report Degraded, not Unhealthy: auth-admin breaks while the rest of the API
-/// keeps serving, so readiness is partial, not down.
-///
-/// Exercises the same <see cref="IUserInfoService"/> production uses for
-/// fetching user info, so the health check covers the exact client wiring.
+/// Reports Degraded rather than Unhealthy because an auth-admin failure leaves the rest of the API serving.
 /// </summary>
 internal sealed class SupabaseAuthHealthCheck(IUserInfoService userInfoService) : IHealthCheck
 {

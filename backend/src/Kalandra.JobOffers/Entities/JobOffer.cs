@@ -10,17 +10,11 @@ public enum CancelJobOfferError { NotFound, NotAuthorized, InvalidStatus }
 public enum UpdateJobOfferStatusError { NotFound, InvalidTransition }
 public enum AddCommentError { NotFound, NotAuthorized }
 
-/// <summary>
-/// Marten event-sourced aggregate for job offers.
-/// State is rebuilt by applying events in order.
-/// </summary>
 public class JobOffer
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    // These are populated by Apply(JobOfferSubmitted) before any read.
-    // Marten rehydrates via the parameterless constructor and replays events;
-    // a partially-constructed JobOffer is never observed outside that window.
+    // null! is safe: Marten rehydrates via the parameterless constructor and Apply(JobOfferSubmitted) sets these before any read.
     public Email UserEmail { get; set; } = null!;
 
     public NonEmptyString CompanyName { get; set; } = null!;
@@ -57,13 +51,7 @@ public class JobOffer
         if (Status != JobOfferStatus.Submitted)
             return EditJobOfferError.NotSubmittedStatus;
 
-        // Null on a parameter means "no change" (PATCH semantics). Null on the
-        // emitted event field means the same thing — unchanged fields stay null
-        // and are skipped by both Apply() and the activity-log projection.
-        //
-        // Clearing a previously-set optional field is NOT supported: when the
-        // caller passes null for SalaryRange / Location / AdditionalNotes we
-        // treat it as "leave this field alone" rather than "set it to null".
+        // Null means "no change" in both the parameters and the event, so clearing an optional field isn't supported.
         return new JobOfferEdited(
             EditedByUserId: user.Id,
             EditedByEmail: user.Email,
@@ -142,7 +130,6 @@ public class JobOffer
 
     public void Apply(JobOfferEdited e)
     {
-        // Null means "not edited" — preserve the current value for that field.
         if (e.CompanyName != null) CompanyName = e.CompanyName;
         if (e.ContactName != null) ContactName = e.ContactName;
         if (e.ContactEmail is { } contactEmail) ContactEmail = contactEmail;

@@ -11,10 +11,7 @@ public interface IStorageService
 
     Task<StorageDownloadResult> DownloadAsync(string storagePath, CancellationToken ct);
 
-    /// <summary>
-    /// Lightweight probe that the backing storage is reachable with the configured
-    /// credentials. Throws if not. Used by the /health endpoint.
-    /// </summary>
+    /// <summary>Throws if the storage is unreachable or rejects the configured credentials.</summary>
     Task PingAsync(CancellationToken ct);
 }
 

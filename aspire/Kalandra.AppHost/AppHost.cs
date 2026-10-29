@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 // Supabase is shared machine-wide via its CLI; Aspire owns Marten's Postgres so each run gets an isolated DB.
 DevInfrastructure.EnsureRunning();
 
-// Prevents two aspires to bind into the same ports.
+// Machine-wide lock so parallel AppHosts can't claim the same ports.
 using var portMutex = new Mutex(initiallyOwned: false, "Kalandra-Aspire-Ports");
 AcquireMutex(portMutex);
 
@@ -29,7 +29,6 @@ try
     Environment.SetEnvironmentVariable("DASHBOARD__OTLP__CORS__ALLOWEDHEADERS", "*");
 
     dashboardUrl = $"http://localhost:{ports.Dashboard.Port}";
-    // Only announce non-default port assignments.
     if (ports.Source != "default ports")
     {
         Console.WriteLine($"Aspire ports: {ports.Source}");
@@ -42,14 +41,11 @@ try
     var worktreeId = Convert.ToHexString(SHA256.HashData(
         Encoding.UTF8.GetBytes(Path.GetFullPath(repoRoot))))[..8].ToLowerInvariant();
 
-    // Docker Desktop collapses containers sharing this label into one row.
     var dockerGroup = $"DemoPage-Aspire-{worktreeId}";
 
-    // Fixed local-dev password: Postgres bakes POSTGRES_PASSWORD into the volume on first init,
-    // so a rotating value would break auth on every subsequent run.
+    // Postgres bakes the password into the data volume on first init, so a rotating value would break later runs.
     var pgPassword = builder.AddParameter("postgres-password", () => "kalandra-local-dev", secret: true);
 
-    // connectionName matches the key in the API's appsettings.json.
     var postgres = builder.AddPostgres("postgres", password: pgPassword)
         .WithDataVolume($"kalandra-pgdata-{worktreeId}")
         .WithDockerGroup(dockerGroup);
@@ -64,8 +60,7 @@ try
         .WithIconName("Server");
 
     var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
-    // No WaitFor(api): the UI comes up immediately rather than blocking on the API's own DB wait;
-    // a fetch before the API is ready just errors and recovers on the next call.
+    // No WaitFor(api) so the UI starts immediately; a fetch before the API is up just errors and recovers.
     var web = builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
         .WithHttpEndpoint(env: "PORT")
         .WithReference(api)
@@ -75,7 +70,6 @@ try
         .WithExternalHttpEndpoints()
         .WithIconName("Globe");
 
-    // The MCP server is its own OAuth-protected host, sharing the API's database and domain handlers.
     var mcp = builder.AddProject<Projects.Kalandra_McpServer>("mcp", launchProfileName: null)
         .WithReference(kalandraDb, connectionName: "DefaultConnection")
         .WaitFor(kalandraDb)
@@ -83,9 +77,7 @@ try
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
         .WithIconName("PlugConnected");
 
-    // Its list_blog_posts tool reads the site's RSS feed — point it at the dev web server.
     mcp.WithEnvironment("BlogFeed__RssUrl", ReferenceExpression.Create($"{web.GetEndpoint("http")}/rss.xml"));
-    // The protected-resource-metadata "resource" id is the host's own public URL.
     mcp.WithEnvironment("Mcp__ResourceUri", mcp.GetEndpoint("http"));
 
     // Display-only links to the CLI-managed Supabase stack; ports come from supabase/config.toml.
@@ -113,7 +105,6 @@ finally
     portMutex.ReleaseMutex();
 }
 
-// Print a clickable Web + Dashboard summary once the frontend is up; everything else is reachable from the dashboard.
 var notifications = app.Services.GetRequiredService<ResourceNotificationService>();
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 _ = Task.Run(async () =>

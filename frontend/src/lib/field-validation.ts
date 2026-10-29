@@ -1,8 +1,4 @@
-/**
- * Form-field validation rules shared by the job-offers edit form (Vue) and,
- * eventually, the hire-me submission form — the two forms must stay in sync
- * with the backend contract, so the rules live in one place.
- */
+// hire-me.astro's inline validator duplicates this logic; change both together.
 
 export interface FieldValidationStrings {
   required: string;

@@ -3,9 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 namespace Kalandra.Blog;
 
 /// <summary>
-/// Caches each post's live comment count so the blog index doesn't replay the whole comment
-/// stream on every request. A write invalidates the entry, then invalidates it again after a
-/// short delay in case a read already in flight repopulates it with the pre-write count.
+/// Invalidate wipes again after a delay in case a read already in flight repopulates the pre-write count.
 /// </summary>
 public sealed class BlogCommentCountCache(IMemoryCache cache, TimeProvider timeProvider) : IDisposable
 {
