@@ -94,7 +94,7 @@
     "dns": "DNS / Doména",
     "reverseProxy": "Reverzní proxy",
     "blueGreen": "Blue/Green",
-    "backgroundJobs": "Úlohy na pozadí",
+    "backgroundJobs": "Události + úlohy na pozadí",
     "database": "Databáze",
     "authentication": "Autentizace",
     "fileStorage": "Avatary / Soubory",
@@ -117,7 +117,7 @@
         "id": "backend-hosting",
         "title": "Backend Hosting → Oracle Cloud",
         "summary": "Oracle Cloud Always Free ARM A1 instance, se zálohou na Hetzner VPS.",
-        "context": "Potřebujeme hosting, který podporuje dlouhodobě běžící procesy (ASP.NET Core + Temporal). Většina free tierů je serverless/scale-to-zero a při nečinnosti proces ukončí.",
+        "context": "Potřebujeme hosting, který podporuje dlouhodobě běžící procesy (ASP.NET Core se stále běžícím daemonem na pozadí pro notifikace). Většina free tierů je serverless/scale-to-zero a při nečinnosti proces ukončí.",
         "decision": "Začít s Oracle Cloud Always Free ARM A1 instancí (4 OCPU, 24 GB RAM, 200 GB úložiště). Pokud bude Oracle nespolehlivý, přejít na Hetzner VPS (~4 €/měsíc).",
         "why": [
           "Free tier se štědrými parametry (4 OCPU, 24 GB RAM, 200 GB úložiště)",
@@ -162,7 +162,7 @@
           },
           {
             "option": "AWS Lambda / Google Cloud Run",
-            "reason": "Serverless — žádný trvalý background proces pro Temporal workery."
+            "reason": "Serverless — žádný trvalý proces pro daemon na pozadí."
           },
           {
             "option": "Render free tier",
@@ -174,7 +174,7 @@
           },
           {
             "option": "Azure Container Apps",
-            "reason": "Free tier je štědrý, ale self-hosting Temporal by byl nepraktický."
+            "reason": "Free tier je štědrý, ale daemon na pozadí potřebuje stále běžící repliku a ta se do měsíčního free limitu nevejde."
           }
         ]
       },
@@ -183,7 +183,7 @@
         "title": "Frontend Framework → Astro SSG",
         "summary": "Astro v SSG režimu s Vue komponentami hydratovanými jen tam, kde je třeba.",
         "context": "Potřebujeme frontend framework pro převážně statický web na Cloudflare Pages. Požadavky: Tailwind CSS, i18n (čeština/angličtina), progresivní interaktivita, minimum JS pro uživatele.",
-        "decision": "Astro ve statickém režimu (SSG). Interaktivní komponenty používají vanilla JS, s možností Vue islands pro složitější UI logiku. Žádné Cloudflare Workers — Pages servíruje čisté HTML/CSS/JS z CDN.",
+        "decision": "Astro ve statickém režimu (SSG). Interaktivita na úrovni stránky používá vanilla JS; UI řízené daty (komentáře na blogu, pracovní nabídky) používá Vue islands. Žádné Cloudflare Workers — Pages servíruje čisté HTML/CSS/JS z CDN.",
         "why": [
           "Zdarma navždy — SSG na Cloudflare Pages nemá žádné náklady za request, na rozdíl od SSR s Workers, které se účtují za volání",
           "Každá stránka je předgenerovaná a cachovaná na CDN edge nodech po celém světě — téměř okamžité načítání",
@@ -265,7 +265,7 @@
         "title": "Organizace kódu → Vertical Slices",
         "summary": "Kód organizovaný podle funkcionality, ne podle technické vrstvy.",
         "context": "Potřebujeme strategii organizace backend kódu, která drží související kód pohromadě a zabraňuje problému \"změna jedné featury, úprava pěti vrstev\".",
-        "decision": "Kód je organizovaný podle featury (např. Features/JobOffers/) místo podle technické vrstvy. Každá feature složka obsahuje svůj controller, eventy, DTO a handlery.",
+        "decision": "Kód je organizovaný podle featury místo podle technické vrstvy: každá doména je samostatný projekt (např. Kalandra.JobOffers) se svými eventy, handlery a kontrakty a složka Features/JobOffers/ v API obsahuje její controller a DTO.",
         "why": [
           "Přidání nové featury = přidání nové složky se všemi soubory, žádné změny sdílených vrstev",
           "Každá featura je samostatná — snadno pochopitelná, reviewovatelná a testovatelná izolovaně",
@@ -279,9 +279,9 @@
         "context": "Potřebujeme testovací přístup, který poskytuje vysokou jistotu s minimem mockování a pokrývá celý stack od API endpointů po databázi.",
         "decision": "Tři vrstvy testování, všechny běží paralelně v CI/CD. Každá blokuje deployment při selhání.",
         "why": [
-          "Backend integrační testy (hlavní zaměření): xUnit + Testcontainers — reálný PostgreSQL a reálný Temporal dev server, celé API přes WebApplicationFactory. Mockovat co nejméně (auth je mockovaný, odchozí emaily zachytává in-memory fake a testy je ověřují), ale databáze je reálná, takže většinu funkcionality lze snadno ověřit",
+          "Backend integrační testy (hlavní zaměření): xUnit + Testcontainers — reálný PostgreSQL s reálně běžícími notifikačními subscriptions, celé API přes WebApplicationFactory. Mockovat co nejméně (auth je mockovaný, odchozí emaily zachytává in-memory fake a testy je ověřují), ale databáze je reálná, takže většinu funkcionality lze snadno ověřit",
           "Backend unit testy: pro doménovou logiku a čisté funkce, kde by integrační testy byly zbytečně složité",
-          "Frontend page testy: Playwright — builduje statický web, ověřuje renderování, navigaci, i18n a dark mode",
+          "Frontend page testy: Playwright — builduje statický web, ověřuje renderování, navigaci, i18n, dark mode a přihlašovací dialog",
           "E2E testy: Playwright proti celé běžící aplikaci — fungující auth, fungující DB, vše reálné. Pouze skutečně externí efekty jako reálné doručení emailu nelze ověřit",
           "CI/CD: Všechny tři testovací sady běží paralelně, všechny blokují deployment při selhání"
         ]
@@ -425,34 +425,34 @@
         "number": 3,
         "title": "Emaily, Slack a observabilita",
         "done": false,
-        "description": "Částečně hotovo: emailové notifikace běží (přes Temporal, viz v4) a Sentry pokrývá chyby, traces a logy. Zbývá: Slack notifikace, emaily při změnách stavu a PostHog produktová analytika.",
+        "description": "Částečně hotovo: emailové notifikace běží (viz v4) a Sentry pokrývá chyby, traces a logy. Zbývá: Slack notifikace, emaily při změnách stavu a PostHog produktová analytika.",
         "side": "left"
       },
       {
         "number": 4,
         "title": "Úlohy na pozadí",
         "done": true,
-        "dates": "7. 7. 2026",
-        "description": "Emaily a notifikace běží jako durable workflow na pozadí: self-hosted Temporal na backend VPS s retry sémantikou, persistence v Supabase PostgreSQL. Uložení komentáře či pracovní nabídky a rozeslání notifikací sdílí jeden workflow — jedno se nestane bez druhého.",
+        "dates": "7. 7. – 13. 7. 2026",
+        "description": "Emaily a notifikace se spolehlivě doručují na pozadí: Marten event subscriptions běží v async daemonu API a svůj postup ukládají do stejné Supabase PostgreSQL. Uložený komentář či pracovní nabídka vždy dostane své emaily a žádný neodejde dvakrát. Nejdřív to běželo na self-hosted Temporal serveru, pak ho nahradily subscriptions — stejné záruky bez dalšího systému na provoz.",
         "side": "right",
         "detailsLabel": "Co se udělalo",
         "details": [
           {
             "author": "claude",
-            "text": "Self-hosted Temporal server na VPS, persistence v Supabase PostgreSQL"
+            "text": "Spolehlivé store-and-notify s retry: komentáře na blogu, podání pracovních nabídek i komentáře k nabídkám notifikují správné lidi emailem"
           },
           {
             "author": "claude",
-            "text": "Durable store-and-notify workflow s retry: komentáře na blogu, podání pracovních nabídek i komentáře k nabídkám notifikují správné lidi emailem"
-          },
-          {
-            "author": "claude",
-            "text": "Temporal Web UI na temporal.kalandra.tech za Cloudflare Access"
+            "text": "První verze na self-hosted Temporal serveru s Web UI za Cloudflare Access"
           },
           { "author": "pavel", "text": "Brevo SMTP relay a nastavení Cloudflare Access" },
           {
             "author": "claude",
-            "text": "Aspire spouští lokální Temporal dev server; integrační testy ověřují doručené emaily proti skutečnému přes Testcontainers"
+            "text": "Temporal nahrazen Marten event subscriptions v async daemonu API — žádný další server, databáze ani dashboard na provoz"
+          },
+          {
+            "author": "claude",
+            "text": "Integrační testy ověřují doručené emaily s reálně běžícími subscriptions proti PostgreSQL v Testcontainers"
           }
         ]
       },

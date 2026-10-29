@@ -94,7 +94,7 @@
     "dns": "DNS / Domain",
     "reverseProxy": "Reverse Proxy",
     "blueGreen": "Blue/Green",
-    "backgroundJobs": "Background Jobs",
+    "backgroundJobs": "Events + background jobs",
     "database": "Database",
     "authentication": "Authentication",
     "fileStorage": "Avatars / Files",
@@ -117,7 +117,7 @@
         "id": "backend-hosting",
         "title": "Backend Hosting → Oracle Cloud",
         "summary": "Oracle Cloud Always Free ARM A1 instance, with Hetzner VPS as fallback.",
-        "context": "Need a host that supports long-running processes (ASP.NET Core + Temporal background workers). Most free tiers are serverless/scale-to-zero and shut down the process when idle.",
+        "context": "Need a host that supports long-running processes (ASP.NET Core with an always-on background daemon for notifications). Most free tiers are serverless/scale-to-zero and shut down the process when idle.",
         "decision": "Start with Oracle Cloud Always Free ARM A1 instance (4 OCPUs, 24 GB RAM, 200 GB storage). If Oracle proves unreliable, fall back to Hetzner VPS (~€4/month).",
         "why": [
           "Free tier with generous specs (4 OCPUs, 24 GB RAM, 200 GB storage)",
@@ -162,7 +162,7 @@
           },
           {
             "option": "AWS Lambda / Google Cloud Run",
-            "reason": "Serverless — no persistent background process for Temporal workers."
+            "reason": "Serverless — no persistent process for the background daemon."
           },
           {
             "option": "Render free tier",
@@ -174,7 +174,7 @@
           },
           {
             "option": "Azure Container Apps",
-            "reason": "Free tier is generous, but self-hosting Temporal would be awkward."
+            "reason": "Free tier is generous, but the background daemon needs an always-on replica, which outgrows the free monthly grant."
           }
         ]
       },
@@ -183,7 +183,7 @@
         "title": "Frontend Framework → Astro SSG",
         "summary": "Astro in SSG mode with Vue components hydrated only where needed.",
         "context": "Need a frontend framework for a mostly-static site hosted on Cloudflare Pages. Requirements: Tailwind CSS, i18n (Czech/English), progressive interactivity, minimal JS shipped to users.",
-        "decision": "Astro in static site generation (SSG) mode. Interactive components use vanilla JS, with the option of Vue islands for complex UI logic. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN.",
+        "decision": "Astro in static site generation (SSG) mode. Page-level interactivity uses vanilla JS; data-driven UI (blog comments, job offers) uses Vue islands. No Cloudflare Workers — Pages serves plain HTML/CSS/JS from CDN.",
         "why": [
           "Free forever — SSG on Cloudflare Pages has no per-request cost, unlike SSR with Workers which bills per invocation",
           "Every page is pre-built and cached on CDN edge nodes worldwide — near-instant loading",
@@ -265,7 +265,7 @@
         "title": "Code Organization → Vertical Slices",
         "summary": "Code organized by feature, not by technical layer.",
         "context": "Need a backend code organization strategy that keeps related code together and avoids the \"change one feature, touch five layers\" problem.",
-        "decision": "Code is organized by feature (e.g., Features/JobOffers/) rather than by technical layer. Each feature folder contains its controller, events, DTOs, and handlers.",
+        "decision": "Code is organized by feature rather than by technical layer: each business domain is its own project (e.g. Kalandra.JobOffers) with its events, handlers, and contracts, and the API's Features/JobOffers/ folder holds its controller and DTOs.",
         "why": [
           "Adding a new feature = adding a new folder with all its files, no changes to shared layers",
           "Each feature is self-contained — easy to understand, review, and test in isolation",
@@ -279,9 +279,9 @@
         "context": "Need a testing approach that provides high confidence with minimal mocking, covering the full stack from API endpoints to database.",
         "decision": "Three layers of testing, all running in parallel in CI/CD. Each blocks deployment on failure.",
         "why": [
-          "Backend integration tests (main focus): xUnit + Testcontainers — real PostgreSQL and a real Temporal dev server, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, outbound email is captured by an in-memory fake and asserted), but the database is real so most functionality is easy to assert",
+          "Backend integration tests (main focus): xUnit + Testcontainers — real PostgreSQL with the notification subscriptions running for real, full API via WebApplicationFactory. Mock as little as possible (auth is mocked, outbound email is captured by an in-memory fake and asserted), but the database is real so most functionality is easy to assert",
           "Backend unit tests: for domain logic and pure functions where integration tests would be overkill",
-          "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, and dark mode",
+          "Frontend page tests: Playwright — builds the static site, verifies rendering, navigation, i18n, dark mode, and the sign-in dialog",
           "E2E tests: Playwright against the full running application — working auth, working DB, everything real. Only truly external side effects like actual email delivery can't be asserted",
           "CI/CD: All three test suites run in parallel, all block deployment on failure"
         ]
@@ -299,7 +299,7 @@
         "verdict": "Would probably do it again just for the setup simplicity on personal projects. Not on commercial projects with real budgets.",
         "observations": [
           "Free PostgreSQL is cool and worth it on its own",
-          "Temporal's persistence fits into the same Supabase PostgreSQL (temporal + temporal_visibility databases) — no extra database to run",
+          "Temporal's persistence fit into the same Supabase PostgreSQL (temporal + temporal_visibility databases) — no extra database to run",
           {
             "text": "Auth has some rough edges — e.g. email provider issues",
             "link": "https://github.com/orgs/supabase/discussions/37737#discussioncomment-14990605",
@@ -425,34 +425,34 @@
         "number": 3,
         "title": "Emails, Slack & Observability",
         "done": false,
-        "description": "Partially shipped: email notifications are live (Temporal-backed, see v4) and Sentry covers errors, traces, and logs. Remaining: Slack notifications, emails on status changes, and PostHog product analytics.",
+        "description": "Partially shipped: email notifications are live (see v4) and Sentry covers errors, traces, and logs. Remaining: Slack notifications, emails on status changes, and PostHog product analytics.",
         "side": "left"
       },
       {
         "number": 4,
         "title": "Background Tasks",
         "done": true,
-        "dates": "Jul 7, 2026",
-        "description": "Emails and notifications run as durable background workflows: self-hosted Temporal on the backend VPS with retry semantics, persisting into the Supabase PostgreSQL. Storing a comment or job offer and sending its notifications share one workflow — neither happens without the other.",
+        "dates": "Jul 7 – 13, 2026",
+        "description": "Emails and notifications are delivered durably in the background: Marten event subscriptions on the API's async daemon, tracking their progress in the same Supabase PostgreSQL. A stored comment or job offer always gets its emails, and none goes out twice. First shipped on a self-hosted Temporal server, then replaced by the subscriptions — the same guarantees without a second system to run.",
         "side": "right",
         "detailsLabel": "What was done",
         "details": [
           {
             "author": "claude",
-            "text": "Self-hosted Temporal server on the VPS, persisting into the Supabase PostgreSQL"
+            "text": "Durable store-and-notify with retries: blog comments, job offer submissions, and job offer comments all notify the right people by email"
           },
           {
             "author": "claude",
-            "text": "Durable store-and-notify workflows with retries: blog comments, job offer submissions, and job offer comments all notify the right people by email"
-          },
-          {
-            "author": "claude",
-            "text": "Temporal Web UI at temporal.kalandra.tech behind Cloudflare Access"
+            "text": "First version on a self-hosted Temporal server, with its Web UI behind Cloudflare Access"
           },
           { "author": "pavel", "text": "Brevo SMTP relay and Cloudflare Access setup" },
           {
             "author": "claude",
-            "text": "Aspire runs a local Temporal dev server; integration tests assert the delivered emails against a real one via Testcontainers"
+            "text": "Replaced Temporal with Marten event subscriptions on the API's async daemon — no extra server, databases, or dashboard to run"
+          },
+          {
+            "author": "claude",
+            "text": "Integration tests assert the delivered emails with the real subscriptions running against Testcontainers PostgreSQL"
           }
         ]
       },

@@ -213,8 +213,7 @@ const { t, class: className, ...rest } = Astro.props;
             ASP.NET Core
           </text>
           <text x="374" y="174" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
-            {" "}
-            Backend API{" "}
+            REST API + MCP host
           </text>
           <rect x="490" y="152" width="72" height="16" rx="8" fill="var(--color-tertiary)" opacity="0.15"></rect>
           <text
@@ -230,10 +229,10 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
 
-        <!-- Internal arrow: API → Temporal -->
+        <!-- Internal arrow: API → Marten -->
         <line x1="530" y1="203" x2="530" y2="220" stroke="var(--color-outline)" stroke-width="1" marker-end="url(#arrow)"></line>
 
-        <!-- Temporal (offset right and narrower than the API so no arrow crosses it) -->
+        <!-- Marten (offset right and narrower than the API so no arrow crosses it) -->
         <g>
           <rect
             x="420"
@@ -248,7 +247,7 @@ const { t, class: className, ...rest } = Astro.props;
           <rect x="420" y="228" width="4" height="60" rx="2" fill="var(--color-tertiary)"></rect>
           <circle cx="438" cy="248" r="3.5" fill="var(--color-tertiary)" opacity="0.6"></circle>
           <text x="448" y="252" fill="var(--color-on-surface)" font-family="var(--font-body)" font-size="13" font-weight="600">
-            Temporal
+            Marten
           </text>
           <text x="436" y="268" fill="var(--color-on-surface-variant)" font-family="var(--font-body)" font-size="11">
             {t.backgroundJobs}
@@ -364,16 +363,7 @@ const { t, class: className, ...rest } = Astro.props;
         marker-end="url(#arrow)"
       ></path>
 
-      <!-- Backend API → PostgreSQL (API bottom → DB top) -->
-      <path
-        d="M390,203 C390,330 385,400 375,438"
-        fill="none"
-        stroke="var(--color-outline)"
-        stroke-width="1.5"
-        marker-end="url(#arrow)"
-      ></path>
-
-      <!-- Temporal → PostgreSQL (workflow persistence) -->
+      <!-- Marten → PostgreSQL -->
       <path
         d="M490,288 C490,360 460,400 445,438"
         fill="none"
