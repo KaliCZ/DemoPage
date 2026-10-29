@@ -17,8 +17,8 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.14" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
-    <PackageReference Include="Supabase.Gotrue" Version="8.5.1" />
-    <PackageReference Include="Supabase.Storage" Version="8.5.1" />
+    <PackageReference Include="Supabase.Gotrue" Version="8.6.0" />
+    <PackageReference Include="Supabase.Storage" Version="8.6.0" />
   </ItemGroup>
 
 </Project>
