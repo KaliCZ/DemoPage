@@ -33,6 +33,7 @@ public class SupabaseUserInfoServiceTests
         public Task<GenerateLinkResponse?> GenerateLink(GenerateLinkOptions options) => throw new NotImplementedException();
         public Task<MfaAdminListFactorsResponse?> ListFactors(MfaAdminListFactorsParams listFactorsParams) => throw new NotImplementedException();
         public Task<MfaAdminDeleteFactorResponse?> DeleteFactor(MfaAdminDeleteFactorParams deleteFactorParams) => throw new NotImplementedException();
+        public Task DeleteCustomProviderAsync(string identifier, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private static SupabaseUserInfoService Build(Func<string, Task<User?>> onGetUserById, TimeSpan? fetchTimeout = null) =>
