@@ -246,9 +246,8 @@ jobs:
         run: ./node_modules/.bin/playwright install --with-deps chromium
         working-directory: frontend
 
-
-      - name: Run Playwright tests (pages only — e2e requires backend)
-        run: ./node_modules/.bin/playwright test tests/pages.spec.ts
+      - name: Run Playwright page tests (e2e runs in its own job)
+        run: ./node_modules/.bin/playwright test
         working-directory: frontend
 
   backend-deploy:
