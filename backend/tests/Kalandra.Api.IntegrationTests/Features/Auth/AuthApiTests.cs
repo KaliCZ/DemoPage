@@ -13,16 +13,12 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     private readonly FakeSupabaseAdminService adminService = factory.FakeAdminService;
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    // ───── Auth ─────
-
     [Fact]
     public async Task LinkEmail_WithoutAuth_Returns401()
     {
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "test123456" }, Ct);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-
-    // ───── Validation ─────
 
     [Fact]
     public async Task LinkEmail_WithShortPassword_Returns400_PasswordTooShort()
@@ -48,8 +44,6 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         AssertValidationError(json, "password", "PasswordTooShort");
     }
 
-    // ───── Success ─────
-
     [Fact]
     public async Task LinkEmail_WithValidPassword_Returns204()
     {
@@ -63,8 +57,6 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(linkUserId, adminService.LastChangePasswordCall.Value.User.Id);
         Assert.Equal("securepassword123", adminService.LastChangePasswordCall.Value.Password);
     }
-
-    // ───── Supabase Failure ─────
 
     [Fact]
     public async Task LinkEmail_WhenAlreadyLinked_Returns400_AlreadyLinked()
@@ -88,8 +80,6 @@ public class AuthApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var response = await client.PostAsJsonAsync("/api/auth/link-email", new { password = "securepassword123" }, Ct);
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
-
-    // ───── Helpers ─────
 
     private Guid Authenticate(
         string email = "test@example.com",

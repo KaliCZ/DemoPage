@@ -34,7 +34,7 @@ public record CreateJobOfferCommand(
 public class CreateJobOfferHandler(IDocumentSession session, IStorageService storageService)
 {
     private const int MaxAttachments = 5;
-    private const long MaxTotalBytes = 15 * 1024 * 1024; // 15 MB
+    private const long MaxTotalBytes = 15 * 1024 * 1024;
 
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -49,14 +49,10 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         "image/webp",
     };
 
-    /// <summary>
-    /// Stores the submitted offer; the owner notification is delivered separately by the
-    /// job-offer subscription reacting to the appended event.
-    /// </summary>
+    /// <summary>The owner notification is sent by JobOfferNotificationSubscription reacting to the appended event.</summary>
     public async Task<Result<Guid, CreateJobOfferError>> CreateAndSave(
         CreateJobOfferCommand command, CancellationToken ct)
     {
-        // Validate attachments
         if (command.Files.Count > MaxAttachments)
             return CreateJobOfferError.TooManyAttachments;
 
@@ -70,7 +66,6 @@ public class CreateJobOfferHandler(IDocumentSession session, IStorageService sto
         if (await session.LoadAsync<JobOffer>(command.Id, ct) is { } existing)
             return existing.UserId == command.User.Id ? command.Id : CreateJobOfferError.IdAlreadyUsed;
 
-        // Upload attachments
         var uploadedAttachments = new List<AttachmentInfo>();
 
         if (command.Files.Count > 0)

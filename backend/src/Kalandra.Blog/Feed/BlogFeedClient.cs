@@ -12,9 +12,7 @@ public record BlogPostSummary(
     IReadOnlyList<string> Tags);
 
 /// <summary>
-/// Reads the published posts from the site's own RSS feed. The backend's post catalog holds
-/// only slugs and stream ids, so the feed the frontend generates is the source of post titles,
-/// summaries, and tags for the MCP <c>list_blog_posts</c> tool.
+/// The post catalog holds only slugs and stream ids, so the frontend's RSS feed is the source of titles, summaries and tags.
 /// </summary>
 public sealed class BlogFeedClient(HttpClient httpClient, BlogFeedConfig config)
 {
@@ -45,8 +43,7 @@ public sealed class BlogFeedClient(HttpClient httpClient, BlogFeedConfig config)
             .ToList();
     }
 
-    // Items link to the post page (…/blog/{slug}, possibly locale-prefixed); the trailing
-    // segment is the slug the comment endpoints key on.
+    // Links may be locale-prefixed, but the trailing segment is always the slug.
     private static string SlugFromLink(string link) =>
         Uri.TryCreate(link, UriKind.Absolute, out var uri)
             ? uri.Segments[^1].Trim('/')

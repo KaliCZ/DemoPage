@@ -12,7 +12,6 @@ import { Icon } from "astro-icon/components";
   <Icon name="material-symbols:info" class="size-[18px] shrink-0" aria-hidden="true" />
 </template>
 
-<!-- Global snackbar -->
 <div
   id="snackbar"
   role="status"
@@ -61,7 +60,6 @@ import { Icon } from "astro-icon/components";
 
     const inner = snackbar.firstElementChild as HTMLElement;
 
-    // Reset classes
     inner.classList.remove("bg-tertiary-container", "text-on-surface", "bg-error-container", "bg-surface-container-high");
     icon.classList.remove("text-tertiary", "text-error", "text-primary");
 
@@ -81,7 +79,6 @@ import { Icon } from "astro-icon/components";
 
     msg.textContent = message;
 
-    // Show/hide traceId section
     const traceEl = document.getElementById("snackbar-trace");
     const traceText = document.getElementById("snackbar-trace-text");
     if (traceEl && traceText) {
@@ -93,7 +90,6 @@ import { Icon } from "astro-icon/components";
       }
     }
 
-    // Always show close button
     const closeBtn = document.getElementById("snackbar-close");
     if (closeBtn) {
       closeBtn.classList.remove("hidden");
@@ -108,11 +104,10 @@ import { Icon } from "astro-icon/components";
       snackbar.style.transition = "";
     }
 
-    // Show
     snackbar.classList.remove("opacity-0", "-translate-y-4", "pointer-events-none");
     snackbar.classList.add("opacity-100", "translate-y-0", "pointer-events-auto");
 
-    // Auto-hide (0 = persistent, dismissed via close button or by next snackbar)
+    // A duration of 0 keeps it up until it's closed or replaced by the next snackbar.
     clearTimeout((window as any).__snackbarTimer);
     if (duration > 0) {
       (window as any).__snackbarTimer = setTimeout(() => {
@@ -122,7 +117,6 @@ import { Icon } from "astro-icon/components";
     }
   };
 
-  // Copy traceId to clipboard
   document.getElementById("snackbar-trace-copy")?.addEventListener("click", () => {
     const traceText = document.getElementById("snackbar-trace-text")?.textContent;
     if (traceText) {
@@ -139,7 +133,7 @@ import { Icon } from "astro-icon/components";
     }
   });
 
-  // Show snackbar from sessionStorage (for cross-page messages like form submission redirects)
+  // Messages queued in sessionStorage survive a redirect (e.g. after a form submission).
   try {
     const pending = sessionStorage.getItem("snackbar");
     if (pending) {

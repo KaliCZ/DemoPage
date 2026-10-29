@@ -8,10 +8,7 @@ public record PostBlogCommentCommand(BlogPost Post, BlogCommentPosted Comment);
 
 public class PostBlogCommentHandler(IDocumentSession session, BlogCommentCountCache commentCountCache)
 {
-    /// <summary>
-    /// Stores the comment; the notification emails are delivered separately by the
-    /// blog-comment subscription reacting to the appended event.
-    /// </summary>
+    /// <summary>Notification emails are sent by BlogCommentNotificationSubscription reacting to the appended event.</summary>
     public async Task<Result<BlogCommentPosted, PostBlogCommentError>> PostAndSave(
         PostBlogCommentCommand command, CancellationToken ct)
     {

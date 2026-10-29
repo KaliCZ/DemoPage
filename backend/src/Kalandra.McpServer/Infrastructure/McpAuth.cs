@@ -11,10 +11,6 @@ using ModelContextProtocol.Authentication;
 
 namespace Kalandra.McpServer.Infrastructure;
 
-/// <summary>
-/// The MCP server is an OAuth 2.0 resource server. Supabase is the authorization server: it runs the
-/// OAuth flow and issues access tokens; this host only validates them and advertises where to get one.
-/// </summary>
 public static class McpAuth
 {
     public static void Add(IServiceCollection services, SupabaseConfig supabaseConfig, McpServerConfig mcpConfig)
@@ -26,8 +22,7 @@ public static class McpAuth
 
         services.AddAuthentication(options =>
             {
-                // JWT validates the bearer token; when it's absent or invalid the MCP scheme issues the
-                // 401 + `WWW-Authenticate: resource_metadata=…` challenge that points clients at Supabase.
+                // The MCP scheme challenges so the 401 carries the resource_metadata that points clients at Supabase.
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
             })
@@ -45,9 +40,7 @@ public static class McpAuth
                 {
                     ValidateIssuer = true,
                     ValidIssuer = issuer,
-                    // Supabase's OAuth-server audience for third-party tokens isn't observable until the
-                    // server is turned on; validate issuer + signature + lifetime now and tighten to an
-                    // RFC 8707 resource-bound audience once we can confirm the token's `aud`.
+                    // Supabase's `aud` for third-party OAuth tokens is unconfirmed; tighten to the RFC 8707 resource audience once it is.
                     ValidateAudience = false,
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime = true,
@@ -85,8 +78,7 @@ public static class McpAuth
     }
 
     /// <summary>
-    /// Projects Supabase's app_metadata.roles into ClaimTypes.Role using canonical enum names, so the
-    /// shared CurrentUserFactory reads the same roles here as in the API.
+    /// Mirrors the API's role projection so the shared CurrentUserFactory reads the same roles on both hosts.
     /// </summary>
     private static void ExtractRolesFromAppMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
     {

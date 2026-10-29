@@ -4,7 +4,7 @@ Host-level patching for the Oracle Linux VM: apply security updates
 automatically, then surface when a reboot is needed to finish applying them.
 All optional/additive host ops — none of it affects the running app stack, and
 the stack comes back on its own after a reboot (see
-[SETUP.md → Reboot Survival](../docs/SETUP.md#reboot-survival)).
+[deployment.md](../../docs/architecture/deployment.md#how-it-works)).
 
 ## Automatic security updates (`dnf-automatic`)
 

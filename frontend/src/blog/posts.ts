@@ -8,7 +8,6 @@ export interface BlogPost {
   locales: Locale[];
   pubDate: Date;
   updatedDate?: Date;
-  /** Sitemap lastmod source: updatedDate when set, else pubDate. */
   lastModified: string;
 }
 
@@ -24,7 +23,7 @@ function parseIsoDate(value: string, source: string): Date {
   return date;
 }
 
-/** All published posts, newest first. Drafts are excluded. */
+/** All published posts, newest first. */
 export function publishedPosts(): BlogPost[] {
   return Object.entries(modules)
     .map(([path, module]) => {

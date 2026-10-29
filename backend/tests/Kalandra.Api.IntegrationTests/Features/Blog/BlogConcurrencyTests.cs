@@ -51,8 +51,7 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
     [Fact]
     public async Task DifferentReactorsOnSamePost_DoNotConflict()
     {
-        // Reactions are rows keyed by the reactor, so two people reacting to the same post at
-        // once write different rows — no stream-append version clash, no exception.
+        // Reactions are rows keyed by reactor, so two people reacting at once write separate rows with no version clash.
         var slug = Guid.NewGuid().ToString();
 
         await using var firstSession = store.LightweightSession();
@@ -72,8 +71,7 @@ public class BlogConcurrencyTests(TestWebApplicationFactory factory) : IClassFix
     [Fact]
     public async Task SameReactorRacingSameKind_ConvergesToOneRow()
     {
-        // The same reactor from two browsers keys the same row id, so racing writers upsert to a
-        // single reaction instead of double-counting — and neither throws.
+        // One reactor on two browsers keys the same row id, so racing writers upsert instead of double-counting.
         var slug = Guid.NewGuid().ToString();
         var reactorId = Guid.NewGuid();
 

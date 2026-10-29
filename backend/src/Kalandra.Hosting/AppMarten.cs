@@ -13,10 +13,7 @@ namespace Kalandra.Hosting;
 public static class AppMarten
 {
     /// <summary>
-    /// The Marten store both hosts share — same connection, same domain config, same serialization, so
-    /// they read and write one schema. Returns the Marten builder so a host can chain what only it runs:
-    /// Kalandra.Api adds the notification subscriptions and the async daemon, and the MCP host must not,
-    /// or a tool-written event would be emailed twice.
+    /// Shared by both hosts; only the API may chain the notification subscriptions and daemon, or a tool-written event is emailed twice.
     /// </summary>
     /// <param name="ownsSchema">Only the owner migrates in production; the other host assumes the schema exists.</param>
     public static MartenServiceCollectionExtensions.MartenConfigurationExpression AddAppMartenStore(
@@ -36,7 +33,6 @@ public static class AppMarten
         {
             options.Connection(connectionString);
 
-            // Domain-specific Marten configuration
             options.ConfigureJobOffers();
             options.ConfigureBlog();
 

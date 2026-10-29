@@ -1,15 +1,5 @@
-/* ============================================
-   Design System: "The Digital Architect"
-   Based on Stitch export + docs/stitch/kalandra_kinetic/DESIGN.md
-
-   Single source of the app's palette: every page and component color
-   resolves from these tokens (as Tailwind utilities like `bg-primary` or
-   `var(--color-*)` references), including the code-block syntax palette
-   (see lib/code-theme.ts).
-   ============================================ */
-
+/* The app's only palette — every color resolves from these tokens (design rules: docs/conventions/frontend.md). */
 @theme {
-  /* --- Light Mode Colors (default) — warm cream palette --- */
   --color-background: #fdfcf9;
   --color-surface: #fdfcf9;
   --color-surface-container-lowest: #fdfcf9;
@@ -51,16 +41,11 @@
   --color-inverse-surface: #313030;
   --color-inverse-on-surface: #f4f0ef;
 
-  /* --- Typography --- */
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Space Grotesk", sans-serif;
 }
 
-/* ============================================
-   Dark Mode Overrides
-   Applied when <html class="dark">
-   ============================================ */
 .dark {
   --color-background: #0a0a0a;
   --color-surface: #0a0a0a;
@@ -104,12 +89,7 @@
   --color-inverse-on-surface: #313030;
 }
 
-/* ============================================
-   Code-block syntax palette
-   Consumed by the Shiki theme in lib/code-theme.ts, which colors every
-   token with these variables. Aliases resolve at use time, so `.dark`
-   flips them through the tokens above.
-   ============================================ */
+/* Syntax colors for lib/code-theme.ts; aliases resolve at use time, so they flip with `.dark`. */
 .astro-code {
   --code-background: var(--color-surface-container-low);
   --code-foreground: var(--color-on-surface);

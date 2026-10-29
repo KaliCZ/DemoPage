@@ -1,24 +1,7 @@
 ---
 /**
- * Auth redirect landing page — for OAuth sign-ins and password-reset email links.
- *
- * Supabase redirects here after a successful OAuth handshake or a verified
- * reset link, with the URL hash containing `access_token` and friends. We
- * load the Supabase client eagerly so `detectSessionInUrl` (default true)
- * parses and persists the session
- * before any other page-level auth UI tries to read from localStorage — this
- * avoids the "just signed in but header says signed out" flash that happened
- * when the redirect landed on a normal page and relied on the lazy-loaded
- * supabase bundle.
- *
- * On success: redirect to `?next=<path>` (or `/`) — the session is already in
- * localStorage so the destination's pre-paint script picks it up on first
- * render.
- * On failure: forward to `next` with an `error_description` in the hash so the
- * generic handler in Layout.astro surfaces the error snackbar.
- *
- * This page is intentionally bare (no Layout) so it renders in a single
- * paint and processes the hash as fast as possible.
+ * Supabase's OAuth and password-reset redirect target: a bare page (no Layout) that persists the session from the
+ * URL hash before forwarding to `next`, so the destination paints signed-in from its first frame.
  */
 import enCommon from "../../i18n/en/common.json";
 ---
@@ -82,10 +65,10 @@ import enCommon from "../../i18n/en/common.json";
         const hashErr = hash.get("error_description");
         const accessToken = hash.get("access_token");
 
-        // Pick locale from the `next` path so errors show in the user's language.
         const lang = next.startsWith("/cs") ? "cs" : "en";
         const t = (lang === "cs" ? csCommon : enCommon).auth;
 
+        // Layout.astro shows an `error_description` in the hash as an error snackbar.
         const failAndRedirect = (reason: string) => {
           const target = `${next}#error_description=${encodeURIComponent(reason)}`;
           window.location.replace(target);
@@ -107,9 +90,7 @@ import enCommon from "../../i18n/en/common.json";
           return;
         }
 
-        // `detectSessionInUrl` (default true) runs during createClient and
-        // writes the session to localStorage. Wait a tick for it to settle
-        // before we read it back.
+        // getSession waits for createClient's detectSessionInUrl (on by default) to persist the session from the hash.
         const {
           data: { session },
         } = await supabase.auth.getSession();

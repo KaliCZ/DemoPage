@@ -1,4 +1,3 @@
-// Smooth open/close animation for <details> elements
 document.querySelectorAll("details").forEach((details) => {
   const content = details.querySelector<HTMLElement>(":scope > :not(summary)");
   if (!content) return;
@@ -10,7 +9,6 @@ document.querySelectorAll("details").forEach((details) => {
     animation?.cancel();
 
     if (details.open) {
-      // Closing: animate from current height to 0
       const startHeight = details.offsetHeight;
       const summaryHeight = details.querySelector("summary")!.offsetHeight;
 
@@ -23,7 +21,6 @@ document.querySelectorAll("details").forEach((details) => {
         animation = null;
       };
     } else {
-      // Opening: set open, then animate from summary height to full height
       details.open = true;
       const endHeight = details.offsetHeight;
       const summaryHeight = details.querySelector("summary")!.offsetHeight;

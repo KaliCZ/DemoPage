@@ -26,9 +26,6 @@ const posts = publishedPosts();
 const dateLocale = lang === "cs" ? "cs-CZ" : "en-US";
 const formatDate = (date: Date) => date.toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
 
-// The island renders the cards (build-time SSR keeps the list crawlable), so all
-// display strings are resolved here. A post without a variant in this language is
-// listed anyway — under its own language's title and URL, with a chip.
 const listPosts: BlogListPost[] = posts.map((post) => {
   const { locale, variant } = resolveVariant(post, lang);
   const crossLocale = locale !== lang ? locale : undefined;

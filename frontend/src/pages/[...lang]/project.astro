@@ -46,7 +46,6 @@ const tocItems = [
         items={[{ label: tCommon.nav.projects, href: localePath(lang, "projects") }, { label: tCommon.nav.projectThisSite }]}
         class="mb-8"
       />
-      <!-- Hero / Intro Section -->
       <section id="hero" class="mb-24">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
           <div class="md:col-span-8">
@@ -112,7 +111,6 @@ const tocItems = [
         </div>
       </section>
 
-      <!-- Tech Stack -->
       <section id="tech-stack" class="mb-32">
         <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.techStack.title}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -173,7 +171,6 @@ const tocItems = [
         </div>
       </section>
 
-      <!-- Goals & Requirements -->
       <section id="goals" class="mb-32">
         <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.goals.title}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -214,13 +211,11 @@ const tocItems = [
         </div>
       </section>
 
-      <!-- Architecture Diagram -->
       <section id="architecture" class="mb-32">
         <h2 class="font-headline text-3xl font-bold mb-12 text-on-surface">{t.architectureDiagram.title}</h2>
         <ArchitectureDiagram t={t.architectureDiagram} class="w-full" />
       </section>
 
-      <!-- Architecture Decisions -->
       <section id="decisions" class="mb-32">
         <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.decisions.title}</h2>
         <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.decisions.subtitle}</p>
@@ -317,7 +312,6 @@ const tocItems = [
         </div>
       </section>
 
-      <!-- Roadmap Section -->
       <section id="roadmap">
         <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-4">
           <div>
@@ -328,7 +322,6 @@ const tocItems = [
         </div>
 
         <div class="relative">
-          <!-- Vertical Line -->
           <div class="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-outline-variant/30 -translate-x-1/2 hidden md:block"></div>
 
           <div class="space-y-24">
@@ -467,7 +460,6 @@ const tocItems = [
         </div>
       </section>
 
-      <!-- Lessons Learned -->
       <section id="lessons-learned" class="mt-32 mb-32">
         <h2 class="font-headline text-3xl font-bold mb-4 text-on-surface">{t.lessonsLearned.title}</h2>
         <p class="font-body text-on-surface-variant mb-12 max-w-2xl">{t.lessonsLearned.subtitle}</p>
@@ -517,7 +509,6 @@ const tocItems = [
         </div>
       </section>
 
-      <!-- CTA Section -->
       <section class="mt-32">
         <div class="bg-linear-to-br from-primary-container to-surface-container-low p-12 rounded-2xl relative overflow-hidden border border-primary/10 shadow-lg">
           <div class="relative z-10 flex flex-col items-center text-center">
@@ -532,7 +523,6 @@ const tocItems = [
               {t.cta.button}
             </a>
           </div>
-          <!-- Abstract visual element -->
           <div class="absolute -right-24 -bottom-24 w-96 h-96 bg-tertiary/10 blur-[100px] rounded-full"></div>
         </div>
       </section>

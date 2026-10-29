@@ -23,8 +23,7 @@ const qr = QRCode.create(url, { errorCorrectionLevel: "H" });
 const size = qr.modules.size;
 const data = qr.modules.data;
 
-// Radius (in module units) of the circular region we clear for the portrait.
-// 0.18 × size ≈ 10% of the code area — well under the 30% ECC-H allowance.
+// Clears ≈10% of the code area, well under the 30% ECC-H allowance.
 const punchRadius = size * 0.18;
 const center = (size - 1) / 2;
 
@@ -109,9 +108,7 @@ const feedbackJson = JSON.stringify(t);
     outline-offset: 3px;
   }
 
-  /* The inner face is kept on a fixed light background so the QR always has the
-     high contrast scanners expect, regardless of page theme. The outer card
-     adapts to dark/light, turning the QR into a card-like artifact on the page. */
+  /* Fixed light background so scanners get the contrast they expect in either theme. */
   .qr-face {
     position: relative;
     display: block;
@@ -186,9 +183,7 @@ const feedbackJson = JSON.stringify(t);
     });
   }
 
-  // Re-renders the on-screen QR face (SVG + circular portrait overlay) into a
-  // PNG blob. Drawing from the live SVG keeps the exported image in sync with
-  // whatever the component happens to render — no duplicated layout math.
+  // Rasterizes the live SVG so the exported code always matches the rendered one.
   async function buildQrImage(face: HTMLElement): Promise<Blob> {
     const svg = face.querySelector<SVGSVGElement>("[data-qr-svg]");
     const portrait = face.querySelector<HTMLImageElement>("[data-qr-portrait]");
@@ -224,7 +219,6 @@ const feedbackJson = JSON.stringify(t);
       URL.revokeObjectURL(svgUrl);
     }
 
-    // Circular portrait overlay with the cream ring from the on-screen design.
     const portraitSize = inner * 0.26;
     const cx = exportSize / 2;
     const cy = exportSize / 2;
@@ -280,9 +274,7 @@ const feedbackJson = JSON.stringify(t);
     }
 
     const file = new File([blob], "kalandra-tech-qr.png", { type: "image/png" });
-    // Touch-primary devices get the native share sheet (it already includes
-    // Copy as one of the options). Everyone else goes straight to the
-    // clipboard, which on desktop pastes inline into Slack/email/etc.
+    // Only touch devices get the share sheet; on desktop the clipboard pastes inline into chat and email.
     const prefersShare =
       matchMedia("(pointer: coarse)").matches && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
 

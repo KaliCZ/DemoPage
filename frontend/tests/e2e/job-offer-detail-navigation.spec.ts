@@ -1,17 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-/**
- * E2E test for the split list/detail pages:
- *   1. The list links each offer card to /job-offers/detail?id=...
- *   2. The detail page renders the offer for a direct (shareable) URL
- *   3. The back link returns to the list
- *
- * Requires:
- *   - Local Supabase running (npm run dev:supabase)
- *   - Backend API at http://localhost:5000
- *   - Frontend at http://localhost:4321
- */
-
 const API_URL = process.env.PUBLIC_API_URL || "http://localhost:5000";
 const SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -90,7 +78,6 @@ test.describe("Job Offer Detail Navigation", () => {
     await page.goto("/job-offers");
     await signIn(page);
 
-    // The list card is a real link to the detail page
     const card = page.locator("#offers-grid > a", { hasText: "Detail Nav Corp" }).first();
     await expect(card).toBeVisible({ timeout: 15000 });
     await expect(card).toHaveAttribute("href", `/job-offers/detail?id=${offerId}`);
@@ -100,7 +87,6 @@ test.describe("Job Offer Detail Navigation", () => {
     await expect(page.locator("#offer-detail")).toContainText("Navigation Engineer", { timeout: 10000 });
     await expect(page.locator("#offer-detail")).toContainText("Detail Nav Corp");
 
-    // Back link returns to the list
     await page.click("#back-to-list");
     await expect(page).toHaveURL(/\/job-offers$/);
     await expect(page.locator("#offers-grid")).toBeVisible({ timeout: 15000 });

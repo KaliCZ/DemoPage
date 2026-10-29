@@ -16,9 +16,7 @@ public static class RateLimits
     {
         var permitLimit = environment.IsDevelopment() ? 50 : 2;
 
-        // Hire-me submissions: N per 4 hours per authenticated user. When the
-        // limit is hit, the client must re-render Turnstile in interactive mode
-        // and resend with the X-Interactive-Captcha header.
+        // Over the limit, the client re-renders Turnstile interactively and resends with X-Interactive-Captcha, which bypasses this limiter.
         var hireMeLimiterOptions = new SlidingWindowRateLimiterOptions
         {
             PermitLimit = permitLimit,
@@ -27,7 +25,6 @@ public static class RateLimits
             QueueLimit = 0,
         };
 
-        // No Turnstile escape hatch here — blog writes have no captcha flow.
         var blogWriteLimiterOptions = new SlidingWindowRateLimiterOptions
         {
             PermitLimit = environment.IsDevelopment() ? 1000 : 30,
@@ -52,9 +49,7 @@ public static class RateLimits
 
             options.AddPolicy(RateLimitPolicies.BlogWrite, httpContext =>
             {
-                // Anonymous blog writes (views, reactions) key on the client-minted visitor id.
-                // It's spoofable, but these are low-value analytics writes, and the alternative —
-                // one shared anonymous bucket — would let a single caller starve every visitor.
+                // The visitor id is spoofable, but one shared anonymous bucket would let a single caller starve every visitor.
                 var user = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().User;
                 var partitionKey = user is { } signedIn
                     ? "user:" + signedIn.Id
@@ -70,8 +65,7 @@ public static class RateLimits
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.ContentType = "application/json";
 
-                // captcha_required is consumed by the hire-me interactive Turnstile flow; everything
-                // else (blog writes, MCP) has no captcha, so it gets a plain rate_limited marker.
+                // captcha_required triggers the hire-me interactive Turnstile flow; other policies have no captcha.
                 var policyName = context.HttpContext.GetEndpoint()?.Metadata
                     .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
                 var body = policyName == RateLimitPolicies.HireMeCreateUser

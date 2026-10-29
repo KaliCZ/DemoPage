@@ -1,30 +1,22 @@
 namespace Kalandra.Blog;
 
-/// <summary>A published post's stable identity: its slug and the Guid of its comment event stream.</summary>
 public sealed record BlogPost(string Slug, Guid CommentsStreamId);
 
 /// <summary>
-/// The backend's copy of the published blog posts (the posts themselves live in the
-/// frontend). A monorepo lets the backend gate reactions/comments to real posts and
-/// pin each post's stream Guids here rather than deriving them from the slug, so a
-/// slug rename can't orphan its data. The all-posts reaction E2E fails if this list
-/// drifts from the frontend.
+/// The backend's copy of the frontend's published posts, so reactions and comments are gated to real posts; the all-posts reaction E2E fails if it drifts.
 /// </summary>
 public interface IBlogPostCatalog
 {
     BlogPost? Find(string slug);
 
-    /// <summary>Reverse of <see cref="Find"/>: recovers the post from a comment event's stream id, which is all the notification subscription has.</summary>
     BlogPost? FindByCommentsStreamId(Guid commentsStreamId);
 
-    /// <summary>Every published post, for queries that span the whole blog (e.g. "my comments").</summary>
     IReadOnlyCollection<BlogPost> All { get; }
 }
 
 public sealed class BlogPostCatalog : IBlogPostCatalog
 {
-    // Hand-assigned and permanent: it keys the comment event stream, so it can't change once a post
-    // has comments (Marten keeps every stream in one id namespace).
+    // Hand-assigned so a slug rename can't orphan comments; never change one once its post has comments.
     private static readonly IReadOnlyDictionary<string, BlogPost> Posts =
         new[]
         {

@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# Auto-format staged frontend files with Prettier before committing.
-# Aborts the commit if Prettier fails.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Staged files Prettier should format, relative to repo root.
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR \
   | grep '^frontend/' \
   | grep -E '\.(astro|ts|js|json|css|mjs)$' || true)
@@ -14,10 +11,8 @@ if [ -z "$STAGED" ]; then
   exit 0
 fi
 
-# Prettier must run from frontend/ so it can resolve prettier-plugin-astro
-# from frontend/node_modules. Pass paths relative to frontend/.
+# Run from frontend/ so Prettier resolves prettier-plugin-astro from frontend/node_modules.
 echo "$STAGED" | sed 's|^frontend/||' \
   | (cd "$REPO_ROOT/frontend" && xargs npx prettier --write --ignore-unknown)
 
-# Re-stage the formatted files.
 echo "$STAGED" | xargs git add

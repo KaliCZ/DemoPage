@@ -1,19 +1,5 @@
-# Shared Caddy reverse proxy — fronts every app on the box (demopage, hampap, …).
-#
-# This is host-level shared infrastructure, NOT part of any app's CI/CD. It is
-# installed once per machine (see docs/SETUP.md §3.3): copy this unit and the
-# two .volume files to ~/.config/containers/systemd/, copy the base Caddyfile to
-# /srv/caddy/, then `systemctl --user start caddy`. Apps never touch Caddy's
-# lifecycle — they only drop a fragment in /srv/caddy/sites and reload.
-#
-# Runs rootless under the opc user. Binding 80/443 rootless requires the host
-# sysctl net.ipv4.ip_unprivileged_port_start=80 (set in host setup). The `:z`
-# flag relabels the bind mounts for SELinux (enforcing on Oracle Linux); the
-# deploy additionally `chcon`s each fragment it writes, since :z only relabels
-# at container start.
-#
-# Boot autostart comes from [Install] WantedBy=default.target together with
-# `loginctl enable-linger opc`, which keeps the user manager alive across reboots.
+# Fronts every app on the box; host infra installed once per machine (see docs/architecture/deployment.md), never by an app's deploy.
+# Rootless 80/443 needs sysctl net.ipv4.ip_unprivileged_port_start=80, and boot autostart needs `loginctl enable-linger opc`.
 
 [Unit]
 Description=Shared Caddy reverse proxy

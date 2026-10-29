@@ -15,11 +15,7 @@ public record AddCommentCommand(
 
 public class AddCommentHandler(IDocumentSession session)
 {
-    /// <summary>
-    /// Stores the comment; the notification emails are delivered separately by the
-    /// job-offer subscription reacting to the appended event. Re-checks authorization here
-    /// (not just at the HTTP boundary) because the write is the domain's last line of defence.
-    /// </summary>
+    /// <summary>Notification emails are sent by JobOfferNotificationSubscription reacting to the appended event.</summary>
     public async Task<Result<JobOfferCommentAdded, AddCommentError>> AddAndSave(
         AddCommentCommand command, CancellationToken ct)
     {

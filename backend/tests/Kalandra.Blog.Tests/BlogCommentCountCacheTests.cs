@@ -66,7 +66,6 @@ public class BlogCommentCountCacheTests
         cache.Dispose();
         time.Advance(TimeSpan.FromSeconds(20));
 
-        // Dispose cancels the pending rewipe synchronously, so the entry survives untouched.
         Assert.True(cache.TryGet(StreamId, out var count));
         Assert.Equal(3, count);
     }

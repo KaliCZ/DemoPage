@@ -63,7 +63,6 @@ const { t, class: className, ...rest } = Astro.props;
         }
       </style>
 
-      <!-- ===== CLOUDFLARE CONTAINER (top-left) ===== -->
       <g>
         <rect
           x="20"
@@ -89,7 +88,6 @@ const { t, class: className, ...rest } = Astro.props;
           CLOUDFLARE
         </text>
 
-        <!-- DNS -->
         <g>
           <rect
             x="38"
@@ -112,7 +110,6 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
 
-        <!-- Static Site -->
         <g>
           <rect
             x="38"
@@ -136,7 +133,6 @@ const { t, class: className, ...rest } = Astro.props;
         </g>
       </g>
 
-      <!-- ===== ORACLE CLOUD CONTAINER (top-right) ===== -->
       <g>
         <rect
           x="340"
@@ -162,7 +158,6 @@ const { t, class: className, ...rest } = Astro.props;
           ORACLE CLOUD VPS
         </text>
 
-        <!-- Caddy -->
         <g>
           <rect
             x="358"
@@ -188,9 +183,8 @@ const { t, class: className, ...rest } = Astro.props;
         <!-- Internal arrow: Caddy → API -->
         <line x1="460" y1="110" x2="460" y2="130" stroke="var(--color-outline)" stroke-width="1" marker-end="url(#arrow)"></line>
 
-        <!-- Backend API — Blue/Green overlapping boxes -->
+        <!-- Backend API: the faded offset box behind is the second blue/green slot -->
         <g>
-          <!-- Shadow/green box (offset behind) -->
           <rect
             x="366"
             y="143"
@@ -203,7 +197,6 @@ const { t, class: className, ...rest } = Astro.props;
             opacity="0.45"
           ></rect>
           <rect x="366" y="143" width="4" height="60" rx="2" fill="var(--color-tertiary)" opacity="0.45"></rect>
-          <!-- Main/blue box (in front) -->
           <rect
             x="358"
             y="136"
@@ -223,7 +216,6 @@ const { t, class: className, ...rest } = Astro.props;
             {" "}
             Backend API{" "}
           </text>
-          <!-- Blue/Green badge -->
           <rect x="490" y="152" width="72" height="16" rx="8" fill="var(--color-tertiary)" opacity="0.15"></rect>
           <text
             x="526"
@@ -264,7 +256,6 @@ const { t, class: className, ...rest } = Astro.props;
         </g>
       </g>
 
-      <!-- ===== SUPABASE CONTAINER (bottom-center) ===== -->
       <g>
         <rect
           x="160"
@@ -290,7 +281,6 @@ const { t, class: className, ...rest } = Astro.props;
           SUPABASE
         </text>
 
-        <!-- PostgreSQL -->
         <g>
           <rect
             x="178"
@@ -312,7 +302,6 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
 
-        <!-- Auth -->
         <g>
           <rect
             x="178"
@@ -335,7 +324,6 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
 
-        <!-- File Storage -->
         <g>
           <rect
             x="178"
@@ -357,8 +345,6 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
       </g>
-
-      <!-- ===== NODE-TO-NODE ARROWS ===== -->
 
       <!-- Static Site → Backend API (right edge of Astro → left edge of API) -->
       <path
@@ -425,7 +411,6 @@ const { t, class: className, ...rest } = Astro.props;
         marker-end="url(#arrow)"
       ></path>
 
-      <!-- ===== CI/CD GROUP ===== -->
       <g>
         <text
           x="850"
@@ -440,7 +425,6 @@ const { t, class: className, ...rest } = Astro.props;
           {t.cicd}
         </text>
 
-        <!-- GitHub Actions -->
         <g>
           <rect
             x="730"
@@ -474,7 +458,6 @@ const { t, class: className, ...rest } = Astro.props;
         </g>
       </g>
 
-      <!-- ===== OBSERVABILITY GROUP ===== -->
       <g>
         <text
           x="850"
@@ -489,7 +472,6 @@ const { t, class: className, ...rest } = Astro.props;
           {t.observability}
         </text>
 
-        <!-- Sentry -->
         <g>
           <rect
             x="730"
@@ -514,7 +496,6 @@ const { t, class: className, ...rest } = Astro.props;
           </text>
         </g>
 
-        <!-- PostHog (planned) -->
         <g opacity="0.4">
           <rect
             x="730"
@@ -547,7 +528,6 @@ const { t, class: className, ...rest } = Astro.props;
         </g>
       </g>
 
-      <!-- ===== NOTIFICATIONS GROUP ===== -->
       <g>
         <text
           x="850"
@@ -562,7 +542,6 @@ const { t, class: className, ...rest } = Astro.props;
           {t.notifications}
         </text>
 
-        <!-- Slack (planned) -->
         <g opacity="0.4">
           <rect
             x="730"
@@ -594,7 +573,6 @@ const { t, class: className, ...rest } = Astro.props;
           </g>
         </g>
 
-        <!-- Email -->
         <g>
           <rect
             x="730"

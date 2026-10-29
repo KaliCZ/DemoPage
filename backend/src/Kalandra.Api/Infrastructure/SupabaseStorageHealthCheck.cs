@@ -5,14 +5,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Kalandra.Api.Infrastructure;
 
 /// <summary>
-/// Verifies that the Supabase Storage bucket used for job-offer attachments is
-/// reachable with the configured service key. Catches misconfigured project
-/// URLs, revoked service keys, and missing buckets at /health rather than on
-/// the first upload attempt. Failures report Degraded, not Unhealthy: uploads
-/// break while the rest of the API keeps serving, so readiness is partial, not down.
-///
-/// Exercises the same <see cref="IStorageService"/> the production upload path
-/// uses, so the health check is guaranteed to cover the exact client wiring.
+/// Reports Degraded rather than Unhealthy because a storage failure breaks only uploads, not the rest of the API.
 /// </summary>
 internal sealed class SupabaseStorageHealthCheck(IStorageService storageService) : IHealthCheck
 {

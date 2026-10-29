@@ -1,7 +1,6 @@
 import type { ThemeRegistrationRaw } from "shiki";
 
-// Every color is a `--code-*` CSS variable that theme.css aliases to a design
-// token, so one theme serves both modes — the tokens themselves flip under `.dark`.
+// One theme serves both modes because the `--code-*` variables it uses flip under `.dark` (see theme.css).
 export const designTokenCodeTheme: ThemeRegistrationRaw = {
   name: "design-tokens",
   type: "light",

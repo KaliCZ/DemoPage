@@ -73,7 +73,6 @@ public class ListMyJobOfferCommentsTests
         var mine = NewComment(MyId, "Question", 0);
         var reply = NewComment(OwnerId, "Answer", 1);
 
-        // Same thread handed over out of order — pairing must go by time, not input order.
         var result = ListMyJobOfferCommentsHandler.Collect(Offer, [reply, mine], MyId).ToList();
 
         var entry = Assert.Single(result);

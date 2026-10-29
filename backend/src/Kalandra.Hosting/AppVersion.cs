@@ -4,8 +4,7 @@ namespace Kalandra.Hosting;
 
 public static class AppVersion
 {
-    // The entry assembly, not this one: the version (and its embedded SourceRevisionId) belongs to
-    // whichever host is running, and the deploy gate reads that commit back out of /health/live.
+    // The entry assembly, not this one: the deploy gate reads the running host's commit back out of /health/live.
     public static readonly string InformationalVersion =
         Assembly.GetEntryAssembly()
             ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()

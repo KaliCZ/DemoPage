@@ -8,11 +8,7 @@ namespace Kalandra.Blog;
 public static class MartenConfiguration
 {
     /// <summary>
-    /// Configures Marten for the Blog domain. Comments are an event stream, live-aggregated on
-    /// read — no snapshots, so state and events cannot drift. Views and reactions are plain
-    /// documents rather than streams: both are high-volume and per-reactor, so a row keyed by the
-    /// reactor sidesteps stream-append contention and makes counts a point/aggregate query. The
-    /// duplicated columns back the stats and sign-in attribution queries.
+    /// Views and reactions are documents rather than streams: they're high-volume and per-reactor, so a row per reactor avoids stream-append contention.
     /// </summary>
     public static void ConfigureBlog(this StoreOptions options)
     {

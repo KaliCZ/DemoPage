@@ -1,19 +1,5 @@
 ---
-// The standard content card. Default elevation sits one step above the page
-// surface — `bg-surface-container-low` adapts automatically (subtle cream in
-// light mode, raised dark grey in dark mode), so the same class produces the
-// right look in both modes without a `dark:` swap.
-//
-// `level="lowest"` drops the card to page-surface elevation — used for the
-// "flat" cards inside a band where the band itself provides the visible step
-// (e.g. Personal items, where the band is at `low` and the cards sit flush
-// with the page tone but pop above the band).
-//
-// Pass `accent` to make the card a hover target (transition + accent-coloured
-// hover border + lighter resting border); omit it for static content cards.
-//
-// `as="a"` plus `href` produces a clickable card with the same surface
-// treatment.
+// level="lowest" is for cards inside a band, where the band provides the elevation step.
 interface Props {
   as?: "div" | "a";
   href?: string;
@@ -28,11 +14,7 @@ const { as = "div", href, level = "low", padding = "default", accent, class: ext
 const bgClass = level === "lowest" ? "bg-surface-container-lowest" : "bg-surface-container-low";
 const padClass = padding === "compact" ? "p-6" : "p-8";
 
-// `accent` swaps two things at once:
-//   1. resting border opacity drops from /40 to /20 — softer baseline so the
-//      hover state has somewhere to brighten to.
-//   2. the card becomes a `group` with hover transition + accent border tint
-//      + lifted shadow. Children can then key off `group-hover:` on their own.
+// Accent cards are a hover `group` for their children, with a softer resting border so the hover has room to brighten.
 const accentClass = accent
   ? [
       "group border border-outline-variant/20 transition-all duration-300 shadow-sm hover:shadow-md",

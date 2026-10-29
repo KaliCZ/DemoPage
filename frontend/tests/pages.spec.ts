@@ -28,7 +28,6 @@ test.describe("Page rendering", () => {
 
   test("admin job-offers page shows access denied when not authenticated", async ({ page }) => {
     await page.goto("/admin/job-offers");
-    // Wait for auth check to complete (loading spinner disappears)
     await expect(page.locator("#admin-loading")).toBeHidden({ timeout: 10000 });
     await expect(page.locator("#access-denied")).toBeVisible();
     await expect(page.locator("#offers-list-section")).toBeHidden();
@@ -93,7 +92,6 @@ test.describe("Navigation", () => {
     await page.goto("/about");
     const nav = page.locator("nav[aria-label]");
 
-    // English content present before the switch.
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(nav.getByRole("link", { name: "About Me" }).first()).toBeVisible();
     await expect(nav.getByRole("link", { name: "Hire Me" }).first()).toBeVisible();
@@ -101,12 +99,10 @@ test.describe("Navigation", () => {
     await page.getByRole("link", { name: "Switch to Czech" }).first().click();
     await expect(page).toHaveURL("/cs/about");
 
-    // Czech content actually rendered — not just URL change.
     await expect(page.locator("html")).toHaveAttribute("lang", "cs");
     await expect(nav.getByRole("link", { name: "O mně" }).first()).toBeVisible();
     await expect(nav.getByRole("link", { name: "Najměte mě" }).first()).toBeVisible();
 
-    // And the reverse direction also flips content back to English.
     await page.getByRole("link", { name: "Přepnout do angličtiny" }).first().click();
     await expect(page).toHaveURL("/about");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -127,8 +123,7 @@ test.describe("Theme picker", () => {
     // Only the desktop picker is visible at the default viewport width.
     const opt = (value: string) => page.locator(`[data-theme-option="${value}"]:visible`);
 
-    // Capture a few token-driven colors in light mode so we can confirm they
-    // actually change — the .dark class flipping is a precondition, not proof.
+    // The .dark class flipping is a precondition, not proof — compare token-driven colors too.
     const readColors = () =>
       page.evaluate(() => ({
         body: getComputedStyle(document.body).backgroundColor,
@@ -152,16 +147,13 @@ test.describe("Theme picker", () => {
     await expect(html).not.toHaveClass(/dark/);
     await expect(html).toHaveAttribute("data-theme-pref", "light");
 
-    // Switching back to light restores the original colors.
     const restoredColors = await readColors();
     expect(restoredColors).toEqual(lightColors);
 
-    // The chosen preference survives a reload.
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-theme-pref", "light");
     await expect(page.locator("html")).not.toHaveClass(/dark/);
 
-    // The system segment clears the override (no stored value).
     await opt("system").click();
     await expect(page.locator("html")).toHaveAttribute("data-theme-pref", "system");
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBeNull();
@@ -195,7 +187,6 @@ test.describe("Blog", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "cs");
     await expect(page.locator("article h1")).toContainText("Validace v .NET API bez jediného řádku kódu");
     await expect(page.locator("pre.astro-code").first()).toBeVisible();
-    // The bilingual post claims both languages in its head.
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute(
       "href",
       "https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api",
@@ -245,12 +236,10 @@ test.describe("Blog", () => {
     expect(response.headers()["content-type"]).toContain("xml");
     const body = await response.text();
     expect(body).toContain("<rss");
-    // Bilingual post: one item, language tags + both titles (English first), linked to the English page.
     expect(body).toContain("[EN]/[CS] Zero-Code Validations in Your .NET API / Validace v .NET API bez jediného řádku kódu");
     expect(body).toContain("<link>https://www.kalandra.tech/blog/zero-code-validations-in-your-dotnet-api</link>");
-    // The Czech URL is not a separate entry — one item per post, not per language.
     expect(body).not.toContain("<link>https://www.kalandra.tech/cs/blog/");
-    // Validator-completeness fields: self link, feed language, last change.
+    // Fields feed validators expect.
     expect(body).toContain('<atom:link href="https://www.kalandra.tech/rss.xml" rel="self" type="application/rss+xml"/>');
     expect(body).toContain("<language>en</language>");
     expect(body).toContain("<lastBuildDate>");

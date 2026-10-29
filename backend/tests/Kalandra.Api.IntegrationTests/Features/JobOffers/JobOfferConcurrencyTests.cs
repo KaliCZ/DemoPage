@@ -103,11 +103,9 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
             await seedSession.SaveChangesAsync(Ct);
         }
 
-        // Writer fetches stream for an optimistic-concurrency edit
         await using var writerSession = store.LightweightSession();
         var writer = await writerSession.Events.FetchForWriting<JobOffer>(jobOfferId, Ct);
 
-        // Meanwhile, a comment is appended to the separate comment stream
         await using (var commentSession = store.LightweightSession())
         {
             var commentStreamId = CommentStreamId.For(jobOfferId);
@@ -124,7 +122,6 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
             await commentSession.SaveChangesAsync(Ct);
         }
 
-        // The writer's save should succeed — comment didn't touch the job offer stream
         writer.AppendOne(new JobOfferStatusChanged(
             ChangedByUserId: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             ChangedByEmail: Email.Create("admin@test.com"),
@@ -135,7 +132,6 @@ public class JobOfferConcurrencyTests(TestWebApplicationFactory factory) : IClas
 
         await writerSession.SaveChangesAsync(Ct);
 
-        // Verify both the status change and comment are visible
         await using var verifySession = store.LightweightSession();
         var offer = await verifySession.LoadAsync<JobOffer>(jobOfferId, Ct);
         Assert.Equal(JobOfferStatus.InReview, offer!.Status);

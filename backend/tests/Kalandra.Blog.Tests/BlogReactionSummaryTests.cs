@@ -81,7 +81,7 @@ public class BlogReactionSummaryTests
     [Fact]
     public void IdFor_IsStablePerReactorAndKind_AndDistinctOtherwise()
     {
-        // Same reactor + kind keys the same row (so a person's reaction dedupes); anything else differs.
+        // The stable id is what dedupes a person's repeated reaction into one row.
         Assert.Equal(BlogReaction.IdFor(Slug, UserA, BlogReactionKind.Heart), BlogReaction.IdFor(Slug, UserA, BlogReactionKind.Heart));
         Assert.NotEqual(BlogReaction.IdFor(Slug, UserA, BlogReactionKind.Heart), BlogReaction.IdFor(Slug, UserB, BlogReactionKind.Heart));
         Assert.NotEqual(BlogReaction.IdFor(Slug, UserA, BlogReactionKind.Heart), BlogReaction.IdFor(Slug, UserA, BlogReactionKind.Rocket));

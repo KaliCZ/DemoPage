@@ -3,10 +3,7 @@ using Kalandra.Blog.Queries;
 
 namespace Kalandra.McpServer.Contracts;
 
-/// <summary>
-/// A feed post merged with the same per-post totals the blog index shows. Viewer fields are null for
-/// anonymous callers; stats default to zero when the feed briefly leads the backend's post catalog.
-/// </summary>
+/// <summary>Viewer fields are null for anonymous callers; stats are zero while the feed leads the post catalog.</summary>
 public record BlogPostResponse(
     string Slug,
     string Title,

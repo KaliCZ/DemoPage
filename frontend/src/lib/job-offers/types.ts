@@ -1,5 +1,3 @@
-/** Wire types for the job-offers API, shared by the list and detail Vue islands. */
-
 export type JobOfferStatus = "Submitted" | "InReview" | "LetsTalk" | "Declined" | "Cancelled";
 
 export interface JobOfferSummary {

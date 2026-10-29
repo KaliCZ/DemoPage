@@ -80,9 +80,7 @@ function submit() {
   clearedFieldsError.value = "";
   if (!validateAll()) return;
 
-  // Clearing a previously-set optional field is not supported by the backend:
-  // the Edit command treats null as "don't edit this field", so the update
-  // would appear to succeed but do nothing. Surface the constraint instead.
+  // The backend's Edit command treats null as "unchanged", so clearing a field would silently do nothing.
   const cleared: string[] = [];
   if (props.offer.salaryRange && !values.salaryRange.trim()) cleared.push(props.t.labels.salaryRange);
   if (props.offer.location && !values.location.trim()) cleared.push(props.t.labels.location);

@@ -6,8 +6,6 @@ using StrongTypes;
 
 namespace Kalandra.McpServer.Contracts;
 
-// Reuses the Blog and JobOffers comment responses so a comment looks the same here
-// as on the per-post and per-offer endpoints.
 public record MyBlogCommentResponse(
     string Slug,
     BlogCommentResponse Comment,

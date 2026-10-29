@@ -1,6 +1,5 @@
--- Seed a well-known dev user for local development and E2E tests.
--- Credentials: dev@kalandra.local / devpass123
--- This runs on `supabase start` (first time) and `supabase db reset`.
+-- Well-known admin user for local development: dev@kalandra.local / Heslo123.
+-- Runs on the first `supabase start` and on `supabase db reset`.
 
 DO $$
 DECLARE
@@ -79,14 +78,10 @@ BEGIN
   ON CONFLICT DO NOTHING;
 END $$;
 
--- Storage RLS policies for job-offer-attachments bucket.
--- Files are stored at: {user_id}/{job_offer_id}/{filename}
--- Authenticated users can upload to their own folder and read their own files.
--- Note: admin access is handled by the backend via service role key or signed URLs.
+-- job-offer-attachments RLS: a path's first segment is the owner's user id ({user_id}/{job_offer_id}/...).
 
 DO $$
 BEGIN
-  -- Allow authenticated users to upload files under their own user ID prefix
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE policyname = 'Users can upload own attachments'
   ) THEN
@@ -99,7 +94,6 @@ BEGIN
       );
   END IF;
 
-  -- Allow authenticated users to read their own uploaded files
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own attachments'
   ) THEN
@@ -113,12 +107,8 @@ BEGIN
   END IF;
 END $$;
 
--- Storage RLS policies for avatars bucket.
--- Files are stored at: {user_id}/avatar.{ext}
--- Authenticated users can upload/update/delete their own avatar.
--- Public URL serves files without RLS, but authenticated operations (upsert)
--- need SELECT to check file existence. The SELECT policy is scoped to the
--- user's own folder so they cannot list other users' files.
+-- avatars RLS: a path's first segment is the owner's user id ({user_id}/avatar).
+-- The bucket is public, but upsert still needs SELECT; scoping it to the user's folder stops listing others' files.
 
 DO $$
 BEGIN

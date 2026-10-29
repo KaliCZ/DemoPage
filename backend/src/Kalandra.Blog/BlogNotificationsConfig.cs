@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 
 namespace Kalandra.Blog;
 
-/// <summary>Where new-comment notifications for the blog author land.</summary>
 public record BlogNotificationsConfig(MailAddress AuthorEmail)
 {
     public static BlogNotificationsConfig AddSingleton(
@@ -19,7 +18,6 @@ public record BlogNotificationsConfig(MailAddress AuthorEmail)
 
         var config = new BlogNotificationsConfig(AuthorEmail: new MailAddress(authorEmail));
 
-        // .local is the dev placeholder domain; in production it would drop every notification.
         if (!environment.IsDevelopment() && config.AuthorEmail.Host.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
                 "Blog:AuthorNotificationEmail is still a .local address — a production deploy must set a real recipient.");

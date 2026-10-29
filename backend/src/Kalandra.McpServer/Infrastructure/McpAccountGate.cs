@@ -7,28 +7,21 @@ using ModelContextProtocol.AspNetCore.Authentication;
 namespace Kalandra.McpServer.Infrastructure;
 
 /// <summary>
-/// Issues the OAuth challenge the MCP authorization spec requires: a 401 carrying <c>WWW-Authenticate</c> with
-/// the resource metadata, which is what sends a client to Supabase to sign in, or to refresh a stale token and
-/// retry. The spec puts authorization at the transport level, so this is the only refusal a client's OAuth code
-/// acts on — a tool error saying "please sign in" reaches the model, which can do nothing but relay it.
+/// Issues the transport-level 401 challenge that sends an MCP client to sign in or refresh; a tool error would only reach the model.
 /// </summary>
 public static class McpAccountGate
 {
     /// <summary>
-    /// The tools served to anyone. Everything else acts as the user, so a new tool is account-only until it is
-    /// deliberately named here. Mirrored by the <c>[Authorized]</c> marker on the listed descriptions.
+    /// Tools served without an account; every other tool acts as the user and its description must carry the <c>[Authorized]</c> marker.
     /// </summary>
     public static readonly IReadOnlySet<string> PublicTools =
         new HashSet<string>(StringComparer.Ordinal) { "list_blog_posts", "get_blog_post_comments" };
 
     /// <summary>
-    /// Runs before the MCP endpoint, because the SDK cannot challenge from inside a tool — by then the response
-    /// is already a JSON-RPC envelope. Stock <c>RequireAuthorization</c> can't do it either: it would shut the
-    /// anonymous tier out of the whole endpoint, and it never sees the body that says which tool is wanted.
+    /// Middleware, because a tool can't challenge once the response is a JSON-RPC envelope and <c>RequireAuthorization</c> would lock anonymous tools out.
     /// </summary>
     /// <param name="endpointPath">
-    /// Scopes the challenge to the MCP endpoint. The discovery documents a challenged client is sent to fetch
-    /// next must stay reachable, even when it is the token it carries that is the problem.
+    /// Scopes the challenge so the discovery documents a challenged client fetches next stay reachable even with a bad token.
     /// </param>
     public static void Use(WebApplication app, string endpointPath) =>
         app.UseWhen(
@@ -48,8 +41,7 @@ public static class McpAccountGate
     {
         await context.ChallengeAsync();
 
-        // The SDK's handler emits only resource_metadata; the spec also wants the scopes named, and RFC 6750
-        // wants a rejected token called out — error="invalid_token" is what says refresh, not re-sign-in.
+        // The SDK emits only resource_metadata; error="invalid_token" is what tells the client to refresh rather than re-sign-in.
         var details = new List<string>();
         if (context.Request.Headers.ContainsKey(HeaderNames.Authorization))
             details.Add("error=\"invalid_token\"");
@@ -67,8 +59,7 @@ public static class McpAccountGate
             .ResourceMetadata?.ScopesSupported ?? [];
 
     private static async Task<bool> NeedsAToken(HttpContext context) =>
-        // "Invalid or expired tokens MUST receive a HTTP 401 response" — a presented token that didn't
-        // authenticate is stale or forged either way, and only a challenge tells the client to refresh it.
+        // A token that failed to authenticate gets a 401 even for a public tool; only a challenge tells the client to refresh it.
         context.Request.Headers.ContainsKey(HeaderNames.Authorization)
         || await IsAccountToolCall(context);
 
@@ -81,9 +72,7 @@ public static class McpAccountGate
         context.Request.EnableBuffering();
         try
         {
-            // Fail closed: a tools/call is an account call unless it names a public tool. That covers
-            // misshapen calls too (params or name missing or of the wrong kind) — challenging them keeps
-            // them out of the SDK, which answers each with a protocol error only after alerting at Error.
+            // Fail closed: a tools/call, misshapen ones included, needs an account unless it cleanly names a public tool.
             using var document = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted);
             return document.RootElement is { ValueKind: JsonValueKind.Object } request
                 && request.TryGetProperty("method", out var method)

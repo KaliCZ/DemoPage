@@ -31,8 +31,7 @@ jobs:
   e2e:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    # Local Supabase always generates the same deterministic keys from its JWT secret.
-    # Hardcoding them avoids waiting for 'supabase status' before building.
+    # Local Supabase's keys are deterministic, so hardcode them instead of waiting on `supabase status` to build.
     env:
       SB_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
       SB_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
@@ -40,13 +39,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Start Supabase first in background — it pulls Docker images (~50s)
-      # which overlaps with .NET/Node setup, backend build, and npm ci below.
+      # Supabase starts first, in the background, so its ~50s image pull overlaps the setup and builds below.
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
         with:
-          # Exact pin (matching package.json) — resolving "latest" is a GitHub API
-          # call that rate-limits on shared runners.
+          # Exact pin — resolving "latest" is a GitHub API call that rate-limits on shared runners.
           version: 2.108.0
 
       - name: Start local Supabase in background
@@ -85,16 +82,13 @@ jobs:
           PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.SB_ANON_KEY }}
           PUBLIC_API_URL: "http://localhost:5000"
-          # Override the DSN committed in frontend/.env so the @sentry/browser chunk tree-shakes
-          # out at build time and the e2e run produces zero Sentry traffic.
+          # Blanks the DSN committed in frontend/.env so test runs send no Sentry traffic.
           PUBLIC_SENTRY_DSN: ""
 
       - name: Serve frontend
         run: npm run serve &
         working-directory: frontend
 
-      # Wait for Supabase before starting the backend (which needs it running).
-      # By now ~40s of setup/build work has overlapped with the ~50s startup.
       - name: Wait for Supabase
         run: |
           echo "Waiting for Supabase to be ready..."
@@ -106,12 +100,10 @@ jobs:
 
       - name: Start backend
         run: |
-          # Line-buffered + captured so a startup failure/hang is visible in the logs below,
-          # not swallowed by the backgrounded process.
+          # Line-buffered into a file so a startup failure or hang shows in the logs step below.
           stdbuf -oL -eL dotnet run --project backend/src/Kalandra.Api -c Release --no-build --urls http://localhost:5000 > "$RUNNER_TEMP/api.log" 2>&1 &
         env:
-          # ConnectionStrings__DefaultConnection comes from appsettings.json
-          # (points at Supabase's bundled Postgres on :54322 — same as local dev).
+          # The connection string comes from appsettings.json, which already targets local Supabase's Postgres.
           Supabase__ProjectUrl: "http://127.0.0.1:54321"
           Turnstile__SecretKey: "1x0000000000000000000000000000000AA"
           ASPNETCORE_ENVIRONMENT: Development
@@ -234,8 +226,7 @@ jobs:
         run: npm run build
         working-directory: frontend
         env:
-          # Override the DSN committed in frontend/.env so the @sentry/browser chunk tree-shakes
-          # out at build time and the page-test run produces zero Sentry traffic.
+          # Blanks the DSN committed in frontend/.env so test runs send no Sentry traffic.
           PUBLIC_SENTRY_DSN: ""
 
       - name: Get Playwright version
@@ -325,11 +316,7 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          # App slot units only (the shared Caddy units live under infra/host/,
-          # host-managed per SETUP.md §3.3). Land them in this app's staging dir
-          # under ~/demoPage/ (parallel to ~/hampap/ on the shared box); the
-          # deploy installs only the slot it's deploying to, leaving the other
-          # slot's live unit (and its pinned production image) untouched.
+          # Staged, not installed: the deploy installs only its target slot so the live slot's pinned unit stays untouched.
           source: "infra/quadlet/*.container"
           target: "/home/${{ vars.OCI_USERNAME }}/demoPage/quadlet-staging/"
           strip_components: 2
@@ -340,8 +327,6 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          # Kalandra's routing template (port filled in at deploy time). The
-          # shared Caddy that loads it is host infra, not synced here.
           source: "infra/quadlet/kalandra.caddy"
           target: "/home/${{ vars.OCI_USERNAME }}/demoPage/"
           strip_components: 2
@@ -361,8 +346,7 @@ jobs:
           SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
           BLOG_AUTHOR_NOTIFICATION_EMAIL: ${{ vars.BLOG_AUTHOR_NOTIFICATION_EMAIL }}
           JOB_OFFERS_OWNER_NOTIFICATION_EMAIL: ${{ vars.JOB_OFFERS_OWNER_NOTIFICATION_EMAIL }}
-          # Digest-pinned, not :latest — the exact build verified by this run
-          # is what runs and what comes back after a reboot.
+          # Digest, not :latest, so a restart or reboot runs exactly the build this run verified.
           IMAGE_REF: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           EXPECTED_SHA: ${{ github.sha }}
         with:
@@ -379,21 +363,17 @@ jobs:
             SITE_CONF=/srv/caddy/sites/kalandra.caddy
 
             # ----- 0. Preconditions: shared infra must already exist -----
-            # podman and the shared Caddy proxy are host infrastructure,
-            # provisioned once per machine (SETUP.md §3.2–3.3), not by this
-            # deploy. Fail fast with a pointer if an assumption is unmet.
             command -v podman >/dev/null 2>&1 \
-              || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+              || { echo "podman not installed — see docs/architecture/deployment.md (Oracle Cloud VM)"; exit 1; }
             podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
-              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+              || { echo "Shared Caddy not running — see docs/architecture/deployment.md (Shared Caddy reverse proxy)"; exit 1; }
             [ -d /srv/caddy/sites ] \
-              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+              || { echo "/srv/caddy/sites missing — see docs/architecture/deployment.md (Shared Caddy reverse proxy)"; exit 1; }
 
             umask 077
             mkdir -p "$APP_DIR"
 
-            # App secrets, read by both slots via EnvironmentFile. Rewritten
-            # every deploy so rotated secrets propagate when a slot (re)starts.
+            # Shared by both slots' EnvironmentFile= and rewritten every deploy so rotated secrets propagate.
             cat > "$APP_DIR/kalandra-api.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
@@ -411,7 +391,6 @@ jobs:
             EOF
 
             # ----- 1. Determine which slot is currently active -----
-            # Active = whichever slot's service is running now. Cold start → blue.
             if systemctl --user is-active --quiet kalandra-api-blue.service; then
               OLD=blue; NEW=green; NEW_PORT=8081
             elif systemctl --user is-active --quiet kalandra-api-green.service; then
@@ -422,12 +401,7 @@ jobs:
             echo "Active: ${OLD:-<none>} → Deploying: $NEW on port $NEW_PORT"
 
             # ----- 2. Install + pin ONLY the slot we're deploying to -----
-            # Copy just the new slot's unit from staging and pin its Image= to the
-            # digest just built. The active slot's unit is deliberately left
-            # untouched, so its pinned (production) image stays put — if the host
-            # crashes or reboots mid-deploy, production comes back on the verified
-            # build, not this unproven one. Promotion happens only at the Caddy
-            # swap below. Digest, never :latest, so a restart can't drift.
+            # The live slot's unit stays untouched so a reboot mid-deploy brings production back on its verified image.
             mkdir -p "$UNIT_DIR"
             cp "$STAGING/kalandra-api-${NEW}.container" "$UNIT_DIR/kalandra-api-${NEW}.container"
             sed -i "s|^Image=.*|Image=${IMAGE_REF}|" "$UNIT_DIR/kalandra-api-${NEW}.container"
@@ -437,16 +411,12 @@ jobs:
             podman pull "$IMAGE_REF"
 
             # ----- 4. Start the new slot -----
-            # Stop first: if the unit is already active from a prior deploy,
-            # `start` is a no-op and the old container keeps serving the old
-            # binary. Cycling forces a fresh container from the pinned image.
+            # Stop first — `start` on a unit still active from a prior deploy is a no-op and keeps the old container.
             systemctl --user stop "kalandra-api-${NEW}.service" || true
             systemctl --user start "kalandra-api-${NEW}.service"
 
             # ----- 5. Liveness-gate the new slot directly (bypassing Caddy) -----
-            # Gate on /health/live (process up + expected commit), not /health: a shared
-            # DB/Supabase outage breaks both slots equally and must not strand a good build.
-            # The commit match still blocks a stale container from an earlier deploy.
+            # /health/live, not /health: a shared DB/Supabase outage breaks both slots equally and mustn't block a good build.
             echo "Waiting for new slot on port $NEW_PORT (expecting commit $EXPECTED_SHA)..."
             ATTEMPTS=0
             until curl -sf "http://localhost:${NEW_PORT}/health/live" 2>/dev/null | grep -qF "$EXPECTED_SHA"; do
@@ -465,39 +435,21 @@ jobs:
             done
             echo "New slot is live on port $NEW_PORT (running $EXPECTED_SHA)."
 
-            # The gate is liveness-only, so a slot promotes even while readiness is degraded or
-            # unhealthy (DB/Supabase down). Surface the full /health status as a warning.
+            # The gate is liveness-only, so a degraded /health is surfaced as a warning instead.
             SLOT_STATUS=$(curl -s "http://localhost:${NEW_PORT}/health" 2>/dev/null | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
             if [ "$SLOT_STATUS" != "Healthy" ]; then
               echo "::warning::New slot is live but /health reports '${SLOT_STATUS:-unknown}' — check its dependencies (DB, Supabase)."
             fi
 
             # ----- 6. Point our site at the new port (promotion) and reload -----
-            # We write ONLY our own fragment, /srv/caddy/sites/kalandra.caddy —
-            # never the shared /srv/caddy/Caddyfile, which is set up once at host
-            # provisioning and only `import`s each app's fragment. The reload
-            # below points at that root config because that's how Caddy reloads
-            # (it re-reads the root + all imports and applies gracefully); it does
-            # not modify the file. This is the promotion step — until now Caddy
-            # was still routing to the old (production) slot.
+            # Only our own fragment is written; the reload just re-reads the shared root Caddyfile and its imports.
             sed "s/__PORT__/${NEW_PORT}/" "$APP_DIR/kalandra.caddy" > "$SITE_CONF"
-            # Oracle Linux enforces SELinux; relabel the freshly-written fragment
-            # so the Caddy container can read it (the unit's :z relabel only runs
-            # at container start). opc owns the file, so no sudo. No-op where
-            # SELinux/chcon isn't present.
+            # SELinux relabel so the Caddy container can read it — the unit's :z only relabels at container start.
             command -v chcon >/dev/null 2>&1 && chcon -t container_file_t "$SITE_CONF" || true
             podman exec caddy caddy reload --config /etc/caddy/Caddyfile
 
             # ----- 7. Retire the old slot -----
-            # Stop it AND remove its unit file, so only the production slot's
-            # unit remains on disk. Quadlet derives boot-start from the unit's
-            # presence + WantedBy=default.target (generated units can't be
-            # `systemctl disable`d), so removing the file is what guarantees a
-            # cold reboot starts exactly one container — the one Caddy routes to.
-            # The next deploy recreates this slot from staging (step 2), so
-            # blue/green still alternates. Safe as the final step: until now the
-            # old unit stayed on disk, so a crash/reboot mid-deploy still brings
-            # production back on its verified, pinned image.
+            # Remove the unit file too — Quadlet units can't be disabled, so only its absence stops a reboot starting both slots.
             if [ -n "$OLD" ]; then
               systemctl --user stop "kalandra-api-${OLD}.service" || true
               rm -f "$UNIT_DIR/kalandra-api-${OLD}.container"
@@ -505,9 +457,7 @@ jobs:
             fi
 
             # ----- 8. Prune only THIS app's old images -----
-            # The box is shared, so scope the prune to our ownership label (set
-            # in the Dockerfile) — never touch other apps' images or the shared
-            # Caddy image. The running slot still references its digest.
+            # The box is shared, so filter on our ownership label (set in the Dockerfiles).
             podman image prune -af --filter "label=tech.kalandra.app=demopage"
 
             echo "Deployment complete — kalandra-api-${NEW} serving on port ${NEW_PORT}."
@@ -515,16 +465,14 @@ jobs:
       - name: Verify public endpoint
         uses: KaliCZ/verify-deployment@57cf981c4f0d8c4096fcba5308521e85f204da11  # v1
         with:
-          # Liveness, matching the deploy gate — confirms Caddy serves the new commit publicly
-          # without failing on a dependency outage that would break either slot.
+          # Liveness, matching the deploy gate, so a dependency outage doesn't fail the verify.
           health-url: https://api.kalandra.tech/health/live
           max-attempts: 20
           retry-interval: 5
           expected-content: ${{ github.sha }}
 
   mcp-deploy:
-    # Gated on backend-deploy: the API owns the Marten schema (this host runs with
-    # AutoCreate.None in production), and backend-deploy already carries the test gates.
+    # After backend-deploy because the API owns the Marten schema; this host runs AutoCreate.None in production.
     needs: [backend-deploy]
     runs-on: ubuntu-latest
     environment: production
@@ -584,7 +532,6 @@ jobs:
           host: ${{ vars.OCI_HOST }}
           username: ${{ vars.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          # Our own fragment, separate from the API's, so each deploy rewrites only its port.
           source: "infra/quadlet/kalandra-mcp.caddy"
           target: "/home/${{ vars.OCI_USERNAME }}/demoPage/"
           strip_components: 2
@@ -615,17 +562,16 @@ jobs:
 
             # ----- 0. Preconditions: shared infra must already exist -----
             command -v podman >/dev/null 2>&1 \
-              || { echo "podman not installed — see SETUP.md §3.2 (host setup)"; exit 1; }
+              || { echo "podman not installed — see docs/architecture/deployment.md (Oracle Cloud VM)"; exit 1; }
             podman ps --filter name=caddy --filter status=running --format '{{.Names}}' | grep -qx caddy \
-              || { echo "Shared Caddy not running — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+              || { echo "Shared Caddy not running — see docs/architecture/deployment.md (Shared Caddy reverse proxy)"; exit 1; }
             [ -d /srv/caddy/sites ] \
-              || { echo "/srv/caddy/sites missing — see SETUP.md §3.3 (shared Caddy)"; exit 1; }
+              || { echo "/srv/caddy/sites missing — see docs/architecture/deployment.md (Shared Caddy reverse proxy)"; exit 1; }
 
             umask 077
             mkdir -p "$APP_DIR"
 
-            # No SMTP or notification config here: this host only writes events; the API's async
-            # daemon reacts to them and sends the emails.
+            # No SMTP config: this host only writes events, and the API's async daemon sends the emails.
             cat > "$APP_DIR/kalandra-mcp.env" << EOF
             ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
             Supabase__ProjectUrl=${SUPABASE_PROJECT_URL}
@@ -635,7 +581,7 @@ jobs:
             Mcp__ResourceUri=${MCP_RESOURCE_URI}
             EOF
 
-            # ----- 1. Determine which slot is currently active (cold start → blue) -----
+            # ----- 1. Determine which slot is currently active -----
             if systemctl --user is-active --quiet kalandra-mcp-blue.service; then
               OLD=blue; NEW=green; NEW_PORT=8083
             elif systemctl --user is-active --quiet kalandra-mcp-green.service; then
@@ -689,8 +635,7 @@ jobs:
               systemctl --user daemon-reload
             fi
 
-            # No image prune here: backend-deploy already prunes by the shared
-            # tech.kalandra.app=demopage label, which covers this host's old images too.
+            # No prune here: backend-deploy's label-scoped prune already covers this host's images.
             echo "Deployment complete — kalandra-mcp-${NEW} serving on port ${NEW_PORT}."
 
       - name: Verify public endpoint
@@ -745,10 +690,7 @@ jobs:
           PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_API_URL: https://api.kalandra.tech
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-          # @sentry/vite-plugin uploads source maps + tags the release with the deploy commit so
-          # Sentry resolves prod stack traces to original source. Omitting the token silently
-          # skips the upload (see astro.config.mjs). The plugin reads SENTRY_AUTH_TOKEN by name;
-          # the org auth token lives in the SENTRY_CI_TOKEN secret.
+          # Without the token, astro.config.mjs silently skips the Sentry source-map upload.
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_CI_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}

@@ -2,7 +2,6 @@ using System.Diagnostics;
 
 namespace Kalandra.AppHost;
 
-// Brings up the dev prerequisites Aspire doesn't own: npm install and the Supabase CLI stack.
 internal static class DevInfrastructure
 {
     public static void EnsureRunning()

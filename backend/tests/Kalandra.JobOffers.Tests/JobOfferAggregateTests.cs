@@ -39,8 +39,6 @@ public class JobOfferAggregateTests
         return offer;
     }
 
-    // --- Edit ---
-
     [Fact]
     public void Edit_ByOwner_WhenSubmitted_Succeeds()
     {
@@ -69,21 +67,20 @@ public class JobOfferAggregateTests
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
             user: Owner,
-            companyName: null,    // no change
-            contactName: null,    // no change
-            contactEmail: null,   // no change
-            jobTitle: "CTO".ToNonEmpty(),  // changed
-            description: null,    // no change
-            salaryRange: null,    // no change
-            location: null,       // no change
-            isRemote: null,       // no change
-            additionalNotes: null,// no change
+            companyName: null,
+            contactName: null,
+            contactEmail: null,
+            jobTitle: "CTO".ToNonEmpty(),
+            description: null,
+            salaryRange: null,
+            location: null,
+            isRemote: null,
+            additionalNotes: null,
             timestamp: Now.AddHours(1));
 
         Assert.True(result.IsSuccess);
         var evt = result.Success!;
 
-        // Only jobTitle should be emitted as changed
         Assert.Null(evt.CompanyName);
         Assert.Null(evt.ContactName);
         Assert.Null(evt.ContactEmail);
@@ -94,7 +91,6 @@ public class JobOfferAggregateTests
         Assert.Null(evt.IsRemote);
         Assert.Null(evt.AdditionalNotes);
 
-        // Apply and verify only jobTitle changed on the aggregate
         offer.Apply(evt);
         Assert.Equal("Acme", offer.CompanyName);
         Assert.Equal("CTO", offer.JobTitle);
@@ -149,8 +145,6 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(EditJobOfferError.NotSubmittedStatus, result.Error!);
     }
-
-    // --- Cancel ---
 
     [Fact]
     public void Cancel_ByOwner_WhenSubmitted_Succeeds()
@@ -221,8 +215,6 @@ public class JobOfferAggregateTests
         Assert.True(result.IsError);
         Assert.Equal(CancelJobOfferError.InvalidStatus, result.Error!);
     }
-
-    // --- ChangeStatus ---
 
     [Fact]
     public void ChangeStatus_Submitted_To_InReview_Succeeds()
@@ -394,8 +386,6 @@ public class JobOfferAggregateTests
             result.Error!);
     }
 
-    // --- Apply ---
-
     [Fact]
     public void Apply_Submitted_SetsInitialState()
     {
@@ -443,14 +433,12 @@ public class JobOfferAggregateTests
         Assert.Equal("NewCo", offer.CompanyName);
         Assert.Equal("CTO", offer.JobTitle);
         Assert.Equal(Now.AddHours(1), offer.UpdatedAt);
-        Assert.Equal(Now, offer.CreatedAt); // CreatedAt unchanged
+        Assert.Equal(Now, offer.CreatedAt);
     }
 
     [Fact]
     public void Apply_Edited_NullFields_ArePreserved()
     {
-        // Null on a JobOfferEdited field means "not edited" — existing values
-        // on the aggregate should be kept intact.
         var offer = CreateSubmittedOffer();
         var originalCompany = offer.CompanyName;
         var originalLocation = offer.Location;
@@ -462,7 +450,7 @@ public class JobOfferAggregateTests
             CompanyName: null,
             ContactName: null,
             ContactEmail: null,
-            JobTitle: "CTO".ToNonEmpty(), // the only field actually edited
+            JobTitle: "CTO".ToNonEmpty(),
             Description: null,
             SalaryRange: null,
             Location: null,
@@ -479,20 +467,19 @@ public class JobOfferAggregateTests
     [Fact]
     public void Edit_OnlyEmitsChangedFields()
     {
-        // Edit() compares input against the aggregate's current state and
-        // emits null for any field that wasn't actually changed.
+        // Every value but jobTitle matches CreateSubmittedOffer's, so only jobTitle may come back non-null.
         var offer = CreateSubmittedOffer();
         var result = offer.Edit(
             user: Owner,
-            companyName: "Acme".ToNonEmpty(),           // unchanged
-            contactName: "John".ToNonEmpty(),           // unchanged
-            contactEmail: new MailAddress("john@acme.com"), // unchanged
-            jobTitle: "Senior Dev".ToNonEmpty(),        // changed (was "Dev")
-            description: "Desc".ToNonEmpty(),           // unchanged
-            salaryRange: null,                 // unchanged (was null)
-            location: "Prague",                // unchanged
-            isRemote: true,                    // unchanged
-            additionalNotes: null,             // unchanged (was null)
+            companyName: "Acme".ToNonEmpty(),
+            contactName: "John".ToNonEmpty(),
+            contactEmail: new MailAddress("john@acme.com"),
+            jobTitle: "Senior Dev".ToNonEmpty(),
+            description: "Desc".ToNonEmpty(),
+            salaryRange: null,
+            location: "Prague",
+            isRemote: true,
+            additionalNotes: null,
             timestamp: Now.AddHours(1));
 
         Assert.True(result.IsSuccess);

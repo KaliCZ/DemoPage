@@ -93,7 +93,6 @@ async function loadOffers() {
   pagination.value = data.pagination;
 }
 
-// A filter change always restarts from page 1.
 watch(activeStatuses, () => {
   page.value = 1;
   void loadOffers();
@@ -111,8 +110,7 @@ async function nextPage() {
   await loadOffers();
 }
 
-// The page's auth-gate script controls section visibility; the island only has
-// to (re)load data when a qualifying user appears, and not reload for the same one.
+// The page's auth-gate script owns section visibility; the island just loads once per qualifying user.
 let loadedForUserId: string | null = null;
 
 function applyUser(user: any) {
@@ -145,7 +143,6 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <!-- Status filter dropdown -->
     <div class="relative mb-6">
       <button
         id="status-filter-toggle"
@@ -188,12 +185,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Initial load spinner -->
     <div v-if="!loaded" class="text-center py-12">
       <MaterialIcon :d="paths.progressActivity" class="size-[30px] text-on-surface-variant animate-spin inline-block" />
     </div>
 
-    <!-- Empty state -->
     <div
       v-else-if="pagination && pagination.totalCount === 0"
       id="offers-empty"
@@ -213,7 +208,6 @@ onUnmounted(() => {
       </a>
     </div>
 
-    <!-- Offer cards -->
     <div v-else id="offers-grid" class="grid gap-4">
       <a
         v-for="offer in offers"
@@ -240,7 +234,6 @@ onUnmounted(() => {
       </a>
     </div>
 
-    <!-- Pagination controls -->
     <nav
       v-if="pagination && pagination.pageCount > 1"
       id="pagination-controls"

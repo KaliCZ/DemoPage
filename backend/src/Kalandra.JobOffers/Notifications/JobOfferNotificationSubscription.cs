@@ -12,12 +12,9 @@ using StrongTypes;
 namespace Kalandra.JobOffers.Notifications;
 
 /// <summary>
-/// Sends the job-offer notification emails as events are committed: the site owner hears about new
-/// offers and comments, the offer's author about comments on their offer. The async daemon delivers
-/// each event here at least once, so an offer is never stored without its notifications following.
+/// The async daemon delivers each event at least once, hence the per-recipient dedupe in DeliverAsync.
 /// </summary>
-// IServiceProvider, not IDocumentStore: Marten resolves the subscription while it is still building the
-// store, so a direct IDocumentStore dependency deadlocks the container. Resolve the store lazily at run time.
+// IServiceProvider, not IDocumentStore: Marten resolves this while building the store, so injecting the store deadlocks the container.
 public class JobOfferNotificationSubscription(
     IServiceProvider services,
     IEmailSender emailSender,

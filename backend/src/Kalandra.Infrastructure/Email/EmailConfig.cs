@@ -6,11 +6,6 @@ using StrongTypes;
 
 namespace Kalandra.Infrastructure.Email;
 
-/// <summary>
-/// SMTP login is genuinely optional at the protocol level: the local mail catcher
-/// accepts unauthenticated mail, a production relay requires a login. Coupled so a
-/// username can never exist without its password.
-/// </summary>
 public record SmtpCredentials(NonEmptyString Username, NonEmptyString Password);
 
 public record EmailConfig(
@@ -34,14 +29,11 @@ public record EmailConfig(
         var host = NonEmptyString.Create(section["Host"]);
         var isLoopback = host.Value is "localhost" or "127.0.0.1";
 
-        // Crash rather than let a prod deploy that forgot Email:Host silently mail into the local catcher.
         if (!environment.IsDevelopment() && isLoopback)
             throw new InvalidOperationException(
                 "Email:Host still points at the local mail catcher — a production deploy must set a real SMTP relay.");
 
-        // Only the loopback mail catcher accepts unauthenticated mail; a real relay
-        // always needs a login. Fails a misconfigured production deploy fast rather
-        // than silently dropping mail at an unauthenticated relay.
+        // Only the loopback mail catcher accepts unauthenticated mail; fail fast rather than have a real relay silently drop it.
         if (credentials is null && !isLoopback)
             throw new InvalidOperationException(
                 "Email:Username and Email:Password are required unless Email:Host is the local mail catcher (localhost).");

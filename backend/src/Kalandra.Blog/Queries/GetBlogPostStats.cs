@@ -6,14 +6,11 @@ namespace Kalandra.Blog.Queries;
 
 public record GetBlogPostStatsQuery(IReadOnlyList<BlogPost> Posts, Guid? ViewerId);
 
-/// <summary>ViewerViews is null for anonymous callers — they have no signed-in reading history to report.</summary>
+/// <summary>ViewerViews is null for anonymous callers.</summary>
 public record BlogPostStats(string Slug, int TotalViews, int UniqueVisitors, int TotalReactions, int TotalComments, int? ViewerViews);
 
 /// <summary>
-/// Aggregates the blog-index stats for the whole requested batch. Views, reactions and comments each run
-/// on their own Marten session, so the three groups overlap on separate connections instead of summing.
-/// Within a group the queries share one session (a Marten session runs one query at a time). Comment
-/// counts fold each post's event stream, cached per stream so the fold stays off the hot path.
+/// Each stat group gets its own session so the three run in parallel, since a Marten session runs one query at a time.
 /// </summary>
 public class GetBlogPostStatsHandler(IDocumentStore store, BlogCommentCountCache commentCountCache)
 {
@@ -82,7 +79,7 @@ public class GetBlogPostStatsHandler(IDocumentStore store, BlogCommentCountCache
         if (commentCountCache.TryGet(post.CommentsStreamId, out var cached))
             return cached;
 
-        // Omits tombstones, matching the "live discussion" count the endpoint has always reported.
+        // Tombstones stay in the aggregate but don't count toward the live discussion.
         var comments = await session.Events.AggregateStreamAsync<BlogPostComments>(post.CommentsStreamId, token: ct);
         var count = comments?.Comments.Count(comment => !comment.IsDeleted) ?? 0;
         commentCountCache.Set(post.CommentsStreamId, count);
@@ -101,9 +98,7 @@ public class GetBlogPostStatsHandler(IDocumentStore store, BlogCommentCountCache
     }
 
     /// <summary>
-    /// Distinct people per post = each anonymous visitor (a DB-side count) plus every distinct signed-in
-    /// account (deduped across devices). Marten can't translate COUNT(DISTINCT COALESCE(user_id, visitor_id)),
-    /// so the signed-in rows — real accounts, few of them — are deduped in memory, mirroring CountDistinctViewersAsync.
+    /// Marten can't translate COUNT(DISTINCT COALESCE(user_id, visitor_id)), so signed-in rows are deduped in memory, as in CountDistinctViewersAsync.
     /// </summary>
     private static async Task<Dictionary<string, int>> CountDistinctViewersBySlugAsync(
         IQuerySession session, string[] slugs, CancellationToken ct)

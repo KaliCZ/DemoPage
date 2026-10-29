@@ -13,8 +13,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     private readonly HttpClient client = NewClientWithVisitor(factory);
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    // Every blog write carries the anonymous visitor id; the client keeps one by default so tests
-    // read like a single browser, and SetVisitor swaps it to stand in for a different browser.
+    // X-Visitor-Id is the browser's identity, so the default client acts as one browser and SetVisitor switches browsers.
     private static HttpClient NewClientWithVisitor(TestWebApplicationFactory factory)
     {
         var client = factory.CreateClient();
@@ -29,8 +28,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     }
 
     private void ClearVisitor() => client.DefaultRequestHeaders.Remove("X-Visitor-Id");
-
-    // ───── Reactions ─────
 
     [Fact]
     public async Task GetReactions_UnknownSlug_ReturnsEmptyState()
@@ -121,7 +118,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(userId: userB, email: "reader-b@test.com");
         await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = "Heart" }, Ct);
 
-        // Anonymous viewer sees aggregate counts but no personal state.
         SignOut();
         var anonymous = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/reactions", Ct));
         Assert.Equal(2, anonymous.GetProperty("counts").GetProperty("heart").GetInt32());
@@ -138,8 +134,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         Authenticate(email: "completionist@test.com");
 
-        // Iterating the domain enum makes a sixth kind that's missing from the
-        // hardcoded counts response fail here instead of shipping as a silent zero.
+        // Iterating the enum makes a new kind missing from the hardcoded counts response fail here, not ship as a silent zero.
         foreach (var kind in Enum.GetValues<BlogReactionKind>())
         {
             var response = await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = kind.ToString() }, Ct);
@@ -180,16 +175,13 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     {
         Authenticate(email: "unknown-kind@test.com");
 
-        // Both an unknown enum name and a raw number fail JSON binding (the converter
-        // runs with allowIntegerValues: false), so each is a 400 before the action runs.
+        // The enum converter disallows integer values, so a raw number fails binding just like an unknown name.
         var nameResponse = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/reactions/toggle", new { kind = "Confetti" }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
         var numberResponse = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/reactions/toggle", new { kind = 99 }, Ct);
         Assert.Equal(HttpStatusCode.BadRequest, numberResponse.StatusCode);
     }
-
-    // ───── Views ─────
 
     [Fact]
     public async Task RecordView_Anonymous_IsAllowed()
@@ -222,7 +214,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         Authenticate(email: "rereader@test.com");
 
-        // Two visits milliseconds apart are the same reading session — the second must not bump the count.
         var first = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
         var second = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
@@ -240,7 +231,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         SetVisitor(Guid.NewGuid());
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // A second browser is a new visitor row but the same account — the cross-device total counts.
         SetVisitor(Guid.NewGuid());
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
@@ -265,16 +255,13 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     {
         var slug = NewSlug();
 
-        // The visitor id is the browser's identity; sign-in layers on top and only rotates on
-        // sign-out, so two accounts share one id only via a session swap with no sign-out between.
+        // Reachable when a session swaps accounts without a sign-out, since only sign-out rotates the visitor id.
         SetVisitor(Guid.NewGuid());
 
-        // A signs in first and reads, stamping this browser's row to A.
         Authenticate(userId: Guid.NewGuid(), email: "shared-owner@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // B swaps in on the same browser: the backend refuses rather than count B's view against A's
-        // row, signalling the client to mint a fresh visitor id.
+        // Refused so the client mints a fresh visitor id rather than counting this view on another account's row.
         Authenticate(userId: Guid.NewGuid(), email: "shared-guest@test.com");
         var response = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
@@ -287,12 +274,10 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         SetVisitor(Guid.NewGuid());
 
-        // The row belongs to a signed-in account.
         Authenticate(userId: Guid.NewGuid(), email: "row-owner@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // An anonymous view on the same id is refused too — otherwise it would count against the
-        // account's row and echo back its private read count.
+        // Refused, or the anonymous view would count against the account's row and echo back its private read count.
         SignOut();
         var response = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
@@ -305,30 +290,23 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         var readerB = Guid.NewGuid();
 
-        // B reads once on their own browser.
         SetVisitor(Guid.NewGuid());
         Authenticate(userId: readerB, email: "own-device-reader@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // A owns a second, shared browser's row for the same post.
         SetVisitor(Guid.NewGuid());
         Authenticate(userId: Guid.NewGuid(), email: "other-owner@test.com");
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // B reads on that shared browser and is refused (409).
         Authenticate(userId: readerB, email: "own-device-reader@test.com");
         var conflict = await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
         Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
 
-        // The client mints a fresh id and retries, landing on B's own new row — their one prior read
-        // still counts, so it reads "read once".
         SetVisitor(Guid.NewGuid());
         var response = await ParseJsonAsync(await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct));
 
         Assert.Equal(1, response.GetProperty("previousViewCount").GetInt32());
     }
-
-    // ───── Visitor link (anonymous → account attribution) ─────
 
     [Fact]
     public async Task LinkVisitor_WithoutAuth_Returns401()
@@ -347,7 +325,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var visitorId = Guid.NewGuid();
         SetVisitor(visitorId);
 
-        // React anonymously, then sign in and link.
         SignOut();
         await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = "Heart" }, Ct);
 
@@ -355,7 +332,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var link = await client.PostAsync("/api/blog/visitor/link", content: null, Ct);
         Assert.Equal(HttpStatusCode.NoContent, link.StatusCode);
 
-        // The account now owns the reaction, and it is not double-counted.
         var mine = await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/reactions", Ct));
         Assert.Equal(1, mine.GetProperty("counts").GetProperty("heart").GetInt32());
         Assert.Equal("Heart", mine.GetProperty("mine")[0].GetString());
@@ -380,8 +356,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(1, stats.GetProperty("viewerViews").GetInt32());
     }
 
-    // ───── Stats ─────
-
     [Fact]
     public async Task Stats_AggregatesViewsReactionsAndCommentsPerPost()
     {
@@ -396,7 +370,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         await client.PostAsJsonAsync($"/api/blog/{slugA}/reactions/toggle", new { kind = "Rocket" }, Ct);
         await client.PostAsJsonAsync($"/api/blog/{slugA}/comments", new { content = "First!" }, Ct);
 
-        // A different reader on a different browser adds a second view and comment on the same post.
         Authenticate(userId: Guid.NewGuid(), email: "stats-other@test.com");
         SetVisitor(Guid.NewGuid());
         await client.PostAsync($"/api/blog/{slugA}/views", content: null, Ct);
@@ -464,8 +437,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Assert.Equal(1, response.GetProperty("posts").GetArrayLength());
     }
 
-    // ───── Stats caching ─────
-
     [Fact]
     public async Task Stats_CommentCount_ReflectsANewCommentAfterTheCountWasCached()
     {
@@ -473,8 +444,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(email: "count-cache-post@test.com");
         await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "One" }, Ct);
 
-        // Authenticated reads skip the response cache but still prime the per-post comment-count cache;
-        // the second comment must invalidate it so the follow-up read isn't stuck on the cached 1.
+        // Authenticated reads bypass the output cache but still prime the per-post comment-count cache.
         var first = await GetPostStats(slug);
         Assert.Equal(1, first.GetProperty("totalComments").GetInt32());
 
@@ -504,11 +474,9 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
     {
         var slug = NewSlug();
 
-        // Prime the response cache anonymously with the empty state.
         SignOut();
         Assert.Equal(0, (await GetPostStats(slug)).GetProperty("totalReactions").GetInt32());
 
-        // A reaction lands out of band; within the cache window the anonymous read still serves the primed response.
         Authenticate(email: "output-cache-warm@test.com");
         await client.PostAsJsonAsync($"/api/blog/{slug}/reactions/toggle", new { kind = "Heart" }, Ct);
 
@@ -526,16 +494,12 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         SetVisitor(Guid.NewGuid());
         await client.PostAsync($"/api/blog/{slug}/views", content: null, Ct);
 
-        // Prime the anonymous cache: viewerViews is null for anonymous callers.
         SignOut();
         Assert.Equal(JsonValueKind.Null, (await GetPostStats(slug)).GetProperty("viewerViews").ValueKind);
 
-        // The signed-in viewer must compute their own count, never be served the cached anonymous null.
         Authenticate(userId: viewerId, email: "output-cache-bypass@test.com");
         Assert.Equal(1, (await GetPostStats(slug)).GetProperty("viewerViews").GetInt32());
     }
-
-    // ───── Comments ─────
 
     [Fact]
     public async Task PostComment_WithoutAuth_Returns401()
@@ -575,7 +539,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         Authenticate(email: "dedupe@test.com");
         var commentId = Guid.NewGuid();
 
-        // An accidental resend (double-submit, retry) carries the same client-generated id.
         var first = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { commentId, content = "Only once" }, Ct);
         var second = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { commentId, content = "Only once" }, Ct);
 
@@ -618,10 +581,8 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var userId = Guid.NewGuid();
         Authenticate(userId: userId, email: "chameleon@test.com");
 
-        // No user_metadata in the token, so the snapshot name is the email local part with no avatar.
         await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "Look at my avatar" }, Ct);
 
-        // The author later sets a display name and avatar; every past comment must show them.
         factory.UserInfoService.Profiles[userId] = new UserPublicInfo("Chameleon Prime", new Uri("https://cdn.test/avatar.png"));
 
         SignOut();
@@ -681,7 +642,7 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
 
         var response = await client.PostAsJsonAsync($"/api/blog/{NewSlug()}/comments", new { content }, Ct);
 
-        // NonEmptyString rejects null/empty at binding — a plain 400, no stable error code.
+        // NonEmptyString rejects it at binding, so there's no stable error code to assert.
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -691,7 +652,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var slug = NewSlug();
         Authenticate(email: "spacer@test.com");
 
-        // Content is stored verbatim — no server-side trimming or whitespace collapsing.
         var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content = "spaced   out   comment" }, Ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -773,8 +733,6 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         AssertValidationError(await ParseJsonAsync(response), "commentId", "AlreadyDeleted");
     }
 
-    // ───── Notification emails (via the blog-comment subscription) ─────
-
     [Fact]
     public async Task PostComment_NotifiesTheBlogAuthor()
     {
@@ -841,15 +799,12 @@ public class BlogApiTests(TestWebApplicationFactory factory) : IClassFixture<Tes
         var response = await client.PostAsJsonAsync($"/api/blog/{slug}/comments", new { content }, Ct);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // The comment must still be stored even though nobody is notified.
         SignOut();
         var comments = (await ParseJsonAsync(await client.GetAsync($"/api/blog/{slug}/comments", Ct))).GetProperty("comments");
         Assert.Equal(1, comments.GetArrayLength());
 
         Assert.Empty(await factory.WaitForDeliveredEmailsAsync(m => m.TextBody.Value.Contains(content)));
     }
-
-    // ───── Helpers ─────
 
     /// <summary>Unique per test — the factory shares one database across the class.</summary>
     private static string NewSlug() => $"post-{Guid.NewGuid():N}";

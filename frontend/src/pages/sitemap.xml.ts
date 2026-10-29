@@ -3,8 +3,6 @@ import type { PageMeta } from "../lib/page-meta";
 import { publishedPosts } from "../blog/posts";
 import { locales, localePath, type Locale } from "../i18n/utils";
 
-// Every static page opts in by exporting `pageMeta`; blog posts contribute
-// their own metadata. One mechanism, no auto-discovery — see docs/frontend.md.
 const pageModules = import.meta.glob("./**/*.astro", { eager: true }) as Record<string, { pageMeta?: PageMeta }>;
 
 interface SitemapEntry {
@@ -12,7 +10,6 @@ interface SitemapEntry {
   path: string;
   /** ISO date (YYYY-MM-DD). */
   lastmod: string;
-  /** Locales this URL exists in — all for static pages, the declared languages for posts. */
   locales: Locale[];
 }
 
@@ -27,10 +24,9 @@ function collectEntries(): SitemapEntry[] {
 
     let route = path.slice(LOCALIZED_PAGES_PREFIX.length).replace(/\.astro$/, "");
     if (route === "index") route = "";
-    // Normalize nested index pages ("blog/index" → "blog") BEFORE the blog-post
-    // skip below, or the blog index itself would be dropped from the sitemap.
+    // Must run before the blog/ skip below, or the blog index itself would be dropped.
     if (route.endsWith("/index")) route = route.slice(0, -"/index".length);
-    if (route.startsWith("blog/")) continue; // posts are added from their own metadata below
+    if (route.startsWith("blog/")) continue;
 
     // The blog index changes whenever a post lands — its lastmod tracks the newest post.
     const lastmod =

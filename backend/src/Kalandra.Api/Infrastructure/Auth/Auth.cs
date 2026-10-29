@@ -66,8 +66,6 @@ public static class Auth
                     },
                     OnTokenValidated = context =>
                     {
-                        // Project app_metadata.roles into ASP.NET role claims so authorization works.
-                        // user_metadata (full_name, avatar_url etc.) is handled in HttpContextCurrentUserAccessor.
                         var identity = context.Principal?.Identity as ClaimsIdentity;
                         if (identity == null)
                             return Task.CompletedTask;
@@ -90,11 +88,7 @@ public static class Auth
     }
 
     /// <summary>
-    /// Parses role names from Supabase's app_metadata.roles array, matches
-    /// them against the Role enum, and adds a ClaimTypes.Role claim using
-    /// the canonical enum name. Unknown strings are dropped. Canonicalizing
-    /// here means both RequireRole and CurrentUser's role projection can
-    /// compare against nameof(Role.X) without caring about wire casing.
+    /// Canonicalizes roles to the UserRole spelling so RequireRole and CurrentUser can compare against nameof(UserRole.X) regardless of wire casing.
     /// </summary>
     private static void ExtractRolesFromAppMetadata(ClaimsPrincipal principal, ClaimsIdentity identity)
     {

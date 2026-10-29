@@ -17,10 +17,6 @@ public class AuthController(
     ISupabaseAdminService adminService,
     ILogger<AuthController> logger) : ControllerBase
 {
-    /// <summary>
-    /// Links an email/password identity to the current user's account.
-    /// Used when a user signed up via OAuth (e.g. Google) and wants to add email/password login.
-    /// </summary>
     [HttpPost("link-email")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -35,7 +31,7 @@ public class AuthController(
 
         var error = await adminService.ChangePasswordAsync(currentUser.RequiredUser, request.Password, ct);
         if (error == null)
-            return NoContent(); // Success
+            return NoContent();
 
         switch (error.Code)
         {

@@ -12,8 +12,7 @@ public static class McpRateLimits
 {
     public static void Add(IServiceCollection services, IHostEnvironment environment)
     {
-        // One generous bucket for the whole endpoint: an assistant session lists tools and makes several
-        // calls in quick succession. Signed-in calls key on the user; the rest on IP.
+        // Generous because an assistant session lists tools and makes several calls in quick succession.
         var mcpLimiterOptions = new SlidingWindowRateLimiterOptions
         {
             PermitLimit = environment.IsDevelopment() ? 1000 : 60,

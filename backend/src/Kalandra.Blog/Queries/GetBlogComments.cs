@@ -12,7 +12,7 @@ public class GetBlogCommentsHandler(IQuerySession session, IUserInfoService user
         await session.Events.AggregateStreamAsync<BlogPostComments>(query.CommentsStreamId, token: ct)
             ?? new BlogPostComments();
 
-    /// <summary>Overlays each author's current profile so a later name/avatar change shows on their old comments; separate from <see cref="Get"/> so the notification workflow's read doesn't do profile lookups.</summary>
+    /// <summary>Overlays each author's current profile so a later name or avatar change shows on their old comments.</summary>
     public async Task<BlogPostComments> GetForDisplay(GetBlogCommentsQuery query, CancellationToken ct)
     {
         var comments = await Get(query, ct);

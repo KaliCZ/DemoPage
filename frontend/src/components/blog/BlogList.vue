@@ -93,7 +93,6 @@ function applyUser(user: any) {
   void loadStats();
 }
 
-// A sort or filter change always restarts from page 1.
 watch([sortBy, unreadOnly], () => (page.value = 1));
 // The unread filter can shrink the list under the current page.
 watch(pageCount, (count) => (page.value = Math.min(page.value, count)));

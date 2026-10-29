@@ -1,29 +1,15 @@
 @import "tailwindcss";
-
-/* Design tokens (colors + fonts, light and dark) live in theme.css; this file
-   holds base styles and shared component styling that consume them. */
 @import "./theme.css";
 
-/* Bind Tailwind's `dark:` variant to the `.dark` class on <html>, not the
-   `prefers-color-scheme` media query. Our design tokens in this file are
-   scoped to `.dark`, so the variant must match — otherwise `dark:` utilities
-   fire whenever the OS prefers dark, while the tokens themselves stay at
-   their light values, producing hybrid mid-toggle rendering. */
+/* `dark:` must key off the same `.dark` class the theme tokens flip on, not prefers-color-scheme. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Prose styling for blog post bodies (see BlogPostLayout.astro). */
 @plugin "@tailwindcss/typography";
 
 /* Safelist dynamic color classes used via interpolated class names (e.g. `bg-${cat.color}`). */
 @source inline("bg-primary bg-secondary bg-tertiary text-primary text-secondary text-tertiary");
 
-/* ============================================
-   Self-hosted Google Fonts (Inter, Manrope, Space Grotesk)
-   Only latin + latin-ext subsets (covers English + Czech).
-   Font files live in public/fonts/ and are preloaded in Layout.astro.
-   ============================================ */
-
-/* Inter — body font (weights 400, 500, 600) */
+/* Only latin + latin-ext subsets (English + Czech); URLs must match the preloads in Layout.astro. */
 @font-face {
   font-family: "Inter";
   font-style: normal;
@@ -45,7 +31,6 @@
     U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Manrope — headline font (weights 400, 700, 800) */
 @font-face {
   font-family: "Manrope";
   font-style: normal;
@@ -67,7 +52,6 @@
     U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Space Grotesk — label font (weights 400, 500, 700) */
 @font-face {
   font-family: "Space Grotesk";
   font-style: normal;
@@ -92,11 +76,9 @@
 /* Offset anchor scroll for sticky header */
 html {
   scroll-padding-top: 6rem;
-  /* Prevent horizontal page shift when navigating between pages with/without scrollbar */
   scrollbar-gutter: stable;
 }
 
-/* Base styles */
 body {
   font-family: var(--font-body);
   background-color: var(--color-background);
@@ -105,13 +87,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Selection color */
 ::selection {
   background-color: var(--color-primary-container);
   color: var(--color-on-primary-container);
 }
 
-/* Keyboard focus ring, application-wide. */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -122,16 +102,14 @@ body {
   outline: none;
 }
 
-/* Gradient text with accessible fallback.
-   Uses a visible color as fallback so text remains readable
-   when browser extensions (e.g. Dark Reader) strip the gradient. */
+/* Pair with a `text-*` color so the text stays readable when an extension like Dark Reader strips the gradient. */
 .gradient-text {
   -webkit-text-fill-color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-/* Details/accordion smooth animation */
+/* details-animation.ts animates the <details> height, so its content must clip. */
 details {
   overflow: hidden;
 }
@@ -140,9 +118,7 @@ details > summary + * {
   will-change: opacity;
 }
 
-/* Suppress transitions during theme toggle to prevent flash. Only used on
-   the legacy fallback path in `theme-toggle.ts`; modern browsers go through
-   `document.startViewTransition` and don't need this. */
+/* theme-toggle.ts's instant flip for browsers without View Transitions. */
 .no-transitions,
 .no-transitions *,
 .no-transitions *::before,
@@ -150,10 +126,7 @@ details > summary + * {
   transition: none !important;
 }
 
-/* Theme-toggle view transition. Smooth crossfade of the entire viewport
-   when `theme-toggle.ts` flips `.dark`. Default ::view-transition-old /
-   ::view-transition-new pair already crossfades; we just slow it slightly
-   and ease it so the swap reads less like a snap. */
+/* theme-toggle.ts's crossfade, slowed slightly so the swap reads less like a snap. */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
@@ -167,10 +140,6 @@ details > summary + * {
     animation: none;
   }
 }
-
-/* ============================================
-   Blog article typography
-   ============================================ */
 
 /* Map prose colors onto the design tokens — they already flip under `.dark`,
    so `prose-invert` is never needed. */
@@ -198,14 +167,10 @@ details > summary + * {
   letter-spacing: -0.025em;
 }
 
-/* Shiki code blocks (see BlogCode.astro); their colors come from the
-   `--code-*` aliases in theme.css. */
 .astro-code {
   border: 1px solid var(--color-outline-variant);
 }
 
-/* Inline code: a distinct chip so it stands out from body text. Shiki blocks
-   (`pre > code`) set their own background and are excluded. */
 .prose :not(pre) > code {
   background-color: var(--color-surface-container-high);
   border: 1px solid var(--color-outline-variant);

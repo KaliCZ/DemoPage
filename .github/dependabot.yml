@@ -1,7 +1,5 @@
 version: 2
 updates:
-  # GitHub Actions — SHA-pinned third-party actions get auto-bumped here
-  # so we keep supply-chain protection without manual upkeep.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -11,8 +9,7 @@ updates:
         patterns:
           - "*"
 
-  # Backend — NuGet packages across all csproj files in the solution.
-  # Points at repo root so Dependabot picks up DemoPage.slnx as the entry point.
+  # Repo root so Dependabot finds DemoPage.slnx.
   - package-ecosystem: nuget
     directory: /
     schedule:
@@ -22,7 +19,6 @@ updates:
         patterns:
           - "*"
 
-  # Frontend — npm packages from frontend/package.json.
   - package-ecosystem: npm
     directory: /frontend
     schedule:
@@ -32,7 +28,6 @@ updates:
         patterns:
           - "*"
 
-  # Root — npm packages from the repo-root package.json (dev tooling, hooks, etc.).
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -42,8 +37,7 @@ updates:
         patterns:
           - "*"
 
-  # Docker — the backend Dockerfiles pin base images to tag + digest; this is
-  # what moves the digest when Microsoft rebuilds a tag in place.
+  # Moves the Dockerfiles' pinned base-image digests when Microsoft rebuilds a tag in place.
   - package-ecosystem: docker
     directories:
       - /backend/src/Kalandra.Api

@@ -19,7 +19,6 @@ const t = translations[lang];
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="profile" lang={lang} noindex>
-  <!-- Hero -->
   <section class="max-w-3xl mx-auto px-8 mb-16">
     <h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-none mb-6">
       <span class="gradient-text text-primary bg-linear-to-r from-primary to-tertiary">{t.hero.title}</span>
@@ -27,9 +26,7 @@ const t = translations[lang];
     <p class="text-lg text-on-surface-variant font-body max-w-xl">{t.hero.subtitle}</p>
   </section>
 
-  <!-- Login prompt (shown when not authenticated). The `signed-out-only`
-       class hooks Layout's pre-paint CSS so this section is hidden for
-       signed-in users immediately on parse, before supabase loads. -->
+  <!-- `signed-out-only` lets Layout's pre-paint CSS hide this for signed-in users before Supabase loads. -->
   <section id="login-prompt" class="signed-out-only max-w-3xl mx-auto px-8 mb-16">
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12 text-center">
       <Icon name="material-symbols:lock" class="size-12 text-primary mb-4 mx-auto block" aria-hidden="true" />
@@ -45,13 +42,8 @@ const t = translations[lang];
     </div>
   </section>
 
-  <!-- Profile settings (shown when authenticated). `signed-in-only` keeps
-       it visible for signed-in users during the supabase init delay; the
-       `hidden` class is the no-JS / signed-out fallback.
-       `data-loading` triggers skeleton placeholders for fields that stay
-       empty until supabase loads — populateProfile() removes the attribute. -->
+  <!-- `signed-in-only` overrides `hidden` pre-paint for signed-in users; `hidden` is the no-JS / signed-out fallback. -->
   <section id="profile-section" class="signed-in-only hidden max-w-3xl mx-auto px-8 mb-16 space-y-8" data-loading aria-busy="true">
-    <!-- Avatar -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.avatar.title}</h2>
       <div class="flex items-center gap-6">
@@ -60,12 +52,7 @@ const t = translations[lang];
           <div id="avatar-preview-initial" class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center">
             <span class="text-xl font-bold text-on-primary-container"></span>
           </div>
-          <!-- Pulsing skeleton circle covering the avatar until
-               populateProfile() runs. The opaque outer circle masks the
-               blue primary-container underneath; the inner element fades
-               in/out via animate-pulse to make the pulsing visible without
-               revealing the blue. Hidden via the loading-skeleton CSS rule
-               once data-loading is removed from #profile-section. -->
+          <!-- The opaque outer circle masks the avatar initial underneath so only the inner circle pulses. -->
           <div
             class="loading-skeleton absolute inset-0 w-16 h-16 rounded-full bg-surface-container-high overflow-hidden pointer-events-none"
             aria-hidden="true"
@@ -89,13 +76,10 @@ const t = translations[lang];
       <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" class="hidden" />
     </div>
 
-    <!-- Provider info -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <h2 class="font-headline text-lg font-bold text-on-surface mb-4">{t.provider.title}</h2>
       <div id="provider-list" class="flex flex-col gap-3">
-        <!-- Skeleton placeholders shown until populateProfile() runs.
-             populateProfile() does providerList.innerHTML = "", so these
-             clear automatically once the user data is in. -->
+        <!-- Cleared by populateProfile() emptying the list, not by the loading-skeleton rule. -->
         <div class="flex items-center gap-3 animate-pulse" aria-hidden="true">
           <div class="size-5 rounded-full bg-on-surface-variant/20 shrink-0"></div>
           <div class="flex-1 flex flex-col gap-2">
@@ -113,7 +97,6 @@ const t = translations[lang];
       <p id="provider-feedback" class="hidden text-sm font-body mt-3"></p>
     </div>
 
-    <!-- Display name -->
     <div class="bg-surface-container-low rounded-2xl border border-outline-variant/10 p-8 md:p-12">
       <label for="display-name" class="block text-sm font-label font-semibold text-on-surface mb-2">
         {t.displayName.label}
@@ -127,10 +110,7 @@ const t = translations[lang];
             placeholder={t.displayName.placeholder}
             class="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
-          <!-- Pulsing skeleton over the input until populateProfile() runs.
-               Hidden via the loading-skeleton CSS rule once data-loading is
-               removed from #profile-section. The outer div masks the input's
-               placeholder; the inner bar is what the user sees pulsing. -->
+          <!-- The outer div masks the input's placeholder so only the inner bar pulses. -->
           <div
             class="loading-skeleton absolute inset-0 rounded-xl bg-surface-container flex items-center px-4 pointer-events-none"
             aria-hidden="true"
@@ -151,8 +131,6 @@ const t = translations[lang];
   </section>
 
   <style>
-    /* Hide skeleton overlays once #profile-section loses data-loading
-       (populateProfile ran). */
     #profile-section:not([data-loading]) .loading-skeleton {
       display: none;
     }
@@ -211,7 +189,6 @@ const t = translations[lang];
         if (loginPrompt) loginPrompt.classList.add("hidden");
         if (profileSection) profileSection.classList.remove("hidden");
         populateProfile(user);
-        // Clear loading state — populateProfile has filled in everything.
         if (profileSection) {
           profileSection.removeAttribute("data-loading");
           profileSection.removeAttribute("aria-busy");
@@ -254,7 +231,6 @@ const t = translations[lang];
       if (nameInput) nameInput.value = user.user_metadata?.full_name || "";
       if (emailInput) emailInput.value = user.email || "";
 
-      // Determine linked providers from identities
       var identities = user.identities || [];
       var hasEmail = identities.some(function (i) {
         return i.provider === "email";
@@ -263,7 +239,6 @@ const t = translations[lang];
         return i.provider === "google";
       });
 
-      // Render provider list — linked methods first, then unlinked
       if (providerList) {
         providerList.innerHTML = "";
         var linked = [];
@@ -274,7 +249,6 @@ const t = translations[lang];
           "px-5 py-2.5 rounded-xl text-sm font-semibold font-label bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap";
         var linkClass = "text-xs font-label font-semibold text-primary hover:text-primary/80 cursor-pointer";
 
-        // Email & Password
         if (hasEmail) {
           var emailBlock = document.createElement("div");
           emailBlock.className = "flex flex-col gap-3";
@@ -300,7 +274,6 @@ const t = translations[lang];
             "</button>" +
             "</div>" +
             "</div>" +
-            // Change email form (hidden by default)
             '<div id="change-email-form" class="hidden ml-8 space-y-3">' +
             '<div class="flex flex-col sm:flex-row gap-3">' +
             '<input type="email" id="profile-email" autocomplete="email" maxlength="255" placeholder="' +
@@ -318,7 +291,6 @@ const t = translations[lang];
             "</div>" +
             '<p id="email-feedback" class="hidden text-sm font-body"></p>' +
             "</div>" +
-            // Change password form (hidden by default)
             '<div id="change-password-form" class="hidden ml-8 space-y-3">' +
             '<input type="password" id="current-password" autocomplete="current-password" minlength="6" placeholder="' +
             esc(strings.password.currentPasswordPlaceholder) +
@@ -345,7 +317,6 @@ const t = translations[lang];
           linked.push(emailBlock);
         }
 
-        // Google
         if (hasGoogle) {
           var googleIdentity = identities.find(function (i) {
             return i.provider === "google";
@@ -383,7 +354,6 @@ const t = translations[lang];
           unlinked.push(linkBtn);
         }
 
-        // Append linked first, then unlinked
         linked.forEach(function (el) {
           providerList.appendChild(el);
         });
@@ -391,7 +361,6 @@ const t = translations[lang];
           providerList.appendChild(el);
         });
 
-        // Bind toggle and action buttons after DOM insertion
         if (hasEmail) {
           setTimeout(function () {
             document.getElementById("toggle-change-email")?.addEventListener("click", function () {
@@ -489,12 +458,10 @@ const t = translations[lang];
       }
     }
 
-    // Sign in button
     document.getElementById("profile-sign-in")?.addEventListener("click", function () {
       document.getElementById("auth-sign-in-desktop")?.click();
     });
 
-    // --- Save display name ---
     async function saveName() {
       var btn = document.getElementById("save-name-btn");
       var feedback = document.getElementById("name-feedback");
@@ -531,7 +498,6 @@ const t = translations[lang];
       if (e.key === "Enter") saveName();
     });
 
-    // --- Save email ---
     async function saveEmail() {
       var btn = document.getElementById("save-email-btn");
       var feedback = document.getElementById("email-feedback");
@@ -563,7 +529,6 @@ const t = translations[lang];
       }
     }
 
-    // --- Change password ---
     async function savePassword() {
       var btn = document.getElementById("save-password-btn");
       var feedback = document.getElementById("password-feedback");
@@ -626,7 +591,6 @@ const t = translations[lang];
       }
     }
 
-    // --- Avatar upload ---
     document.getElementById("avatar-change-btn")?.addEventListener("click", function () {
       document.getElementById("avatar-file-input")?.click();
     });
@@ -659,7 +623,6 @@ const t = translations[lang];
         var supabase = await window.__supabaseReady;
         if (!supabase) throw new Error("Not authenticated");
 
-        // Get current user ID for the storage path
         var {
           data: { user: currentUser },
         } = await supabase.auth.getUser();
@@ -667,7 +630,6 @@ const t = translations[lang];
 
         var storagePath = currentUser.id + "/avatar";
 
-        // Upload directly to Supabase Storage (upsert overwrites existing)
         var { error: uploadError } = await supabase.storage.from("avatars").upload(storagePath, file, {
           contentType: file.type,
           upsert: true,
@@ -675,26 +637,19 @@ const t = translations[lang];
 
         if (uploadError) throw uploadError;
 
-        // Build public URL with cache-busting timestamp
+        // Every upload reuses the same storage path, so the timestamp busts cached copies of the old avatar.
         var { data: urlData } = supabase.storage.from("avatars").getPublicUrl(storagePath);
         var avatarUrl = urlData.publicUrl + "?t=" + Date.now();
 
-        // Update user metadata with new avatar URL
         var { error: updateError } = await supabase.auth.updateUser({
           data: { avatar_url: avatarUrl },
         });
 
         if (updateError) throw updateError;
 
-        // Evict the server cache now, in parallel with the session refresh below —
-        // issued this early (and with keepalive), it still lands if the tab closes
-        // right after saving. Must stay after updateUser: evicting sooner would let
-        // a concurrent read re-cache the old profile.
+        // Started early so it lands even if the tab closes, but after updateUser so a concurrent read can't re-cache the old profile.
         var serverCacheRefreshed = refreshServerUserCache();
 
-        // Update preview immediately — avatarUrl is already confirmed by the
-        // successful upload + metadata update above, so we don't need to wait
-        // for getUser() to reflect it.
         var displayName = currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "User";
         updateAvatarPreview(avatarUrl, displayName);
 
@@ -709,7 +664,7 @@ const t = translations[lang];
           );
         }
 
-        // Invalidate the cached user info so other pages fetch the new avatar
+        // Evict this user from lib/user-info.ts's localStorage cache so other pages fetch the new avatar.
         try {
           var uiCache = JSON.parse(localStorage.getItem("userInfoCache")) || {};
           delete uiCache[currentUser.id];

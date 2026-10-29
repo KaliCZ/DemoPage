@@ -2,13 +2,7 @@ using Kalandra.JobOffers.Queries;
 
 namespace Kalandra.Api.Features.JobOffers.Contracts;
 
-/// <summary>
-/// Stable API contract for field identifiers in edit history entries.
-/// Separate from the domain <see cref="JobOfferField"/> enum so that
-/// internal renames don't silently break frontend i18n keys.
-/// Serialized as PascalCase strings via the global JsonStringEnumConverter,
-/// consistent with all other API enums (e.g. JobOfferStatus).
-/// </summary>
+/// <summary>Separate from the domain <see cref="JobOfferField"/> so an internal rename can't silently break frontend i18n keys.</summary>
 public enum HistoryField
 {
     CompanyName,

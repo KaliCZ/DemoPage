@@ -27,7 +27,7 @@ const props = defineProps<{
 // Comment events live in the comments section, not the activity log.
 const visibleEntries = computed(() => props.entries.filter((entry) => entry.eventType !== "Comment"));
 
-// Description/AdditionalNotes diffs don't fit inline — they get an expandable before/after panel.
+// Long-text diffs don't fit inline, so they get an expandable before/after panel.
 const LONG_TEXT_FIELDS = new Set(["Description", "AdditionalNotes"]);
 const expandedDiffs = ref(new Set<string>());
 

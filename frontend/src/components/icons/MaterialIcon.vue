@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Vue counterpart of astro-icon's material-symbols icons; path data comes
-// from material-symbol-paths.ts. Size via Tailwind classes on the component.
+// Vue islands can't use astro-icon's <Icon>, so they draw material symbols through this.
 defineProps<{ d: string }>();
 </script>
 

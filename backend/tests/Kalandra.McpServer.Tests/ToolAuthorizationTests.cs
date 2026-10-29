@@ -3,19 +3,13 @@ using System.Net.Http.Headers;
 
 namespace Kalandra.McpServer.Tests;
 
-/// <summary>
-/// Sweeps the account tier the way a client meets it: every tool the server lists is really called without a
-/// token, and must either answer or challenge, matching what its description advertises. A new account tool
-/// that slips into the public set fails here instead of leaking.
-/// </summary>
+/// <summary>Calls every listed tool anonymously, so an account tool that slips into the public set fails here instead of leaking.</summary>
 public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
-    // Deliberately a second copy of McpAccountGate.PublicTools: reusing the gate's own set would assert
-    // nothing. This is the expectation; the gate is the thing under test.
+    // Deliberately a copy of McpAccountGate.PublicTools: reusing the gate's own set would assert nothing.
     private static readonly string[] PublicTools = ["get_blog_post_comments", "list_blog_posts"];
 
-    // Arguments good enough to reach the tool body, so a served call really runs rather than bouncing off
-    // parameter binding. A tool missing here fails the sweep until someone adds it.
+    // Valid enough to reach the tool body, so a served call really runs rather than failing parameter binding.
     private static readonly Dictionary<string, string> ArgumentsByTool = new()
     {
         ["list_blog_posts"] = "{}",
@@ -55,8 +49,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     [Fact]
     public async Task ToolsList_WithoutAToken_StillOffersTheAccountTools()
     {
-        // The whole point of listing everything: a model can only tell the user what this site offers if it
-        // can see the account tools before they sign in.
+        // A model can only tell the user what the site offers if it sees the account tools before sign-in.
         var names = (await ListTools()).Select(tool => tool.Name).ToList();
         Assert.Contains("submit_job_offer", names);
         Assert.Contains("get_my_comments", names);
@@ -67,8 +60,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     [InlineData("stale-or-forged-token")]
     public async Task AnAccountTool_WithoutAUsableToken_ChallengesTowardsSupabase(string? bearerToken)
     {
-        // The 401 is the whole contract: a client's OAuth code reads WWW-Authenticate, finds the resource
-        // metadata, and signs in or refreshes on its own. A tool error saying "please sign in" cannot do that.
+        // Only a 401 lets the client's OAuth code sign in or refresh on its own; a "please sign in" tool error can't.
         var response = await CallAccountTool(bearerToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -82,8 +74,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     [Fact]
     public async Task ARejectedToken_IsNamedTheProblem_SoTheClientRefreshesIt()
     {
-        // RFC 6750's error="invalid_token" is the standard signal separating "refresh your token and retry"
-        // from "start a sign-in" — without it a client cannot tell which of the two the 401 means.
+        // RFC 6750's error="invalid_token" is what tells a client to refresh rather than start a new sign-in.
         var response = await CallAccountTool("stale-or-forged-token");
 
         var challenge = Assert.Single(response.Headers.WwwAuthenticate);
@@ -91,10 +82,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     }
 
     [Theory]
-    // Valid JSON in shapes the protocol never produces: params that aren't an object, a tool name that
-    // isn't a string, no params at all. Scanners send these anonymously, and anything but the gate's own
-    // challenge is noise — a 500 out of the gate, or the SDK alerting at Error before it answers. A call
-    // that names no public tool is an account call, however misshapen (fail closed).
+    // Scanners send these anonymously; naming no public tool, they must fail closed to the challenge, not a 500 or an SDK alert.
     [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":null}""")]
     [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":[]}""")]
     [InlineData("""{"jsonrpc":"2.0","id":6,"method":"tools/call","params":"get_my_comments"}""")]
@@ -113,8 +101,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     [Fact]
     public async Task AFirstVisitWithNoToken_GetsAPlainChallenge_NotAnErrorCode()
     {
-        // RFC 6750: when no credentials were presented, the challenge SHOULD NOT carry an error code —
-        // there is no token to blame, only a sign-in to start.
+        // RFC 6750: with no credentials presented, the challenge SHOULD NOT carry an error code.
         var response = await CallAccountTool(bearerToken: null);
 
         var challenge = Assert.Single(response.Headers.WwwAuthenticate);
@@ -124,8 +111,7 @@ public class ToolAuthorizationTests(McpServerFactory factory) : IClassFixture<Mc
     [Fact]
     public async Task TheDiscoveryDocument_StaysReachable_WithTheVeryTokenThatWasRejected()
     {
-        // The challenge sends the client here to find its authorization server. Challenging this too would
-        // trap a client holding a stale token in a loop it can't discover its way out of.
+        // Challenging the discovery document too would trap a client holding a stale token in a loop.
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "stale-token");
 

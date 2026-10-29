@@ -16,8 +16,7 @@ builder.Services.AddProblemDetails();
 var supabaseConfig = SupabaseConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 var mcpConfig = McpServerConfig.AddSingleton(builder.Services, builder.Configuration, builder.Environment);
 
-// Store only — no daemon, no notification subscriptions: Kalandra.Api owns those (and the schema), so
-// an event written by a tool here is emailed exactly once, by that host.
+// No daemon or subscriptions here: the API runs them, so a tool-written event is emailed exactly once.
 builder.Services.AddAppMartenStore(builder.Configuration, builder.Environment, ownsSchema: false);
 McpAuth.Add(builder.Services, supabaseConfig, mcpConfig);
 builder.Services.AddMcpServices();
@@ -31,7 +30,6 @@ McpRateLimits.Add(builder.Services, builder.Environment);
 builder.Services.Configure<HostOptions>(
     o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
-// "live" = deploy-gate liveness (process up + build commit, no external deps); "ready" = full readiness.
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, timeout: TimeSpan.FromSeconds(5), tags: ["ready"])
     .AddCheck<CommitHashHealthCheck>("version", tags: ["live", "ready"]);
@@ -47,8 +45,7 @@ McpAuth.Use(app);
 McpRateLimits.Use(app);
 McpAccountGate.Use(app, McpEndpoint);
 
-// MCP tools over streamable HTTP. The endpoint carries no authorization requirement of its own — that would
-// shut the anonymous tier out of the public blog tools; McpAccountGate challenges per tool call instead.
+// No RequireAuthorization: it would lock out the public tools, so McpAccountGate challenges per tool call instead.
 app.MapMcp(McpEndpoint).RequireRateLimiting(McpRateLimitPolicies.Mcp);
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
@@ -56,7 +53,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-// Liveness for the blue/green deploy gate: process up + expected commit, no external deps.
+// The blue/green deploy gate skips external deps: a shared DB/Supabase outage breaks both slots and must not roll back a good build.
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),

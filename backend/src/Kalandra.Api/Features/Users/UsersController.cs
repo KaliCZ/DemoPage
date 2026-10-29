@@ -29,7 +29,7 @@ public class UsersController(IUserInfoService userInfoService, ICurrentUserAcces
                 AvatarUrl: kvp.Value.AvatarUrl));
     }
 
-    /// <summary>Drops the caller's cached profile after they change their own name or avatar, so it re-resolves on the next read instead of waiting out the cache TTL.</summary>
+    /// <summary>Called after the user changes their name or avatar so the cached profile re-resolves instead of waiting out the TTL.</summary>
     [HttpPost("me/refresh")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RefreshMe(CancellationToken ct)

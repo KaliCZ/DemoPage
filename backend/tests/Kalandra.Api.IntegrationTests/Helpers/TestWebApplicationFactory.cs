@@ -22,7 +22,6 @@ namespace Kalandra.Api.IntegrationTests.Helpers;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    // The MCP list_blog_posts tool reads this instead of a live frontend; StubBlogFeedHandler serves it.
     public const string BlogFeedSlug = "zero-code-validations-in-your-dotnet-api";
     private const string BlogFeedRss =
         $"""
@@ -41,19 +40,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
-    // Generous because CI runs Docker and several test hosts in parallel; progress-based waits return
-    // the moment the daemon catches up, so the cap only bites when something is genuinely broken.
+    // Generous because CI runs Docker and several test hosts in parallel.
     private static readonly TimeSpan AsyncDaemonTimeout = TimeSpan.FromSeconds(60);
 
     public FakeSupabaseAdminService FakeAdminService { get; } = new();
     public TestEmailSender EmailSender { get; } = new();
     public FakeUserInfoService UserInfoService { get; } = new();
 
-    /// <summary>
-    /// Waits until the async daemon has processed every event committed so far, then returns the sent
-    /// emails matching the predicate. The result is final for those events — a missing or extra
-    /// notification is a real bug, not a race — so callers assert exact counts without sleeping.
-    /// </summary>
+    /// <summary>The result is final for every event committed before the call, so callers can assert exact counts without sleeping.</summary>
     public async Task<EmailMessage[]> WaitForDeliveredEmailsAsync(Func<EmailMessage, bool> predicate)
     {
         var store = Services.GetRequiredService<IDocumentStore>();
@@ -75,7 +69,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(EmailSender);
 
-            // Random per-test slugs need to resolve; the prod catalog gates to real posts.
             services.RemoveAll<IBlogPostCatalog>();
             services.AddSingleton<IBlogPostCatalog, TestBlogPostCatalog>();
 
@@ -94,7 +87,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<Supabase.Storage.Client>();
             services.RemoveAll<Supabase.Gotrue.Interfaces.IGotrueAdminClient<Supabase.Gotrue.User>>();
 
-            // No live frontend in tests — serve the MCP list_blog_posts tool a canned RSS feed.
             services.AddHttpClient<BlogFeedClient>()
                 .ConfigurePrimaryHttpMessageHandler(() => new StubBlogFeedHandler(BlogFeedRss));
 
@@ -117,8 +109,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     protected override void ConfigureClient(HttpClient client)
     {
         base.ConfigureClient(client);
-        // Bypass hire-me rate limiter in tests — same mechanism the frontend uses
-        // after the user solves the interactive Turnstile challenge.
+        // Bypasses the hire-me rate limiter, as the frontend does after an interactive Turnstile challenge.
         client.DefaultRequestHeaders.Add("X-Interactive-Captcha", "1");
     }
 
@@ -128,9 +119,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         await WaitForNotificationSubscriptionsToStartAsync();
     }
 
-    // SubscribeFromPresent seeds each subscription at the current high-water mark when its shard starts —
-    // an event committed before that would be skipped, never emailed. Agents register only after seeding,
-    // so waiting for registration while the database is still empty guarantees no test event is missed.
+    // Subscriptions start from the present, so a test event committed before its shard starts would never be emailed.
     private async Task WaitForNotificationSubscriptionsToStartAsync()
     {
         var store = (DocumentStore)Services.GetRequiredService<IDocumentStore>();
@@ -152,8 +141,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     public new async ValueTask DisposeAsync()
     {
-        // Stop the host — and its async daemon — before the database it talks to, so daemon shutdown
-        // doesn't log connection failures into an already-disposed logger and fault the fixture teardown.
+        // Host first, so the daemon's shutdown doesn't hit a disposed database and fault the fixture teardown.
         await base.DisposeAsync();
         await _postgres.DisposeAsync();
     }

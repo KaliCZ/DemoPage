@@ -3,9 +3,7 @@ using StrongTypes;
 namespace Kalandra.McpServer.Infrastructure;
 
 /// <summary>
-/// The MCP server's own canonical URL — the OAuth "resource identifier" (RFC 8707/9728) advertised in the
-/// protected-resource metadata and the audience a client requests a token for. In production this is
-/// <c>https://mcp.kalandra.tech</c>; a token minted for any other resource is not meant for this server.
+/// ResourceUri is the OAuth resource identifier (RFC 8707/9728) clients request a token for; a token minted for another resource isn't meant for this server.
 /// </summary>
 public record McpServerConfig(Uri ResourceUri)
 {

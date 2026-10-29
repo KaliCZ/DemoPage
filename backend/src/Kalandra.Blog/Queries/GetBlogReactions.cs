@@ -5,7 +5,6 @@ namespace Kalandra.Blog.Queries;
 
 public record GetBlogReactionsQuery(string Slug, Guid? VisitorId, Guid? UserId);
 
-/// <summary>A post's reaction counts plus the kinds the current reactor has active ("mine").</summary>
 public record BlogReactionSummary(IReadOnlyDictionary<BlogReactionKind, int> CountsByKind, IReadOnlyCollection<BlogReactionKind> Mine)
 {
     public int CountOf(BlogReactionKind kind) => CountsByKind.GetValueOrDefault(kind);
@@ -13,8 +12,7 @@ public record BlogReactionSummary(IReadOnlyDictionary<BlogReactionKind, int> Cou
     public static BlogReactionSummary From(IReadOnlyList<BlogReaction> rows, Guid? visitorId, Guid? userId)
     {
         var countsByKind = rows.GroupBy(reaction => reaction.Kind).ToDictionary(group => group.Key, group => group.Count());
-        // "Mine" is the account's reactions plus this browser's own not-yet-linked anonymous ones —
-        // a signed-in reaction belongs to its account, never to whoever else shares the browser.
+        // A signed-in reaction belongs to its account, never to whoever else shares the browser.
         var mine = rows
             .Where(reaction =>
                 (userId is { } uid && reaction.UserId == uid)

@@ -10,7 +10,6 @@ public class CachingUserInfoServiceTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    /// <summary>Stand-in source that counts fetches, so a test can assert a read was served from cache.</summary>
     private sealed class CountingUserInfoService : IUserInfoService
     {
         public int Calls { get; private set; }
@@ -80,7 +79,6 @@ public class CachingUserInfoServiceTests
         // The racing read: re-caches the (stale) profile right after the immediate eviction.
         await service.GetUserInfoAsync([userId], Ct);
 
-        // The delayed second eviction clears the resurrected entry.
         for (var attempt = 0; ; attempt++)
         {
             if (await cache.GetAsync($"userinfo:{userId}", Ct) is null) break;

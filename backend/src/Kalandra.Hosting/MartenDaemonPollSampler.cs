@@ -3,8 +3,7 @@ using OpenTelemetry.Trace;
 namespace Kalandra.Hosting;
 
 /// <summary>
-/// Root sampler (wrap in <see cref="ParentBasedSampler"/>) that drops the Marten async daemon's
-/// high-water-mark poll — one trace every ~2s around the clock, ~85% of the spans we exported.
+/// Drops the daemon's high-water-mark poll, a trace every ~2s that would dominate exported spans; wrap in <see cref="ParentBasedSampler"/>.
 /// </summary>
 public sealed class MartenDaemonPollSampler : Sampler
 {

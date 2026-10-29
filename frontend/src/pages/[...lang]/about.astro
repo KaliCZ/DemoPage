@@ -36,7 +36,6 @@ const tocItems = [
 ---
 
 <Layout title={t.meta.title} description={t.meta.description} activePage="about" lang={lang}>
-  <!-- Hero Section -->
   <section id="hero" class="max-w-7xl mx-auto px-4 md:px-8 mb-12 lg:mb-16">
     <div class="flex flex-col md:flex-row items-end gap-12">
       <div class="w-full md:w-2/3">
@@ -103,7 +102,6 @@ const tocItems = [
           </a>
         </div>
       </div>
-      <!-- Portrait -->
       <div class="w-full md:w-1/3 aspect-square rounded-xl overflow-hidden border border-outline-variant/20">
         <picture>
           <source
@@ -124,16 +122,10 @@ const tocItems = [
     </div>
   </section>
 
-  <!-- Values Section -->
   <Band id="values" borders="top">
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
     <div class="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
       <h2 class="font-headline text-4xl font-extrabold mb-12 tracking-tight">{t.values.title}</h2>
-      <!-- Asymmetric two-column layout: short pillars stack on the left, the
-           long-form Empowered Teams pillar (with its lede + two paragraphs)
-           occupies the right column on its own. The split is driven by the
-           presence of `paragraphs` on the data, so adding/removing long
-           pillars adapts the layout without rewiring it. -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
         <ul class="space-y-10">
           {t.values.pillars
@@ -180,7 +172,6 @@ const tocItems = [
     </div>
   </Band>
 
-  <!-- Skills Section -->
   <Band id="skills" level="lowest">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
@@ -218,12 +209,6 @@ const tocItems = [
     </div>
   </Band>
 
-  <!-- Personal Section. Third band in the sequence Values → Skills → Personal,
-       using the deeper shade so it alternates with Skills (which uses the
-       subtler one). The band's bottom border acts as the divider that closes
-       off the colored-bands zone before the transparent Career timeline. Cards
-       use a horizontal icon-then-text layout so each item reads as a quick
-       human attribute rather than a feature. -->
   <Band id="personal" borders="bottom" class="mb-8 lg:mb-12">
     <div class="max-w-7xl mx-auto px-4 md:px-8">
       <div class="text-center mb-10">
@@ -248,16 +233,11 @@ const tocItems = [
     </div>
   </Band>
 
-  <!-- Career Journey Section -->
   <section id="career" class="max-w-7xl mx-auto px-4 md:px-8">
     <div class="text-center mb-16">
       <h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter">{t.career.title}</h2>
     </div>
 
-    <!-- Timeline. Entries alternate sides via `side: "left" | "right"` in the
-         JSON; each side is the same card, just mirrored around the central
-         vertical line. The shared <Card> renders the body so the two sides
-         can't drift apart. -->
     <div class="relative">
       <div class="absolute left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/30 hidden md:block"></div>
 
@@ -302,8 +282,6 @@ const tocItems = [
             </div>
           );
 
-          // Right-side rows always pad below; left-side rows do too, except
-          // for the final entry which closes the timeline with no trailing gap.
           const needsBottomGap = isRight || !isLast;
           const spacer = <div class="hidden md:block w-1/2" />;
 

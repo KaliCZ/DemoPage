@@ -1,5 +1,5 @@
-# Quadlet unit for the green slot of the demopage MCP server (rootless, under the opc user).
-# See kalandra-mcp-blue.container for the blue/green contract.
+# The deploy rewrites Image= to the digest it just verified; :latest is only a placeholder.
+# Network=host, so these ports must never overlap the API slots' ports.
 
 [Unit]
 Description=Kalandra MCP server (green slot)

@@ -3,11 +3,6 @@ using System.Text.Json;
 
 namespace Kalandra.McpServer.Tests;
 
-/// <summary>
-/// Pins the anonymous tier: without a token — or with one that doesn't validate — the endpoint connects and
-/// serves the public blog tools. Which tools are offered and which refuse an anonymous caller is swept by
-/// <see cref="ToolAuthorizationTests"/>.
-/// </summary>
 public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpServerFactory>
 {
     [Fact]
@@ -53,11 +48,10 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
         var post = postsDocument.RootElement.EnumerateArray().Single();
 
         Assert.Equal(McpServerFactory.StubBlogPostSlug, post.GetProperty("slug").GetString());
-        // The blog-index totals are served to everyone (zero here: the stub slug has no catalog entry).
+        // Zero because the stub slug has no catalog entry.
         Assert.Equal(0, post.GetProperty("totalViews").GetInt32());
         Assert.Equal(0, post.GetProperty("totalReactions").GetInt32());
         Assert.Equal(0, post.GetProperty("totalComments").GetInt32());
-        // Anonymous callers have no reading history, so the per-viewer read state must stay unset.
         Assert.True(!post.TryGetProperty("viewerViews", out var viewerViews) || viewerViews.ValueKind == JsonValueKind.Null);
         Assert.True(!post.TryGetProperty("watched", out var watched) || watched.ValueKind == JsonValueKind.Null);
     }
@@ -65,8 +59,7 @@ public class AnonymousAccessTests(McpServerFactory factory) : IClassFixture<McpS
     [Fact]
     public async Task AnyCall_WithAnInvalidToken_IsChallengedRatherThanDowngraded()
     {
-        // Even for a public tool: the authorization spec says an invalid or expired token MUST be answered
-        // with a 401, and only that tells the client to refresh instead of silently acting as nobody.
+        // The MCP authorization spec requires a 401 for an invalid token even on a public tool, so the client refreshes.
         var response = await factory.PostMcp(
             """{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"list_blog_posts","arguments":{}}}""",
             bearerToken: "not-a-valid-token");

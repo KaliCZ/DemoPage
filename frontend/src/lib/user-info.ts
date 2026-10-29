@@ -1,6 +1,5 @@
 import { getAccessToken } from "./auth";
 
-/** Public display info for a user, as served by /api/users. */
 export interface UserInfo {
   displayName?: string;
   avatarUrl?: string;
@@ -8,8 +7,7 @@ export interface UserInfo {
 
 type CacheEntry = UserInfo & { _ts: number };
 
-// Persisted in localStorage so it survives page navigations and works across
-// tabs. Entries expire after 5 minutes to pick up avatar/name changes.
+// profile.astro evicts entries by this literal key after an avatar change.
 const CACHE_KEY = "userInfoCache";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -33,11 +31,7 @@ function saveCache(cache: Record<string, CacheEntry>): void {
   } catch {}
 }
 
-/**
- * Resolves display name + avatar for the given user ids, best-effort: ids the
- * API doesn't return (or a failed request) are simply absent from the result.
- * Negative results are cached too, so unknown ids aren't refetched every call.
- */
+/** Best-effort: ids the API doesn't resolve, or a failed request, are simply absent from the result. */
 export async function fetchUserInfo(apiUrl: string, userIds: (string | null)[]): Promise<Record<string, UserInfo>> {
   const ids = [...new Set(userIds.filter((id): id is string => !!id))];
   if (ids.length === 0) return {};
