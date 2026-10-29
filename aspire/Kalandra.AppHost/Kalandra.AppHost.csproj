@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+<Project Sdk="Aspire.AppHost.Sdk/13.6.4">
 
   <ItemGroup>
     <ProjectReference Include="..\..\backend\src\Kalandra.Api\Kalandra.Api.csproj" />
@@ -6,7 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.6.4" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.6.4" />
   </ItemGroup>
 
@@ -16,6 +16,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>0f8ea75e-f640-4bc7-ace3-b1cd6369f724</UserSecretsId>
+    <!-- DCP and the dashboard come from NuGet so the AppHost builds without the Aspire CLI, which CI doesn't install. -->
+    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
   </PropertyGroup>
 
 </Project>
