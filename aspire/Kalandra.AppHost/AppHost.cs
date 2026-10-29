@@ -61,7 +61,9 @@ try
 
     var otlpTracesUrl = $"http://localhost:{ports.OtlpHttp.Port}/v1/traces";
     // No WaitFor(api) so the UI starts immediately; a fetch before the API is up just errors and recovers.
-    var web = builder.AddNpmApp("web", "../../frontend", "dev:claudePreview")
+    var web = builder.AddJavaScriptApp("web", "../../frontend", "dev:claudePreview")
+        // DevInfrastructure already ran npm install, which had to happen before the Supabase CLI it provides started.
+        .WithNpm(install: false)
         .WithHttpEndpoint(env: "PORT")
         .WithReference(api)
         .WithEnvironment("PUBLIC_OTLP_TRACES_ENDPOINT", otlpTracesUrl)
