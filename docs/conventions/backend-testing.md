@@ -1,6 +1,6 @@
-# Backend Testing Guide
+# Backend Testing Conventions
 
-xUnit v3 with Microsoft.Testing.Platform.
+xUnit v3 on Microsoft.Testing.Platform. How the test tiers fit together is in [architecture/local-development.md](../architecture/local-development.md#test-tiers).
 
 ## Table of contents
 
@@ -11,8 +11,8 @@ xUnit v3 with Microsoft.Testing.Platform.
 
 ## Test project naming
 
-- **`{Project}.Tests`** — unit tests for that project. No external dependencies (no Testcontainers, no `WebApplicationFactory`). Examples: `Kalandra.JobOffers.Tests` and `Kalandra.Blog.Tests` for aggregate decide/apply and notification-planning tests.
-- **`{Project}.IntegrationTests`** — integration tests that need real infrastructure. Example: `Kalandra.Api.IntegrationTests` uses Testcontainers (PostgreSQL) + `TestWebApplicationFactory` for full HTTP round-trip tests.
+- **`{Project}.Tests`** — tests that need no external infrastructure (no Docker). Mostly unit tests, such as aggregate decide/apply and notification planning in `Kalandra.JobOffers.Tests` and `Kalandra.Blog.Tests`; `Kalandra.McpServer.Tests` hosts the real MCP server in-process with stubs.
+- **`{Project}.IntegrationTests`** — integration tests that need real infrastructure. `Kalandra.Api.IntegrationTests` uses Testcontainers (PostgreSQL) + `TestWebApplicationFactory` for full HTTP round-trip tests.
 
 Each test project lives in `backend/tests/` and references only the project it's testing (plus `Kalandra.Infrastructure` if needed for shared types like `CurrentUser`).
 
@@ -21,7 +21,7 @@ Each test project lives in `backend/tests/` and references only the project it's
 `TestWebApplicationFactory` is the single test host. It:
 
 - Spins up a disposable PostgreSQL container via Testcontainers — the database is real and the notification subscriptions run for real under the async daemon.
-- Replaces external HTTP dependencies with in-memory fakes: `InMemoryStorageService`, `AlwaysPassTurnstileValidator`, `FakeSupabaseAdminService`, `FakeUserInfoService`, `TestBlogPostCatalog`, and `TestEmailSender` — outbound notification emails are captured there, so tests assert actual deliveries (`factory.EmailSender.Sent`).
+- Replaces every external dependency except the database with in-memory fakes (storage, Turnstile, Supabase admin and user info, the blog post catalog, email). Outbound notification emails are captured, so tests assert actual deliveries (`factory.EmailSender.Sent`).
 - Configures JWT validation against `FakeJwksHandler` so tests can mint their own tokens via `JwtTestHelper.GenerateToken(userId, email, isAdmin)`.
 - Bypasses the rate limiter via the `X-Interactive-Captcha` header.
 
@@ -113,6 +113,3 @@ The rule is about the **HTTP boundary** — what goes over the wire as JSON must
 
 **Concurrency tests** — verify Marten's optimistic concurrency by opening two sessions against the same stream and confirming the second writer gets a concurrency exception. Also verify that separate streams (e.g. comments vs. job offer) don't conflict.
 
-## Running tests locally
-
-Use `npm test` from the repo root — it runs backend, frontend, and E2E tests. This is what CI runs.

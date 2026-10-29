@@ -9,8 +9,11 @@ This is a personal portfolio and technology showcase website for Pavel Kalandra,
 - [Home](https://www.kalandra.tech/): Overview of the site, navigation to key sections
 - [About Me](https://www.kalandra.tech/about): Background, experience, and skills
 - [Project](https://www.kalandra.tech/project): Technical deep-dive into how this site is built — architecture, tech stack, and engineering decisions
-- [Hire Me](https://www.kalandra.tech/hire-me): Contact form for job offers and collaboration inquiries
-- [Job Offers](https://www.kalandra.tech/job-offers): Public listing of received job offers (with consent)
+- [Projects](https://www.kalandra.tech/projects): Pavel's software projects, including this site and StrongTypes
+- [StrongTypes](https://www.kalandra.tech/strong-types): Kalicz.StrongTypes, a C# NuGet package for safer types
+- [Blog](https://www.kalandra.tech/blog): Engineering articles in English and Czech, with an RSS feed at https://www.kalandra.tech/rss.xml
+- [Hire Me](https://www.kalandra.tech/hire-me): Job offer submission form (requires sign-in)
+- [Job Offers](https://www.kalandra.tech/job-offers): A signed-in user's own submitted job offers and their status
 - [MCP](https://www.kalandra.tech/mcp): Connect an AI assistant to this site over the Model Context Protocol — submit job offers, browse blog posts, read and write comments
 - [Privacy Policy](https://www.kalandra.tech/privacy): Data handling and privacy information
 - [Terms of Service](https://www.kalandra.tech/terms): Usage terms
@@ -19,9 +22,9 @@ This is a personal portfolio and technology showcase website for Pavel Kalandra,
 
 AI assistants can interact with this site directly over the Model Context Protocol:
 
-- Endpoint: https://api.kalandra.tech/mcp (streamable HTTP, stateless)
+- Endpoint: https://mcp.kalandra.tech/mcp (streamable HTTP, stateless)
 - Public tools (no account): list blog posts, read blog comments
-- Account tools (Supabase access token in the Authorization header): submit and track job offers, comment on job offers and blog posts, list your own comments and their replies
+- Account tools (the assistant signs the user in over OAuth 2.1; no token to paste): submit and track job offers, comment on job offers and blog posts, list your own comments and their replies
 - Details: https://www.kalandra.tech/mcp
 
 ## Tech Stack

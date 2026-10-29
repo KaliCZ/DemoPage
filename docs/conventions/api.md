@@ -1,8 +1,8 @@
-# API Layer
+# API Layer Conventions
 
 The API layer is the REST boundary of the backend. It lives in `backend/src/Kalandra.Api/`. Its job is to translate HTTP into handler calls, translate handler results back into HTTP responses, and enforce cross-cutting HTTP concerns (auth, rate limiting, content negotiation, problem details). **It must not contain business logic.**
 
-It is one of two hosts: `Kalandra.McpServer` serves the same domain to AI assistants over MCP (see `docs/mcp-server.md`). Everything the two share lives in a domain project or in `Kalandra.Infrastructure` — never in this one.
+It is one of two hosts: `Kalandra.McpServer` serves the same domain to AI assistants over MCP (see [architecture/mcp-server.md](../architecture/mcp-server.md)). Everything the two share lives in a domain project, `Kalandra.Hosting`, or `Kalandra.Infrastructure` — never in this one.
 
 ## Table of contents
 
@@ -38,7 +38,7 @@ Features are vertical slices, not horizontal layers within the API project. A fe
 - `Contracts/*Response.cs` — REST-only outbound DTOs with a static `Serialize(...)` method (see below)
 - `Contracts/*Error.cs` — the API-layer error enum
 
-There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature reuse happens through `Kalandra.Infrastructure` (auth, storage, config) or `Kalandra.JobOffers` (domain handlers and shared response contracts), never through a shared API-layer "common" folder.
+There is no shared `Controllers/`, `Dtos/`, or `Models/` folder. Cross-feature reuse happens through `Kalandra.Infrastructure` (auth, storage, config) or the domain projects (handlers and shared response contracts), never through a shared API-layer "common" folder.
 
 ## Request & response DTOs
 
@@ -114,17 +114,16 @@ For unexpected 500s (e.g. `SupabaseAdminService` returning an unknown failure), 
 ## Authorization
 
 - `[Authorize]` is applied at the controller class level by default; anonymous endpoints are the exception and must be annotated.
-- Admin-only endpoints use `[Authorize(Policy = AuthPolicies.Admin)]`. The policy is defined in `Kalandra.Api/Infrastructure/Auth/Auth.cs` and requires the `Admin` role claim.
-- Roles are projected from Supabase's JWT `app_metadata.roles` array into `ClaimTypes.Role` claims during `JwtBearerEvents.OnTokenValidated`. Only role names that parse into the `UserRole` enum are kept — unknown strings are dropped, so the `UserRole` enum is the canonical list of admissible roles.
-- Per-request state is exposed through `ICurrentUserAccessor.RequiredUser`. Controllers should read it through the `AppUser` property pattern (see `JobOffersController`), not through `HttpContext.User` directly.
-- JWT validation uses Supabase's OpenID Connect metadata endpoint (`{projectUrl}/auth/v1/.well-known/openid-configuration`) to fetch signing keys, with `RefreshOnIssuerKeyNotFound = true` so rotated keys are picked up automatically.
+- Admin-only endpoints use `[Authorize(Policy = AuthPolicies.Admin)]`, defined in `Kalandra.Api/Infrastructure/Auth/Auth.cs`.
+- Read the caller through `ICurrentUserAccessor` — the `AppUser` property pattern in `JobOffersController` — never through `HttpContext.User`.
+- How tokens are validated and roles projected is in [architecture/auth.md](../architecture/auth.md).
 
 ## Rate limiting
 
-- Policies are declared in `RateLimitPolicies` (constants) and registered in `RateLimits.Add`.
-- Per-policy options use `SlidingWindowRateLimiterOptions`, keyed by `user:{currentUser.Id}` — never by IP.
-- Opting out: when a user has passed an interactive Turnstile challenge the client sends `X-Interactive-Captcha: 1`, which maps onto `RateLimitPartition.GetNoLimiter(...)`. This lets a legitimate user retry after a rate-limit response without waiting for the sliding window to drain.
-- `OnRejected` is the only place a raw JSON string is written into the response. It deliberately uses a literal `{"error":"captcha_required"}` because this response is consumed by a matching frontend handler that triggers the interactive Turnstile flow; it is not a user-facing i18n key and is intentionally stable.
+- Policies are declared in `RateLimitPolicies` (constants) and registered in `RateLimits.Add`, as `SlidingWindowRateLimiterOptions`.
+- Partition by caller, never by IP: `user:{id}` when signed in, the visitor id for anonymous blog writes.
+- The hire-me policy is skipped when the request carries `X-Interactive-Captcha: 1`, which the client sends after the user passes an interactive Turnstile challenge — so a legitimate user can retry without waiting for the window to drain. The endpoint still validates the Turnstile token.
+- `OnRejected` is the only place a raw JSON string is written into a response: `{"error":"captcha_required"}` for the hire-me policy, which the frontend answers with the interactive Turnstile flow, and `{"error":"rate_limited"}` otherwise. These are stable signals, not i18n keys.
 
 Apply a policy with `[EnableRateLimiting(RateLimitPolicies.HireMeCreateUser)]` on the action.
 
@@ -149,4 +148,4 @@ The controller never retries. Retries are the caller's responsibility — a retr
 - **No anonymous error objects.** Use typed API error enums.
 - **No business rules.** "Only the owner can edit" belongs on the entity, not in the controller. The controller only maps `NotAuthorized` to `Forbid()`.
 - **No direct `HttpContext.User` reads.** Use `ICurrentUserAccessor`.
-- **No reading request/response DTOs from tests.** Integration tests send anonymous objects and assert on raw `JsonElement` properties so that renaming a contract field is caught as a test failure. See the `Testing` bullet in `CLAUDE.md`.
+- **No reading request/response DTOs from tests.** Integration tests send anonymous objects and assert on raw `JsonElement` properties so that renaming a contract field is caught as a test failure. See [backend-testing.md](backend-testing.md#the-contract-detection-rule).

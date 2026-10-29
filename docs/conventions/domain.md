@@ -1,6 +1,6 @@
-# Domain Layer
+# Domain Layer Conventions
 
-The domain layer owns the business. It lives in the domain projects (`backend/src/Kalandra.JobOffers/`, `backend/src/Kalandra.Blog/`) and is the only place where business rules, invariants, and event shapes are defined. It has no reference to ASP.NET Core and does not know what HTTP is. Its dependencies are `Marten` (event store, including the subscriptions that deliver notifications — see `docs/backend-architecture.md` → "Background notifications") and `Kalandra.Infrastructure` (cross-cutting types like `CurrentUser`, `IStorageService`). This doc uses `Kalandra.JobOffers` as the running example.
+The domain layer owns the business. It lives in the domain projects (`backend/src/Kalandra.JobOffers/`, `backend/src/Kalandra.Blog/`) and is the only place where business rules, invariants, and event shapes are defined. It has no reference to ASP.NET Core and does not know what HTTP is. Its dependencies are `Marten` (event store, including the subscriptions that deliver [notifications](../architecture/notifications.md)) and `Kalandra.Infrastructure` (cross-cutting types like `CurrentUser`, `IStorageService`). This doc uses `Kalandra.JobOffers` as the running example.
 
 ## Table of contents
 
@@ -31,7 +31,7 @@ A handler's validation is the **last line of defence**. The API layer may reject
 
 ## Commands, queries, handlers
 
-- **Commands** mutate state. Their return type is `Result<TSuccess, TError>` where `TSuccess` is either the new stream ID (on create) or the updated aggregate (on edit/cancel/change-status). They take an `IDocumentSession` (read-write) and store inline. Commands whose write should also notify (create offer, add comment, post blog comment) just append the event — the notification emails are delivered separately by a subscription (see `docs/backend-architecture.md` → "Background notifications").
+- **Commands** mutate state. Their return type is `Result<TSuccess, TError>` where `TSuccess` is either the new stream ID (on create) or the updated aggregate (on edit/cancel/change-status). They take an `IDocumentSession` (read-write) and store inline. Commands whose write should also notify (create offer, add comment, post blog comment) just append the event — the notification emails are delivered separately by a subscription (see [architecture/notifications.md](../architecture/notifications.md)).
 - **Queries** read state. They return `T?` (null for not-found or not-authorized) or a result record. They take an `IQuerySession` (read-only).
 - Both are registered as `Scoped` in `ServiceRegistration.AddJobOffersDomain()`.
 - The command / query / handler live in the **same file** with matching names: `CreateJobOffer.cs` holds `CreateJobOfferCommand`, `CreateJobOfferError`, and `CreateJobOfferHandler`.
@@ -56,7 +56,7 @@ Queries that shouldn't expose an aggregate's existence return `null` (not a doma
 
 ## The `Result<TSuccess, TError>` return type
 
-See `docs/backend-csharp.md` → "Result type" for the API. Handlers and entity decision methods return `Result<TSuccess, TError>` for business failures. Exceptions are only for infrastructure faults.
+See [csharp.md](csharp.md#resulttsuccess-terror-type) for the API. Handlers and entity decision methods return `Result<TSuccess, TError>` for business failures. Exceptions are only for infrastructure faults.
 
 ## Entities and event sourcing
 
@@ -98,7 +98,7 @@ Rules:
 - **Past tense naming** — `JobOfferSubmitted`, `JobOfferEdited`, `JobOfferCancelled`. An event is a record of something that happened, not a command.
 - **Self-contained** — events carry every field needed to rebuild the aggregate state they touch. Do not reference other entities by ID and expect them to be loaded lazily.
 - **Additive evolution** — once an event shape ships, it lives forever in the store. Adding a new nullable field is safe; removing or renaming one breaks rehydration of historical streams. When a genuinely incompatible change is needed, introduce a new event type (`JobOfferEditedV2`) and leave the original intact.
-- **Timestamps come from the command** — handlers resolve `TimeProvider.GetUtcNow()` in the API layer and pass it through the command. The entity does not read the clock.
+- **Timestamps come from the command** — the front door (controller or MCP tool) reads `TimeProvider.GetUtcNow()` and passes it through the command. The entity does not read the clock.
 - **Actor tracking** — events that are triggered by an authenticated user carry `UserId` / `UserEmail` (or `EditedByUserId`, `CancelledByUserId`, etc.) so the history is auditable.
 
 ## Multiple streams per aggregate
@@ -124,7 +124,7 @@ Each feature defines its own error enum next to its handler or entity. Examples:
 - `EditJobOfferError { NotFound, NotAuthorized, NotSubmittedStatus }` — in `Entities/JobOffer.cs` (used by both `JobOffer.Edit` and `EditJobOfferHandler`)
 - `AddCommentError { NotFound, NotAuthorized }` — in `Entities/JobOffer.cs`
 
-These enums are **internal to the domain**. They may be renamed, split, or merged freely when refactoring — the API layer's parallel enums shield the frontend from those changes (see `docs/backend-api.md` → "Error contracts: the two-enum rule"). That freedom is the whole point of keeping them separate: domain refactoring should never break the wire contract.
+These enums are **internal to the domain**. They may be renamed, split, or merged freely when refactoring — the API layer's parallel enums shield the frontend from those changes (see [api.md](api.md#error-contracts-the-two-enum-rule)). That freedom is the whole point of keeping them separate: domain refactoring should never break the wire contract.
 
 ## What the domain must not do
 

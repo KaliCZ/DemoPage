@@ -43,7 +43,7 @@ Exceptions are reserved for truly exceptional conditions (storage failures, DB o
 
 ## Enum switches: no default branch
 
-Never use `default` or `_` in switch expressions on enums. Enumerate every case explicitly so the compiler warns when a new value is added. This is critical for the two-enum error contract — a new domain error that isn't mapped must be a compile-time signal, not a silent fallthrough.
+Never use `default` or `_` in switch expressions on enums. Enumerate every case explicitly so adding a value breaks the build — `backend/.editorconfig` makes CS8509 an error. This is critical for the two-enum error contract — a new domain error that isn't mapped must be a compile-time signal, not a silent fallthrough.
 
 ## Keep method calls compact
 
