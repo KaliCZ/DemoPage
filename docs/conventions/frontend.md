@@ -97,4 +97,4 @@ Non-negotiable baseline for all new UI:
 
 - The specs directly under `tests/` run against the built static site with no backend: rendering,
   navigation, i18n, dark mode, and the sign-in dialog.
-- `tests/e2e/` drives the full stack — real auth, API, and database — with the seeded dev account.
+- `tests/e2e/` drives the full stack — real auth, API, and database — with users each test signs up itself.

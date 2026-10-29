@@ -43,7 +43,7 @@ values with `dotnet user-secrets`.
 ### Dev account
 
 `supabase/seed.sql` creates `dev@kalandra.local` with the admin role (its password is in that
-file). The E2E suite signs in with the same account.
+file) for signing in by hand. E2E tests sign up their own users, so they never depend on it.
 
 ### Parallel worktrees
 
