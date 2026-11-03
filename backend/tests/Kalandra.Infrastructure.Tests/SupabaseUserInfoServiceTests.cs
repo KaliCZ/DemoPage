@@ -4,9 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Supabase.Gotrue;
+using Supabase.Gotrue.Common;
+using Supabase.Gotrue.CreateCustomProvider;
 using Supabase.Gotrue.Interfaces;
 using Supabase.Gotrue.Mfa;
 using Supabase.Gotrue.Responses;
+using Supabase.Gotrue.UpdateCustomProvider;
+using Supabase.Gotrue.UpdateFactor;
 
 namespace Kalandra.Infrastructure.Tests;
 
@@ -33,7 +37,13 @@ public class SupabaseUserInfoServiceTests
         public Task<GenerateLinkResponse?> GenerateLink(GenerateLinkOptions options) => throw new NotImplementedException();
         public Task<MfaAdminListFactorsResponse?> ListFactors(MfaAdminListFactorsParams listFactorsParams) => throw new NotImplementedException();
         public Task<MfaAdminDeleteFactorResponse?> DeleteFactor(MfaAdminDeleteFactorParams deleteFactorParams) => throw new NotImplementedException();
+        public Task SignOutAsync(string accessToken, Constants.SignOutScope scope = Constants.SignOutScope.Global, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<Factor> UpdateFactorAsync(string userId, string factorId, FactorChanges changes, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteCustomProviderAsync(string identifier, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CustomProvider> CreateCustomProviderAsync(NewCustomProvider provider, CustomProviderOptions? options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CustomProvider> UpdateCustomProviderAsync(string identifier, CustomProviderChanges changes, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CustomProvider> GetCustomProviderAsync(string identifier, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<CustomProvider>> ListCustomProvidersAsync(CustomProviderType? type = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private static SupabaseUserInfoService Build(Func<string, Task<User?>> onGetUserById, TimeSpan? fetchTimeout = null) =>
