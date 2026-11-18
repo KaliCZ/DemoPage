@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.4">
+<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
 
   <ItemGroup>
     <ProjectReference Include="..\..\backend\src\Kalandra.Api\Kalandra.Api.csproj" />
@@ -6,8 +6,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.6.4" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.6.4" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.6.5" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.6.5" />
   </ItemGroup>
 
   <PropertyGroup>
