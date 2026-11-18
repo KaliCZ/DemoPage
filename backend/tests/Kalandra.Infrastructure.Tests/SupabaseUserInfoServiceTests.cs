@@ -39,6 +39,8 @@ public class SupabaseUserInfoServiceTests
         public Task<MfaAdminDeleteFactorResponse?> DeleteFactor(MfaAdminDeleteFactorParams deleteFactorParams) => throw new NotImplementedException();
         public Task SignOutAsync(string accessToken, Constants.SignOutScope scope = Constants.SignOutScope.Global, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<Factor> UpdateFactorAsync(string userId, string factorId, FactorChanges changes, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<Passkey>> ListPasskeysAsync(Guid userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeletePasskeyAsync(Guid userId, Guid passkeyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteCustomProviderAsync(string identifier, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<CustomProvider> CreateCustomProviderAsync(NewCustomProvider provider, CustomProviderOptions? options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<CustomProvider> UpdateCustomProviderAsync(string identifier, CustomProviderChanges changes, CancellationToken cancellationToken = default) => throw new NotImplementedException();
