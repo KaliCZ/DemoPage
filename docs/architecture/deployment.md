@@ -17,6 +17,7 @@ Keep the site up through deploys and reboots at close to zero cost, with every r
   all pass, `backend-deploy` releases the API, then `mcp-deploy` releases the MCP host (the API
   applies the schema first), and `frontend-deploy` publishes the site. A manual run can skip the
   backend deploy to ship the frontend while the backend is broken.
+  Every job has an explicit timeout to keep stalled commands from consuming hours of runner time.
 - **Blue/green release** — a deploy writes the host's env file, installs the idle slot's unit with
   `Image=` pinned to the digest this run built, starts it, and waits until `/health/live` reports
   the expected commit. Only then does it point the host's Caddy fragment at the new port, reload

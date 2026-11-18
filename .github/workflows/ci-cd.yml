@@ -31,6 +31,7 @@ jobs:
   e2e:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Local Supabase's keys are deterministic, so hardcode them instead of waiting on `supabase status` to build.
     env:
       SB_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
@@ -90,6 +91,7 @@ jobs:
         working-directory: frontend
 
       - name: Wait for Supabase
+        timeout-minutes: 4
         run: |
           echo "Waiting for Supabase to be ready..."
           until supabase status > /dev/null 2>&1; do
@@ -158,6 +160,7 @@ jobs:
   backend-test:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -185,6 +188,7 @@ jobs:
   frontend-format:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -207,6 +211,7 @@ jobs:
   frontend-test:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -268,6 +273,7 @@ jobs:
         )
       )
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: production
     steps:
       - uses: actions/checkout@v7
@@ -474,6 +480,7 @@ jobs:
     # After backend-deploy because the API owns the Marten schema; this host runs AutoCreate.None in production.
     needs: [backend-deploy]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: production
     steps:
       - uses: actions/checkout@v7
@@ -661,6 +668,7 @@ jobs:
         )
       )
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: production
     permissions:
       contents: read
