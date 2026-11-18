@@ -46,9 +46,14 @@ jobs:
           # Exact pin — resolving "latest" is a GitHub API call that rate-limits on shared runners.
           version: 2.108.0
 
-      - name: Start local Supabase
-        timeout-minutes: 5
-        run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor
+      # Start Supabase early so image pulls overlap setup and builds.
+      - name: Start local Supabase in background
+        run: |
+          (
+            set +e
+            timeout --kill-after=10s 5m supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor
+            echo "$?" > "$RUNNER_TEMP/supabase-start.exit"
+          ) > "$RUNNER_TEMP/supabase-start.log" 2>&1 < /dev/null &
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -89,6 +94,18 @@ jobs:
       - name: Serve frontend
         run: npm run serve &
         working-directory: frontend
+
+      - name: Wait for Supabase
+        timeout-minutes: 6
+        run: |
+          until [ -f "$RUNNER_TEMP/supabase-start.exit" ]; do
+            sleep 1
+          done
+          exit "$(cat "$RUNNER_TEMP/supabase-start.exit")"
+
+      - name: Supabase startup logs
+        if: always()
+        run: cat "$RUNNER_TEMP/supabase-start.log" 2>/dev/null || echo "(no Supabase startup log captured)"
 
       - name: Start backend
         run: |
