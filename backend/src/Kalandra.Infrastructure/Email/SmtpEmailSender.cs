@@ -20,7 +20,7 @@ public class SmtpEmailSender(EmailConfig config, ILogger<SmtpEmailSender> logger
         await client.ConnectAsync(config.Host, config.Port, SecureSocketOptions.Auto, ct);
         if (config.Credentials is { } credentials)
             await client.AuthenticateAsync(credentials.Username.Value, credentials.Password.Value, ct);
-        await client.SendAsync(mimeMessage, ct);
+        await client.SendAsync(new SmtpSendRequest(mimeMessage), ct);
         await client.DisconnectAsync(quit: true, ct);
 
         logger.LogInformation("Sent email \"{Subject}\" to {Recipient}", message.Subject.Value, message.To.Address);
