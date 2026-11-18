@@ -11,8 +11,8 @@
   "devDependencies": {
     "concurrently": "^10.0.7",
     "cross-env": "^10.1.0",
-    "serve": "^14.2.7",
-    "supabase": "^3.0.0",
+    "serve": "^14.2.8",
+    "supabase": "^3.1.0",
     "wait-on": "^9.5.1"
   },
   "overrides": {
