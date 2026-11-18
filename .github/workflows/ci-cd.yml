@@ -31,6 +31,7 @@ jobs:
   e2e:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Local Supabase's keys are deterministic, so hardcode them instead of waiting on `supabase status` to build.
     env:
       SB_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
@@ -39,15 +40,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Supabase starts first, in the background, so its ~50s image pull overlaps the setup and builds below.
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
         with:
           # Exact pin — resolving "latest" is a GitHub API call that rate-limits on shared runners.
           version: 2.108.0
 
-      - name: Start local Supabase in background
-        run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor &
+      - name: Start local Supabase
+        timeout-minutes: 5
+        run: supabase start --exclude realtime,imgproxy,edge-runtime,logflare,vector,supavisor
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -88,15 +89,6 @@ jobs:
       - name: Serve frontend
         run: npm run serve &
         working-directory: frontend
-
-      - name: Wait for Supabase
-        run: |
-          echo "Waiting for Supabase to be ready..."
-          until supabase status > /dev/null 2>&1; do
-            echo "Still waiting..."
-            sleep 3
-          done
-          echo "Supabase is ready."
 
       - name: Start backend
         run: |
