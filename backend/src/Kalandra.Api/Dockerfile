@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1-labs
 
 # Build natively and cross-publish so restore/publish never run under slow QEMU emulation.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine@sha256:0294f285d062afacc8b5f6d7febb0cd4ee879320e5585fa15f2f4ebf1feb9ba7 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0-alpine@sha256:52556c0fb9d0f609ae9aeab9efeeba96f4acc2f7038f7696f2235ccbdbb8e290 AS build
 ARG COMMIT_SHA=unknown
 ARG TARGETARCH
 WORKDIR /src
@@ -18,7 +18,7 @@ RUN dotnet publish src/Kalandra.Api/Kalandra.Api.csproj \
     -o /app \
     -p:SourceRevisionId=$COMMIT_SHA
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:21c3f9798416cba4c0576a947c286231cb71ea2884896cb968253f5c9668f930 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0-alpine@sha256:d39b72ad1534fa0faf52b488bffb0762df7ba269d120f0338713d4dda2a41bf5 AS runtime
 WORKDIR /app
 
 # The deploy's image prune is scoped to this label so it never removes another app's images on the shared host.
