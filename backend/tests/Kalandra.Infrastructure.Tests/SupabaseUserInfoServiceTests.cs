@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Supabase.Gotrue;
 using Supabase.Gotrue.Common;
 using Supabase.Gotrue.CreateCustomProvider;
+using Supabase.Gotrue.CreateOAuthClient;
 using Supabase.Gotrue.CreateSsoProvider;
 using Supabase.Gotrue.Interfaces;
 using Supabase.Gotrue.ListSsoProviders;
@@ -13,6 +14,7 @@ using Supabase.Gotrue.Mfa;
 using Supabase.Gotrue.Responses;
 using Supabase.Gotrue.UpdateCustomProvider;
 using Supabase.Gotrue.UpdateFactor;
+using Supabase.Gotrue.UpdateOAuthClient;
 using Supabase.Gotrue.UpdateSsoProvider;
 
 namespace Kalandra.Infrastructure.Tests;
@@ -54,6 +56,12 @@ public class SupabaseUserInfoServiceTests
         public Task<CustomProvider> UpdateCustomProviderAsync(string identifier, CustomProviderChanges changes, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<CustomProvider> GetCustomProviderAsync(string identifier, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<CustomProvider>> ListCustomProvidersAsync(CustomProviderType? type = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<OAuthClientCredentials> CreateOAuthClientAsync(NewOAuthClient client, OAuthClientOptions? options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteOAuthClientAsync(Guid clientId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<OAuthClientCredentials> RegenerateOAuthClientSecretAsync(Guid clientId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<OAuthClient> GetOAuthClientAsync(Guid clientId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<OAuthClient>> ListOAuthClientsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<OAuthClient> UpdateOAuthClientAsync(Guid clientId, OAuthClientChanges changes, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private static SupabaseUserInfoService Build(Func<string, Task<User?>> onGetUserById, TimeSpan? fetchTimeout = null) =>

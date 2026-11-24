@@ -20,8 +20,8 @@
 
   <ItemGroup>
     <PackageReference Include="Kalicz.StrongTypes" Version="2.0.1" />
-    <PackageReference Include="Marten" Version="9.62.0" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="10.0.3" />
+    <PackageReference Include="Marten" Version="9.63.0" />
+    <PackageReference Include="Npgsql.OpenTelemetry" Version="11.0.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.21.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.21.0" />
